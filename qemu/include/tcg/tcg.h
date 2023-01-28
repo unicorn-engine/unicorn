@@ -35,6 +35,11 @@
 #include "tcg-apple-jit.h"
 #include "qemu/int128.h"
 
+// Unicorn: Default region size for win32
+#if defined(_WIN32) && !defined(USE_STATIC_CODE_GEN_BUFFER)
+#define UC_TCG_REGION_PAGES_COUNT (128)
+#endif
+
 /* XXX: make safe guess about sizes */
 #define MAX_OP_PER_INSTR 266
 

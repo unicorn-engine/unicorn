@@ -20,6 +20,7 @@
 #ifndef QEMU_CPU_H
 #define QEMU_CPU_H
 
+#include <stdint.h>
 #include "exec/hwaddr.h"
 #include "exec/memattrs.h"
 #include "qemu/bitmap.h"
