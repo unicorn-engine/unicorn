@@ -36,7 +36,7 @@
 #include "qemu/int128.h"
 
 // Unicorn: Default region size for win32
-#if defined(_WIN32) && !defined(USE_STATIC_CODE_GEN_BUFFER)
+#if defined(_WIN32) && !defined(WIN32_QEMU_ALLOC_BUFFER)
 #define UC_TCG_REGION_PAGES_COUNT (128) // Note less pages may cause unexpected and subtle errors.
 #endif
 
