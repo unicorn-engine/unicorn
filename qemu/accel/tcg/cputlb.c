@@ -1436,7 +1436,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
     bool handled;
     HOOK_FOREACH_VAR_DECLARE;
     struct uc_struct *uc = env->uc;
-    MemoryRegion *mr = memory_mapping(uc, addr);
+    MemoryRegion *mr = find_memory_region(uc, addr);
 
     // memory might be still unmapped while reading or fetching
     if (mr == NULL) {
@@ -1480,7 +1480,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
 
         if (handled) {
             uc->invalid_error = UC_ERR_OK;
-            mr = memory_mapping(uc, addr);
+            mr = find_memory_region(uc, addr);
             if (mr == NULL) {
                 uc->invalid_error = UC_ERR_MAP;
                 cpu_exit(uc->cpu);
@@ -2010,7 +2010,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
     }
 
     // Load the latest memory mapping.
-    mr = memory_mapping(uc, addr);
+    mr = find_memory_region(uc, addr);
 
     // Unicorn: callback on invalid memory
     if (mr == NULL) {
@@ -2037,7 +2037,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             return;
         } else {
             uc->invalid_error = UC_ERR_OK;
-            mr = memory_mapping(uc, addr);
+            mr = find_memory_region(uc, addr);
             if (mr == NULL) {
                 uc->invalid_error = UC_ERR_MAP;
                 cpu_exit(uc->cpu);

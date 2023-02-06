@@ -552,7 +552,7 @@ static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
     size_t count = 0, len;
 
     while (count < size) {
-        MemoryRegion *mr = memory_mapping(uc, address);
+        MemoryRegion *mr = find_memory_region(uc, address);
         if (mr) {
             len = (size_t)MIN(size - count, mr->end - address);
             count += len;
@@ -587,7 +587,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
 
     // memory area can overlap adjacent memory blocks
     while (count < size) {
-        MemoryRegion *mr = memory_mapping(uc, address);
+        MemoryRegion *mr = find_memory_region(uc, address);
         if (mr) {
             len = (size_t)MIN(size - count, mr->end - address);
             if (uc->read_mem(&uc->address_space_memory, address, bytes, len) ==
@@ -632,7 +632,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
 
     // memory area can overlap adjacent memory blocks
     while (count < size) {
-        MemoryRegion *mr = memory_mapping(uc, address);
+        MemoryRegion *mr = find_memory_region(uc, address);
         if (mr) {
             uint32_t operms = mr->perms;
             if (!(operms & UC_PROT_WRITE)) { // write protected
@@ -976,8 +976,7 @@ static bool memory_overlap(struct uc_struct *uc, uint64_t begin, size_t size)
 }
 
 // common setup/error checking shared between uc_mem_map and uc_mem_map_ptr
-static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size,
-                      uint32_t perms, MemoryRegion *block)
+static uc_err mem_map(uc_engine *uc, MemoryRegion *block)
 {
     MemoryRegion **regions;
     int pos;
@@ -1060,8 +1059,7 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
         return res;
     }
 
-    return mem_map(uc, address, size, perms,
-                   uc->memory_map(uc, address, size, perms));
+    return mem_map(uc, uc->memory_map(uc, address, size, perms));
 }
 
 UNICORN_EXPORT
@@ -1085,8 +1083,7 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size,
         return res;
     }
 
-    return mem_map(uc, address, size, UC_PROT_ALL,
-                   uc->memory_map_ptr(uc, address, size, perms, ptr));
+    return mem_map(uc, uc->memory_map_ptr(uc, address, size, perms, ptr));
 }
 
 UNICORN_EXPORT
@@ -1108,9 +1105,8 @@ uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
 
     // The callbacks do not need to be checked for NULL here, as their presence
     // (or lack thereof) will determine the permissions used.
-    return mem_map(uc, address, size, UC_PROT_NONE,
-                   uc->memory_map_io(uc, address, size, read_cb, write_cb,
-                                     user_data_read, user_data_write));
+    return mem_map(uc, uc->memory_map_io(uc, address, size, read_cb, write_cb,
+                                         user_data_read, user_data_write));
 }
 
 // Create a backup copy of the indicated MemoryRegion.
@@ -1416,14 +1412,14 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     addr = address;
     count = 0;
     while (count < size) {
-        mr = memory_mapping(uc, addr);
+        mr = find_memory_region(uc, addr);
         len = (size_t)MIN(size - count, mr->end - addr);
         if (mr->ram) {
             if (!split_region(uc, mr, addr, len, false)) {
                 return UC_ERR_NOMEM;
             }
 
-            mr = memory_mapping(uc, addr);
+            mr = find_memory_region(uc, addr);
             // will this remove EXEC permission?
             if (((mr->perms & UC_PROT_EXEC) != 0) &&
                 ((perms & UC_PROT_EXEC) == 0)) {
@@ -1437,7 +1433,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
                 return UC_ERR_NOMEM;
             }
 
-            mr = memory_mapping(uc, addr);
+            mr = find_memory_region(uc, addr);
             mr->perms = perms;
         }
 
@@ -1496,7 +1492,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
     addr = address;
     count = 0;
     while (count < size) {
-        mr = memory_mapping(uc, addr);
+        mr = find_memory_region(uc, addr);
         len = (size_t)MIN(size - count, mr->end - addr);
         if (!mr->ram) {
             if (!split_mmio_region(uc, mr, addr, len, true)) {
@@ -1510,7 +1506,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
 
         // if we can retrieve the mapping, then no splitting took place
         // so unmap here
-        mr = memory_mapping(uc, addr);
+        mr = find_memory_region(uc, addr);
         if (mr != NULL) {
             uc->memory_unmap(uc, mr);
         }
@@ -1522,7 +1518,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
 }
 
 // find the memory region of this address
-MemoryRegion *memory_mapping(struct uc_struct *uc, uint64_t address)
+MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address)
 {
     unsigned int i;
 
@@ -1537,14 +1533,16 @@ MemoryRegion *memory_mapping(struct uc_struct *uc, uint64_t address)
     // try with the cache index first
     i = uc->mapped_block_cache_index;
 
-    if (i < uc->mapped_block_count && address >= uc->mapped_blocks[i]->addr &&
+    if (i < uc->mapped_block_count &&
+        address >= uc->mapped_blocks[i]->addr &&
         address < uc->mapped_blocks[i]->end) {
         return uc->mapped_blocks[i];
     }
 
     i = bsearch_mapped_blocks(uc, address);
 
-    if (i < uc->mapped_block_count && address >= uc->mapped_blocks[i]->addr &&
+    if (i < uc->mapped_block_count &&
+        address >= uc->mapped_blocks[i]->addr &&
         address <= uc->mapped_blocks[i]->end - 1)
         return uc->mapped_blocks[i];
 

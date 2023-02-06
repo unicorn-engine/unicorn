@@ -409,7 +409,7 @@ struct uc_context {
 };
 
 // check if this address is mapped in (via uc_mem_map())
-MemoryRegion *memory_mapping(struct uc_struct *uc, uint64_t address);
+MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address);
 
 // We have to support 32bit system so we can't hold uint64_t on void*
 static inline void uc_add_exit(uc_engine *uc, uint64_t addr)
