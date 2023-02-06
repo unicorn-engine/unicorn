@@ -5207,152 +5207,152 @@ static void disas_data_proc_1src(DisasContext *s, uint32_t insn)
         handle_cls(s, sf, rn, rd);
         break;
     case MAP(1, 0x01, 0x00): /* PACIA */
-        if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_pacia(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
-        } else if (!dc_isar_feature(aa64_pauth, s)) {
-            goto do_unallocated;
-        }
+        // if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_pacia(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
+        // } else if (!dc_isar_feature(aa64_pauth, s)) {
+        //     goto do_unallocated;
+        // }
         break;
     case MAP(1, 0x01, 0x01): /* PACIB */
-        if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_pacib(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
-        } else if (!dc_isar_feature(aa64_pauth, s)) {
-            goto do_unallocated;
-        }
+        // if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_pacib(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
+        // } else if (!dc_isar_feature(aa64_pauth, s)) {
+        //     goto do_unallocated;
+        // }
         break;
     case MAP(1, 0x01, 0x02): /* PACDA */
-        if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_pacda(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
-        } else if (!dc_isar_feature(aa64_pauth, s)) {
-            goto do_unallocated;
-        }
+        // if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_pacda(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
+        // } else if (!dc_isar_feature(aa64_pauth, s)) {
+        //     goto do_unallocated;
+        // }
         break;
     case MAP(1, 0x01, 0x03): /* PACDB */
-        if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_pacdb(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
-        } else if (!dc_isar_feature(aa64_pauth, s)) {
-            goto do_unallocated;
-        }
+        // if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_pacdb(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
+        // } else if (!dc_isar_feature(aa64_pauth, s)) {
+        //     goto do_unallocated;
+        // }
         break;
     case MAP(1, 0x01, 0x04): /* AUTIA */
-        if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_autia(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
-        } else if (!dc_isar_feature(aa64_pauth, s)) {
-            goto do_unallocated;
-        }
+        // if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_autia(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
+        // } else if (!dc_isar_feature(aa64_pauth, s)) {
+        //     goto do_unallocated;
+        // }
         break;
     case MAP(1, 0x01, 0x05): /* AUTIB */
-        if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_autib(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
-        } else if (!dc_isar_feature(aa64_pauth, s)) {
-            goto do_unallocated;
-        }
+        // if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_autib(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
+        // } else if (!dc_isar_feature(aa64_pauth, s)) {
+        //     goto do_unallocated;
+        // }
         break;
     case MAP(1, 0x01, 0x06): /* AUTDA */
-        if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_autda(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
-        } else if (!dc_isar_feature(aa64_pauth, s)) {
-            goto do_unallocated;
-        }
+        // if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_autda(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
+        // } else if (!dc_isar_feature(aa64_pauth, s)) {
+        //     goto do_unallocated;
+        // }
         break;
     case MAP(1, 0x01, 0x07): /* AUTDB */
-        if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_autdb(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
-        } else if (!dc_isar_feature(aa64_pauth, s)) {
-            goto do_unallocated;
-        }
+        // if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_autdb(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, cpu_reg_sp(s, rn));
+        // } else if (!dc_isar_feature(aa64_pauth, s)) {
+        //     goto do_unallocated;
+        // }
         break;
     case MAP(1, 0x01, 0x08): /* PACIZA */
-        if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
-            goto do_unallocated;
-        } else if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_pacia(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
-        }
+        // if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
+        //     goto do_unallocated;
+        // } else if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_pacia(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
+        // }
         break;
     case MAP(1, 0x01, 0x09): /* PACIZB */
-        if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
-            goto do_unallocated;
-        } else if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_pacib(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
-        }
+        // if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
+        //     goto do_unallocated;
+        // } else if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_pacib(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
+        // }
         break;
     case MAP(1, 0x01, 0x0a): /* PACDZA */
-        if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
-            goto do_unallocated;
-        } else if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_pacda(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
-        }
+        // if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
+        //     goto do_unallocated;
+        // } else if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_pacda(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
+        // }
         break;
     case MAP(1, 0x01, 0x0b): /* PACDZB */
-        if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
-            goto do_unallocated;
-        } else if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_pacdb(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
-        }
+        // if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
+        //     goto do_unallocated;
+        // } else if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_pacdb(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
+        // }
         break;
     case MAP(1, 0x01, 0x0c): /* AUTIZA */
-        if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
-            goto do_unallocated;
-        } else if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_autia(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
-        }
+        // if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
+        //     goto do_unallocated;
+        // } else if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_autia(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
+        // }
         break;
     case MAP(1, 0x01, 0x0d): /* AUTIZB */
-        if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
-            goto do_unallocated;
-        } else if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_autib(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
-        }
+        // if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
+        //     goto do_unallocated;
+        // } else if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_autib(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
+        // }
         break;
     case MAP(1, 0x01, 0x0e): /* AUTDZA */
-        if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
-            goto do_unallocated;
-        } else if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_autda(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
-        }
+        // if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
+        //     goto do_unallocated;
+        // } else if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_autda(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
+        // }
         break;
     case MAP(1, 0x01, 0x0f): /* AUTDZB */
-        if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
-            goto do_unallocated;
-        } else if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_autdb(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
-        }
+        // if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
+        //     goto do_unallocated;
+        // } else if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_autdb(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd, new_tmp_a64_zero(s));
+        // }
         break;
     case MAP(1, 0x01, 0x10): /* XPACI */
-        if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
-            goto do_unallocated;
-        } else if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_xpaci(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd);
-        }
+        // if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
+        //     goto do_unallocated;
+        // } else if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_xpaci(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd);
+        // }
         break;
     case MAP(1, 0x01, 0x11): /* XPACD */
-        if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
-            goto do_unallocated;
-        } else if (s->pauth_active) {
-            tcg_rd = cpu_reg(s, rd);
-            gen_helper_xpacd(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd);
-        }
+        // if (!dc_isar_feature(aa64_pauth, s) || rn != 31) {
+        //     goto do_unallocated;
+        // } else if (s->pauth_active) {
+        tcg_rd = cpu_reg(s, rd);
+        gen_helper_xpacd(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rd);
+        // }
         break;
     default:
-    do_unallocated:
-        unallocated_encoding(s);
+    // do_unallocated:
+    //     unallocated_encoding(s);
         break;
     }
 

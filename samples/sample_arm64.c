@@ -89,6 +89,89 @@ static void test_arm64_mem_fetch(void)
     uc_close(uc);
 }
 
+static void test_arm64_atomic(void)
+{
+    uc_engine *uc;
+    uc_err err;
+
+    int64_t x9 = ADDRESS + 0x100;
+    int64_t x8 = 1;
+
+    char CODE[] = "\x29\x01\x28\xb8"; // ldadd     w8, w9, [x9]
+    int64_t output = 0;
+
+    printf("Emulate ARM64 LDADD\n");
+
+    // Initialize emulator in ARM mode
+    err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
+        return;
+    }
+
+    // map 2MB memory for this emulation
+    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+
+    // write machine code to be emulated to memory
+    uc_mem_write(uc, ADDRESS, CODE, sizeof(CODE) - 1);
+
+    // initialize machine registers
+    uc_reg_write(uc, UC_ARM64_REG_X8, &x8);
+    uc_reg_write(uc, UC_ARM64_REG_X9, &x9);
+
+    // emulate machine code in infinite time (last param = 0), or when
+    // finishing all the code.
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(CODE) - 1, 0, 0);
+    if (err) {
+        printf("Failed on uc_emu_start() with error returned: %u\n", err);
+    }
+
+    uc_reg_read(uc, UC_ARM64_REG_X16, &x9);
+    uc_mem_read(uc, x9, (void *)&output, 8);
+    printf("Output: %llx\n", (uint64_t)output);
+}
+
+static void test_arm64_pacda(void)
+{
+    uc_engine *uc;
+    uc_err err;
+
+    int64_t x16 = 0xFFFFFFF007880F38;
+    int64_t x17 = 0xCDA1FFF00B3CC000;
+    char PACDA_CODE[] = "\x30\x0A\xC1\xDA"; //pacda   x16, x17
+
+    printf("Emulate ARM64 PACDA\n");
+
+    // Initialize emulator in ARM mode
+    err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
+        return;
+    }
+
+    // map 2MB memory for this emulation
+    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+
+    // write machine code to be emulated to memory
+    uc_mem_write(uc, ADDRESS, PACDA_CODE, sizeof(PACDA_CODE) - 1);
+
+    // initialize machine registers
+    uc_reg_write(uc, UC_ARM64_REG_X17, &x17);
+    uc_reg_write(uc, UC_ARM64_REG_X16, &x16);
+
+    // emulate machine code in infinite time (last param = 0), or when
+    // finishing all the code.
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(PACDA_CODE) - 1, 0, 0);
+    if (err) {
+        printf("Failed on uc_emu_start() with error returned: %u\n", err);
+    }
+
+    uc_reg_read(uc, UC_ARM64_REG_X16, &x16);
+    printf("X16: %llx\n", (uint64_t)x16);
+}
+
 static void test_arm64(void)
 {
     uc_engine *uc;
@@ -295,6 +378,12 @@ static void test_arm64_hook_mrs()
 
 int main(int argc, char **argv, char **envp)
 {
+    printf("-------------------------\n");
+    test_arm64_atomic();
+
+    printf("-------------------------\n");
+    test_arm64_pacda();
+
     test_arm64_mem_fetch();
     test_arm64();
 
