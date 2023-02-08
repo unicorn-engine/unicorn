@@ -2174,9 +2174,9 @@ static void disas_uncond_b_reg(DisasContext *s, uint32_t insn)
 
         case 2:
         case 3:
-            if (!dc_isar_feature(aa64_pauth, s)) {
-                goto do_unallocated;
-            }
+            // if (!dc_isar_feature(aa64_pauth, s)) {
+            //     goto do_unallocated;
+            // }
             if (opc == 2) {
                 /* RETAA, RETAB */
                 if (rn != 0x1f || op4 != 0x1f) {
@@ -2215,9 +2215,9 @@ static void disas_uncond_b_reg(DisasContext *s, uint32_t insn)
 
     case 8: /* BRAA */
     case 9: /* BLRAA */
-        if (!dc_isar_feature(aa64_pauth, s)) {
-            goto do_unallocated;
-        }
+        // if (!dc_isar_feature(aa64_pauth, s)) {
+        //     goto do_unallocated;
+        // }
         if ((op3 & ~1) != 2) {
             goto do_unallocated;
         }
@@ -2256,9 +2256,9 @@ static void disas_uncond_b_reg(DisasContext *s, uint32_t insn)
 
         case 2: /* ERETAA */
         case 3: /* ERETAB */
-            if (!dc_isar_feature(aa64_pauth, s)) {
-                goto do_unallocated;
-            }
+            // if (!dc_isar_feature(aa64_pauth, s)) {
+            //     goto do_unallocated;
+            // }
             if (rn != 0x1f || op4 != 0x1f) {
                 goto do_unallocated;
             }
@@ -3394,10 +3394,15 @@ static void disas_ldst_pac(DisasContext *s, uint32_t insn,
     int offset;
     TCGv_i64 clean_addr, dirty_addr, tcg_rt;
 
-    if (size != 3 || is_vector || !dc_isar_feature(aa64_pauth, s)) {
+    // if (size != 3 || is_vector || !dc_isar_feature(aa64_pauth, s)) {
+    //     unallocated_encoding(s);
+    //     return;
+    // }
+	if (size != 3 || is_vector) {
         unallocated_encoding(s);
         return;
     }
+
 
     if (rn == 31) {
         gen_check_sp_alignment(s);
