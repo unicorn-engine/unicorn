@@ -10253,7 +10253,6 @@ static void ppc_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
     cc->do_unaligned_access = ppc_cpu_do_unaligned_access;
     cc->get_phys_page_debug = ppc_cpu_get_phys_page_debug;
     cc->tcg_initialize = ppc_translate_init;
-    cc->tlb_fill = ppc_cpu_tlb_fill;
     cc->tlb_fill_cpu = ppc_cpu_tlb_fill;
     cc->cpu_exec_enter = ppc_cpu_exec_enter;
     cc->cpu_exec_exit = ppc_cpu_exec_exit;

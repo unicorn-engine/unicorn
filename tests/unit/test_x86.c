@@ -1090,6 +1090,7 @@ static void test_x86_correct_address_in_long_jump_hook(void)
     uc_hook hook;
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
     OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED,
                    test_x86_correct_address_in_long_jump_hook_callback, NULL, 1,
                    0));
@@ -1348,6 +1349,7 @@ static void test_x86_mmu(void)
     char code[] = "\xB8\x39\x00\x00\x00\x0F\x05\x48\x85\xC0\x74\x0F\xB8\x3C\x00\x00\x00\x48\x89\x04\x25\x00\x40\x00\x00\x0F\x05\xB9\x2A\x00\x00\x00\x48\x89\x0C\x25\x00\x40\x00\x00\xB8\x3C\x00\x00\x00\x0F\x05";
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_CPU));
     OK(uc_hook_add(uc, &h1, UC_HOOK_INSN, &test_x86_mmu_callback, &parrent_done, 1, 0, UC_X86_INS_SYSCALL));
     OK(uc_context_alloc(uc, &context));
 
