@@ -416,6 +416,7 @@ static void test_arm64_mmu(void)
     TEST_CHECK(data != NULL);
 
     OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_CPU));
     OK(uc_mem_map(uc, 0, 0x2000, UC_PROT_ALL));
     OK(uc_mem_write(uc, 0, code, sizeof(code) - 1));
 

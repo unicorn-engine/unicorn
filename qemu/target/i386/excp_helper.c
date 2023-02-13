@@ -635,12 +635,7 @@ do_check_protect_pse36:
     /* align to page_size */
     pte &= PG_ADDRESS_MASK & ~(page_size - 1);
     page_offset = addr & (page_size - 1);
-    /* HACK allow full 64 bit mapping in u64 without paging */
-    if (env->cr[0] & CR0_PG_MASK) {
-        paddr = get_hphys(cs, pte + page_offset, is_write1, &prot);
-    } else {
-        paddr = addr;
-    }
+    paddr = get_hphys(cs, pte + page_offset, is_write1, &prot);
 
     /* Even if 4MB pages, we map only one 4KB page in the cache to
        avoid filling it too fast */

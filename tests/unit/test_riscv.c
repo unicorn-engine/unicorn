@@ -689,6 +689,7 @@ static void test_riscv_mmu(void)
     char code_s[] = "\xb7\x42\x41\x41" "\x9b\x82\x12\x14" "\x37\x63\x01\x00" "\x23\x20\x53\x00" "\x13\x00\x00\x00";
 
     OK(uc_open(UC_ARCH_RISCV, UC_MODE_RISCV64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_CPU));
     OK(uc_hook_add(uc, &h, UC_HOOK_CODE, test_riscv_mmu_hook_code, NULL, 1, 0));
     OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
     OK(uc_mem_map(uc, code_address, 0x1000, UC_PROT_ALL));

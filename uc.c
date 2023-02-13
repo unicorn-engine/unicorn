@@ -235,6 +235,11 @@ static uc_err uc_init(uc_engine *uc)
         return UC_ERR_RESOURCE;
     }
 
+    // init tlb function
+    if (!uc->cpu->cc->tlb_fill) {
+        uc->set_tlb(uc, UC_TLB_CPU);
+    }
+
     // init fpu softfloat
     uc->softfloat_initialize();
 
@@ -591,10 +596,6 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     if (size > INT_MAX)
         return UC_ERR_ARG;
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_READ_UNMAPPED;
     }
@@ -635,10 +636,6 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
     // qemu cpu_physical_memory_rw() size is an int
     if (size > INT_MAX)
         return UC_ERR_ARG;
-
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
 
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_WRITE_UNMAPPED;
@@ -1059,10 +1056,6 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 
     UC_INIT(uc);
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     res = mem_map_check(uc, address, size, perms);
     if (res) {
         return res;
@@ -1083,10 +1076,6 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size,
         return UC_ERR_ARG;
     }
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     res = mem_map_check(uc, address, size, perms);
     if (res) {
         return res;
@@ -1103,10 +1092,6 @@ uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
     uc_err res;
 
     UC_INIT(uc);
-
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
 
     res = mem_map_check(uc, address, size, UC_PROT_ALL);
     if (res)
@@ -1407,10 +1392,6 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
         return UC_ERR_ARG;
     }
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     // check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_NOMEM;
@@ -1487,10 +1468,6 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
         return UC_ERR_ARG;
     }
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     // check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_NOMEM;
@@ -1533,10 +1510,6 @@ MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address)
 
     if (uc->mapped_block_count == 0) {
         return NULL;
-    }
-
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
     }
 
     // try with the cache index first

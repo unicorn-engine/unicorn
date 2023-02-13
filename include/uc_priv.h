@@ -119,9 +119,6 @@ typedef MemoryRegion *(*uc_memory_map_io_t)(struct uc_struct *uc,
 // which interrupt should make emulation stop?
 typedef bool (*uc_args_int_t)(struct uc_struct *uc, int intno);
 
-// some architecture redirect virtual memory to physical memory like Mips
-typedef uint64_t (*uc_mem_redirect_t)(uint64_t address);
-
 // validate if Unicorn supports hooking a given instruction
 typedef bool (*uc_insn_hook_validate)(uint32_t insn_enum);
 
@@ -287,7 +284,6 @@ struct uc_struct {
     uc_args_uc_ram_size_ptr_t memory_map_ptr;
     uc_mem_unmap_t memory_unmap;
     uc_readonly_mem_t readonly_mem;
-    uc_mem_redirect_t mem_redirect;
     uc_cpus_init cpus_init;
     uc_target_page_init target_page;
     uc_softfloat_initialize softfloat_initialize;
