@@ -567,6 +567,9 @@ typedef enum uc_control_type {
     // Invalidate all translation blocks.
     // No arguments.
     UC_CTL_TB_FLUSH,
+    // Invalidate all TLB cache entries and translation blocks.
+    // No arguments
+    UC_CTL_TLB_FLUSH,
     // Change the tlb implementation
     // see uc_tlb_type for current implemented types
     // Write: @args = (int)
@@ -645,7 +648,8 @@ See sample_ctl.c for a detailed example.
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_REMOVE_CACHE, 2), (address), (end))
 #define uc_ctl_request_cache(uc, address, tb)                                  \
     uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_TB_REQUEST_CACHE, 2), (address), (tb))
-#define uc_ctl_flush_tlb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_FLUSH, 0))
+#define uc_ctl_flush_tb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_FLUSH, 0))
+#define uc_ctl_flush_tlb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TLB_FLUSH, 0))
 #define uc_ctl_tlb_mode(uc, mode) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TLB_TYPE, 1), (mode))
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;

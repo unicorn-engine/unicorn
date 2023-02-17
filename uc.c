@@ -2350,6 +2350,17 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         }
         break;
 
+    case UC_CTL_TLB_FLUSH:
+
+        UC_INIT(uc);
+
+        if (rw == UC_CTL_IO_WRITE) {
+            uc->tcg_flush_tlb(uc);
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+
     case UC_CTL_TLB_TYPE: {
 
         UC_INIT(uc);
