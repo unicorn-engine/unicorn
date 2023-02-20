@@ -4816,7 +4816,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         }
 
         // Sync PC in advance
-        gen_jmp_im(s, pc_start);
+        gen_jmp_im(s, pc_start - s->cs_base);
 
         // save the last operand
         prev_op = tcg_last_op(tcg_ctx);
@@ -9314,7 +9314,7 @@ static void i386_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
-    dc->prev_pc = dc->base.pc_next;
+    dc->prev_pc = dc->base.pc_next - dc->cs_base;
     tcg_gen_insn_start(tcg_ctx, dc->base.pc_next, dc->cc_op);
 }
 
