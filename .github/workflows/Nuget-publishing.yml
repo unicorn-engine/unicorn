@@ -156,7 +156,7 @@ jobs:
         if: contains(matrix.config.name, 'macos-x64')
         shell: bash
         run: |
-          brew install p7zip cmake ninja
+          brew install p7zip cmake ninja pkg-config
           ninja --version
           cmake --version
           mkdir build
