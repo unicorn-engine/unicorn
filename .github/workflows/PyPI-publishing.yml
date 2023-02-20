@@ -96,7 +96,12 @@ jobs:
       run: |
         choco install ninja cmake
 
-    - name: '🛠️ Install dependencies'
+    - name: '🛠️ macOS dependencies'
+      if: contains(matrix.config.name, 'macos')
+      run: |
+        brew install p7zip cmake ninja pkg-config
+
+    - name: '🛠️ pip dependencies'
       run: |
         pip install setuptools wheel
 
