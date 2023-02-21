@@ -113,6 +113,19 @@ To provide end users with simple API, Unicorn does lots of dirty hacks within qe
 
 Yes, it’s possible but that is not Unicorn’s goal and there is no simple switch in qemu to disable softmmu.
 
+## How can I interact with MMU/TLB?
+
+By default Unicorn will emulate the MMU depending on the emulated architecture.
+So you can use the features and interfaces of this MMU.
+You or the emulated code can write to the memory and corresponding register to use the MMU.
+
+There is also use the `UC_TLB_VIRTUAL` mode.
+This mode defaults to a simple paddr := vaddr mapping.
+
+You can also add an `UC_HOOK_TLB_FILL` hook to manage the TLB.
+The hook is called, when a virtuall address is not cached and Unicorn is in `UC_TLB_VIRTUAL` mode.
+You can manual flush the cache with `uc_ctl_flush_tlb`.
+
 ## I'd like to make contributions, where do I start?
 
 See [milestones](https://github.com/unicorn-engine/unicorn/milestones) and [coding convention](https://github.com/unicorn-engine/unicorn/wiki/Coding-Convention
@@ -122,4 +135,4 @@ Be sure to send pull requests for our **dev** branch only.
 
 ## Which qemu version is Unicorn based on?
 
-Prior to 2.0.0, Unicorn is based on qemu 2.2.1. After that, Unicorn is based on qemu 5.0.1. 
+Prior to 2.0.0, Unicorn is based on qemu 2.2.1. After that, Unicorn is based on qemu 5.0.1.
