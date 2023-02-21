@@ -11,7 +11,6 @@ import platform
 
 from distutils import log
 from distutils.core import setup
-from distutils.util import get_platform
 from distutils.command.build import build
 from distutils.command.sdist import sdist
 from setuptools.command.bdist_egg import bdist_egg
@@ -176,25 +175,6 @@ cmdclass = {}
 cmdclass['build'] = custom_build
 cmdclass['sdist'] = custom_sdist
 cmdclass['bdist_egg'] = custom_bdist_egg
-
-if 'bdist_wheel' in sys.argv and '--plat-name' not in sys.argv:
-    idx = sys.argv.index('bdist_wheel') + 1
-    sys.argv.insert(idx, '--plat-name')
-    name = get_platform()
-    if 'linux' in name:
-        # linux_* platform tags are disallowed because the python ecosystem is fubar
-        # linux builds should be built in the centos 5 vm for maximum compatibility
-        # see https://github.com/pypa/manylinux
-        # see also https://github.com/angr/angr-dev/blob/master/bdist.sh
-        sys.argv.insert(idx + 1, 'manylinux1_' + platform.machine())
-    elif 'mingw' in name:
-        if IS_64BITS:
-            sys.argv.insert(idx + 1, 'win_amd64')
-        else:
-            sys.argv.insert(idx + 1, 'win32')
-    else:
-        # https://www.python.org/dev/peps/pep-0425/
-        sys.argv.insert(idx + 1, name.replace('.', '_').replace('-', '_'))
 
 try:
     from setuptools.command.develop import develop
