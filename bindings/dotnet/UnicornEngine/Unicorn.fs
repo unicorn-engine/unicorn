@@ -249,7 +249,7 @@ and Unicorn(arch: Int32, mode: Int32, binding: IBinding) =
         |> Seq.iter(fun eventFlag ->
             let funcPointer = Marshal.GetFunctionPointerForDelegate(new EventMemHookInternal(trampoline))
             let hh = new UIntPtr(allocate(IntPtr.Size))
-            match binding.HookAddNoarg(_eng.[0], hh, eventFlag, new UIntPtr(funcPointer.ToPointer()), IntPtr.Zero, uint64 0, uint64 0) |> this.CheckResult with
+            match binding.HookAddNoarg(_eng.[0], hh, eventFlag, new UIntPtr(funcPointer.ToPointer()), IntPtr.Zero, uint64 1, uint64 0) |> this.CheckResult with
             | Some e -> raise e | None -> ()
         )
 
@@ -274,7 +274,7 @@ and Unicorn(arch: Int32, mode: Int32, binding: IBinding) =
         if _inHooks |> Seq.isEmpty then
             let funcPointer = Marshal.GetFunctionPointerForDelegate(new InHookInternal(trampoline))
             let hh = new UIntPtr(allocate(IntPtr.Size))
-            match binding.HookAddArg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), IntPtr.Zero, uint64 0, uint64 0, X86.UC_X86_INS_IN) |> this.CheckResult with
+            match binding.HookAddArg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), IntPtr.Zero, uint64 1, uint64 0, X86.UC_X86_INS_IN) |> this.CheckResult with
             | Some e -> raise e | None -> ()
 
         _inHooks.Add(callback, userData)
@@ -290,7 +290,7 @@ and Unicorn(arch: Int32, mode: Int32, binding: IBinding) =
         if _outHooks |> Seq.isEmpty then
             let funcPointer = Marshal.GetFunctionPointerForDelegate(new OutHookInternal(trampoline))
             let hh = new UIntPtr(allocate(IntPtr.Size))
-            match binding.HookAddArg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), IntPtr.Zero, uint64 0, uint64 0, X86.UC_X86_INS_OUT) |> this.CheckResult with
+            match binding.HookAddArg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), IntPtr.Zero, uint64 1, uint64 0, X86.UC_X86_INS_OUT) |> this.CheckResult with
             | Some e -> raise e | None -> ()
 
         _outHooks.Add(callback, userData)
@@ -306,7 +306,7 @@ and Unicorn(arch: Int32, mode: Int32, binding: IBinding) =
         if _syscallHooks |> Seq.isEmpty then
             let funcPointer = Marshal.GetFunctionPointerForDelegate(new SyscallHookInternal(trampoline))
             let hh = new UIntPtr(allocate(IntPtr.Size))
-            match binding.HookAddArg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), IntPtr.Zero, uint64 0, uint64 0, X86.UC_X86_INS_SYSCALL) |> this.CheckResult with
+            match binding.HookAddArg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), IntPtr.Zero, uint64 1, uint64 0, X86.UC_X86_INS_SYSCALL) |> this.CheckResult with
             | Some e -> raise e | None -> ()
 
         _syscallHooks.Add(callback, userData)
