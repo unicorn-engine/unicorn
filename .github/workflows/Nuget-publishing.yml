@@ -80,6 +80,7 @@ jobs:
             -B . \
             -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
             -G "${{ matrix.config.generators }}" \
+            -DCMAKE_C_FLAGS="//MT" \
             -DCMAKE_INSTALL_PREFIX:PATH=instdir \
             -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
           cmake --build . --config ${{ matrix.config.build_type }}
@@ -107,6 +108,7 @@ jobs:
             -A "win32" \
             -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
             -G "${{ matrix.config.generators }}" \
+            -DCMAKE_C_FLAGS="//MT" \
             -DCMAKE_INSTALL_PREFIX:PATH=instdir \
             -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
           cmake --build . --config ${{ matrix.config.build_type }}
