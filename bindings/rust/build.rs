@@ -138,7 +138,11 @@ fn build_with_cmake() {
 
     // Lazymio(@wtdcode): Dynamic link may break. See: https://github.com/rust-lang/cargo/issues/5077
     if cfg!(feature = "dynamic_linkage") {
-        println!("cargo:rustc-link-lib=dylib=unicorn");
+        if compiler.is_like_msvc() {
+            println!("cargo:rustc-link-lib=dylib=unicorn-import");
+        } else {
+            println!("cargo:rustc-link-lib=dylib=unicorn");
+        }
     } else {
         println!("cargo:rustc-link-lib=static=unicorn");
     }
@@ -159,7 +163,11 @@ fn main() {
                 println!("cargo:rustc-link-search=native={}", dir.to_str().unwrap());
             }
             if cfg!(feature = "dynamic_linkage") {
-                println!("cargo:rustc-link-lib=dylib=unicorn");
+                if cc::Build::new().get_compiler().is_like_msvc() {
+                    println!("cargo:rustc-link-lib=dylib=unicorn-import");
+                } else {
+                    println!("cargo:rustc-link-lib=dylib=unicorn");
+                }
             } else {
                 println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
                 println!("cargo:rustc-link-lib=static=unicorn");
