@@ -1229,6 +1229,36 @@ static void test_x86_lazy_mapping(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_16_incorrect_ip_cb(uc_engine *uc, uint64_t address, uint32_t size, void* data)
+{
+    uint16_t cs, ip;
+
+    OK(uc_reg_read(uc, UC_X86_REG_CS, &cs));
+    OK(uc_reg_read(uc, UC_X86_REG_IP, &ip));
+
+    TEST_CHECK(cs == 0x20);
+    TEST_CHECK(address == ((cs << 4) + ip));
+}
+
+static void test_x86_16_incorrect_ip(void)
+{
+    uc_engine *uc;
+    uc_hook hk1, hk2;
+    uint16_t cs = 0x20;
+    char code[] = "\x41"; // INC cx;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_16, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &hk1, UC_HOOK_BLOCK, test_x86_16_incorrect_ip_cb, NULL, 1, 0));
+    OK(uc_hook_add(uc, &hk2, UC_HOOK_CODE, test_x86_16_incorrect_ip_cb, NULL, 1, 0));
+    
+    OK(uc_reg_write(uc, UC_X86_REG_CS, &cs));
+    
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1271,4 +1301,5 @@ TEST_LIST = {
     {"test_x86_unaligned_access", test_x86_unaligned_access},
 #endif
     {"test_x86_lazy_mapping", test_x86_lazy_mapping},
+    {"test_x86_16_incorrect_ip", test_x86_16_incorrect_ip},
     {NULL, NULL}};

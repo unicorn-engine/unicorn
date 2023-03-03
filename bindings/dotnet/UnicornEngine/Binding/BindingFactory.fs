@@ -1,4 +1,4 @@
-﻿namespace UnicornManaged.Binding
+﻿namespace UnicornEngine.Binding
 
 
 module BindingFactory =
