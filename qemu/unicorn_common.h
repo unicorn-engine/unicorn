@@ -14,13 +14,13 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size);
 
 // return true on success, false on failure
 static inline bool cpu_physical_mem_read(AddressSpace *as, hwaddr addr,
-                                            uint8_t *buf, int len)
+                                            uint8_t *buf, hwaddr len)
 {
     return cpu_physical_memory_rw(as, addr, (void *)buf, len, 0);
 }
 
 static inline bool cpu_physical_mem_write(AddressSpace *as, hwaddr addr,
-                                            const uint8_t *buf, int len)
+                                            const uint8_t *buf, hwaddr len)
 {
     return cpu_physical_memory_rw(as, addr, (void *)buf, len, 1);
 }

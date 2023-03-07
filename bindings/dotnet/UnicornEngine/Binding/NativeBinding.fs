@@ -1,4 +1,4 @@
-﻿namespace UnicornManaged.Binding
+﻿namespace UnicornEngine.Binding
 
 open System
 open System.Runtime.InteropServices
@@ -6,34 +6,34 @@ open System.Runtime.InteropServices
 module NativeBinding =
 
     [<AutoOpen>]
-    module private Imported = 
+    module private Imported =
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
         extern Int32 uc_version(UIntPtr major, UIntPtr minor)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_open(UInt32 arch, UInt32 mode, UIntPtr[] engine)          
+        extern Int32 uc_open(UInt32 arch, UInt32 mode, UIntPtr[] engine)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_close(UIntPtr eng)          
+        extern Int32 uc_close(UIntPtr eng)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_map(UIntPtr eng, UInt64 address, UIntPtr size, UInt32 perm)
+        extern Int32 uc_mem_map(UIntPtr eng, UInt64 address, UInt64 size, UInt32 perm)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_map_ptr(UIntPtr eng, UInt64 address, UIntPtr size, UInt32 perm, UIntPtr ptr)
+        extern Int32 uc_mem_map_ptr(UIntPtr eng, UInt64 address, UInt64 size, UInt32 perm, UIntPtr ptr)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_unmap(UIntPtr eng, UInt64 address, UIntPtr size)
+        extern Int32 uc_mem_unmap(UIntPtr eng, UInt64 address, UInt64 size)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_protect(UIntPtr eng, UInt64 address, UIntPtr size, UInt32 perms)
-                
-        [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_write(UIntPtr eng, UInt64 address, Byte[] value, UIntPtr size)
+        extern Int32 uc_mem_protect(UIntPtr eng, UInt64 address, UInt64 size, UInt32 perms)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_read(UIntPtr eng, UInt64 address, Byte[] value, UIntPtr size)
+        extern Int32 uc_mem_write(UIntPtr eng, UInt64 address, Byte[] value, UInt64 size)
+
+        [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
+        extern Int32 uc_mem_read(UIntPtr eng, UInt64 address, Byte[] value, UInt64 size)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
         extern Int32 uc_reg_write(UIntPtr eng, Int32 regId, Byte[] value)
@@ -67,7 +67,7 @@ module NativeBinding =
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl, EntryPoint = "uc_hook_add")>]
         extern Int32 uc_hook_add_arg0_arg1(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData, UInt64 hookbegin, UInt64 hookend, UInt64 arg0, UInt64 arg1)
-            
+
     let instance =
         {new IBinding with
             member thi.Version(major, minor) = uc_version(major, minor)

@@ -291,7 +291,7 @@ var
  for detailed error).
 *)
   uc_mem_write_ : function (uc : uc_engine; address : UInt64; const bytes : Pointer;
-                            size : Cardinal) : uc_err; cdecl;
+                            size : UInt64) : uc_err; cdecl;
 
 (*
  Read a range of bytes in memory.
@@ -307,7 +307,7 @@ var
  for detailed error).
 *)
   uc_mem_read_ : function (uc : uc_engine; address : UInt64; bytes : Pointer;
-                           size : Cardinal) : uc_err; cdecl;
+                           size : UInt64) : uc_err; cdecl;
 
 (*
  Emulate machine code in a specific duration of time.
@@ -400,7 +400,7 @@ The callback will be run when the hook event is hit.
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
 *)
-  uc_mem_map : function (uc : uc_engine; address : UInt64; size : Cardinal; perms : UInt32) : uc_err; cdecl;
+  uc_mem_map : function (uc : uc_engine; address : UInt64; size : UInt64; perms : UInt32) : uc_err; cdecl;
 
 
 (*
@@ -422,7 +422,7 @@ The callback will be run when the hook event is hit.
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 *)
-  uc_mem_map_ptr : function(uc : uc_engine; address : UInt64; size : Cardinal; perms : UInt32; ptr : Pointer) : uc_err; cdecl;
+  uc_mem_map_ptr : function(uc : uc_engine; address : UInt64; size : UInt64; perms : UInt32; ptr : Pointer) : uc_err; cdecl;
 
 
 (*
@@ -438,7 +438,7 @@ The callback will be run when the hook event is hit.
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum \
  for detailed error).
 *)
-  uc_mem_unmap : function (uc : uc_engine; address : UInt64; size : Cardinal) : uc_err; cdecl ;
+  uc_mem_unmap : function (uc : uc_engine; address : UInt64; size : UInt64) : uc_err; cdecl ;
 
 (*
  Set memory permissions for emulation memory.
@@ -456,7 +456,7 @@ The callback will be run when the hook event is hit.
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum \
  for detailed error).
 *)
-  uc_mem_protect : function (uc : uc_engine; address : UInt64; size : Cardinal; perms : UInt32) : uc_err; cdecl ;
+  uc_mem_protect : function (uc : uc_engine; address : UInt64; size : UInt64; perms : UInt32) : uc_err; cdecl ;
 
 (*
  Retrieve all memory regions mapped by uc_mem_map() and uc_mem_map_ptr()

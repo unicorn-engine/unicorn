@@ -153,7 +153,7 @@ fn emulate_x86() {
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
     assert_eq!(
-        emu.mem_read_as_vec(0x1000, x86_code32.len()),
+        emu.mem_read_as_vec(0x1000, x86_code32.len().try_into().unwrap()),
         Ok(x86_code32.clone())
     );
 
@@ -550,7 +550,7 @@ fn emulate_arm() {
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &arm_code32), Ok(()));
     assert_eq!(
-        emu.mem_read_as_vec(0x1000, arm_code32.len()),
+        emu.mem_read_as_vec(0x1000, arm_code32.len().try_into().unwrap()),
         Ok(arm_code32.clone())
     );
 
@@ -581,7 +581,7 @@ fn emulate_mips() {
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &mips_code32), Ok(()));
     assert_eq!(
-        emu.mem_read_as_vec(0x1000, mips_code32.len()),
+        emu.mem_read_as_vec(0x1000, mips_code32.len().try_into().unwrap()),
         Ok(mips_code32.clone())
     );
     assert_eq!(emu.reg_write(RegisterMIPS::AT, 0), Ok(()));
@@ -606,7 +606,7 @@ fn emulate_ppc() {
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &ppc_code32), Ok(()));
     assert_eq!(
-        emu.mem_read_as_vec(0x1000, ppc_code32.len()),
+        emu.mem_read_as_vec(0x1000, ppc_code32.len().try_into().unwrap()),
         Ok(ppc_code32.clone())
     );
     assert_eq!(emu.reg_write(RegisterPPC::R3, 42), Ok(()));
@@ -652,7 +652,7 @@ fn mem_map_ptr() {
     );
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
     assert_eq!(
-        emu.mem_read_as_vec(0x1000, x86_code32.len()),
+        emu.mem_read_as_vec(0x1000, x86_code32.len().try_into().unwrap()),
         Ok(x86_code32.clone())
     );
 
@@ -688,7 +688,7 @@ fn mem_map_ptr() {
     );
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
     assert_eq!(
-        emu.mem_read_as_vec(0x1000, x86_code32.len()),
+        emu.mem_read_as_vec(0x1000, x86_code32.len().try_into().unwrap()),
         Ok(x86_code32.clone())
     );
 
