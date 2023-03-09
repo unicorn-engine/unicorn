@@ -793,7 +793,9 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         // Thumb mode is determined by bit 5 of the CPSR register.
         uint32_t cpsr;
         uc_reg_read(uc, UC_ARM_REG_CPSR, &cpsr);
-        begin_pc32 &= ((cpsr & 0x20) >> 4);
+        if (cpsr & 0x20) {
+            begin_pc32 |= 1;
+        }
         uc_reg_write(uc, UC_ARM_REG_R15, &begin_pc32);
         break;
     }
