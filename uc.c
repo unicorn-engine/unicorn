@@ -788,9 +788,15 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         break;
 #endif
 #ifdef UNICORN_HAS_ARM
-    case UC_ARCH_ARM:
+    case UC_ARCH_ARM: {
+        // HACK: force bit 0 of pc to 1 if in thumb mode when starting.
+        // Thumb mode is determined by bit 5 of the CPSR register.
+        uint32_t cpsr;
+        uc_reg_read(uc, UC_ARM_REG_CPSR, &cpsr);
+        begin_pc32 |= ((cpsr & 0x20) >> 4);
         uc_reg_write(uc, UC_ARM_REG_R15, &begin_pc32);
         break;
+    }
 #endif
 #ifdef UNICORN_HAS_ARM64
     case UC_ARCH_ARM64:
