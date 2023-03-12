@@ -486,6 +486,28 @@ static inline void hooked_regions_check(uc_engine *uc, uint64_t start,
                                 length);
 }
 
+/*
+ break translation loop:
+ This is done in two cases:
+ 1. the user wants to stop the emulation.
+ 2. the user has set it IP. This requires to restart the internal
+ CPU emulation and rebuild some translation blocks
+*/
+static inline uc_err break_translation_loop(uc_engine *uc)
+{
+    if (uc->emulation_done) {
+        return UC_ERR_OK;
+    }
+
+    // TODO: make this atomic somehow?
+    if (uc->cpu) {
+        // exit the current TB
+        cpu_exit(uc->cpu);
+    }
+
+    return UC_ERR_OK;
+}
+
 #ifdef UNICORN_TRACER
 #define UC_TRACE_START(loc) trace_start(get_tracer(), loc)
 #define UC_TRACE_END(loc, fmt, ...)                                            \
