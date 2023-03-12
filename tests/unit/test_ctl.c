@@ -309,7 +309,6 @@ static void test_uc_emu_stop_set_ip_callback(uc_engine *uc, uint64_t address, ui
     uint64_t rip = code_start + 0xb;
 
     if (address == code_start + 0x7) {
-        printf("stoping\n");
         uc_emu_stop(uc);
         uc_reg_write(uc, UC_X86_REG_RIP, &rip);
     }
