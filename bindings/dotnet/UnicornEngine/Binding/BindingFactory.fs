@@ -9,3 +9,4 @@ module BindingFactory =
 
     let getDefault() =
         _instance
+        
