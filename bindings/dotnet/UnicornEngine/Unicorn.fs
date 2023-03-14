@@ -354,3 +354,4 @@ and Unicorn(arch: Int32, mode: Int32, binding: IBinding) =
     interface IDisposable with
         member this.Dispose() =
             this.Dispose()
+            
