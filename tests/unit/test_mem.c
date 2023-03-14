@@ -275,7 +275,7 @@ static void test_mem_protect_mmio(void)
     OK(uc_close(uc));
 }
 
-static void __inline parts_increment(size_t idx, char parts[3])
+static void parts_increment(size_t idx, char parts[3])
 {
     if (idx && idx % 3 == 0) {
         if (++parts[2] > '9') {
