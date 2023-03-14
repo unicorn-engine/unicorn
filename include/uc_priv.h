@@ -12,6 +12,7 @@
 #include "qemu/xxhash.h"
 #include "unicorn/unicorn.h"
 #include "list.h"
+#include "interval.h"
 
 // The max recursive nested uc_emu_start levels
 #define UC_MAX_NESTED_LEVEL (64)
@@ -341,6 +342,8 @@ struct uc_struct {
     struct list hook[UC_HOOK_MAX];
     struct list hooks_to_del;
     int hooks_count[UC_HOOK_MAX];
+    // interval tree for BLOCK & CODE hooks
+    interval_node *interval_block, *interval_code;
 
     // hook to count number of instructions for uc_emu_start()
     uc_hook count_hook;

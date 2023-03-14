@@ -488,6 +488,9 @@ uc_err uc_close(uc_engine *uc)
         list_clear(&uc->hook[i]);
     }
 
+    interval_free(uc->interval_block);
+    interval_free(uc->interval_code);
+
     free(uc->mapped_blocks);
 
     g_tree_destroy(uc->ctl_exits);
@@ -1647,6 +1650,19 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         i++;
     }
 
+    switch (type) {
+        default:
+            break;
+
+        case UC_HOOK_BLOCK_IDX:
+            interval_insert(&uc->interval_block, begin, end, hook);
+            break;
+
+        case UC_HOOK_CODE_IDX:
+            interval_insert(&uc->interval_code, begin, end, hook);
+            break;
+    }
+
     // we didn't use the hook
     // TODO: return an error?
     if (hook->refs == 0) {
@@ -1723,8 +1739,9 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
                          int64_t address)
 {
     struct uc_struct *uc = handle;
-    struct list_item *cur;
     struct hook *hook;
+    interval_node *interval_root, *nodes;
+    int i, count;
     int hook_flags =
         index &
         UC_HOOK_FLAG_MASK; // The index here may contain additional flags. See
@@ -1743,39 +1760,46 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
         return;
     }
 
-    for (cur = uc->hook[index].head;
-         cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next) {
-        if (hook->to_delete) {
-            continue;
-        }
+    // index can only be UC_HOOK_CODE_IDX or UC_HOOK_BLOCK_IDX
+    interval_root = uc->interval_block;
+    if (index == UC_HOOK_CODE_IDX)
+        interval_root = uc->interval_code;
 
-        // on invalid block/instruction, call instruction counter (if enable),
-        // then quit
-        if (size == 0) {
-            if (index == UC_HOOK_CODE_IDX && uc->count_hook) {
-                // this is the instruction counter (first hook in the list)
-                ((uc_cb_hookcode_t)hook->callback)(uc, address, size,
-                                                   hook->user_data);
-            }
+    interval_find_n(interval_root, address, &nodes, &count);
 
-            return;
-        }
+    for(i = 0; i < count; i++) {
+         hook = (struct hook *)nodes[i].data;
+         if (hook->to_delete) {
+             continue;
+         }
 
-        if (HOOK_BOUND_CHECK(hook, (uint64_t)address)) {
-            ((uc_cb_hookcode_t)hook->callback)(uc, address, size,
-                                               hook->user_data);
-        }
+         // on invalid block/instruction, call instruction counter (if enable),
+         // then quit
+         if (size == 0) {
+             if (index == UC_HOOK_CODE_IDX && uc->count_hook) {
+                 // this is the instruction counter (first hook in the list)
+                 ((uc_cb_hookcode_t)hook->callback)(uc, address, size,
+                     hook->user_data);
+             }
 
-        // the last callback may already asked to stop emulation
-        // Unicorn:
-        //   In an ARM IT block, we behave like the emulation continues
-        //   normally. No check_exit_request is generated and the hooks are
-        //   triggered normally. In other words, the whole IT block is treated
-        //   as a single instruction.
-        if (uc->stop_request && !(hook_flags & UC_HOOK_FLAG_NO_STOP)) {
-            break;
-        }
+             free(nodes);
+             return;
+         }
+
+         ((uc_cb_hookcode_t)hook->callback)(uc, address, size, hook->user_data);
+
+         // the last callback may already asked to stop emulation
+         // Unicorn:
+         //   In an ARM IT block, we behave like the emulation continues
+         //   normally. No check_exit_request is generated and the hooks are
+         //   triggered normally. In other words, the whole IT block is treated
+         //   as a single instruction.
+         if (uc->stop_request && !(hook_flags & UC_HOOK_FLAG_NO_STOP)) {
+             break;
+         }
     }
+
+    free(nodes);
 }
 
 UNICORN_EXPORT

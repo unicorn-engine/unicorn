@@ -1106,6 +1106,7 @@ set(UNICORN_SRCS
 set(UNICORN_COMMON_SRCS
 
     list.c
+    interval.c
 
     glib_compat/glib_compat.c
     glib_compat/gtestutils.c
