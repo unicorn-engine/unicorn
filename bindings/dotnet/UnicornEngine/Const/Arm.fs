@@ -1,6 +1,6 @@
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT
 
-namespace UnicornManaged.Const
+namespace UnicornEngine.Const
 
 open System
 
@@ -197,4 +197,3 @@ module Arm =
     let UC_ARM_REG_SL = 76
     let UC_ARM_REG_FP = 77
     let UC_ARM_REG_IP = 78
-

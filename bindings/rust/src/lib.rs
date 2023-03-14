@@ -369,17 +369,13 @@ impl<'a, D> Unicorn<'a, D> {
         let mut read_data = read_callback.map(|c| {
             Box::new(ffi::UcHook {
                 callback: c,
-                uc: Unicorn {
-                    inner: self.inner.clone(),
-                },
+                uc: Rc::downgrade(&self.inner),
             })
         });
         let mut write_data = write_callback.map(|c| {
             Box::new(ffi::UcHook {
                 callback: c,
-                uc: Unicorn {
-                    inner: self.inner.clone(),
-                },
+                uc: Rc::downgrade(&self.inner),
             })
         });
 
@@ -388,12 +384,18 @@ impl<'a, D> Unicorn<'a, D> {
                 self.get_handle(),
                 address,
                 size,
-                ffi::mmio_read_callback_proxy::<D, R> as _,
+                match read_data {
+                    Some(_) => ffi::mmio_read_callback_proxy::<D, R> as _,
+                    None => ptr::null_mut(),
+                },
                 match read_data {
                     Some(ref mut d) => d.as_mut() as *mut _ as _,
                     None => ptr::null_mut(),
                 },
-                ffi::mmio_write_callback_proxy::<D, W> as _,
+                match write_data {
+                    Some(_) => ffi::mmio_write_callback_proxy::<D, W> as _,
+                    None => ptr::null_mut(),
+                },
                 match write_data {
                     Some(ref mut d) => d.as_mut() as *mut _ as _,
                     None => ptr::null_mut(),
@@ -586,7 +588,8 @@ impl<'a, D> Unicorn<'a, D> {
             return Err(uc_error::ARCH);
         }
 
-        let err: uc_error = unsafe { ffi::uc_reg_read(self.get_handle(), curr_reg_id, value.as_mut_ptr() as _) };
+        let err: uc_error =
+            unsafe { ffi::uc_reg_read(self.get_handle(), curr_reg_id, value.as_mut_ptr() as _) };
 
         if err == uc_error::OK {
             boxed = value.into_boxed_slice();
@@ -622,9 +625,7 @@ impl<'a, D> Unicorn<'a, D> {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
-            uc: Unicorn {
-                inner: self.inner.clone(),
-            },
+            uc: Rc::downgrade(&self.inner),
         });
 
         let err = unsafe {
@@ -654,9 +655,7 @@ impl<'a, D> Unicorn<'a, D> {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
-            uc: Unicorn {
-                inner: self.inner.clone(),
-            },
+            uc: Rc::downgrade(&self.inner),
         });
 
         let err = unsafe {
@@ -697,9 +696,7 @@ impl<'a, D> Unicorn<'a, D> {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
-            uc: Unicorn {
-                inner: self.inner.clone(),
-            },
+            uc: Rc::downgrade(&self.inner),
         });
 
         let err = unsafe {
@@ -730,9 +727,7 @@ impl<'a, D> Unicorn<'a, D> {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
-            uc: Unicorn {
-                inner: self.inner.clone(),
-            },
+            uc: Rc::downgrade(&self.inner),
         });
 
         let err = unsafe {
@@ -763,9 +758,7 @@ impl<'a, D> Unicorn<'a, D> {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
-            uc: Unicorn {
-                inner: self.inner.clone(),
-            },
+            uc: Rc::downgrade(&self.inner),
         });
 
         let err = unsafe {
@@ -796,9 +789,7 @@ impl<'a, D> Unicorn<'a, D> {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
-            uc: Unicorn {
-                inner: self.inner.clone(),
-            },
+            uc: Rc::downgrade(&self.inner),
         });
 
         let err = unsafe {
@@ -830,9 +821,7 @@ impl<'a, D> Unicorn<'a, D> {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
-            uc: Unicorn {
-                inner: self.inner.clone(),
-            },
+            uc: Rc::downgrade(&self.inner),
         });
 
         let err = unsafe {
@@ -870,9 +859,7 @@ impl<'a, D> Unicorn<'a, D> {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
-            uc: Unicorn {
-                inner: self.inner.clone(),
-            },
+            uc: Rc::downgrade(&self.inner),
         });
 
         let err = unsafe {

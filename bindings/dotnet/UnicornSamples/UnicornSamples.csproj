@@ -6,7 +6,7 @@
     <AssemblyName>UnicornSamples</AssemblyName>
     <Copyright>Copyright © Antonio Parata 2016</Copyright>
     <RepositoryUrl>https://github.com/unicorn-engine/unicorn</RepositoryUrl>
-    <Version>2.0.0</Version>
+    <Version>2.0.2-rc1</Version>
     <ProjectGuid>{B80B5987-1E24-4309-8BF9-C4F91270F21C}</ProjectGuid>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
@@ -17,9 +17,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UnicornManaged\UnicornManaged.fsproj">
+    <ProjectReference Include="..\UnicornEngine\UnicornEngine.fsproj">
       <Project>{0c21f1c1-2725-4a46-9022-1905f85822a5}</Project>
-      <Name>UnicornManaged</Name>
+      <Name>UnicornEngine</Name>
     </ProjectReference>
   </ItemGroup>
   

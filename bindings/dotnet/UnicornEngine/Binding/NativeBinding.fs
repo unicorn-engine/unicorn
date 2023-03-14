@@ -1,4 +1,4 @@
-﻿namespace UnicornEngine.Binding
+namespace UnicornEngine.Binding
 
 open System
 open System.Runtime.InteropServices
@@ -12,6 +12,7 @@ module NativeBinding =
         extern Int32 uc_version(UIntPtr major, UIntPtr minor)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
+
         extern Int32 uc_open(UInt32 arch, UInt32 mode, UIntPtr[] engine)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]

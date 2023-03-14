@@ -94,7 +94,7 @@ _path_list = [os.getenv('LIBUNICORN_PATH', None),
 
 for _path in _path_list:
     if _path is None: continue
-    _uc = _load_lib(_path, _lib.get(sys.platform, "libunicorn.so"))
+    _uc = _load_lib(_path, _lib.get(sys.platform, "libunicorn.so.2"))
     if _uc is not None:
         break
 

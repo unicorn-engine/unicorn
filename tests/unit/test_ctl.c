@@ -304,6 +304,40 @@ static void test_uc_hook_cached_uaf(void)
 #endif
 }
 
+static void test_uc_emu_stop_set_ip_callback(uc_engine *uc, uint64_t address, uint32_t size, void *userdata)
+{
+    uint64_t rip = code_start + 0xb;
+
+    if (address == code_start + 0x7) {
+        uc_emu_stop(uc);
+        uc_reg_write(uc, UC_X86_REG_RIP, &rip);
+    }
+}
+
+static void test_uc_emu_stop_set_ip(void)
+{
+    uc_engine *uc;
+    uc_hook h;
+    uint64_t rip;
+
+    char code[] = "\x48\x31\xc0"        // 0x0    xor rax, rax    : rax = 0
+                  "\x90"                // 0x3    nop             :
+                  "\x48\xff\xc0"        // 0x4    inc rax         : rax++
+                  "\x90"                // 0x7    nop             : <-- going to stop here
+                  "\x48\xff\xc0"        // 0x8    inc rax         : rax++
+                  "\x90"                // 0xb    nop             :
+                  "\x0f\x0b"            // 0xc    ud2             : <-- will raise UC_ERR_INSN_INVALID, but should not never be reached
+                  "\x90"                // 0xe    nop             :
+                  "\x90";               // 0xf    nop             :
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, test_uc_emu_stop_set_ip_callback, NULL, 1, 0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &rip));
+    TEST_CHECK(rip == code_start + 0xb);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_page_size", test_uc_ctl_page_size},
              {"test_uc_ctl_arch", test_uc_ctl_arch},
@@ -315,4 +349,5 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
 #endif
              {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
+             {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
              {NULL, NULL}};

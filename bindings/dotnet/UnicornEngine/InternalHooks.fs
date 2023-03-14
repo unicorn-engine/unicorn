@@ -1,4 +1,4 @@
-﻿namespace UnicornManaged
+namespace UnicornEngine
 
 open System
 open System.Runtime.InteropServices
@@ -14,10 +14,10 @@ type internal BlockHookInternal = delegate of IntPtr * Int64 * Int32 * IntPtr ->
 type internal InterruptHookInternal = delegate of IntPtr * Int32 * IntPtr -> unit
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-type internal MemReadHookInternal = delegate of IntPtr * Int64 * Int32 * IntPtr -> unit
+type internal MemReadHookInternal = delegate of IntPtr * Int32 * Int64 * Int32 * IntPtr -> unit
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-type internal MemWriteHookInternal = delegate of IntPtr * Int64 * Int32 * Int64 * IntPtr -> unit
+type internal MemWriteHookInternal = delegate of IntPtr * Int32 * Int64 * Int32 * Int64 * IntPtr -> unit
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type internal EventMemHookInternal = delegate of IntPtr * Int32 * Int64 * Int32 * Int64 * IntPtr-> Boolean

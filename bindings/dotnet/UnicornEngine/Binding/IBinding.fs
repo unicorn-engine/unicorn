@@ -1,4 +1,4 @@
-﻿namespace UnicornManaged.Binding
+namespace UnicornEngine.Binding
 
 open System
 
@@ -25,4 +25,3 @@ type IBinding =
         abstract HookAddArg0 : UIntPtr * UIntPtr * Int32 * UIntPtr * IntPtr * UInt64 * UInt64 * Int32 -> Int32
         abstract HookAddArg0Arg1 : UIntPtr * UIntPtr * Int32 * UIntPtr * IntPtr * UInt64 * UInt64 * UInt64 * UInt64 -> Int32
     end
-

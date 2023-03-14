@@ -130,7 +130,7 @@ static int s390_reg_write(struct uc_struct *uc, unsigned int *regs,
         if (regid == UC_S390X_REG_PC) {
             // force to quit execution and flush TB
             uc->quit_request = true;
-            uc_emu_stop(uc);
+            break_translation_loop(uc);
         }
     }
 
