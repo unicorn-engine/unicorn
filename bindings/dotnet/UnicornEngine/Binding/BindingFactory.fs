@@ -1,4 +1,4 @@
-namespace UnicornEngine.Binding
+﻿namespace UnicornEngine.Binding
 
 
 module BindingFactory =
@@ -9,4 +9,3 @@ module BindingFactory =
 
     let getDefault() =
         _instance
-        

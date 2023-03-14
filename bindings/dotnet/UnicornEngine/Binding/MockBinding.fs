@@ -1,4 +1,4 @@
-namespace UnicornEngine.Binding
+﻿namespace UnicornEngine.Binding
 
 open System
 
@@ -48,4 +48,4 @@ module internal MockBinding =
             member thi.HookAddArg0(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0) = hook_add_arg0(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0)
             member thi.HookAddArg0Arg1(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0, arg1) = hook_add_arg0_arg1(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0, arg1)
         }
-        
+    
