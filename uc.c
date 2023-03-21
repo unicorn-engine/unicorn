@@ -1552,8 +1552,10 @@ MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address)
 
     if (i < uc->mapped_block_count &&
         address >= uc->mapped_blocks[i]->addr &&
-        address <= uc->mapped_blocks[i]->end - 1)
+        address < uc->mapped_blocks[i]->end) {
+        uc->mapped_block_cache_index = i;
         return uc->mapped_blocks[i];
+    }
 
     // not found
     return NULL;
