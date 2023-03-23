@@ -129,6 +129,26 @@ template = {
             'comment_open': '//',
             'comment_close': '',
         },
+    'zig': {
+           'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\npub const %sConst = enum(c_int) {\n",
+            'footer': "\n};\n",
+            'line_format': '\t%s = %s,\n',
+            'out_file': './zig/unicorn/%s_const.zig',
+            # prefixes for constant filenames of all archs - case sensitive
+            'arm.h': 'arm',
+            'arm64.h': 'arm64',
+            'mips.h': 'mips',
+            'x86.h': 'x86',
+            'sparc.h': 'sparc',
+            'm68k.h': 'm68k',
+            'ppc.h': 'ppc',
+            'riscv.h': 'riscv',
+            's390x.h' : 's390x',
+            'tricore.h' : 'tricore',
+            'unicorn.h': 'unicorn',
+            'comment_open': '//',
+            'comment_close': '',
+        },
 }
 
 # markup for comments to be added to autogen files
