@@ -69,17 +69,6 @@ void x86_reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env = uc->cpu->env_ptr;
 
-    env->features[FEAT_1_EDX] = CPUID_CX8 | CPUID_CMOV | CPUID_SSE2 |
-                                CPUID_FXSR | CPUID_SSE | CPUID_CLFLUSH;
-    env->features[FEAT_1_ECX] = CPUID_EXT_SSSE3 | CPUID_EXT_SSE41 |
-                                CPUID_EXT_SSE42 | CPUID_EXT_AES |
-                                CPUID_EXT_CX16;
-    env->features[FEAT_8000_0001_EDX] = CPUID_EXT2_3DNOW | CPUID_EXT2_RDTSCP;
-    env->features[FEAT_8000_0001_ECX] = CPUID_EXT3_LAHF_LM | CPUID_EXT3_ABM |
-                                        CPUID_EXT3_SKINIT | CPUID_EXT3_CR8LEG;
-    env->features[FEAT_7_0_EBX] = CPUID_7_0_EBX_BMI1 | CPUID_7_0_EBX_BMI2 |
-                                  CPUID_7_0_EBX_ADX | CPUID_7_0_EBX_SMAP;
-
     memset(env->regs, 0, sizeof(env->regs));
     memset(env->segs, 0, sizeof(env->segs));
     memset(env->cr, 0, sizeof(env->cr));
@@ -1532,7 +1521,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
             case UC_X86_REG_IP:
                 // force to quit execution and flush TB
                 uc->quit_request = true;
-                uc_emu_stop(uc);
+                break_translation_loop(uc);
                 break;
             }
 
@@ -1546,7 +1535,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
             case UC_X86_REG_IP:
                 // force to quit execution and flush TB
                 uc->quit_request = true;
-                uc_emu_stop(uc);
+                break_translation_loop(uc);
                 break;
             }
 #endif

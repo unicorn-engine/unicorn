@@ -409,7 +409,7 @@ struct uc_context {
 };
 
 // check if this address is mapped in (via uc_mem_map())
-MemoryRegion *memory_mapping(struct uc_struct *uc, uint64_t address);
+MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address);
 
 // We have to support 32bit system so we can't hold uint64_t on void*
 static inline void uc_add_exit(uc_engine *uc, uint64_t addr)
@@ -484,6 +484,28 @@ static inline void hooked_regions_check(uc_engine *uc, uint64_t start,
     hooked_regions_check_single(uc->hook[UC_HOOK_CODE_IDX].head, start, length);
     hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_IDX].head, start,
                                 length);
+}
+
+/*
+ break translation loop:
+ This is done in two cases:
+ 1. the user wants to stop the emulation.
+ 2. the user has set it IP. This requires to restart the internal
+ CPU emulation and rebuild some translation blocks
+*/
+static inline uc_err break_translation_loop(uc_engine *uc)
+{
+    if (uc->emulation_done) {
+        return UC_ERR_OK;
+    }
+
+    // TODO: make this atomic somehow?
+    if (uc->cpu) {
+        // exit the current TB
+        cpu_exit(uc->cpu);
+    }
+
+    return UC_ERR_OK;
 }
 
 #ifdef UNICORN_TRACER

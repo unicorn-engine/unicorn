@@ -305,7 +305,7 @@ jobs:
       if: contains(matrix.config.name, 'macos-x64')
       shell: bash
       run: |
-        brew install p7zip cmake ninja
+        brew install p7zip cmake ninja pkg-config
         ninja --version
         cmake --version
         mkdir build
@@ -325,7 +325,7 @@ jobs:
       if: contains(matrix.config.name, 'android')
       shell: bash
       run: |
-        brew install p7zip cmake ninja
+        brew install p7zip cmake ninja pkg-config
         mkdir build
         mkdir instdir
         cmake . -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \

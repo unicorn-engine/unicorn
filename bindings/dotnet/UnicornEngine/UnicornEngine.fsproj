@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace>UnicornManaged</RootNamespace>
-    <AssemblyName>UnicornManaged</AssemblyName>
+    <PackageId>UnicornEngine.Unicorn</PackageId>
+    <Authors>UnicornEngine</Authors>
     <Copyright>Copyright © Antonio Parata 2016</Copyright>
     <RepositoryUrl>https://github.com/unicorn-engine/unicorn</RepositoryUrl>
-    <Version>2.0.0</Version>
+    <PackageDescription>.NET bindings for unicorn</PackageDescription>
+    <VersionPrefix>2.0.2-rc1</VersionPrefix>
+    <VersionSuffix>$(VersionSuffix)</VersionSuffix>
     <ProjectGuid>0c21f1c1-2725-4a46-9022-1905f85822a5</ProjectGuid>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -13,6 +15,10 @@
 
   <PropertyGroup>
     <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,5 +41,9 @@
     <Compile Include="InternalHooks.fs" />
     <Compile Include="ConvertUtility.fs" />
     <Compile Include="Unicorn.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="runtimes\**" PackagePath="runtimes" Visible="false" />
   </ItemGroup>
 </Project>

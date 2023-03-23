@@ -869,6 +869,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     return buf;
 }
 #elif defined(_WIN32)
+#ifdef WIN32_QEMU_ALLOC_BUFFER
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
@@ -876,6 +877,23 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT,
                         PAGE_EXECUTE_READWRITE);
 }
+#else
+static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
+{
+    TCGContext *tcg_ctx = uc->tcg_ctx;
+    size_t size = tcg_ctx->code_gen_buffer_size;
+
+    void* ptr =  VirtualAlloc(NULL, size, MEM_RESERVE,
+                        PAGE_EXECUTE_READWRITE);
+
+    // for prolog init
+    VirtualAlloc(ptr, 
+                 uc->qemu_real_host_page_size * UC_TCG_REGION_PAGES_COUNT,
+                 MEM_COMMIT, 
+                 PAGE_EXECUTE_READWRITE);
+    return ptr;
+}
+#endif
 void free_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
