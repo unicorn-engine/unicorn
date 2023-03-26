@@ -22,6 +22,7 @@ exclude = [
     "/bindings/python",
     "/bindings/ruby",
     "/bindings/vb6",
+    "/bindings/zig",
     "/samples",
     "/tests",
 ]
