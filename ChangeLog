@@ -1,6 +1,16 @@
 This file details the changelog of Unicorn Engine.
 
 -------------------------------
+[Version 2.0.1.post1]: Nov 22nd, 2022
+
+This is a small release to complement the previous 2.0.1 release.
+
+Fix:
+
+- Fix the endianness detection in tests.
+- Fix the version number in CMakeLists.txt.
+
+-------------------------------
 [Version 2.0.1]: Nov 1st, 2022
 
 Unicorn2 makes the first step to [Debian packages](https://tracker.debian.org/pkg/unicorn-engine) and [vcpkg](https://github.com/microsoft/vcpkg/pull/26101)! Thanks @roehling and @LilyWangL !
