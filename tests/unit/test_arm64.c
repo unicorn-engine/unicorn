@@ -2,6 +2,7 @@
 #include "unicorn/unicorn.h"
 #include "unicorn_test.h"
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 const uint64_t code_start = 0x1000;
@@ -372,6 +373,100 @@ static void test_arm64_block_invalid_mem_read_write_sync(void)
     OK(uc_close(uc));
 }
 
+#define ADDRESS 0x414141000000
+
+static void test_arm64_atomic(void)
+{
+    uc_engine *uc;
+    uc_err err;
+
+    int64_t x9 = ADDRESS + 0x100;
+    int64_t x8 = 1;
+
+    char CODE[] = "\x29\x01\x28\xb8"; // ldadd     w8, w9, [x9]
+
+    // Initialize emulator in ARM mode
+    err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc);
+    TEST_CHECK(err == 0);
+
+    // map 2MB memory for this emulation
+    uc_mem_map(uc, ADDRESS, 2 * 1024, UC_PROT_ALL);
+
+    // write machine code to be emulated to memory
+    uc_mem_write(uc, ADDRESS, CODE, sizeof(CODE) - 1);
+
+    // initialize machine registers
+    uc_reg_write(uc, UC_ARM64_REG_X8, &x8);
+    uc_reg_write(uc, UC_ARM64_REG_X9, &x9);
+
+    // emulate machine code in infinite time (last param = 0), or when
+    // finishing all the code.
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(CODE) - 1, 0, 0);
+    TEST_CHECK(err == 0);
+
+    OK(uc_close(uc));
+}
+
+static void test_arm64_pacda(void)
+{
+    uc_engine *uc;
+    uc_err err;
+
+    int64_t x16 = 0xFFFFFFF007880F38;
+    int64_t x17 = 0xCDA1FFF00B3CC000;
+    char PACDA_CODE[] = "\x30\x0A\xC1\xDA"; //pacda   x16, x17
+
+    // Initialize emulator in ARM mode
+    err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc);
+    TEST_CHECK(err == 0);
+
+    // map 2MB memory for this emulation
+    uc_mem_map(uc, ADDRESS, 2 * 1024, UC_PROT_ALL);
+
+    // write machine code to be emulated to memory
+    uc_mem_write(uc, ADDRESS, PACDA_CODE, sizeof(PACDA_CODE) - 1);
+
+    // initialize machine registers
+    uc_reg_write(uc, UC_ARM64_REG_X17, &x17);
+    uc_reg_write(uc, UC_ARM64_REG_X16, &x16);
+
+    // emulate machine code in infinite time (last param = 0), or when
+    // finishing all the code.
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(PACDA_CODE) - 1, 0, 0);
+    TEST_CHECK(err == 0);
+    OK(uc_close(uc));
+}
+
+static void test_arm64_braa(void)
+{
+    uc_engine *uc;
+    uc_err err;
+
+    int64_t x16 = 0x43AAFFF007897740;
+    int64_t x3 = 0x414141414141;
+    char BRAA_CODE[] = "\x70\x08\x1f\xd7"; //braa   x3, x16
+
+    // Initialize emulator in ARM mode
+    err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc);
+    TEST_CHECK(err == 0);
+
+    // map 2MB memory for this emulation
+    uc_mem_map(uc, ADDRESS, 2 * 1024, UC_PROT_ALL);
+
+    // write machine code to be emulated to memory
+    uc_mem_write(uc, ADDRESS, BRAA_CODE, sizeof(BRAA_CODE) - 1);
+
+    // initialize machine registers
+    uc_reg_write(uc, UC_ARM64_REG_X3, &x3);
+    uc_reg_write(uc, UC_ARM64_REG_X16, &x16);
+
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(BRAA_CODE) - 1, 0, 0);
+
+    uint64_t pc = 0;
+    uc_reg_read(uc, UC_ARM64_REG_PC, &pc);
+    TEST_CHECK(pc == x3);
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -385,4 +480,7 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_block_sync_pc", test_arm64_block_sync_pc},
              {"test_arm64_block_invalid_mem_read_write_sync",
               test_arm64_block_invalid_mem_read_write_sync},
+              {"test_arm64_pacda", test_arm64_pacda},
+              {"test_arm64_atomic", test_arm64_atomic},
+              {"test_arm64_braa", test_arm64_braa},
              {NULL, NULL}};

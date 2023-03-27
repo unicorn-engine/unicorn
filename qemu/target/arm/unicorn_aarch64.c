@@ -433,10 +433,20 @@ static int arm64_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     ARMCPU *cpu;
 
+    // enable AARCH64 atomic instruction
+    uc->cpu_model = 3; // set to cpu max
+
     cpu = cpu_aarch64_init(uc);
     if (cpu == NULL) {
         return -1;
     }
+
+    uint64_t t = cpu->isar.id_aa64isar1;
+    FIELD_DP64(t, ID_AA64ISAR1, APA, 1, t); /* PAuth, architected only */
+    FIELD_DP64(t, ID_AA64ISAR1, API, 1, t);
+    FIELD_DP64(t, ID_AA64ISAR1, GPA, 1, t);
+    FIELD_DP64(t, ID_AA64ISAR1, GPI, 1, t);
+    cpu->isar.id_aa64isar1 = t;
 
     return 0;
 }
