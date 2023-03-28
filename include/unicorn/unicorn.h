@@ -517,9 +517,9 @@ typedef enum uc_query_type {
 
 // unicorn tlb type selection
 typedef enum uc_tlb_type {
+  // The default unicorn virtuall TLB implementation.
     // The tlb implementation of the CPU, best to use for full system emulation.
     UC_TLB_CPU = 0,
-    // The default unicorn virtuall TLB implementation.
     // This tlb defaults to virtuall address == physical address
     // Also a hook is availible to override the tlb entries (see uc_cb_tlbevent_t).
     UC_TLB_VIRTUAL
