@@ -103,7 +103,7 @@ if _uc is None:
     for _path in _path_list:
         if _path is None:
             continue
-        
+
         _uc = _load_lib(_path, "libunicorn.so")
         if _uc is not None:
             # In this case, show a warning for users
@@ -153,16 +153,16 @@ _setup_prototype(_uc, "uc_strerror", ctypes.c_char_p, ucerr)
 _setup_prototype(_uc, "uc_errno", ucerr, uc_engine)
 _setup_prototype(_uc, "uc_reg_read", ucerr, uc_engine, ctypes.c_int, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_reg_write", ucerr, uc_engine, ctypes.c_int, ctypes.c_void_p)
-_setup_prototype(_uc, "uc_mem_read", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
-_setup_prototype(_uc, "uc_mem_write", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
+_setup_prototype(_uc, "uc_mem_read", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_uint64)
+_setup_prototype(_uc, "uc_mem_write", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_uint64)
 _setup_prototype(_uc, "uc_emu_start", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
 _setup_prototype(_uc, "uc_emu_stop", ucerr, uc_engine)
 _setup_prototype(_uc, "uc_hook_del", ucerr, uc_engine, uc_hook_h)
-_setup_prototype(_uc, "uc_mmio_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
-_setup_prototype(_uc, "uc_mem_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
-_setup_prototype(_uc, "uc_mem_map_ptr", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32, ctypes.c_void_p)
-_setup_prototype(_uc, "uc_mem_unmap", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t)
-_setup_prototype(_uc, "uc_mem_protect", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
+_setup_prototype(_uc, "uc_mmio_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
+_setup_prototype(_uc, "uc_mem_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32)
+_setup_prototype(_uc, "uc_mem_map_ptr", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_void_p)
+_setup_prototype(_uc, "uc_mem_unmap", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64)
+_setup_prototype(_uc, "uc_mem_protect", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32)
 _setup_prototype(_uc, "uc_query", ucerr, uc_engine, ctypes.c_uint32, ctypes.POINTER(ctypes.c_size_t))
 _setup_prototype(_uc, "uc_context_alloc", ucerr, uc_engine, ctypes.POINTER(uc_context))
 _setup_prototype(_uc, "uc_free", ucerr, ctypes.c_void_p)
@@ -593,7 +593,7 @@ class Uc(object):
         (cb, data) = self._callbacks[user_data]
         cb(self, offset, size, value, data)
 
-    def mmio_map(self, address: int, size: int, 
+    def mmio_map(self, address: int, size: int,
                  read_cb: UC_MMIO_READ_TYPE, user_data_read: Any,
                  write_cb: UC_MMIO_WRITE_TYPE, user_data_write: Any):
         internal_read_cb = ctypes.cast(UC_MMIO_READ_CB(self._mmio_map_read_cb), UC_MMIO_READ_CB)
@@ -609,7 +609,7 @@ class Uc(object):
         status = _uc.uc_mmio_map(self._uch, address, size, internal_read_cb, read_count, internal_write_cb, write_count)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
-        
+
         # https://docs.python.org/3/library/ctypes.html#callback-functions
         self._ctype_cbs.append(internal_read_cb)
         self._ctype_cbs.append(internal_write_cb)
@@ -731,12 +731,12 @@ class Uc(object):
 
     def __ctl_r(self, ctl, nr):
         return self.__ctl(ctl, nr, uc.UC_CTL_IO_READ)
-    
+
     def __ctl_w(self, ctl, nr):
         return self.__ctl(ctl, nr, uc.UC_CTL_IO_WRITE)
-    
+
     def __ctl_rw(self, ctl, nr):
-        return self.__ctl(ctl, nr, uc.UC_CTL_IO_READ_WRITE) 
+        return self.__ctl(ctl, nr, uc.UC_CTL_IO_READ_WRITE)
 
     def __ctl_r_1_arg(self, ctl, ctp):
         arg = ctp()
@@ -746,7 +746,7 @@ class Uc(object):
     def __ctl_w_1_arg(self, ctl, val, ctp):
         arg = ctp(val)
         self.ctl(self.__ctl_w(ctl, 1), arg)
-    
+
     def __ctl_w_2_arg(self, ctl, val1, val2, ctp1, ctp2):
         arg1 = ctp1(val1)
         arg2 = ctp2(val2)
@@ -763,7 +763,7 @@ class Uc(object):
 
     def ctl_get_page_size(self):
         return self.__ctl_r_1_arg(uc.UC_CTL_UC_PAGE_SIZE, ctypes.c_uint32)
-    
+
     def ctl_set_page_size(self, val: int):
         self.__ctl_w_1_arg(uc.UC_CTL_UC_PAGE_SIZE, val, ctypes.c_uint32)
 
@@ -772,10 +772,10 @@ class Uc(object):
 
     def ctl_get_timeout(self):
         return self.__ctl_r_1_arg(uc.UC_CTL_UC_TIMEOUT, ctypes.c_uint64)
-    
+
     def ctl_exits_enabled(self, val: bool):
         self.__ctl_w_1_arg(uc.UC_CTL_UC_USE_EXITS, val, ctypes.c_int)
-    
+
     def ctl_get_exits_cnt(self):
         return self.__ctl_r_1_arg(uc.UC_CTL_UC_EXITS_CNT, ctypes.c_size_t)
 
@@ -793,7 +793,7 @@ class Uc(object):
 
     def ctl_get_cpu_model(self):
         return self.__ctl_r_1_arg(uc.UC_CTL_CPU_MODEL, ctypes.c_int)
-    
+
     def ctl_set_cpu_model(self, val: int):
         self.__ctl_w_1_arg(uc.UC_CTL_CPU_MODEL, val, ctypes.c_int)
 
@@ -802,7 +802,7 @@ class Uc(object):
 
     def ctl_request_cache(self, addr: int):
         return self.__ctl_rw_1_1_arg(uc.UC_CTL_TB_REQUEST_CACHE, addr, ctypes.c_uint64, uc_tb)
-    
+
     def ctl_flush_tb(self):
         self.ctl(self.__ctl_w(uc.UC_CTL_TB_FLUSH, 0))
 
@@ -963,7 +963,7 @@ class UcContext:
     @property
     def arch(self):
         return self._arch
-    
+
     @property
     def mode(self):
         return self._mode
@@ -1012,11 +1012,11 @@ UC_HOOK_EDGE_GEN_TYPE = Callable[[Uc, uc_tb, uc_tb, Any], None]
 UC_HOOK_TCG_OPCODE_TYPE = Callable[[Uc, int, int, int, Any], None]
 
 UC_HOOK_CALLBACK_TYPE = Union[
-    UC_HOOK_CODE_TYPE, 
-    UC_HOOK_INSN_INVALID_TYPE, 
-    UC_HOOK_MEM_INVALID_TYPE, 
-    UC_HOOK_MEM_ACCESS_TYPE, 
-    UC_HOOK_INSN_IN_TYPE, 
+    UC_HOOK_CODE_TYPE,
+    UC_HOOK_INSN_INVALID_TYPE,
+    UC_HOOK_MEM_INVALID_TYPE,
+    UC_HOOK_MEM_ACCESS_TYPE,
+    UC_HOOK_INSN_IN_TYPE,
     UC_HOOK_INSN_OUT_TYPE,
     UC_HOOK_INSN_SYSCALL_TYPE,
     UC_HOOK_INSN_SYS_TYPE,

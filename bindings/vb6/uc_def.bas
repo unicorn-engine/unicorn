@@ -2077,8 +2077,8 @@ Public Declare Function ucs_reg_read Lib "ucvbshim.dll" (ByVal hEngine As Long, 
 '   for detailed error).
 '*/
 'UNICORN_EXPORT
-'uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *bytes, size_t size);
-Public Declare Function ucs_mem_write Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef b As Byte, ByVal size As Long) As uc_err
+'uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *bytes, uint64_t size);
+Public Declare Function ucs_mem_write Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef b As Byte, ByVal size As Currency) As uc_err
 
 
 
@@ -2096,8 +2096,8 @@ Public Declare Function ucs_mem_write Lib "ucvbshim.dll" (ByVal hEngine As Long,
 '   for detailed error).
 '*/
 'UNICORN_EXPORT
-'uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size);
-Public Declare Function ucs_mem_read Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef b As Byte, ByVal size As Long) As uc_err
+'uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, uint64_t size);
+Public Declare Function ucs_mem_read Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef b As Byte, ByVal size As Currency) As uc_err
 
 
 
@@ -2202,8 +2202,8 @@ Public Declare Function ucs_hook_del Lib "ucvbshim.dll" (ByVal hEngine As Long, 
 '   for detailed error).
 '*/
 'UNICORN_EXPORT
-'uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
-Public Declare Function ucs_mem_map Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Long, ByVal perms As uc_prot) As uc_err
+'uc_err uc_mem_map(uc_engine *uc, uint64_t address, uint64_t size, uint32_t perms);
+Public Declare Function ucs_mem_map Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Currency, ByVal perms As uc_prot) As uc_err
 
 
 
@@ -2227,8 +2227,8 @@ Public Declare Function ucs_mem_map Lib "ucvbshim.dll" (ByVal hEngine As Long, B
 '   for detailed error).
 '*/
 'UNICORN_EXPORT
-'uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, void *ptr);
-Public Declare Function ucs_mem_map_ptr Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Long, ByVal perms As uc_prot, ByVal ptr As Long) As uc_err
+'uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, uint64_t size, uint32_t perms, void *ptr);
+Public Declare Function ucs_mem_map_ptr Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Currency, ByVal perms As uc_prot, ByVal ptr As Long) As uc_err
 
 
 
@@ -2246,8 +2246,8 @@ Public Declare Function ucs_mem_map_ptr Lib "ucvbshim.dll" (ByVal hEngine As Lon
 '   for detailed error).
 '*/
 'UNICORN_EXPORT
-'uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size);
-Public Declare Function ucs_mem_unmap Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Long) As uc_err
+'uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, uint64_t size);
+Public Declare Function ucs_mem_unmap Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Currency) As uc_err
 
 
 '/*
@@ -2267,8 +2267,8 @@ Public Declare Function ucs_mem_unmap Lib "ucvbshim.dll" (ByVal hEngine As Long,
 '   for detailed error).
 '*/
 'UNICORN_EXPORT
-'uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
-Public Declare Function ucs_mem_protect Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Long, ByVal perm As uc_prot) As uc_err
+'uc_err uc_mem_protect(uc_engine *uc, uint64_t address, uint64_t size, uint32_t perms);
+Public Declare Function ucs_mem_protect Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Currency, ByVal perm As uc_prot) As uc_err
 
 
 
@@ -2367,8 +2367,8 @@ Public Declare Function disasm_addr Lib "ucvbshim.dll" (ByVal hEngine As Long, B
 
 
 'simplified access to map and write data to emu memory
-'uc_err __stdcall mem_write_block(uc_engine *uc, uint64_t address, void* data, uint32_t size, uint32_t perm){
-Public Declare Function mem_write_block Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef data As Byte, ByVal size As Long, ByVal perm As Long) As uc_err
+'uc_err __stdcall mem_write_block(uc_engine *uc, uint64_t address, void* data, uint64_t size, uint32_t perm){
+Public Declare Function mem_write_block Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef data As Byte, ByVal size As Currency, ByVal perm As Long) As uc_err
 
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As String) As Long
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenA" (ByVal lpString As Long) As Long
@@ -2393,9 +2393,9 @@ Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenA" (ByVal lpString
 'End Function
 
 Function err2str(e As uc_err) As String
-    
+
     err2str = "Unknown error code: " & e
-    
+
     If e = uc_err_ok Then err2str = "No error: everything was fine"
     If e = UC_ERR_NOMEM Then err2str = "Out-Of-Memory error: uc_open(), uc_emulate()"
     If e = UC_ERR_ARCH Then err2str = "Unsupported architecture: uc_open()"
@@ -2418,13 +2418,13 @@ Function err2str(e As uc_err) As String
     If e = UC_ERR_HOOK_EXIST Then err2str = "hook for this event already existed"
     If e = UC_ERR_RESOURCE Then err2str = "Insufficient resource: uc_emu_start()"
     If e = UC_ERR_EXCEPTION Then err2str = "Unhandled CPU exception"
- 
+
 End Function
 
 Function memType2str(t As uc_mem_type)
-    
+
     memType2str = "Unknown memType: " & t
-    
+
     If t = UC_MEM_READ Then memType2str = "Memory is read from"
     If t = uc_mem_write Then memType2str = "Memory is written to"
     If t = UC_MEM_FETCH Then memType2str = "Memory is fetched"
@@ -2435,10 +2435,10 @@ Function memType2str(t As uc_mem_type)
     If t = UC_MEM_READ_PROT Then memType2str = "Read from read protected, but mapped, memory"
     If t = UC_MEM_FETCH_PROT Then memType2str = "Fetch from non-executable, but mapped, memory"
     If t = UC_MEM_READ_AFTER Then memType2str = "Memory is read from (successful access)"
-    
+
 End Function
 
- 
+
 
 
 

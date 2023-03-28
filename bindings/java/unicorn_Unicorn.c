@@ -447,7 +447,7 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1write
    uc_engine *eng = getEngine(env, self);
    jbyte *array = (*env)->GetByteArrayElements(env, bytes, NULL);
    jsize size = (*env)->GetArrayLength(env, bytes);
-   uc_err err = uc_mem_write(eng, (uint64_t)address, array, (size_t)size);
+   uc_err err = uc_mem_write(eng, (uint64_t)address, array, (uint64_t)size);
 
    if (err != UC_ERR_OK) {
       throwException(env, err);
@@ -467,7 +467,7 @@ JNIEXPORT jbyteArray JNICALL Java_unicorn_Unicorn_mem_1read
 
    jbyteArray bytes = (*env)->NewByteArray(env, (jsize)size);
    jbyte *array = (*env)->GetByteArrayElements(env, bytes, NULL);
-   uc_err err = uc_mem_read(eng, (uint64_t)address, array, (size_t)size);
+   uc_err err = uc_mem_read(eng, (uint64_t)address, array, (uint64_t)size);
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }
@@ -634,7 +634,7 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1map
   (JNIEnv *env, jobject self, jlong address, jlong size, jint perms) {
    uc_engine *eng = getEngine(env, self);
 
-   uc_err err = uc_mem_map(eng, (uint64_t)address, (size_t)size, (uint32_t)perms);
+   uc_err err = uc_mem_map(eng, (uint64_t)address, (uint64_t)size, (uint32_t)perms);
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }
@@ -649,7 +649,7 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1map_1ptr
   (JNIEnv *env, jobject self, jlong address, jlong size, jint perms, jbyteArray block) {
    uc_engine *eng = getEngine(env, self);
    jbyte *array = (*env)->GetByteArrayElements(env, block, NULL);
-   uc_err err = uc_mem_map_ptr(eng, (uint64_t)address, (size_t)size, (uint32_t)perms, (void*)array);
+   uc_err err = uc_mem_map_ptr(eng, (uint64_t)address, (uint64_t)size, (uint32_t)perms, (void*)array);
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }
@@ -667,7 +667,7 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1unmap
   (JNIEnv *env, jobject self, jlong address, jlong size) {
    uc_engine *eng = getEngine(env, self);
 
-   uc_err err = uc_mem_unmap(eng, (uint64_t)address, (size_t)size);
+   uc_err err = uc_mem_unmap(eng, (uint64_t)address, (uint64_t)size);
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }
@@ -685,7 +685,7 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1protect
   (JNIEnv *env, jobject self, jlong address, jlong size, jint perms) {
    uc_engine *eng = getEngine(env, self);
 
-   uc_err err = uc_mem_protect(eng, (uint64_t)address, (size_t)size, (uint32_t)perms);
+   uc_err err = uc_mem_protect(eng, (uint64_t)address, (uint64_t)size, (uint32_t)perms);
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }

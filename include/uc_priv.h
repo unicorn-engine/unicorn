@@ -80,10 +80,10 @@ typedef struct {
 typedef void (*reg_reset_t)(struct uc_struct *uc);
 
 typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr,
-                               const uint8_t *buf, int len);
+                               const uint8_t *buf, hwaddr len);
 
 typedef bool (*uc_read_mem_t)(AddressSpace *as, hwaddr addr, uint8_t *buf,
-                              int len);
+                              hwaddr len);
 
 typedef void (*uc_args_void_t)(void *);
 

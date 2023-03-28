@@ -1,8 +1,8 @@
 
-/* 
+/*
 	stdcall unicorn engine shim layer for use with VB6 or C#
-	code ripped from unicorn_dynload.c 
-	
+	code ripped from unicorn_dynload.c
+
 	Contributed by: FireEye FLARE team
 	Author:         David Zimmer <david.zimmer@fireeye.com>, <dzzie@yahoo.com>
 	License:        Apache 2.0
@@ -31,9 +31,9 @@
 //you can find examples here: https://github.com/dzzie/VS_LIBEMU/tree/master/libemu/include
 
 //if you want to include disassembler support:
-//  1) install libdasm in your compilers include directory 
+//  1) install libdasm in your compilers include directory
 //  2) add libdasm.h/.c to the project (drag and drop into VS project explorer),
-//  3) remove the comment from the define below. 
+//  3) remove the comment from the define below.
 //The vb code detects the changes at runtime.
 //#define INCLUDE_DISASM
 
@@ -49,21 +49,21 @@
 
 enum hookCatagory{hc_code = 0, hc_block = 1, hc_inst = 2, hc_int = 3, hc_mem = 4, hc_memInvalid = 5};
 
-//tracing UC_HOOK_CODE & UC_HOOK_BLOCK 
-typedef void (__stdcall *vb_cb_hookcode_t)   (uc_engine *uc,  uint64_t address,  uint32_t size,    void *user_data); 
+//tracing UC_HOOK_CODE & UC_HOOK_BLOCK
+typedef void (__stdcall *vb_cb_hookcode_t)   (uc_engine *uc,  uint64_t address,  uint32_t size,    void *user_data);
 vb_cb_hookcode_t vbHookcode = 0;
 vb_cb_hookcode_t vbHookBlock = 0;
 
-//hooking memory UC_MEM_READ/WRITE/FETCH 
+//hooking memory UC_MEM_READ/WRITE/FETCH
 typedef void (__stdcall *vb_cb_hookmem_t)    (uc_engine *uc,  uc_mem_type type,  uint64_t address, int size,int64_t value, void *user_data);
 vb_cb_hookmem_t vbHookMem = 0;
 
-//invalid memory access  UC_MEM_*_UNMAPPED and UC_MEM_*PROT events 
-typedef bool (__stdcall *vb_cb_eventmem_t)   (uc_engine *uc,  uc_mem_type type,  uint64_t address, int size, int64_t value, void *user_data);   
+//invalid memory access  UC_MEM_*_UNMAPPED and UC_MEM_*PROT events
+typedef bool (__stdcall *vb_cb_eventmem_t)   (uc_engine *uc,  uc_mem_type type,  uint64_t address, int size, int64_t value, void *user_data);
 vb_cb_eventmem_t vbInvalidMem = 0;
 
-//tracing interrupts for uc_hook_intr() 
-typedef void (__stdcall *vb_cb_hookintr_t)   (uc_engine *uc,  uint32_t intno,    void *user_data); 
+//tracing interrupts for uc_hook_intr()
+typedef void (__stdcall *vb_cb_hookintr_t)   (uc_engine *uc,  uint32_t intno,    void *user_data);
 vb_cb_hookintr_t vbHookInt = 0;
 
 /*
@@ -172,7 +172,7 @@ unsigned int __stdcall ucs_dynload(char *path){
 		return uc_dyn_load(path, 0);
 	#else*/
 		return 1;
-	//#endif	
+	//#endif
 }
 
 unsigned int __stdcall ucs_version(unsigned int *major, unsigned int *minor){
@@ -230,12 +230,12 @@ uc_err __stdcall ucs_reg_read_batch(uc_engine *uc, int *regs, void **vals, int c
     return uc_reg_read_batch(uc, regs, vals, count);
 }
 
-uc_err __stdcall ucs_mem_write(uc_engine *uc, uint64_t address, const void *bytes, size_t size){
+uc_err __stdcall ucs_mem_write(uc_engine *uc, uint64_t address, const void *bytes, uint64_t size){
 #pragma EXPORT
     return uc_mem_write(uc, address, bytes, size);
 }
 
-uc_err __stdcall ucs_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size){
+uc_err __stdcall ucs_mem_read(uc_engine *uc, uint64_t address, void *bytes, uint64_t size){
 #pragma EXPORT
     return uc_mem_read(uc, address, bytes, size);
 }
@@ -255,24 +255,24 @@ uc_err __stdcall ucs_hook_del(uc_engine *uc, uc_hook hh){
     return uc_hook_del(uc, hh);
 }
 
-uc_err __stdcall ucs_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms){
+uc_err __stdcall ucs_mem_map(uc_engine *uc, uint64_t address, uint64_t size, uint32_t perms){
 #pragma EXPORT
     return uc_mem_map(uc, address, size, perms);
 }
 
 //requires link against v1.0
-uc_err __stdcall ucs_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, void *ptr){
+uc_err __stdcall ucs_mem_map_ptr(uc_engine *uc, uint64_t address, uint64_t size, uint32_t perms, void *ptr){
 #pragma EXPORT
     return uc_mem_map_ptr(uc, address, size, perms, ptr);
 }
 
 
-uc_err __stdcall ucs_mem_unmap(uc_engine *uc, uint64_t address, size_t size){
+uc_err __stdcall ucs_mem_unmap(uc_engine *uc, uint64_t address, uint64_t size){
 #pragma EXPORT
     return uc_mem_unmap(uc, address, size);
 }
 
-uc_err __stdcall ucs_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t perms){
+uc_err __stdcall ucs_mem_protect(uc_engine *uc, uint64_t address, uint64_t size, uint32_t perms){
 #pragma EXPORT
     return uc_mem_protect(uc, address, size, perms);
 }
@@ -304,15 +304,15 @@ uc_err __stdcall ucs_context_restore(uc_engine *uc, uc_context *context){
 
 /*
 char* asprintf(char* format, ...){
-	
+
 	char *ret = 0;
-	
+
 	if(!format) return 0;
 
-	va_list args; 
-	va_start(args,format); 
-	int size = _vscprintf(format, args); 
-	
+	va_list args;
+	va_start(args,format);
+	int size = _vscprintf(format, args);
+
 	if(size > 0){
 		size++; //for null
 		ret = (char*)malloc(size+2);
@@ -338,18 +338,18 @@ int __stdcall disasm_addr(uc_engine *uc, uint32_t va, char *str, int bufLen){
 		readLen--;
 		if(readLen == 0) return -2;
 	}
-  
+
 	instr_len = get_instruction(&inst, data, MODE_32);
 	if( instr_len == 0 ) return -3;
 
 	get_instruction_string(&inst, FORMAT_INTEL, va, str, bufLen);
 
-	/* 
+	/*
 	if(inst.type == INSTRUCTION_TYPE_JMP || inst.type == INSTRUCTION_TYPE_JMPC){
 		if(inst.op1.type == OPERAND_TYPE_IMMEDIATE){
 			if(strlen(str) + 6 < bufLen){
 				if(getJmpTarget(str) < va){
-					strcat(str,"   ^^");  
+					strcat(str,"   ^^");
 				}else{
 					strcat(str,"  vv");
 				}
@@ -363,18 +363,18 @@ int __stdcall disasm_addr(uc_engine *uc, uint32_t va, char *str, int bufLen){
 
 
 //maps and write in one shot, auto handles alignment..
-uc_err __stdcall mem_write_block(uc_engine *uc, uint64_t address, void* data, uint32_t size, uint32_t perm){
+uc_err __stdcall mem_write_block(uc_engine *uc, uint64_t address, void* data, uint64_t size, uint32_t perm){
 #pragma EXPORT
 
 	uc_err x;
 	uint64_t base = address;
-    uint32_t sz = size;
+    uint64_t sz = size;
 
 	while(base % 0x1000 !=0){
 		base--;
 		if(base==0) break;
 	}
-	
+
 	sz += address-base; //if data starts mid block, we need to alloc more than just size..
 	while(sz % 0x1000 !=0){
 		sz++;
@@ -402,7 +402,7 @@ uc_err __stdcall get_memMap(uc_engine *uc, _CollectionPtr *pColl){
    char tmp[200]; //max 46 chars used
 
    uc_err err = uc_mem_regions(uc, &regions, &count);
-   
+
    if (err != UC_ERR_OK) return err;
 
    for (uint32_t i = 0; i < count; i++) {
@@ -411,7 +411,7 @@ uc_err __stdcall get_memMap(uc_engine *uc, _CollectionPtr *pColl){
    }
 
    //free(regions); //https://github.com/unicorn-engine/unicorn/pull/373#issuecomment-271187118
-   
+
    uc_free((void*)regions);
    return err;
 

@@ -37,7 +37,7 @@ void Init_unicorn_engine() {
     UcError = rb_define_class_under(UnicornModule, "UcError", rb_eStandardError);
     SavedContext = rb_define_class_under(UnicornModule, "SavedContext", rb_cObject);
     Hook = rb_define_class_under(UnicornModule, "Hook", rb_cObject);
-    
+
     UcClass = rb_define_class_under(UnicornModule, "Uc", rb_cObject);
     rb_define_method(UcClass, "initialize", m_uc_initialize, 2);
     rb_define_method(UcClass, "emu_start", m_uc_emu_start, -1);
@@ -68,7 +68,7 @@ VALUE m_uc_initialize(VALUE self, VALUE arch, VALUE mode) {
     VALUE uc = Data_Wrap_Struct(UcClass, 0, uc_close, _uc);
     rb_iv_set(self, "@uch", uc);
     rb_iv_set(self, "@hooks", rb_ary_new());
-    
+
     return self;
 }
 
@@ -201,7 +201,7 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
     int64_t tmp;
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
-    
+
     uc_arch arch;
     uc_query(_uc, UC_QUERY_ARCH, &arch);
 
@@ -263,7 +263,7 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
             return Qnil;
         }
     }
-    
+
     tmp = NUM2ULL(reg_value);
     err = uc_reg_write(_uc, NUM2INT(reg_id), &tmp);
     if (err != UC_ERR_OK) {
@@ -273,17 +273,17 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
 }
 
 VALUE m_uc_mem_read(VALUE self, VALUE address, VALUE size){
-    size_t isize = NUM2UINT(size);
-    uint8_t bytes[isize];
+    size_t _size = NUM2ULL(size);
+    uint8_t bytes[_size];
     uc_err err;
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
 
-    err = uc_mem_read(_uc, NUM2ULL(address), &bytes, isize);
+    err = uc_mem_read(_uc, NUM2ULL(address), &bytes, _size);
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
     }
-    return rb_str_new(bytes, isize);
+    return rb_str_new(bytes, _size);
 }
 
 VALUE m_uc_mem_write(VALUE self, VALUE address, VALUE bytes){
@@ -308,7 +308,7 @@ VALUE m_uc_mem_map(int argc, VALUE* argv, VALUE self){
     if (NIL_P(perms))
         perms = INT2NUM(UC_PROT_ALL);
 
-    err = uc_mem_map(_uc, NUM2ULL(address), NUM2UINT(size), NUM2UINT(perms));
+    err = uc_mem_map(_uc, NUM2ULL(address), NUM2ULL(size), NUM2UINT(perms));
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
     }
@@ -319,7 +319,7 @@ VALUE m_uc_mem_unmap(VALUE self, VALUE address, VALUE size){
     uc_err err;
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self, "@uch"), uc_engine, _uc);
-    err = uc_mem_unmap(_uc, NUM2ULL(address), NUM2UINT(size));
+    err = uc_mem_unmap(_uc, NUM2ULL(address), NUM2ULL(size));
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
     }
@@ -330,7 +330,7 @@ VALUE m_uc_mem_protect(VALUE self, VALUE address, VALUE size, VALUE perms){
     uc_err err;
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
-    err = uc_mem_protect(_uc, NUM2ULL(address), NUM2UINT(size), NUM2UINT(perms));
+    err = uc_mem_protect(_uc, NUM2ULL(address), NUM2ULL(size), NUM2UINT(perms));
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
     }
@@ -370,7 +370,7 @@ static bool cb_hook_mem_invalid(uc_engine *uc, uint32_t access, uint64_t address
     cb = hook->cb;
     ud = hook->ud;
     rUc = hook->rUc;
-    
+
     return RTEST(rb_funcall(cb, rb_intern("call"), 6, rUc, UINT2NUM(access), ULL2NUM(address), UINT2NUM(size), LL2NUM(value), ud));
 }
 
@@ -438,7 +438,7 @@ VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
     VALUE arg1;
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self, "@uch"), uc_engine, _uc);
-    
+
     rb_scan_args(argc, argv, "24",&hook_type, &callback, &user_data, &begin, &end, &arg1);
     if (NIL_P(begin))
         begin = ULL2NUM(1);
@@ -463,7 +463,7 @@ VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
     r_hook = Data_Wrap_Struct(Hook, mark_hook, free, hook);
     hooks_list = rb_iv_get(self, "@hooks");
     rb_ary_push(hooks_list, r_hook);
-    
+
     uint32_t htype = NUM2UINT(hook_type);
     if(htype == UC_HOOK_INSN){
             switch(NUM2INT(arg1)){
@@ -516,7 +516,7 @@ VALUE m_uc_hook_del(VALUE self, VALUE hook){
     struct hook *h;
     Data_Get_Struct(hook, struct hook, h);
     err = uc_hook_del(_uc, h->trace);
-    
+
     rb_ary_delete(rb_iv_get(self, "@hooks"), hook);
 
     if (err != UC_ERR_OK) {
