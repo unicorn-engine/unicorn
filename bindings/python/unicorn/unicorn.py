@@ -806,6 +806,9 @@ class Uc(object):
     def ctl_flush_tb(self):
         self.ctl(self.__ctl_w(uc.UC_CTL_TB_FLUSH, 0))
 
+    def ctl_tlb_mode(self, mode: int):
+        self.__ctl_w_1_arg(uc.UC_CTL_TLB_TYPE, mode, ctypes.c_int)
+
     # add a hook
     def hook_add(self, htype: int, callback: UC_HOOK_CALLBACK_TYPE , user_data: Any=None, begin: int=1, end: int=0, arg1: int=0, arg2: int=0):
         _h2 = uc_hook_h()
