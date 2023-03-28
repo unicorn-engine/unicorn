@@ -147,7 +147,7 @@ static void mips_cpu_class_init(CPUClass *c)
     cc->do_unaligned_access = mips_cpu_do_unaligned_access;
     cc->get_phys_page_debug = mips_cpu_get_phys_page_debug;
     cc->tcg_initialize = mips_tcg_init;
-    cc->tlb_fill = mips_cpu_tlb_fill;
+    cc->tlb_fill_cpu = mips_cpu_tlb_fill;
 }
 
 MIPSCPU *cpu_mips_init(struct uc_struct *uc)

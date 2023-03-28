@@ -446,6 +446,8 @@ set(UNICORN_ARCH_COMMON
     qemu/accel/tcg/tcg-runtime-gvec.c
     qemu/accel/tcg/translate-all.c
     qemu/accel/tcg/translator.c
+
+    qemu/softmmu/unicorn_vtlb.c
 )
 
 if(UNICORN_HAS_X86)
@@ -1188,7 +1190,7 @@ set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} unicorn-common)
 if(UNICORN_HAS_X86)
     set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_X86)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} x86_64-softmmu)
-    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_x86 sample_x86_32_gdt_and_seg_regs sample_batch_reg mem_apis shellcode)
+    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_x86 sample_x86_32_gdt_and_seg_regs sample_batch_reg mem_apis shellcode sample_mmu)
     target_link_libraries(x86_64-softmmu PRIVATE unicorn-common)
     set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_x86)
 endif()

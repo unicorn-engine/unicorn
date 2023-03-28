@@ -77,21 +77,6 @@ static inline int uc_ppc_store_msr(CPUPPCState *env, target_ulong value,
     return 0;
 }
 
-static uint64_t ppc_mem_redirect(uint64_t address)
-{
-    /*    // kseg0 range masks off high address bit
-        if (address >= 0x80000000 && address <= 0x9fffffff)
-            return address & 0x7fffffff;
-
-        // kseg1 range masks off top 3 address bits
-        if (address >= 0xa0000000 && address <= 0xbfffffff) {
-            return address & 0x1fffffff;
-        }*/
-
-    // no redirect
-    return address;
-}
-
 static void ppc_set_pc(struct uc_struct *uc, uint64_t address)
 {
     ((CPUPPCState *)uc->cpu->env_ptr)->nip = address;
@@ -435,7 +420,6 @@ void ppc_uc_init(struct uc_struct *uc)
     uc->release = ppc_release;
     uc->set_pc = ppc_set_pc;
     uc->get_pc = ppc_get_pc;
-    uc->mem_redirect = ppc_mem_redirect;
     uc->cpus_init = ppc_cpus_init;
     uc->cpu_context_size = offsetof(CPUPPCState, uc);
     uc_common_init(uc);

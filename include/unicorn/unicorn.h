@@ -244,6 +244,22 @@ typedef uint32_t (*uc_cb_insn_in_t)(uc_engine *uc, uint32_t port, int size,
 typedef void (*uc_cb_insn_out_t)(uc_engine *uc, uint32_t port, int size,
                                  uint32_t value, void *user_data);
 
+typedef struct uc_tlb_entry uc_tlb_entry;
+typedef enum uc_mem_type uc_mem_type;
+
+/*
+  Callback function for tlb lookups
+
+  @vaddr: virtuall address for lookup
+  @rw: the access mode
+  @result: result entry, contains physical address (paddr) and permitted access type (perms) for the entry
+
+  @return: return true if the entry was found. If a callback is present but
+  no one returns true a pagefault is generated.
+*/
+typedef bool (*uc_cb_tlbevent_t)(uc_engine *uc, uint64_t vaddr, uc_mem_type type,
+                                 uc_tlb_entry *result, void *user_data);
+
 // Represent a TranslationBlock.
 typedef struct uc_tb {
     uint64_t pc;
@@ -295,7 +311,7 @@ typedef void (*uc_cb_mmio_write_t)(uc_engine *uc, uint64_t offset,
                                    void *user_data);
 
 // All type of memory accesses for UC_HOOK_MEM_*
-typedef enum uc_mem_type {
+enum uc_mem_type {
     UC_MEM_READ = 16,      // Memory is read from
     UC_MEM_WRITE,          // Memory is written to
     UC_MEM_FETCH,          // Memory is fetched
@@ -306,7 +322,7 @@ typedef enum uc_mem_type {
     UC_MEM_READ_PROT,      // Read from read protected, but mapped, memory
     UC_MEM_FETCH_PROT,     // Fetch from non-executable, but mapped, memory
     UC_MEM_READ_AFTER,     // Memory is read from (successful access)
-} uc_mem_type;
+};
 
 // These are all op codes we support to hook for UC_HOOK_TCG_OP_CODE.
 // Be cautious since it may bring much more overhead than UC_HOOK_CODE without
@@ -369,6 +385,10 @@ typedef enum uc_hook_type {
     // Hook on specific tcg op code. The usage of this hook is similar to
     // UC_HOOK_INSN.
     UC_HOOK_TCG_OPCODE = 1 << 16,
+    // Hook on tlb fill requests.
+    // Register tlb fill request hook on the virtuall addresses.
+    // The callback will be triggert if the tlb cache don't contain an address.
+    UC_HOOK_TLB_FILL = 1 << 17,
 } uc_hook_type;
 
 // Hook type for all events of unmapped memory access
@@ -490,6 +510,16 @@ typedef enum uc_query_type {
 #define UC_CTL_WRITE(type, nr) UC_CTL(type, nr, UC_CTL_IO_WRITE)
 #define UC_CTL_READ_WRITE(type, nr) UC_CTL(type, nr, UC_CTL_IO_READ_WRITE)
 
+// unicorn tlb type selection
+typedef enum uc_tlb_type {
+  // The default unicorn virtuall TLB implementation.
+    // The tlb implementation of the CPU, best to use for full system emulation.
+    UC_TLB_CPU = 0,
+    // This tlb defaults to virtuall address == physical address
+    // Also a hook is availible to override the tlb entries (see uc_cb_tlbevent_t).
+    UC_TLB_VIRTUAL
+} uc_tlb_type;
+
 // All type of controls for uc_ctl API.
 // The controls are organized in a tree level.
 // If a control don't have `Set` or `Get` for @args, it means it's r/o or w/o.
@@ -536,7 +566,14 @@ typedef enum uc_control_type {
     UC_CTL_TB_REMOVE_CACHE,
     // Invalidate all translation blocks.
     // No arguments.
-    UC_CTL_TB_FLUSH
+    UC_CTL_TB_FLUSH,
+    // Invalidate all TLB cache entries and translation blocks.
+    // No arguments
+    UC_CTL_TLB_FLUSH,
+    // Change the tlb implementation
+    // see uc_tlb_type for current implemented types
+    // Write: @args = (int)
+    UC_CTL_TLB_TYPE
 
 } uc_control_type;
 
@@ -611,7 +648,9 @@ See sample_ctl.c for a detailed example.
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_REMOVE_CACHE, 2), (address), (end))
 #define uc_ctl_request_cache(uc, address, tb)                                  \
     uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_TB_REQUEST_CACHE, 2), (address), (tb))
-#define uc_ctl_flush_tlb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_FLUSH, 0))
+#define uc_ctl_flush_tb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_FLUSH, 0))
+#define uc_ctl_flush_tlb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TLB_FLUSH, 0))
+#define uc_ctl_tlb_mode(uc, mode) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TLB_TYPE, 1), (mode))
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
 typedef struct uc_context uc_context;
@@ -897,6 +936,11 @@ typedef enum uc_prot {
     UC_PROT_EXEC = 4,
     UC_PROT_ALL = 7,
 } uc_prot;
+
+struct uc_tlb_entry {
+    uint64_t paddr;
+    uc_prot perms;
+};
 
 /*
  Map memory in for emulation.
