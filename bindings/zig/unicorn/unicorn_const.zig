@@ -4,13 +4,13 @@ pub const unicornConst = enum(c_int) {
 	API_MAJOR = 2,
 
 	API_MINOR = 0,
-	API_PATCH = 1,
-	API_EXTRA = 255,
+	API_PATCH = 2,
+	API_EXTRA = 1,
 	VERSION_MAJOR = 2,
 
 	VERSION_MINOR = 0,
-	VERSION_PATCH = 1,
-	VERSION_EXTRA = 255,
+	VERSION_PATCH = 2,
+	VERSION_EXTRA = 1,
 	SECOND_SCALE = 1000000,
 	MILISECOND_SCALE = 1000,
 	ARCH_ARM = 1,
@@ -106,6 +106,7 @@ pub const unicornConst = enum(c_int) {
 	HOOK_INSN_INVALID = 16384,
 	HOOK_EDGE_GENERATED = 32768,
 	HOOK_TCG_OPCODE = 65536,
+	HOOK_TLB_FILL = 131072,
 	HOOK_MEM_UNMAPPED = 112,
 	HOOK_MEM_PROT = 896,
 	HOOK_MEM_READ_INVALID = 144,
@@ -123,6 +124,9 @@ pub const unicornConst = enum(c_int) {
 	CTL_IO_READ = 2,
 	CTL_IO_READ_WRITE = 3,
 
+	TLB_CPU = 0,
+	TLB_VIRTUAL = 1,
+
 	CTL_UC_MODE = 0,
 	CTL_UC_PAGE_SIZE = 1,
 	CTL_UC_ARCH = 2,
@@ -134,6 +138,8 @@ pub const unicornConst = enum(c_int) {
 	CTL_TB_REQUEST_CACHE = 8,
 	CTL_TB_REMOVE_CACHE = 9,
 	CTL_TB_FLUSH = 10,
+	CTL_TLB_FLUSH = 11,
+	CTL_TLB_TYPE = 12,
 
 	PROT_NONE = 0,
 	PROT_READ = 1,
