@@ -86,6 +86,7 @@ extern "C" {
     pub fn uc_context_alloc(engine: uc_handle, context: *mut uc_context) -> uc_error;
     pub fn uc_context_save(engine: uc_handle, context: uc_context) -> uc_error;
     pub fn uc_context_restore(engine: uc_handle, context: uc_context) -> uc_error;
+    pub fn uc_ctl(engine: uc_handle, control: u32, ...) -> uc_error;
 }
 
 pub struct UcHook<'a, D: 'a, F: 'a> {

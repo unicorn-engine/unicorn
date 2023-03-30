@@ -187,3 +187,46 @@ bitflags! {
         const RISCV64 = Self::MIPS64.bits;
     }
 }
+
+// Represent a TranslationBlock.
+#[repr(C)]
+pub struct TranslationBlock {
+    pub pc: u64,
+    pub icount: u16,
+    pub size: u16
+}
+
+macro_rules! UC_CTL_READ {
+    ($expr:expr) => {
+        $expr as u32 | ControlType::UC_CTL_IO_READ as u32
+    };
+}
+
+macro_rules! UC_CTL_WRITE {
+    ($expr:expr) => {
+        $expr as u32 | ControlType::UC_CTL_IO_WRITE as u32
+    };
+}
+
+macro_rules! UC_CTL_READ_WRITE {
+    ($expr:expr) => {
+        $expr as u32 | ControlType::UC_CTL_IO_WRITE as u32 | ControlType::UC_CTL_IO_READ as u32
+    };
+}
+
+#[allow(clippy::upper_case_acronyms)]
+pub enum ControlType {
+    UC_CTL_UC_MODE = 0,
+    UC_CTL_UC_PAGE_SIZE = 1,
+    UC_CTL_UC_ARCH = 2,
+    UC_CTL_UC_TIMEOUT = 3,
+    UC_CTL_UC_USE_EXITS = 4,
+    UC_CTL_UC_EXITS_CNT = 5,
+    UC_CTL_UC_EXITS = 6,
+    UC_CTL_CPU_MODEL = 7,
+    UC_CTL_TB_REQUEST_CACHE = 8,
+    UC_CTL_TB_REMOVE_CACHE = 9,
+    UC_CTL_TB_FLUSH = 10,
+    UC_CTL_IO_READ = 1<<31,
+    UC_CTL_IO_WRITE = 1<<30,
+}
