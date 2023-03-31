@@ -35,7 +35,7 @@ jobs:
               shared: 'yes',
               mingw: MINGW64,
               mingw-arch: x86_64,
-              artifact: 'windows_mingw64.7z',
+              artifact: 'windows_mingw64-shared.7z',
               build_type: 'Debug',
               archiver: '7z a',
               generators: 'Ninja'
@@ -49,7 +49,7 @@ jobs:
               shared: 'no',
               mingw: MINGW64,
               mingw-arch: x86_64,
-              artifact: 'windows_mingw64.7z',
+              artifact: 'windows_mingw64-static.7z',
               build_type: 'Debug',
               archiver: '7z a',
               generators: 'Ninja'
@@ -217,7 +217,7 @@ jobs:
           #export CC=i686-w64-mingw32-gcc
           export AR=gcc-ar
           export RANLIB=gcc-ranlib
-          export CFLAGS="-m32"
+          export CFLAGS="-m32 -static"
           export LDFLAGS="-m32"
           export LDFLAGS_STATIC="-m32"
           export UNICORN_QEMU_FLAGS="--cpu=i386"
@@ -230,6 +230,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -G "${{ matrix.config.generators }}" \
           -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+          -DCMAKE_C_FLAGS:STRING="-static" \
           -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip

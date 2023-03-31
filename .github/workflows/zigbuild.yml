@@ -1,0 +1,81 @@
+name: Zig Build
+
+on:
+  push:
+    paths-ignore:
+      - ".gitignore"
+      - "docs/**"
+      - "README"
+      - "CREDITS.TXT"
+      - "COPYING_GLIB"
+      - "COPYING.LGPL2"
+      - "AUTHORS.TXT"
+      - "CHANGELOG"
+      - "COPYING"
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.11.0
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: latest
+          ninjaVersion: latest
+
+      - name: CMake Build
+        run: zig build cmake
+      
+      - name: Build Summary
+        run: zig build --summary all -freference-trace
+
+# ===================================================================  
+  # zig-mingw:
+  #   runs-on: windows-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include: [{ msystem: CLANG64, arch: x86_64, prefix: /clang64 }, { msystem: CLANG32, arch: i686, prefix: /clang32 }, { msystem: CLANGARM64, arch: aarch64, prefix: /clangarm64 }]
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         path: temp
+  #         submodules: recursive
+  #         fetch-depth: 0
+  #     - uses: goto-bus-stop/setup-zig@v2
+  #       with:
+  #         version: master
+  #     - uses: msys2/setup-msys2@v2
+  #       with:
+  #         msystem: ${{ matrix.msystem }}
+  #         path-type: inherit
+  #         location: D:\
+  #         install: git mingw-w64-clang-${{ matrix.arch }}-cmake
+  #         update: true
+      
+  #     - name: Move Checkout
+  #       run: |
+  #         Copy-Item -Path ".\temp" -Destination "C:\_" -Recurse
+
+  #     - name: Build Summary - ${{ matrix.arch }}
+  #       shell: msys2 {0}
+  #       run: |
+  #           cd /C/_
+  #           zig build cmake
+  #           if [${{ matrix.config.arch }} == 'i686' ]; then
+  #             zig build --summary all -freference-trace -Dtarget=x86-windows
+  #           else
+  #             zig build --summary all -freference-trace -Dtarget=${{ matrix.arch }}-windows
+  #           fi
+  

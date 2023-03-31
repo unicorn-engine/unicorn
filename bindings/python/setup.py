@@ -73,7 +73,7 @@ def copy_sources():
 
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.[ch]")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.mk")))
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.cmake")))
+    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../cmake/*.cmake")))
 
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../LICENSE*")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../README.md")))
