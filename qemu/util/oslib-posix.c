@@ -45,6 +45,16 @@ static void *qemu_ram_mmap(struct uc_struct *uc,
 static void qemu_ram_munmap(struct uc_struct *uc, void *ptr, size_t size);
 #endif
 
+#if defined(__MINGW32__) && defined(__clang__)
+#include <windows.h>
+int getpagesize()
+{
+    SYSTEM_INFO S;
+    GetNativeSystemInfo(&S);
+    return S.dwPageSize;
+}
+#endif
+
 void *qemu_oom_check(void *ptr)
 {
     if (ptr == NULL) {
