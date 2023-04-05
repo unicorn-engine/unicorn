@@ -885,6 +885,33 @@ impl<'a, D> Unicorn<'a, D> {
         }
     }
 
+    pub fn add_tlb_hook<F>(&mut self, begin: u64, end: u64, callback: F) -> Result<ffi::uc_hook, uc_error>
+    where
+        F: FnMut(&mut crate::Unicorn<D>, u64, MemType) -> Option<TlbEntry> + 'a,
+    {
+        let mut hook_ptr = core::ptr::null_mut();
+        let mut user_data = Box::new(ffi::UcHook {
+            callback,
+            uc: Rc::downgrade(&self.inner),
+        });
+        let err = unsafe {
+            ffi::uc_hook_add(self.get_handle(),
+                &mut hook_ptr,
+                HookType::TLB,
+                ffi::tlb_lookup_hook_proxy::<D, F> as _,
+                user_data.as_mut() as *mut _ as _,
+                begin,
+                end,
+            )
+        };
+        if err == uc_error::OK {
+            self.inner_mut().hooks.push((hook_ptr, user_data));
+            Ok(hook_ptr)
+        } else {
+            Err(err)
+        }
+    }
+
     /// Remove a hook.
     ///
     /// `hook` is the value returned by `add_*_hook` functions.

@@ -93,6 +93,8 @@ bitflags! {
         const MEM_INVALID = Self::MEM_READ_INVALID.bits | Self::MEM_WRITE_INVALID.bits | Self::MEM_FETCH_INVALID.bits;
 
         const MEM_ALL = Self::MEM_VALID.bits | Self::MEM_INVALID.bits;
+
+        const TLB = (1 << 17);
     }
 }
 
@@ -238,4 +240,11 @@ pub enum ControlType {
     UC_CTL_TLB_TYPE = 12,
     UC_CTL_IO_READ = 1<<31,
     UC_CTL_IO_WRITE = 1<<30,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct TlbEntry {
+    pub paddr: u64,
+    pub perms: Permission,
 }
