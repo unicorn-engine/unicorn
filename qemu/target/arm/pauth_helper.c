@@ -437,6 +437,11 @@ uint64_t HELPER(pacga)(CPUARMState *env, uint64_t x, uint64_t y)
 {
     uint64_t pac;
 
+    int el = arm_current_el(env);
+    if (!pauth_key_enabled(env, el, SCTLR_EnIB)) {
+        return x;
+    }
+
     pauth_check_trap(env, arm_current_el(env), GETPC());
     pac = pauth_computepac(x, y, env->keys.apga);
 
@@ -485,10 +490,20 @@ uint64_t HELPER(autdb)(CPUARMState *env, uint64_t x, uint64_t y)
 
 uint64_t HELPER(xpaci)(CPUARMState *env, uint64_t a)
 {
+    int el = arm_current_el(env);
+    if (!pauth_key_enabled(env, el, SCTLR_EnIB)) {
+        return a;
+    }
+
     return pauth_strip(env, a, false);
 }
 
 uint64_t HELPER(xpacd)(CPUARMState *env, uint64_t a)
 {
+    int el = arm_current_el(env);
+    if (!pauth_key_enabled(env, el, SCTLR_EnIB)) {
+        return a;
+    }
+
     return pauth_strip(env, a, true);
 }
