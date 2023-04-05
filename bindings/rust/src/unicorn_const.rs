@@ -53,6 +53,13 @@ pub enum MemType {
     READ_AFTER = 25,
 }
 
+#[repr(C)]
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum TlbType {
+    CPU = 0,
+    VIRTUAL = 1,
+}
+
 bitflags! {
     #[repr(C)]
     pub struct HookType: i32 {
@@ -227,6 +234,8 @@ pub enum ControlType {
     UC_CTL_TB_REQUEST_CACHE = 8,
     UC_CTL_TB_REMOVE_CACHE = 9,
     UC_CTL_TB_FLUSH = 10,
+    UC_CTL_TLB_FLUSH = 11,
+    UC_CTL_TLB_TYPE = 12,
     UC_CTL_IO_READ = 1<<31,
     UC_CTL_IO_WRITE = 1<<30,
 }

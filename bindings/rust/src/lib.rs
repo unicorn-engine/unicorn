@@ -1189,8 +1189,26 @@ impl<'a, D> Unicorn<'a, D> {
         }
     }
 
-    pub fn ctl_flush_tlb(&self) -> Result<(), uc_error> {
+    pub fn ctl_flush_tb(&self) -> Result<(), uc_error> {
         let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TB_FLUSH)) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_flush_tlb(&self) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TLB_FLUSH)) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_tlb_type(&self, t: TlbType) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TLB_TYPE), t as i32) };
         if err == uc_error::OK {
             Ok(())
         } else {
