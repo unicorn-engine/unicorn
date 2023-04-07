@@ -245,7 +245,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
     ],
-    requires=['ctypes'],
+    requires=['ctypes', 'typing; python_version<"3.5"'],
     cmdclass=cmdclass,
     zip_safe=False,
     include_package_data=True,
