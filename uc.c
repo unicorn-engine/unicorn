@@ -230,6 +230,11 @@ static uc_err uc_init(uc_engine *uc)
         return UC_ERR_RESOURCE;
     }
 
+    // init tlb function
+    if (!uc->cpu->cc->tlb_fill) {
+        uc->set_tlb(uc, UC_TLB_CPU);
+    }
+
     // init fpu softfloat
     uc->softfloat_initialize();
 
@@ -577,10 +582,6 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     if (size > INT_MAX)
         return UC_ERR_ARG;
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_READ_UNMAPPED;
     }
@@ -621,10 +622,6 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
     // qemu cpu_physical_memory_rw() size is an int
     if (size > INT_MAX)
         return UC_ERR_ARG;
-
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
 
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_WRITE_UNMAPPED;
@@ -907,19 +904,8 @@ UNICORN_EXPORT
 uc_err uc_emu_stop(uc_engine *uc)
 {
     UC_INIT(uc);
-
-    if (uc->emulation_done) {
-        return UC_ERR_OK;
-    }
-
     uc->stop_request = true;
-    // TODO: make this atomic somehow?
-    if (uc->cpu) {
-        // exit the current TB
-        cpu_exit(uc->cpu);
-    }
-
-    return UC_ERR_OK;
+    return break_translation_loop(uc);
 }
 
 // return target index where a memory region at the address exists, or could be
@@ -1050,10 +1036,6 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 
     UC_INIT(uc);
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     res = mem_map_check(uc, address, size, perms);
     if (res) {
         return res;
@@ -1074,10 +1056,6 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size,
         return UC_ERR_ARG;
     }
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     res = mem_map_check(uc, address, size, perms);
     if (res) {
         return res;
@@ -1094,10 +1072,6 @@ uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
     uc_err res;
 
     UC_INIT(uc);
-
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
 
     res = mem_map_check(uc, address, size, UC_PROT_ALL);
     if (res)
@@ -1398,10 +1372,6 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
         return UC_ERR_ARG;
     }
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     // check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_NOMEM;
@@ -1478,10 +1448,6 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
         return UC_ERR_ARG;
     }
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     // check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_NOMEM;
@@ -1526,16 +1492,12 @@ MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address)
         return NULL;
     }
 
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     // try with the cache index first
     i = uc->mapped_block_cache_index;
 
     if (i < uc->mapped_block_count &&
         address >= uc->mapped_blocks[i]->addr &&
-        address < uc->mapped_blocks[i]->end) {
+        address <= uc->mapped_blocks[i]->end - 1) {
         return uc->mapped_blocks[i];
     }
 
@@ -1543,8 +1505,10 @@ MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address)
 
     if (i < uc->mapped_block_count &&
         address >= uc->mapped_blocks[i]->addr &&
-        address <= uc->mapped_blocks[i]->end - 1)
+        address <= uc->mapped_blocks[i]->end - 1) {
+        uc->mapped_block_cache_index = i;
         return uc->mapped_blocks[i];
+    }
 
     // not found
     return NULL;
@@ -2386,6 +2350,30 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         }
         break;
 
+    case UC_CTL_TLB_FLUSH:
+
+        UC_INIT(uc);
+
+        if (rw == UC_CTL_IO_WRITE) {
+            uc->tcg_flush_tlb(uc);
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+
+    case UC_CTL_TLB_TYPE: {
+
+        UC_INIT(uc);
+
+        if (rw == UC_CTL_IO_WRITE) {
+            int mode = va_arg(args, int);
+            err = uc->set_tlb(uc, mode);
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
+
     default:
         err = UC_ERR_ARG;
         break;
@@ -2394,6 +2382,16 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     va_end(args);
 
     return err;
+}
+
+gint cmp_vaddr(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+    uint64_t va = (uint64_t)a;
+    uint64_t vb = (uint64_t)b;
+    if (va == vb) {
+        return 0;
+    }
+    return va < vb ? -1 : 1;
 }
 
 #ifdef UNICORN_TRACER

@@ -111,6 +111,7 @@ module Common =
     let UC_HOOK_INSN_INVALID = 16384
     let UC_HOOK_EDGE_GENERATED = 32768
     let UC_HOOK_TCG_OPCODE = 65536
+    let UC_HOOK_TLB_FILL = 131072
     let UC_HOOK_MEM_UNMAPPED = 112
     let UC_HOOK_MEM_PROT = 896
     let UC_HOOK_MEM_READ_INVALID = 144
@@ -128,6 +129,9 @@ module Common =
     let UC_CTL_IO_READ = 2
     let UC_CTL_IO_READ_WRITE = 3
 
+    let UC_TLB_CPU = 0
+    let UC_TLB_VIRTUAL = 1
+
     let UC_CTL_UC_MODE = 0
     let UC_CTL_UC_PAGE_SIZE = 1
     let UC_CTL_UC_ARCH = 2
@@ -139,6 +143,8 @@ module Common =
     let UC_CTL_TB_REQUEST_CACHE = 8
     let UC_CTL_TB_REMOVE_CACHE = 9
     let UC_CTL_TB_FLUSH = 10
+    let UC_CTL_TLB_FLUSH = 11
+    let UC_CTL_TLB_TYPE = 12
 
     let UC_PROT_NONE = 0
     let UC_PROT_READ = 1

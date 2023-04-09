@@ -26,6 +26,7 @@ build:
 	$(MAKE) -C ruby gen_const
 	python3 const_generator.py dotnet
 	python3 const_generator.py pascal
+	python3 const_generator.py zig
 
 install: build
 	$(MAKE) -C python install

@@ -307,7 +307,7 @@ static void riscv_cpu_class_init(struct uc_struct *uc, CPUClass *c, void *data)
     cc->synchronize_from_tb = riscv_cpu_synchronize_from_tb;
     cc->do_unaligned_access = riscv_cpu_do_unaligned_access;
     cc->tcg_initialize = riscv_translate_init;
-    cc->tlb_fill = riscv_cpu_tlb_fill;
+    cc->tlb_fill_cpu = riscv_cpu_tlb_fill;
 }
 
 typedef struct CPUModelInfo {

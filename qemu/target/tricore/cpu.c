@@ -137,7 +137,7 @@ static void tricore_cpu_class_init(CPUClass *c)
     cc->synchronize_from_tb = tricore_cpu_synchronize_from_tb;
     cc->get_phys_page_debug = tricore_cpu_get_phys_page_debug;
 
-    cc->tlb_fill = tricore_cpu_tlb_fill;
+    cc->tlb_fill_cpu = tricore_cpu_tlb_fill;
     cc->tcg_initialize = tricore_tcg_init;
 }
 

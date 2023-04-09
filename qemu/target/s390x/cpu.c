@@ -233,7 +233,7 @@ static void s390_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
     cc->debug_excp_handler = s390x_cpu_debug_excp_handler;
     cc->do_unaligned_access = s390x_cpu_do_unaligned_access;
     cc->tcg_initialize = s390x_translate_init;
-    cc->tlb_fill = s390_cpu_tlb_fill;
+    cc->tlb_fill_cpu = s390_cpu_tlb_fill;
 
     // s390_cpu_model_class_register_props(oc);
 }

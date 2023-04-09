@@ -119,9 +119,6 @@ typedef MemoryRegion *(*uc_memory_map_io_t)(struct uc_struct *uc,
 // which interrupt should make emulation stop?
 typedef bool (*uc_args_int_t)(struct uc_struct *uc, int intno);
 
-// some architecture redirect virtual memory to physical memory like Mips
-typedef uint64_t (*uc_mem_redirect_t)(uint64_t address);
-
 // validate if Unicorn supports hooking a given instruction
 typedef bool (*uc_insn_hook_validate)(uint32_t insn_enum);
 
@@ -145,6 +142,8 @@ typedef uc_err (*uc_gen_tb_t)(struct uc_struct *uc, uint64_t pc, uc_tb *out_tb);
 
 // tb flush
 typedef uc_tcg_flush_tlb uc_tb_flush_t;
+
+typedef uc_err (*uc_set_tlb_t)(struct uc_struct *uc, int mode);
 
 struct hook {
     int type;       // UC_HOOK_*
@@ -202,6 +201,7 @@ typedef enum uc_hook_idx {
     UC_HOOK_INSN_INVALID_IDX,
     UC_HOOK_EDGE_GENERATED_IDX,
     UC_HOOK_TCG_OPCODE_IDX,
+    UC_HOOK_TLB_FILL_IDX,
 
     UC_HOOK_MAX,
 } uc_hook_idx;
@@ -284,7 +284,6 @@ struct uc_struct {
     uc_args_uc_ram_size_ptr_t memory_map_ptr;
     uc_mem_unmap_t memory_unmap;
     uc_readonly_mem_t readonly_mem;
-    uc_mem_redirect_t mem_redirect;
     uc_cpus_init cpus_init;
     uc_target_page_init target_page;
     uc_softfloat_initialize softfloat_initialize;
@@ -336,6 +335,8 @@ struct uc_struct {
     QTAILQ_HEAD(, AddressSpace) address_spaces;
     GHashTable *flat_views;
     bool memory_region_update_pending;
+
+    uc_set_tlb_t set_tlb;
 
     // linked lists containing hooks per type
     struct list hook[UC_HOOK_MAX];
@@ -484,6 +485,28 @@ static inline void hooked_regions_check(uc_engine *uc, uint64_t start,
     hooked_regions_check_single(uc->hook[UC_HOOK_CODE_IDX].head, start, length);
     hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_IDX].head, start,
                                 length);
+}
+
+/*
+ break translation loop:
+ This is done in two cases:
+ 1. the user wants to stop the emulation.
+ 2. the user has set it IP. This requires to restart the internal
+ CPU emulation and rebuild some translation blocks
+*/
+static inline uc_err break_translation_loop(uc_engine *uc)
+{
+    if (uc->emulation_done) {
+        return UC_ERR_OK;
+    }
+
+    // TODO: make this atomic somehow?
+    if (uc->cpu) {
+        // exit the current TB
+        cpu_exit(uc->cpu);
+    }
+
+    return UC_ERR_OK;
 }
 
 #ifdef UNICORN_TRACER

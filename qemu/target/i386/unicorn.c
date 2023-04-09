@@ -977,10 +977,16 @@ static int reg_write(CPUX86State *env, unsigned int regid, const void *value,
         default:
             break;
         case UC_X86_REG_CR0:
+            cpu_x86_update_cr0(env, *(uint32_t *)value);
+            goto write_cr;
         case UC_X86_REG_CR1:
         case UC_X86_REG_CR2:
         case UC_X86_REG_CR3:
+            cpu_x86_update_cr3(env, *(uint32_t *)value);
+            goto write_cr;
         case UC_X86_REG_CR4:
+            cpu_x86_update_cr4(env, *(uint32_t *)value);
+write_cr:
             env->cr[regid - UC_X86_REG_CR0] = *(uint32_t *)value;
             break;
         case UC_X86_REG_DR0:
@@ -1163,10 +1169,16 @@ static int reg_write(CPUX86State *env, unsigned int regid, const void *value,
         default:
             break;
         case UC_X86_REG_CR0:
+            cpu_x86_update_cr0(env, *(uint32_t *) value);
+            goto write_cr64;
         case UC_X86_REG_CR1:
         case UC_X86_REG_CR2:
         case UC_X86_REG_CR3:
+            cpu_x86_update_cr3(env, *(uint32_t *) value);
+            goto write_cr64;
         case UC_X86_REG_CR4:
+            cpu_x86_update_cr4(env, *(uint32_t *) value);
+write_cr64:
             env->cr[regid - UC_X86_REG_CR0] = *(uint64_t *)value;
             break;
         case UC_X86_REG_DR0:
@@ -1521,7 +1533,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
             case UC_X86_REG_IP:
                 // force to quit execution and flush TB
                 uc->quit_request = true;
-                uc_emu_stop(uc);
+                break_translation_loop(uc);
                 break;
             }
 
@@ -1535,7 +1547,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
             case UC_X86_REG_IP:
                 // force to quit execution and flush TB
                 uc->quit_request = true;
-                uc_emu_stop(uc);
+                break_translation_loop(uc);
                 break;
             }
 #endif

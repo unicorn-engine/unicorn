@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _mipsel
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_mipsel
 #define uc_add_inline_hook uc_add_inline_hook_mipsel
 #define uc_del_inline_hook uc_del_inline_hook_mipsel
 #define tb_invalidate_phys_range tb_invalidate_phys_range_mipsel

@@ -232,7 +232,7 @@ GRand *g_rand_new_with_seed_array (const guint32 *seed, guint seed_length)
 
 gint64 g_get_real_time (void)
 {
-#if defined(unix) || defined(__unix__) || defined(__unix) || defined (__MINGW32__) || defined(__APPLE__)
+#if defined(unix) || defined(__unix__) || defined(__unix) || defined (__MINGW32__) || defined(__APPLE__) || defined(__HAIKU__)
     struct timeval r;
 
     /* this is required on alpha, there the timeval structs are ints
@@ -271,7 +271,7 @@ gint64 g_get_real_time (void)
 GRand *g_rand_new (void)
 {
     guint32 seed[4];
-#if defined(unix) || defined(__unix__) || defined(__unix) || defined(__APPLE__)
+#if defined(unix) || defined(__unix__) || defined(__unix) || defined(__APPLE__) || defined(__HAIKU__)
     static gboolean dev_urandom_exists = TRUE;
 
     if (dev_urandom_exists)

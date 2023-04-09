@@ -1073,6 +1073,11 @@ class Uc(RegStateManager):
     def ctl_flush_tb(self) -> None:
         self.__ctl_w(uc.UC_CTL_TB_FLUSH)
 
+    def ctl_tlb_mode(self, mode: int) -> None:
+        self.__ctl_w(uc.UC_CTL_TLB_TYPE,
+            (ctypes.c_uint, mode)
+        )
+
 
 class UcContext(RegStateManager):
     def __init__(self, h, arch: int, mode: int):

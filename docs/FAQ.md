@@ -113,6 +113,16 @@ To provide end users with simple API, Unicorn does lots of dirty hacks within qe
 
 Yes, it’s possible but that is not Unicorn’s goal and there is no simple switch in qemu to disable softmmu.
 
+Starting from 2.0.2, Unicorn will emulate the MMU depending on the emulated architecture without further hacks. That said, Unicorn offers the full ability of the target MMU implementation. While this enables more possibilities of Uncorn, it has a few drawbacks:
+
+- As previous question points out already, some memory regions are not writable/executable.
+- You have to always check architecture-specific registers to confirm MMU status.
+- `uc_mem_map` will always deal with physical addresses while `uc_emu_start` accepts virtual addresses.
+
+Therefore, if you still prefer the previous `paddr = vaddr` simple mapping, we have a simple experimental MMU implementation that can be switched on by: `uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL)`. With this mode, you could also add a `UC_HOOK_TLB_FILL` hook to manage the TLB. When a virtual address is not cached, the hook will be called. Besides, users are allowed to flush the tlb with `uc_ctl_flush_tlb`.
+
+In theory, `UC_TLB_VIRTUAL` will achieve better performance as it skips all MMU details, though not benchmarked.
+
 ## I'd like to make contributions, where do I start?
 
 See [milestones](https://github.com/unicorn-engine/unicorn/milestones) and [coding convention](https://github.com/unicorn-engine/unicorn/wiki/Coding-Convention
@@ -122,4 +132,4 @@ Be sure to send pull requests for our **dev** branch only.
 
 ## Which qemu version is Unicorn based on?
 
-Prior to 2.0.0, Unicorn is based on qemu 2.2.1. After that, Unicorn is based on qemu 5.0.1. 
+Prior to 2.0.0, Unicorn is based on qemu 2.2.1. After that, Unicorn is based on qemu 5.0.1.

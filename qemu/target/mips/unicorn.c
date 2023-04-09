@@ -17,21 +17,6 @@ typedef uint32_t mipsreg_t;
 
 MIPSCPU *cpu_mips_init(struct uc_struct *uc);
 
-static uint64_t mips_mem_redirect(uint64_t address)
-{
-    // kseg0 range masks off high address bit
-    if (address >= 0x80000000 && address <= 0x9fffffff)
-        return address & 0x7fffffff;
-
-    // kseg1 range masks off top 3 address bits
-    if (address >= 0xa0000000 && address <= 0xbfffffff) {
-        return address & 0x1fffffff;
-    }
-
-    // no redirect
-    return address;
-}
-
 static void mips_set_pc(struct uc_struct *uc, uint64_t address)
 {
     ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC = address;
@@ -170,7 +155,7 @@ int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
         if (regid == UC_MIPS_REG_PC) {
             // force to quit execution and flush TB
             uc->quit_request = true;
-            uc_emu_stop(uc);
+            break_translation_loop(uc);
         }
     }
 
@@ -272,7 +257,6 @@ void mipsel_uc_init(struct uc_struct *uc)
     uc->release = mips_release;
     uc->set_pc = mips_set_pc;
     uc->get_pc = mips_get_pc;
-    uc->mem_redirect = mips_mem_redirect;
     uc->cpus_init = mips_cpus_init;
     uc->cpu_context_size = offsetof(CPUMIPSState, end_reset_fields);
     uc_common_init(uc);
