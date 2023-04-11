@@ -63,7 +63,7 @@ option(BUILD_SHARED_LIBS "Build shared instead of static library" ${PROJECT_IS_T
 option(UNICORN_FUZZ "Enable fuzzing" OFF)
 option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
-set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x;tricore" CACHE STRING "Enabled unicorn architectures")
+set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;rh850;s390x;tricore" CACHE STRING "Enabled unicorn architectures")
 option(UNICORN_TRACER "Trace unicorn execution" OFF)
 
 foreach(ARCH_LOOP ${UNICORN_ARCH})
@@ -268,6 +268,9 @@ else()
     if(UNICORN_HAS_PPC)
         set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_PPC ")
     endif()
+    if(UNICORN_HAS_RH850)
+        set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_RH850 ")
+    endif()
     if(UNICORN_HAS_RISCV)
         set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_RISCV ")
     endif()
@@ -314,6 +317,9 @@ else()
     endif()
     if(UNICORN_HAS_PPC)
         set(TARGET_LIST "${TARGET_LIST}ppc-softmmu, ppc64-softmmu, ")
+    endif()
+    if(UNICORN_HAS_RH850)
+        set(TARGET_LIST "${TARGET_LIST}rh850-softmmu, ")
     endif()
     if(UNICORN_HAS_RISCV)
         set(TARGET_LIST "${TARGET_LIST}riscv32-softmmu, riscv64-softmmu, ")
@@ -397,6 +403,12 @@ else()
         execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
             INPUT_FILE ${CMAKE_BINARY_DIR}/ppc64-softmmu/config-target.mak
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/ppc64-softmmu/config-target.h
+        )
+    endif()
+    if(UNICORN_HAS_RH850)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/rh850-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/rh850-softmmu/config-target.h
         )
     endif()
     if(UNICORN_HAS_RISCV)
@@ -1118,6 +1130,36 @@ else()
 endif()
 endif()
 
+
+if (UNICORN_HAS_RH850)
+add_library(rh850-softmmu STATIC
+    ${UNICORN_ARCH_COMMON}
+
+    qemu/target/rh850/cpu.c
+    qemu/target/rh850/fpu_helper.c
+    qemu/target/rh850/helper.c
+    qemu/target/rh850/op_helper.c
+    qemu/target/rh850/translate.c
+    qemu/target/rh850/pmp.c
+    qemu/target/rh850/unicorn.c
+)
+
+if(MSVC)
+    target_compile_options(rh850-softmmu PRIVATE
+        -DNEED_CPU_H
+        /FIrh850.h
+        /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/rh850-softmmu
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/rh850
+    )
+else()
+    target_compile_options(rh850-softmmu PRIVATE
+        -DNEED_CPU_H
+        -include rh850.h
+        -I${CMAKE_BINARY_DIR}/rh850-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/rh850
+    )
+endif()
+endif()
 
 set(UNICORN_SRCS
     uc.c
