@@ -171,6 +171,10 @@ bool uc_arch_supported(uc_arch arch)
     case UC_ARCH_X86:
         return true;
 #endif
+#ifdef UNICORN_HAS_RH850
+    case UC_ARCH_RH850:
+        return true;
+#endif
 #ifdef UNICORN_HAS_RISCV
     case UC_ARCH_RISCV:
         return true;

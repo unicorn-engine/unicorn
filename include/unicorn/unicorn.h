@@ -33,6 +33,7 @@ typedef size_t uc_hook;
 #include "mips.h"
 #include "sparc.h"
 #include "ppc.h"
+#include "rh850.h"
 #include "riscv.h"
 #include "s390x.h"
 #include "tricore.h"
@@ -107,6 +108,7 @@ typedef enum uc_arch {
     UC_ARCH_S390X,   // S390X architecture
     UC_ARCH_TRICORE, // TriCore architecture
     UC_ARCH_MAX,
+    UC_ARCH_RH850,   // Renesas RH850 architecture (V850e3v2)
 } uc_arch;
 
 // Mode type
