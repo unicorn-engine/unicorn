@@ -389,6 +389,7 @@ struct uc_struct {
     uint64_t qemu_real_host_page_size;
     int qemu_icache_linesize;
     /* ARCH_REGS_STORAGE_SIZE */
+    uc_context_content context_content;
     int cpu_context_size;
     uint64_t next_pc; // save next PC for some special cases
     bool hook_insert; // insert new hook at begin of the hook list (append by
@@ -419,6 +420,7 @@ struct uc_context {
     size_t context_size; // size of the real internal context structure
     uc_mode mode;        // the mode of this context
     uc_arch arch;        // the arch of this context
+    int snapshot_level;  // the memory snapshot level to restore
     char data[0];        // context
 };
 
