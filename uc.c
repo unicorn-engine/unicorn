@@ -32,6 +32,8 @@
 #include "qemu-common.h"
 
 static void clear_deleted_hooks(uc_engine *uc);
+static uc_err uc_snapshot(uc_engine *uc);
+static uc_err uc_restore_latest_snapshot(uc_engine *uc);
 
 static void *hook_insert(struct list *l, struct hook *h)
 {
@@ -260,6 +262,8 @@ static uc_err uc_init_engine(uc_engine *uc)
     if (uc->reg_reset) {
         uc->reg_reset(uc);
     }
+
+    uc->context_content = UC_CTL_CONTEXT_CPU;
 
     uc->init_done = true;
 
@@ -2005,13 +2009,26 @@ UNICORN_EXPORT
 uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
     UC_INIT(uc);
+    uc_err ret = UC_ERR_OK;
 
-    if (!uc->context_save) {
-        memcpy(context->data, uc->cpu->env_ptr, context->context_size);
-        return UC_ERR_OK;
-    } else {
-        return uc->context_save(uc, context);
+    if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
+        ret = uc_snapshot(uc);
+        if (ret != UC_ERR_OK) {
+            return ret;
+        }
     }
+
+    context->snapshot_level = uc->snapshot_level;
+
+    if (uc->context_content & UC_CTL_CONTEXT_CPU) {
+        if (!uc->context_save) {
+            memcpy(context->data, uc->cpu->env_ptr, context->context_size);
+            return UC_ERR_OK;
+        } else {
+            return uc->context_save(uc, context);
+        }
+    }
+    return ret;
 }
 
 // Keep in mind that we don't a uc_engine when r/w the registers of a context.
@@ -2263,13 +2280,26 @@ UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
     UC_INIT(uc);
+    uc_err ret;
 
-    if (!uc->context_restore) {
-        memcpy(uc->cpu->env_ptr, context->data, context->context_size);
-        return UC_ERR_OK;
-    } else {
-        return uc->context_restore(uc, context);
+    if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
+        uc->snapshot_level = context->snapshot_level;
+        ret = uc_restore_latest_snapshot(uc);
+        if (ret != UC_ERR_OK) {
+            return ret;
+        }
+        uc_snapshot(uc);
     }
+
+    if (uc->context_content & UC_CTL_CONTEXT_CPU) {
+        if (!uc->context_restore) {
+            memcpy(uc->cpu->env_ptr, context->data, context->context_size);
+            return UC_ERR_OK;
+        } else {
+            return uc->context_restore(uc, context);
+        }
+    }
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
@@ -2614,6 +2644,19 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         break;
     }
 
+    case UC_CTL_CONTEXT_MODE:
+
+        UC_INIT(uc);
+
+        if (rw == UC_CTL_IO_WRITE) {
+            int mode = va_arg(args, int);
+            uc->context_content = mode;
+            err = UC_ERR_OK;
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+
     default:
         err = UC_ERR_ARG;
         break;
@@ -2624,8 +2667,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     return err;
 }
 
-UNICORN_EXPORT
-uc_err uc_snapshot(struct uc_struct *uc)
+static uc_err uc_snapshot(struct uc_struct *uc)
 {
     if (uc->snapshot_level == INT32_MAX) {
         return UC_ERR_RESOURCE;
@@ -2634,8 +2676,7 @@ uc_err uc_snapshot(struct uc_struct *uc)
     return UC_ERR_OK;
 }
 
-UNICORN_EXPORT
-uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
+static uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
 {
     MemoryRegion *subregion, *subregion_next;
 
