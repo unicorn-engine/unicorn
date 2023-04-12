@@ -1018,11 +1018,13 @@ static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t l
         return;
     }
 
-    // GPA to GVA
+    // GPA to ram addr
+    // https://raw.githubusercontent.com/android/platform_external_qemu/master/docs/QEMU-MEMORY-MANAGEMENT.TXT
     // start_addr : GPA
-    // addr: GVA
+    // start (returned): ram addr
     // (GPA -> HVA via memory_region_get_ram_addr(mr) + GPA + block->host,
-    // HVA->HPA via host mmu)
+    // GVA -> GPA via tlb & softmmu
+    // HVA -> HPA via host mmu)
     start = get_page_addr_code(uc->cpu->env_ptr, start_addr) & (target_ulong)(-1);
 
     uc->nested_level--;

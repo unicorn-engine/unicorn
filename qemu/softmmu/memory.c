@@ -153,12 +153,15 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
     int i;
     hwaddr addr;
 
-    // Make sure all pages associated with the MemoryRegion are flushed
-    // Only need to do this if we are in a running state
     if (uc->cpu) {
-        for (addr = mr->addr; addr < mr->end; addr += uc->target_page_size) {
+        // We also need to remove all tb cache
+        uc->uc_invalidate_tb(uc, mr->addr, mr->size);
+
+        // Make sure all pages associated with the MemoryRegion are flushed
+        // Only need to do this if we are in a running state
+        for (addr = mr->addr; (int64_t)(mr->end - addr) > 0; addr += uc->target_page_size) {
            tlb_flush_page(uc->cpu, addr);
-        }
+        }        
     }
     memory_region_del_subregion(uc->system_memory, mr);
 
