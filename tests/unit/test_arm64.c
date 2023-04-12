@@ -2,6 +2,7 @@
 #include "unicorn/unicorn.h"
 #include "unicorn_test.h"
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 const uint64_t code_start = 0x1000;
@@ -473,6 +474,55 @@ static void test_arm64_mmu(void)
     free(data);
 }
 
+static void test_arm64_pc_wrap(void)
+{
+    uc_engine *uc;
+    // add x1 x2
+    char add_x1_x2[] = "\x20\x00\x02\x8b";
+    // add x1 x3
+    char add_x1_x3[] = "\x20\x00\x03\x8b";
+    uint64_t x0, x1, x2, x3;
+    uint64_t pc = 0xFFFFFFFFFFFFFFFCULL;
+    uint64_t page = 0xFFFFFFFFFFFFF000ULL;
+    
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
+    OK(uc_mem_map(uc, page, 4096, UC_PROT_READ | UC_PROT_EXEC));
+    OK(uc_mem_write(uc, pc, add_x1_x2, sizeof(add_x1_x2) - 1));
+
+    x1 = 1;
+    x2 = 2;
+    OK(uc_reg_write(uc, UC_ARM64_REG_X1, &x1));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X2, &x2));
+
+    OK(uc_emu_start(uc, pc, pc + 4, 0, 1));
+
+    OK(uc_mem_unmap(uc, page, 4096));
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &x0));
+
+    TEST_CHECK( (x0 == 1 + 2) );
+
+    OK(uc_mem_map(uc, page, 4096, UC_PROT_READ | UC_PROT_EXEC));
+    OK(uc_mem_write(uc, pc, add_x1_x3, sizeof(add_x1_x3) - 1));
+
+    x1 = 5;
+    x2 = 0;
+    x3 = 5;
+    OK(uc_reg_write(uc, UC_ARM64_REG_X1, &x1));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X2, &x2));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X3, &x3));
+
+    OK(uc_emu_start(uc, pc, pc + 4, 0, 1));
+
+    OK(uc_mem_unmap(uc, page, 4096));
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &x0));
+
+    TEST_CHECK( (x0 == 5 + 5) );
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -487,4 +537,5 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_block_invalid_mem_read_write_sync",
               test_arm64_block_invalid_mem_read_write_sync},
             {"test_arm64_mmu", test_arm64_mmu},
+            {"test_arm64_pc_wrap", test_arm64_pc_wrap},
              {NULL, NULL}};
