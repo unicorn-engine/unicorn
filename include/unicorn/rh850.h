@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-#ifdef _MSRH850
-#pragma warRH850disable : 4201)
+#ifdef _MSC_VER
+#pragma warning(disable : 4201)
 #endif
 
 #define UC_RH850_SYSREG_SELID0   32

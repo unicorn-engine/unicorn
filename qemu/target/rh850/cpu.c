@@ -566,6 +566,7 @@ static void rh850_cpu_init(struct uc_struct *uc, CPUState *obj)
     cpu_set_cpustate_pointers(cpu);
 
     cs->env_ptr = &cpu->env;
+    cpu->env.uc = uc;
 }
 
 static void rh850_cpu_class_init(struct uc_struct *uc, CPUClass *c)

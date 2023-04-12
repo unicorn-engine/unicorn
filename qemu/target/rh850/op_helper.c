@@ -666,4 +666,13 @@ void helper_tlb_flush(CPURH850State *env)
     tlb_flush(cs);
 }
 
+void helper_uc_rh850_exit(CPURH850State *env)
+{
+    CPUState *cs = CPU(env);
+
+    cs->exception_index = EXCP_HLT;
+    cs->halted = 1;
+    cpu_loop_exit(cs);
+}
+
 #endif /* !CONFIG_USER_ONLY */
