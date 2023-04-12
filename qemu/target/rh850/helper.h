@@ -1,6 +1,7 @@
 
 DEF_HELPER_4(uc_tracecode, void, i32, i32, ptr, i64)
 DEF_HELPER_6(uc_traceopcode, void, ptr, i64, i64, i32, ptr, i64)
+DEF_HELPER_1(uc_rh850_exit, void, env)
 
 /* Exceptions */
 DEF_HELPER_2(raise_exception, noreturn, env, i32)

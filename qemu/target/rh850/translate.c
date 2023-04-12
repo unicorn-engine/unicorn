@@ -31,6 +31,14 @@
 
 #include "instmap.h"
 
+#include "unicorn/platform.h"
+#include "uc_priv.h"
+
+/*
+ * Unicorn: Special disas state for exiting in the middle of tb.
+ */
+#define DISAS_UC_EXIT    DISAS_TARGET_6
+
 /* global register indices */
 static TCGv cpu_gpr[NUM_GP_REGS];
 static TCGv cpu_pc;
@@ -103,6 +111,7 @@ typedef struct DisasContext {
     DisasContextBase base;
     CPURH850State *env;
     target_ulong pc;  // pointer to instruction being translated
+    target_ulong pc_succ_insn;
     uint32_t opcode;
     uint32_t opcode1;  // used for 48 bit instructions
 
@@ -182,6 +191,18 @@ static void gen_exception_debug(DisasContext *dc)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
     TCGv_i32 helper_tmp = tcg_const_i32(tcg_ctx, EXCP_DEBUG);
+    gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, helper_tmp);
+    tcg_temp_free_i32(tcg_ctx, helper_tmp);
+
+    //gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, EXCP_DEBUG);
+    dc->base.is_jmp = DISAS_TB_EXIT_ALREADY_GENERATED;
+}
+
+static void gen_exception_halt(DisasContext *dc)
+{
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+
+    TCGv_i32 helper_tmp = tcg_const_i32(tcg_ctx, EXCP_HLT);
     gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, helper_tmp);
     tcg_temp_free_i32(tcg_ctx, helper_tmp);
 
@@ -4889,7 +4910,7 @@ static void rh850_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
-    tcg_gen_insn_start(tcg_ctx, dc->pc);
+    tcg_gen_insn_start(tcg_ctx, dc->base.pc_next);
 }
 
 /*
@@ -4923,56 +4944,75 @@ static bool rh850_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cpu,
 static void rh850_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
+    struct uc_struct *uc = dc->uc;
+    TCGContext *tcg_ctx = uc->tcg_ctx;
+    TCGOp *tcg_op, *prev_op = NULL;
     CPURH850State *env = dc->env;
+    bool insn_hook = false;
 
-    dc->opcode = cpu_lduw_code(env, dc->pc);  // get opcode from memory
-
-    if ((extract32(dc->opcode, 9, 2) != 0x3) && (extract32(dc->opcode, 5, 11) != 0x17)) {
-		dc->base.pc_next = dc->pc + 2;
-		decode_RH850_16(env, dc);		//this function includes 32-bit JR and JARL
-    } else {
-    	dc->opcode = (dc->opcode) | (cpu_lduw_code(env, dc->pc + 2) << 0x10);
-    	if (((extract32(dc->opcode, 6, 11) == 0x41e) && ((extract32(dc->opcode, 17, 2) > 0x1) ||
-    			(extract32(dc->opcode, 17, 3) == 0x4))) ||
-    			(extract32(dc->opcode, 5, 11) == 0x31) ||		//48-bit MOV
-				(extract32(dc->opcode, 5, 12) == 0x37)  || 		//48-bit JMP
-				(extract32(dc->opcode, 5, 11) == 0x17) ) { 		//48-bit JARL and JR
-    		dc->opcode1 = cpu_lduw_code(env, dc->pc + 4);
-			dc->base.pc_next = dc->pc + 6;
-			decode_RH850_48(env, dc);
-    	} else {
-    		dc->base.pc_next = dc->pc + 4;
-    		decode_RH850_32(env, dc);
-    	}
+    if (uc_addr_is_exit(dc->uc, dc->base.pc_next)) {
+        dcbase->is_jmp = DISAS_UC_EXIT;
     }
+    else
+    {
+        // Unicorn: trace this instruction on request
+        if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, dc->pc)) {
 
-    dc->pc = dc->base.pc_next;
+            // Sync PC in advance
+            tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, dc->pc);
 
-    //printf("addr: %x\n", dc->pc);
-    //copyFlagsToPSW();
-
-#ifdef RH850_HAS_MMU
-    if (dc->base.is_jmp == DISAS_NEXT) {
-        /* Stop translation when the next insn might touch a new page.
-         * This ensures that prefetch aborts at the right place.
-         *
-         * We cannot determine the size of the next insn without
-         * completely decoding it.  However, the maximum insn size
-         * is 32 bytes, so end if we do not have that much remaining.
-         * This may produce several small TBs at the end of each page,
-         * but they will all be linked with goto_tb.
-         *
-         * ??? ColdFire maximum is 4 bytes; MC68000's maximum is also
-         * smaller than MC68020's.
-         */
-        target_ulong start_page_offset
-            = dc->pc - (dc->base.pc_first & TARGET_PAGE_MASK);
-
-        if (start_page_offset >= TARGET_PAGE_SIZE - 32) {
-            dc->base.is_jmp = DISAS_TOO_MANY;
+            // save the last operand
+            prev_op = tcg_last_op(tcg_ctx);
+            insn_hook = true;
+            gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, uc, dc->pc);
+            // the callback might want to stop emulation immediately
+            check_exit_request(tcg_ctx);
         }
+
+        dc->opcode = cpu_lduw_code(env, dc->pc);  // get opcode from memory
+
+        if ((extract32(dc->opcode, 9, 2) != 0x3) && (extract32(dc->opcode, 5, 11) != 0x17)) {
+            dc->base.pc_next = dc->pc + 2;
+            decode_RH850_16(env, dc);		//this function includes 32-bit JR and JARL
+        } else {
+            dc->opcode = (dc->opcode) | (cpu_lduw_code(env, dc->pc + 2) << 0x10);
+            if (((extract32(dc->opcode, 6, 11) == 0x41e) && ((extract32(dc->opcode, 17, 2) > 0x1) ||
+                    (extract32(dc->opcode, 17, 3) == 0x4))) ||
+                    (extract32(dc->opcode, 5, 11) == 0x31) ||		//48-bit MOV
+                    (extract32(dc->opcode, 5, 12) == 0x37)  || 		//48-bit JMP
+                    (extract32(dc->opcode, 5, 11) == 0x17) ) { 		//48-bit JARL and JR
+                dc->opcode1 = cpu_lduw_code(env, dc->pc + 4);
+                dc->base.pc_next = dc->pc + 6;
+                decode_RH850_48(env, dc);
+            } else {
+                dc->base.pc_next = dc->pc + 4;
+                decode_RH850_32(env, dc);
+            }
+        }
+
+        if (insn_hook) {
+            // Unicorn: patch the callback to have the proper instruction size.
+            if (prev_op) {
+                // As explained further up in the function where prev_op is
+                // assigned, we move forward in the tail queue, so we're modifying the
+                // move instruction generated by gen_uc_tracecode() that contains
+                // the instruction size to assign the proper size (replacing 0xF1F1F1F1).
+                tcg_op = QTAILQ_NEXT(prev_op, link);
+            } else {
+                // this instruction is the first emulated code ever,
+                // so the instruction operand is the first operand
+                tcg_op = QTAILQ_FIRST(&tcg_ctx->ops);
+            }
+
+            /*
+              TODO: implement pc_succ_insn in instruction decoding sub-routines
+              to track instruction size.
+            */
+            //tcg_op->args[1] = dc->pc_succ_insn - dc->base.pc_next;
+        }
+
+        dc->pc = dc->base.pc_next;   
     }
-#endif
 }
 
 // Emit exit TB code according to base.is_jmp
@@ -5007,6 +5047,10 @@ static void rh850_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     case DISAS_NORETURN:
     case DISAS_TB_EXIT_ALREADY_GENERATED:
     	break;
+    case DISAS_UC_EXIT:
+        tcg_gen_movi_tl(tcg_ctx, cpu_pc, dc->pc);
+        gen_exception_halt(dc);
+        break;
     default:
         g_assert_not_reached();
     }
