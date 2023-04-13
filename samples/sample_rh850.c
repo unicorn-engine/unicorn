@@ -7,7 +7,7 @@
 #include <string.h>
 
 // code to be emulated
-#define RH850_CODE "\x01\x0e\x06\x00\xc1\x11\x01\x1f\x00\x00"
+#define RH850_CODE "\x01\x0e\x06\x00\xc1\x11\x01\x1f\x00\x00\x41\x1f\x00\x00"
 
 // memory address where emulation starts
 #define ADDRESS 0x10000
@@ -30,14 +30,19 @@ static void hook_code(uc_engine *uc, uint64_t address, uint32_t size,
 static void hook_mem64(uc_engine *uc, uc_mem_type type, uint64_t address,
                        int size, int64_t value, void *user_data)
 {
+    uint64_t pc;
     switch (type) {
     default:
         break;
     case UC_MEM_READ:
+        uc_reg_read(uc, UC_RH850_REG_PC, &pc);
+        printf(">>> Memory read operation at 0x%" PRIx64 "\n", pc);
         printf(">>> Memory is being READ at 0x%" PRIx64 ", data size = %u\n",
                address, size);
         break;
     case UC_MEM_WRITE:
+        uc_reg_read(uc, UC_RH850_REG_PC, &pc);
+        printf(">>> Memory write operation at 0x%" PRIx64 "\n", pc);
         printf(">>> Memory is being WRITE at 0x%" PRIx64
                ", data size = %u, data value = 0x%" PRIx64 "\n",
                address, size, value);
@@ -82,6 +87,7 @@ static void test_rh850(void)
 
     // tracing mem read
     uc_hook_add(uc, &trace3, UC_HOOK_MEM_READ, hook_mem64, NULL, 1, 0);
+    uc_hook_add(uc, &trace3, UC_HOOK_MEM_WRITE, hook_mem64, NULL, 1, 0);
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
