@@ -4955,21 +4955,21 @@ static void rh850_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     }
     else
     {
-        #if 0
         // Unicorn: trace this instruction on request
         if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, dc->pc)) {
 
             // Sync PC in advance
-            tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, dc->pc);
-
+            tcg_gen_movi_i32(tcg_ctx, cpu_pc, dc->pc);
+    
             // save the last operand
             prev_op = tcg_last_op(tcg_ctx);
             insn_hook = true;
-            gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, uc, dc->pc);
+    
+            gen_uc_tracecode(tcg_ctx, 0xF1F1F1F1, UC_HOOK_CODE_IDX, env->uc, dc->pc);
+            
             // the callback might want to stop emulation immediately
             check_exit_request(tcg_ctx);
         }
-        #endif
 
         dc->opcode = cpu_lduw_code(env, dc->pc);  // get opcode from memory
 
@@ -4992,7 +4992,6 @@ static void rh850_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
             }
         }
 
-        #if 0
         if (insn_hook) {
             // Unicorn: patch the callback to have the proper instruction size.
             if (prev_op) {
@@ -5007,13 +5006,8 @@ static void rh850_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
                 tcg_op = QTAILQ_FIRST(&tcg_ctx->ops);
             }
 
-            /*
-              TODO: implement pc_succ_insn in instruction decoding sub-routines
-              to track instruction size.
-            */
-            //tcg_op->args[1] = dc->pc_succ_insn - dc->base.pc_next;
+            tcg_op->args[1] = dc->base.pc_next - dc->pc;
         }
-        #endif
 
         dc->pc = dc->base.pc_next;   
     }
