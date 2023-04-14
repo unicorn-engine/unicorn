@@ -27,26 +27,7 @@
 
 int rh850_cpu_mmu_index(CPURH850State *env, bool ifetch)
 {
-#ifdef CONFIG_USER_ONLY
-    return 0;
-#else
-    return env->priv;
-#endif
-}
-
-
-uint32_t rh850_ldl_phys(CPUState *cs, hwaddr addr)
-{
-    MemTxAttrs attrs;
-    AddressSpace *as = cpu_addressspace(cs, attrs);
-
-    attrs.secure = false;
-
-#ifdef UNICORN_ARCH_POSTFIX
-    return glue(address_space_ldl, UNICORN_ARCH_POSTFIX)(as->uc, as, addr, attrs, NULL);
-#else
-    return address_space_ldl(as->uc, as, addr, attrs, NULL);
-#endif
+  return 0;
 }
 
 #ifndef CONFIG_USER_ONLY
@@ -56,228 +37,139 @@ uint32_t rh850_ldl_phys(CPUState *cs, hwaddr addr)
  *
  * Adapted from Spike's processor_t::take_interrupt()
  */
+
+#if 0 /* Not used */
 static int rh850_cpu_hw_interrupts_pending(CPURH850State *env)
 {
-    target_ulong pending_interrupts = atomic_read(&env->mip) & env->mie;
 
-    target_ulong mie = get_field(env->mstatus, MSTATUS_MIE);
-    target_ulong m_enabled = env->priv < PRV_M || (env->priv == PRV_M && mie);
-    target_ulong enabled_interrupts = pending_interrupts &
-                                      ~env->mideleg & -m_enabled;
-
-    target_ulong sie = get_field(env->mstatus, MSTATUS_SIE);
-    target_ulong s_enabled = env->priv < PRV_S || (env->priv == PRV_S && sie);
-    enabled_interrupts |= pending_interrupts & env->mideleg &
-                          -s_enabled;
-
-    if (enabled_interrupts) {
-        return ctz64(enabled_interrupts); /* since non-zero */
-    } else {
-        return EXCP_NONE; /* indicates no pending interrupt */
-    }
+    return EXCP_NONE;
 }
 #endif
+#endif
+
+uint32_t psw2int(CPURH850State * env);
+uint32_t mem_deref_4(CPUState * cs, uint32_t addr);
+
+
+uint32_t psw2int(CPURH850State * env)
+{
+  uint32_t ret = 0; 
+  ret |= env->UM_flag<<30;
+  ret |= env->CU0_flag<<16;
+  ret |= env->CU1_flag<<17;
+  ret |= env->CU2_flag<<18;
+  ret |= env->EBV_flag<<15;
+  ret |= env->NP_flag<<7;
+  ret |= env->EP_flag<<6;
+  ret |= env->ID_flag<<5; 
+  ret |= env->SAT_flag<<4;
+  ret |= env->CY_flag<<3;
+  ret |= env->OV_flag<<2;
+  ret |= env->S_flag<<1;
+  ret |= env->Z_flag; 
+
+  return ret;
+}
+
+/*
+ * RH850 interrupt handler.
+ **/
 
 bool rh850_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 {
 #if !defined(CONFIG_USER_ONLY)
-    if (interrupt_request & CPU_INTERRUPT_HARD) {
-        RH850CPU *cpu = RH850_CPU(cs);
-        CPURH850State *env = &cpu->env;
-        int interruptno = rh850_cpu_hw_interrupts_pending(env);
-        if (interruptno >= 0) {
-            cs->exception_index = RH850_EXCP_INT_FLAG | interruptno;
+    RH850CPU *cpu = RH850_CPU(cs);
+    CPURH850State *env = &cpu->env;
+
+    //qemu_log("[cpu] exec_interrupt: got interrupt_req=%08x\n", interrupt_request);
+
+    /* Handle FENMI interrupt. */
+    if (interrupt_request == RH850_INT_FENMI)
+    {
+        /* Set exception info. */
+        cs->exception_index = RH850_EXCP_FENMI;
+        env->exception_cause = 0xE0;
+        env->exception_priority = 1;
+
+        /* Acknowledge interrupt. */
+        rh850_cpu_do_interrupt(cs);
+    }
+    else if (interrupt_request == RH850_INT_FEINT)
+    {
+        if (!(env->systemRegs[BANK_ID_BASIC_2][PMR_IDX2] & (1<<env->exception_priority)))
+        {
+            /* Set exception info. */
+            cs->exception_index = RH850_EXCP_FEINT;
+            env->exception_cause = 0xF0;
+            env->exception_priority = 3;
+
+            /* Acknowledge interrupt. */
             rh850_cpu_do_interrupt(cs);
-            return true;
+        }
+    }
+    else if (interrupt_request == RH850_EXCP_EIINT)
+    {
+        //qemu_log("exec_interrupt got RH850_EXCP_EIINT\n");
+
+        /* Get interrupt request number. */
+        //int intn = env->exception_cause & 0xfff;
+        int priority = 4;
+
+        //qemu_log("[cpu] exec_interrupt: got interrupt_req=%08x\n", interrupt_request);
+
+        /* Check if interrupt priority is not masked (through PMR). */
+        if (!(env->systemRegs[BANK_ID_BASIC_2][PMR_IDX2] & (1<<priority)))
+        {
+            /**
+             * Interrupt is not masked, process it.
+             * We set the exception index to RH850_EXCP_EIINT to notify an EIINT interrupt,
+             * and we set the exception cause to indicate the channel.
+             **/
+
+            /* Set exception info. */
+            cs->exception_index = RH850_EXCP_EIINT;
+            //env->exception_cause = 0x1000 | (intn);
+            //env->exception_dv = !(interrupt_request & RH850_INT_TAB_REF);
+            env->exception_priority = priority;
+
+            /* Acknowledge interrupt. */
+            rh850_cpu_do_interrupt(cs);
+        }
+        else
+        {
+            //qemu_log("[cpu] interrupt priority is masked\n");
         }
     }
 #endif
+
+    /* Interrupt request has been processed. */
+    cs->interrupt_request = 0;
     return false;
 }
 
 #if !defined(CONFIG_USER_ONLY)
 
-/* get_physical_address - get the physical address for this virtual address
- *
- * Do a page table walk to obtain the physical address corresponding to a
- * virtual address. Returns 0 if the translation was successful
- *
- * Adapted from Spike's mmu_t::translate and mmu_t::walk
- *
- */
-static int get_physical_address(struct uc_struct *uc, CPURH850State *env, hwaddr *physical,
+
+static int get_physical_address(CPURH850State *env, hwaddr *physical,
                                 int *prot, target_ulong addr,
                                 int access_type, int mmu_idx)
 {
-    /* NOTE: the env->pc value visible here will not be
-     * correct, but the value visible to the exception handler
-     * (rh850_cpu_do_interrupt) is correct */
-
-    int mode = mmu_idx;
-
-    if (mode == PRV_M && access_type != MMU_INST_FETCH) {
-        if (get_field(env->mstatus, MSTATUS_MPRV)) {
-            mode = get_field(env->mstatus, MSTATUS_MPP);
-        }
-    }
-
-    if (mode == PRV_M || !rh850_feature(env, RH850_FEATURE_MMU)) {
+    
+        /*
+         * There is no memory virtualization in RH850 (at least for the targeted SoC)
+         * Address resolution is straightforward 
+         */
         *physical = addr;
         *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
         return TRANSLATE_SUCCESS;
-    }
 
-    *prot = 0;
-
-    target_ulong base;
-    int levels, ptidxbits, ptesize, vm, sum;
-    int mxr = get_field(env->mstatus, MSTATUS_MXR);
-
-    if (env->priv_ver >= PRIV_VERSION_1_10_0) {
-        base = get_field(env->satp, SATP_PPN) << PGSHIFT;
-        sum = get_field(env->mstatus, MSTATUS_SUM);
-        vm = get_field(env->satp, SATP_MODE);
-        switch (vm) {
-        case VM_1_10_SV32:
-          levels = 2; ptidxbits = 10; ptesize = 4; break;
-        case VM_1_10_SV39:
-          levels = 3; ptidxbits = 9; ptesize = 8; break;
-        case VM_1_10_SV48:
-          levels = 4; ptidxbits = 9; ptesize = 8; break;
-        case VM_1_10_SV57:
-          levels = 5; ptidxbits = 9; ptesize = 8; break;
-        case VM_1_10_MBARE:
-            *physical = addr;
-            *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
-            return TRANSLATE_SUCCESS;
-        default:
-          g_assert_not_reached();
-        }
-    } else {
-        base = env->sptbr << PGSHIFT;
-        sum = !get_field(env->mstatus, MSTATUS_PUM);
-        vm = get_field(env->mstatus, MSTATUS_VM);
-        switch (vm) {
-        case VM_1_09_SV32:
-          levels = 2; ptidxbits = 10; ptesize = 4; break;
-        case VM_1_09_SV39:
-          levels = 3; ptidxbits = 9; ptesize = 8; break;
-        case VM_1_09_SV48:
-          levels = 4; ptidxbits = 9; ptesize = 8; break;
-        case VM_1_09_MBARE:
-            *physical = addr;
-            *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
-            return TRANSLATE_SUCCESS;
-        default:
-          g_assert_not_reached();
-        }
-    }
-
-    CPUState *cs = CPU(rh850_env_get_cpu(env));
-    int va_bits = PGSHIFT + levels * ptidxbits;
-    target_ulong mask = (1L << (TARGET_LONG_BITS - (va_bits - 1))) - 1;
-    target_ulong masked_msbs = (addr >> (va_bits - 1)) & mask;
-    if (masked_msbs != 0 && masked_msbs != mask) {
-        return TRANSLATE_FAIL;
-    }
-
-    int ptshift = (levels - 1) * ptidxbits;
-    int i;
-
-#if !TCG_OVERSIZED_GUEST
-restart:
-#endif
-    for (i = 0; i < levels; i++, ptshift -= ptidxbits) {
-        target_ulong idx = (addr >> (PGSHIFT + ptshift)) &
-                           ((1 << ptidxbits) - 1);
-
-        /* check that physical address of PTE is legal */
-        target_ulong pte_addr = base + idx * ptesize;
-#if defined(TARGET_RH850)
-        target_ulong pte = rh850_ldl_phys(cs, pte_addr);
-#endif
-        target_ulong ppn = pte >> PTE_PPN_SHIFT;
-
-        if (PTE_TABLE(pte)) { /* next level of page table */
-            base = ppn << PGSHIFT;
-        } else if ((pte & PTE_U) ? (mode == PRV_S) && !sum : !(mode == PRV_S)) {
-            break;
-        } else if (!(pte & PTE_V) || (!(pte & PTE_R) && (pte & PTE_W))) {
-            break;
-        } else if (access_type == MMU_INST_FETCH ? !(pte & PTE_X) :
-                  access_type == MMU_DATA_LOAD ?  !(pte & PTE_R) &&
-                  !(mxr && (pte & PTE_X)) : !((pte & PTE_R) && (pte & PTE_W))) {
-            break;
-        } else {
-            /* if necessary, set accessed and dirty bits. */
-            target_ulong updated_pte = pte | PTE_A |
-                (access_type == MMU_DATA_STORE ? PTE_D : 0);
-
-            /* Page table updates need to be atomic with MTTCG enabled */
-            if (updated_pte != pte) {
-                /* if accessed or dirty bits need updating, and the PTE is
-                 * in RAM, then we do so atomically with a compare and swap.
-                 * if the PTE is in IO space, then it can't be updated.
-                 * if the PTE changed, then we must re-walk the page table
-                   as the PTE is no longer valid */
-                MemoryRegion *mr;
-                hwaddr l = sizeof(target_ulong), addr1;
-                mr = address_space_translate(cs->as, pte_addr,
-                    &addr1, &l, false, MEMTXATTRS_UNSPECIFIED);
-                if (memory_access_is_direct(mr, true)) {
-                    target_ulong *pte_pa =
-                        qemu_map_ram_ptr(uc, mr->ram_block, addr1);
-#if TCG_OVERSIZED_GUEST
-                    /* MTTCG is not enabled on oversized TCG guests so
-                     * page table updates do not need to be atomic */
-                    *pte_pa = pte = updated_pte;
-#else
-                    target_ulong old_pte =
-                        atomic_cmpxchg(pte_pa, pte, updated_pte);
-                    if (old_pte != pte) {
-                        goto restart;
-                    } else {
-                        pte = updated_pte;
-                    }
-#endif
-                } else {
-                    /* misconfigured PTE in ROM (AD bits are not preset) or
-                     * PTE is in IO space and can't be updated atomically */
-                    return TRANSLATE_FAIL;
-                }
-            }
-
-            /* for superpage mappings, make a fake leaf PTE for the TLB's
-               benefit. */
-            target_ulong vpn = addr >> PGSHIFT;
-            *physical = (ppn | (vpn & ((1L << ptshift) - 1))) << PGSHIFT;
-
-            if ((pte & PTE_R)) {
-                *prot |= PAGE_READ;
-            }
-            if ((pte & PTE_X)) {
-                *prot |= PAGE_EXEC;
-            }
-           /* only add write permission on stores or if the page
-              is already dirty, so that we don't miss further
-              page table walks to update the dirty bit */
-            if ((pte & PTE_W) &&
-                    (access_type == MMU_DATA_STORE || (pte & PTE_D))) {
-                *prot |= PAGE_WRITE;
-            }
-            return TRANSLATE_SUCCESS;
-        }
-    }
-    return TRANSLATE_FAIL;
 }
 
 static void raise_mmu_exception(CPURH850State *env, target_ulong address,
                                 MMUAccessType access_type)
 {
     CPUState *cs = CPU(rh850_env_get_cpu(env));
-    int page_fault_exceptions =
-        (env->priv_ver >= PRIV_VERSION_1_10_0) &&
-        get_field(env->satp, SATP_MODE) != VM_1_10_MBARE;
+    int page_fault_exceptions = RH850_EXCP_INST_PAGE_FAULT; 
     switch (access_type) {
     case MMU_INST_FETCH:
         cs->exception_index = page_fault_exceptions ?
@@ -304,7 +196,7 @@ hwaddr rh850_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
     int prot;
     int mmu_idx = cpu_mmu_index(&cpu->env, false);
 
-    if (get_physical_address(cs->uc, &cpu->env, &phys_addr, &prot, addr, 0, mmu_idx)) {
+    if (get_physical_address(&cpu->env, &phys_addr, &prot, addr, 0, mmu_idx)) {
         return -1;
     }
     return phys_addr;
@@ -330,6 +222,7 @@ void rh850_cpu_do_unaligned_access(CPUState *cs, vaddr addr,
         g_assert_not_reached();
     }
     env->badaddr = addr;
+    //qemu_log_mask(CPU_LOG_INT, "%s\n", __func__);
     do_raise_exception_err(env, cs->exception_index, retaddr);
 }
 
@@ -338,6 +231,12 @@ void rh850_cpu_do_unaligned_access(CPUState *cs, vaddr addr,
 int rh850_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int size,
         int rw, int mmu_idx)
 {
+
+
+    /*
+     * TODO: Add check to system register concerning MPU configuratuon MPLA, MPUA
+     *
+     */
     RH850CPU *cpu = RH850_CPU(cs);
     CPURH850State *env = &cpu->env;
 #if !defined(CONFIG_USER_ONLY)
@@ -345,19 +244,16 @@ int rh850_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int size,
     int prot;
 #endif
     int ret = TRANSLATE_FAIL;
-
     qemu_log_mask(CPU_LOG_MMU,
             "%s pc " TARGET_FMT_lx " ad %" VADDR_PRIx " rw %d mmu_idx \
              %d\n", __func__, env->pc, address, rw, mmu_idx);
 
 #if !defined(CONFIG_USER_ONLY)
-    ret = get_physical_address(cs->uc, env, &pa, &prot, address, rw, mmu_idx);
+
+    ret = get_physical_address(env, &pa, &prot, address, rw, mmu_idx);
     qemu_log_mask(CPU_LOG_MMU,
             "%s address=%" VADDR_PRIx " ret %d physical " TARGET_FMT_plx
              " prot %d\n", __func__, address, ret, pa, prot);
-    if (!pmp_hart_has_privs(env, pa, TARGET_PAGE_SIZE, 1 << rw)) {
-        ret = TRANSLATE_FAIL;
-    }
     if (ret == TRANSLATE_SUCCESS) {
         tlb_set_page(cs, address & TARGET_PAGE_MASK, pa & TARGET_PAGE_MASK,
                      prot, mmu_idx, TARGET_PAGE_SIZE);
@@ -380,121 +276,264 @@ int rh850_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int size,
     return ret;
 }
 
-/*
- */
+
+uint32_t mem_deref_4(CPUState * cs, uint32_t addr){
+          uint8_t * buf = g_malloc(4); 
+          uint32_t ret_dword = 0;
+          cpu_memory_rw_debug(cs, addr,  buf, 4, false); 
+          
+          ret_dword |= buf[3] << 24;
+          ret_dword |= buf[2] << 16;
+          ret_dword |= buf[1] << 8; 
+          ret_dword |= buf[0]; 
+          g_free(buf); 
+          return ret_dword; 
+}
+
+
 void rh850_cpu_do_interrupt(CPUState *cs)
 {
+
+    //qemu_log("[cpu] rh850_cpu_do_interrupt()\n");
+    //qemu_log_mask(CPU_LOG_INT, "%s\n", __func__);
 #if !defined(CONFIG_USER_ONLY)
+    uint32_t intbp;
+    RH850CPU *cpu = RH850_CPU(cs);
+    CPURH850State *env = &cpu->env;
 
-    //RH850CPU *cpu = RH850_CPU(cs);
+    uint32_t direct_vector_ba; 
+    qemu_log_mask(CPU_LOG_INT, "%s: entering switch\n", __func__);
+    switch (cs->exception_index) {
+        case RH850_EXCP_FETRAP: 
 
-#if RH850_DEBUG_INTERRUPT
-        int log_cause = cs->exception_index & RH850_EXCP_INT_MASK;
-        if (cs->exception_index & RH850_EXCP_INT_FLAG) {
-            qemu_log_mask(LOG_TRACE, "core   0: trap %s, epc 0x" TARGET_FMT_lx,
-                rh850_intr_names[log_cause], env->pc);
-        } else {
-            qemu_log_mask(LOG_TRACE, "core   0: intr %s, epc 0x" TARGET_FMT_lx,
-                rh850_excp_names[log_cause], env->pc);
-        }
-    }
-#endif
-// exceptions are not yet implemented on rh850
+            qemu_log_mask(CPU_LOG_INT, "%s: entering FETRAP handler\n", __func__);
+            // store PSW to FEPSW (and update env->EBV_flag)
+            env->systemRegs[BANK_ID_BASIC_0][FEPSW_IDX] = psw2int(env);
+            // store PC to FEPC
+            env->systemRegs[BANK_ID_BASIC_0][FEPC_IDX] = env->pc+2;
+            // Set Exception Cause
+		    env->systemRegs[BANK_ID_BASIC_0][FEIC_IDX] = env->exception_cause;
 
-//    target_ulong fixed_cause = 0;
-//    if (cs->exception_index & (RH850_EXCP_INT_FLAG)) {
-//        /* hacky for now. the MSB (bit 63) indicates interrupt but cs->exception
-//           index is only 32 bits wide */
-//        fixed_cause = cs->exception_index & RH850_EXCP_INT_MASK;
-//        fixed_cause |= ((target_ulong)1) << (TARGET_LONG_BITS - 1);
-//    } else {
-//        /* fixup User ECALL -> correct priv ECALL */
-//        if (cs->exception_index == RH850_EXCP_U_ECALL) {
-//            switch (env->priv) {
-//            case PRV_U:
-//                fixed_cause = RH850_EXCP_U_ECALL;
-//                break;
-//            case PRV_S:
-//                fixed_cause = RH850_EXCP_S_ECALL;
-//                break;
-//            case PRV_H:
-//                fixed_cause = RH850_EXCP_H_ECALL;
-//                break;
-//            case PRV_M:
-//                fixed_cause = RH850_EXCP_M_ECALL;
-//                break;
-//            }
-//        } else {
-//            fixed_cause = cs->exception_index;
-//        }
-//    }
-//
-//    target_ulong backup_epc = env->pc;
-//
-//    target_ulong bit = fixed_cause;
-//    target_ulong deleg = env->medeleg;
-//
-//    int hasbadaddr =
-//        (fixed_cause == RH850_EXCP_INST_ADDR_MIS) ||
-//        (fixed_cause == RH850_EXCP_INST_ACCESS_FAULT) ||
-//        (fixed_cause == RH850_EXCP_LOAD_ADDR_MIS) ||
-//        (fixed_cause == RH850_EXCP_STORE_AMO_ADDR_MIS) ||
-//        (fixed_cause == RH850_EXCP_LOAD_ACCESS_FAULT) ||
-//        (fixed_cause == RH850_EXCP_STORE_AMO_ACCESS_FAULT) ||
-//        (fixed_cause == RH850_EXCP_INST_PAGE_FAULT) ||
-//        (fixed_cause == RH850_EXCP_LOAD_PAGE_FAULT) ||
-//        (fixed_cause == RH850_EXCP_STORE_PAGE_FAULT);
-//
-//    if (bit & ((target_ulong)1 << (TARGET_LONG_BITS - 1))) {
-//        deleg = env->mideleg;
-//        bit &= ~((target_ulong)1 << (TARGET_LONG_BITS - 1));
-//    }
-//
-//    if (env->priv <= PRV_S && bit < 64 && ((deleg >> bit) & 1)) {
-//        /* handle the trap in S-mode */
-//        /* No need to check STVEC for misaligned - lower 2 bits cannot be set */
-//        env->pc = env->stvec;
-//        env->scause = fixed_cause;
-//        env->sepc = backup_epc;
-//
-//        if (hasbadaddr) {
-//            if (RH850_DEBUG_INTERRUPT) {
-//                qemu_log_mask(LOG_TRACE, "core " TARGET_FMT_ld
-//                    ": badaddr 0x" TARGET_FMT_lx, env->mhartid, env->badaddr);
-//            }
-//            //env->sbadaddr = env->mea;  Is sbadaddr=any badaddr????
-//        }
-//
-//        target_ulong s = env->mstatus;
-//        s = set_field(s, MSTATUS_SPIE, env->priv_ver >= PRIV_VERSION_1_10_0 ?
-//            get_field(s, MSTATUS_SIE) : get_field(s, MSTATUS_UIE << env->priv));
-//        s = set_field(s, MSTATUS_SPP, env->priv);
-//        s = set_field(s, MSTATUS_SIE, 0);
-////        csr_write_helper(env, s, CSR_MSTATUS);
-//        rh850_set_mode(env, PRV_S);
-//    } else {
-//        /* No need to check MTVEC for misaligned - lower 2 bits cannot be set */
-//        env->pc = env->mtvec;
-//        env->mepc = backup_epc;
-//        env->mcause = fixed_cause;
-//
-//        if (hasbadaddr) {
-//            if (RH850_DEBUG_INTERRUPT) {
-//                qemu_log_mask(LOG_TRACE, "core " TARGET_FMT_ld
-//                    ": mea 0x" TARGET_FMT_lx, env->mhartid, env->badaddr);
-//            }
-//            //env->mbadaddr = env->badaddr;
-//        }
-//
-//        target_ulong s = env->mstatus;
-//        s = set_field(s, MSTATUS_MPIE, env->priv_ver >= PRIV_VERSION_1_10_0 ?
-//            get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
-//        s = set_field(s, MSTATUS_MPP, env->priv);
-//        s = set_field(s, MSTATUS_MIE, 0);
-////        csr_write_helper(env, s, CSR_MSTATUS);
-//        rh850_set_mode(env, PRV_M);
-//    }
-    /* TODO yield load reservation  */
+            qemu_log_mask(CPU_LOG_INT, "%s, saved pc : %x\n", __func__,env->pc);
+
+            // update PSW
+            env->UM_flag = 0;
+            env->NP_flag = 1;
+            env->EP_flag = 1;
+            env->ID_flag = 1;
+
+            // modify PC, keep RBASE or EBASE bits 9 to 31 (discard bits 0 to 8)
+            if (env->EBV_flag) 
+                direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][EBASE_IDX1] & 0xFFFFFE00;
+            else
+                direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][RBASE_IDX1] & 0xFFFFFE00; 
+    
+            qemu_log_mask(CPU_LOG_INT, "%s: direct vector addr : %x \n", __func__,direct_vector_ba);
+            env->pc = direct_vector_ba + 0x30; 
+            break; 
+        
+        case RH850_EXCP_TRAP:
+            qemu_log_mask(CPU_LOG_INT, "%s: entering TRAP handler\n", __func__);
+            // store PSW to EIPSW
+            env->systemRegs[BANK_ID_BASIC_0][EIPSW_IDX] = psw2int(env);
+            // store PC to EIPC
+            env->systemRegs[BANK_ID_BASIC_0][EIPC_IDX] = env->pc+4;
+            // Set Exception Cause
+            env->systemRegs[BANK_ID_BASIC_0][EIIC_IDX] = env->exception_cause;
+
+            env->UM_flag = 0;
+            env->EP_flag = 1;
+            env->ID_flag = 1;
+
+            // modify PC, keep RBASE or EBASE bits 9 to 31 (discard bits 0 to 8)
+            if (env->EBV_flag)
+                direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][EBASE_IDX1] & 0xFFFFFE00;
+            else
+                direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][RBASE_IDX1] & 0xFFFFFE00; 
+
+            if (env->exception_cause < 0x50) {
+            env->pc = direct_vector_ba + 0x40; 
+            } else {
+            env->pc = direct_vector_ba + 0x50; 
+            }
+            break; 
+
+        case RH850_EXCP_RIE:
+            //qemu_log("%s: entering RIE handler\n", __func__);
+            // store PSW to FEPSW
+            env->systemRegs[BANK_ID_BASIC_0][FEPSW_IDX] = psw2int(env);
+            // store PC to FEPC
+            env->systemRegs[BANK_ID_BASIC_0][FEPC_IDX] = env->pc;
+            // Set Exception Cause
+                env->systemRegs[BANK_ID_BASIC_0][FEIC_IDX] = env->exception_cause;
+            //qemu_log("%s, saved pc : %x\n", __func__,env->pc);
+            // update PSW
+
+            env->UM_flag = 0;
+            env->NP_flag = 1;
+            env->EP_flag = 1;
+            env->ID_flag = 1;
+
+            // modify PC, keep RBASE or EBASE bits 9 to 31 (discard bits 0 to 8)
+            if (env->EBV_flag) 
+                direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][EBASE_IDX1] & 0xFFFFFE00;
+            else
+                direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][RBASE_IDX1] & 0xFFFFFE00; 
+
+            //qemu_log("%s: direct vector addr : %x \n", __func__,direct_vector_ba);
+            env->pc = direct_vector_ba + 0x60;
+            //qemu_log("%s: pc : 0x%08x \n", __func__, direct_vector_ba+0x60); 
+            break;
+
+        case RH850_EXCP_SYSCALL:
+          qemu_log_mask(CPU_LOG_INT, "%s: entering SYSCALL handler\n", __func__);
+          uint32_t syscall_cfg = env->systemRegs[BANK_ID_BASIC_1][SCCFG_IDX1] & 0xff;
+          uint32_t syscall_number = env->exception_cause - 0x8000; 
+          uint32_t syscall_bp = env->systemRegs[BANK_ID_BASIC_1][SCBP_IDX1]; 
+          uint32_t handler_offset=0, deref_addr=0;
+          
+          if (syscall_number <= syscall_cfg) {
+            deref_addr = syscall_bp + (syscall_number<<2); 
+          } else {
+
+            deref_addr = syscall_bp; 
+          }
+
+          qemu_log_mask(CPU_LOG_INT, "%s syscall_cfg_size = %d\n", __func__,syscall_cfg);
+          qemu_log_mask(CPU_LOG_INT, "%s syscall_bp = %d\n", __func__,syscall_bp);
+          qemu_log_mask(CPU_LOG_INT, "%s syscall_num = %d\n", __func__,syscall_number);
+          qemu_log_mask(CPU_LOG_INT, "%s deref_addr = 0x%x\n", __func__,deref_addr);
+          handler_offset = mem_deref_4(cs,deref_addr); 
+          qemu_log_mask(CPU_LOG_INT, "%s handler offset = %x\n", __func__,handler_offset);
+
+          // store PSW to EIPSW
+          env->systemRegs[BANK_ID_BASIC_0][EIPSW_IDX] = psw2int(env);
+          // store PC to EIPC
+          env->systemRegs[BANK_ID_BASIC_0][EIPC_IDX] = env->pc+4;
+          // Set Exception Cause
+		  env->systemRegs[BANK_ID_BASIC_0][EIIC_IDX] = env->exception_cause;
+
+          env->UM_flag = 0;
+          env->EP_flag = 1;
+          env->ID_flag = 1;
+
+          // modify PC 
+          env->pc = syscall_bp + handler_offset; 
+          qemu_log_mask(CPU_LOG_INT, "%s: moving pc to = 0x%x\n", __func__,env->pc);
+          
+          break; 
+
+        case RH850_EXCP_FEINT:
+            //qemu_log("[cpu] entering FEINT handler\n");
+            // store PSW to FEPSW
+            env->systemRegs[BANK_ID_BASIC_0][FEPSW_IDX] = psw2int(env);
+            // store PC to FEPC
+            env->systemRegs[BANK_ID_BASIC_0][FEPC_IDX] = env->pc;
+            // Set Exception Cause
+            env->systemRegs[BANK_ID_BASIC_0][FEIC_IDX] = env->exception_cause;
+
+            /* Update PSW. */
+            env->UM_flag = 0;
+            env->ID_flag = 1;
+            env->NP_flag = 1;
+            env->EP_flag = 0;
+
+            /* Direct vector. */
+            if (env->EBV_flag) 
+                direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][EBASE_IDX1];
+            else
+                direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][RBASE_IDX1]; 
+           
+            /* Redirect to FEINT exception handler. */
+            env->pc = (direct_vector_ba & 0xFFFFFF00) + 0xF0;  
+            //qemu_log("%s: moving pc to = 0x%x\n", __func__,env->pc);
+            break;
+
+        case RH850_EXCP_FENMI:
+            //qemu_log("[cpu] entering FENMI handler\n");
+            // store PSW to FEPSW
+            env->systemRegs[BANK_ID_BASIC_0][FEPSW_IDX] = psw2int(env);
+            // store PC to FEPC
+            env->systemRegs[BANK_ID_BASIC_0][FEPC_IDX] = env->pc;
+            // Set Exception Cause
+            env->systemRegs[BANK_ID_BASIC_0][FEIC_IDX] = env->exception_cause;
+
+            /* Update PSW. */
+            env->UM_flag = 0;
+            env->ID_flag = 1;
+            env->NP_flag = 1;
+            env->EP_flag = 0;
+
+            /* Direct vector. */
+            if (env->EBV_flag) 
+                direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][EBASE_IDX1];
+            else
+                direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][RBASE_IDX1]; 
+           
+            /* Redirect to FENMI exception handler. */
+            env->pc = (direct_vector_ba & 0xFFFFFF00) + 0xE0;  
+            break;
+
+        case RH850_EXCP_EIINT:
+            //qemu_log("[cpu] entering EIINT handler\n");
+            //qemu_log_mask(CPU_LOG_INT, "%s: entering EIINT handler\n", __func__);
+
+            // store PSW to EIPSW
+            env->systemRegs[BANK_ID_BASIC_0][EIPSW_IDX] = psw2int(env);
+            // store PC to EIPC
+            env->systemRegs[BANK_ID_BASIC_0][EIPC_IDX] = env->pc;
+            // Set Exception Cause
+            env->systemRegs[BANK_ID_BASIC_0][EIIC_IDX] = env->exception_cause;
+            // Set priority to ISPR
+            env->systemRegs[BANK_ID_BASIC_2][ISPR_IDX2] |= (1 << env->exception_priority);
+
+            /* Set PSW.ID (disable further EI exceptions). */
+            env->ID_flag = 1;
+
+            /* Clear PSW.EP (we are processing an interrupt). */
+            env->EP_flag = 0;
+
+            /* Modify PC based on dispatch method (direct vector or table reference). */
+            if (!env->exception_dv)
+            {
+                //qemu_log("[cpu] dispatch EIINT (table reference) for IRQ %d\n", env->exception_cause&0x1ff);
+                /* Table reference, first read INTBP value. */
+                intbp = env->systemRegs[BANK_ID_BASIC_1][INTBP_IDX1];
+                //qemu_log("[cpu] INTBP=0x%08x\n", intbp);
+
+                /* Compute address of interrupt handler (based on channel). */
+                env->pc = mem_deref_4(cs, intbp + 4*(env->exception_cause & 0x1ff));
+                //qemu_log("[cpu] PC=0x%08x\n", env->pc);
+            }
+            else
+            {
+                //qemu_log("[cpu] dispatch EIINT (direct vector) for IRQ %d\n", env->exception_cause&0x1ff);
+                //qemu_log("[cpu] exception priority=%d\n", env->exception_priority);
+                /* Direct vector. */
+                if (env->EBV_flag) 
+                    direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][EBASE_IDX1];
+                else
+                    direct_vector_ba = env->systemRegs[BANK_ID_BASIC_1][RBASE_IDX1]; 
+                //qemu_log("[cpu] Direct vector Base Address = 0x%08x\n", direct_vector_ba);
+               
+                /* Is RINT bit set ? */
+                if (direct_vector_ba & 1)
+                {
+                    //qemu_log("[cpu] RINT bit set\n");
+                    /* Reduced vector (one handler for any priority). */
+                    env->pc = (direct_vector_ba & 0xFFFFFF00) + 0x100; 
+                }
+                else
+                {
+                    //qemu_log("[cpu] RINT bit NOT set\n");
+                    /* One handler per priority level. */
+                    env->pc = (direct_vector_ba & 0xFFFFFF00) + 0x100 + (env->exception_priority<<4); 
+                }
+                //qemu_log("[cpu] PC=0x%08x\n", env->pc);
+            }
+            break;
+      }
+      
 #endif
     cs->exception_index = EXCP_NONE; /* mark handled to qemu */
 }

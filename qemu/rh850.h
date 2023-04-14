@@ -1277,8 +1277,8 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_rh850
 #define gen_helper_cpsr_read gen_helper_cpsr_read_rh850
 #define gen_helper_cpsr_write gen_helper_cpsr_write_rh850
-#define gen_intermediate_code gen_intermediate_code_rh850
 #define restore_state_to_opc restore_state_to_opc_rh850
 #define helper_tlb_flush helper_tlb_flush_rh850
 #define helper_uc_rh850_exit helper_uc_rh850_exit_rh850
+#define gen_intermediate_code gen_intermediate_code_rh850
 #endif

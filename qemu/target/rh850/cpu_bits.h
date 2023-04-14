@@ -398,9 +398,22 @@
 #define RH850_EXCP_INST_PAGE_FAULT         0xc /* since: priv-1.10.0 */
 #define RH850_EXCP_LOAD_PAGE_FAULT         0xd /* since: priv-1.10.0 */
 #define RH850_EXCP_STORE_PAGE_FAULT        0xf /* since: priv-1.10.0 */
+#define RH850_EXCP_FETRAP                  0x10 
+#define RH850_EXCP_TRAP                    0x11
+#define RH850_EXCP_RIE                     0x12
+#define RH850_EXCP_SYSCALL                 0x13
+#define RH850_EXCP_EIINT                   0x14
+#define RH850_EXCP_FEINT                   0x15
+#define RH850_EXCP_FENMI                   0x16
+
+/* Specific interrupts (FENMI, FEINT, EIINT). */
+#define RH850_INT_FENMI                     CPU_INTERRUPT_TGT_EXT_0  /* Exception handler address is table-based */
+#define RH850_INT_FEINT                     CPU_INTERRUPT_TGT_EXT_1  /* Defines a non-maskable FE interrupt */
+#define RH850_INT_EIINT                     CPU_INTERRUPT_TGT_EXT_2  /* Defines a maskable FE interrupt */
 
 #define RH850_EXCP_INT_FLAG                0x80000000
 #define RH850_EXCP_INT_MASK                0x7fffffff
+
 
 /* page table entry (PTE) fields */
 #define PTE_V     0x001 /* Valid */
