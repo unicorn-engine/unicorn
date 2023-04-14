@@ -1140,7 +1140,7 @@ add_library(rh850-softmmu STATIC
     qemu/target/rh850/helper.c
     qemu/target/rh850/op_helper.c
     qemu/target/rh850/translate.c
-    qemu/target/rh850/pmp.c
+    qemu/target/rh850/fpu_translate.c
     qemu/target/rh850/unicorn.c
 )
 

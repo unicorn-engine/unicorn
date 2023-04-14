@@ -116,12 +116,8 @@ struct CPURH850State {
     uint32_t CU2_flag;
     uint32_t UM_flag;
 
-    uint32_t condSatisfied;
-
-    target_ulong misa;
-
-    uint32_t features;
-    target_ulong mstatus;       //machine status
+       uint32_t features;
+    uint32_t badaddr;
 
     target_ulong cpu_LLbit;     // register for mutual exclusion (LDL.W, STC.W)
     target_ulong cpu_LLAddress;     // register for mutual exclusion (LDL.W, STC.W)
@@ -131,56 +127,11 @@ struct CPURH850State {
 
     float_status fp_status;     // not used yet in rh850, left for floating-point support.
 
-    // the following items were copied from original proc, remove them
-    uint32_t mip;
-    target_ulong mie;       //machine interrupt enable
-    target_ulong mepc;      //machine exception program counter
-    target_ulong sepc;      //supervisor exception program counter
-    target_ulong mscratch;
-    target_ulong priv_ver;
-    target_ulong priv;
+    target_ulong fpsr;      /* floating-point configuration/status register. */
 
-    target_ulong frm;           //  CSR floating point rounding mode
-    target_ulong mideleg;   //machine interrupt delegation register
-    target_ulong medeleg;
-
-    target_ulong stvec;     //supervisor trap vector base
-    target_ulong scause;    //suprevisor cause register
-    target_ulong mhartid;       //hardware thread ID  ===> is this same as HTCFG0.PEID ???? rh850 doesnt support multithread?
-    uint32_t mucounteren;   //user counter enable
-    uint32_t mscounteren;   //supervisor counter enable
-    target_ulong sscratch;
-    target_ulong mtvec;     //machine trap handler base address
-    target_ulong mcause;    //machine trap cause
-    target_ulong scounteren;
-    target_ulong mcounteren;
-    target_ulong sptbr;
-    target_ulong satp;
-    target_ulong sbadaddr;
-    target_ulong mbadaddr;
-    target_ulong badaddr;       //changed to mea
-    // physical memory protection
-    pmp_table_t pmp_state;              //this should be modified
-/*
-    target_ulong icsr;		//interrupt control status register
-    target_ulong intcfg;	//interrupt function setting
-
-    target_ulong fpsr;		//floating-point configuration/status   <---write the bit defines
-    target_ulong fpepc;		//floating point exception PC
-
-    target_ulong mpm;		//memory protection operation mode
-
-
-    //target_ulong user_ver;
-*/
-    /*
-#ifndef CONFIG_USER_ONLY
-
-    target_ulong mtval;
-
-#endif
-
-*/
+    uint32_t exception_cause;
+    int exception_priority;
+    bool exception_dv;  
 
     // Unicorn engine
     struct uc_struct *uc;
@@ -230,8 +181,8 @@ static inline RH850CPU *rh850_env_get_cpu(CPURH850State *env)
 
 static inline int rh850_has_ext(CPURH850State *env, target_ulong ext)
 {		// TODO: what does value 'ext' represent??
-    return (env->misa & ext) != 0;
-	//return false;
+    //return (env->misa & ext) != 0;
+	return true;
 }
 
 static inline bool rh850_feature(CPURH850State *env, int feature)
