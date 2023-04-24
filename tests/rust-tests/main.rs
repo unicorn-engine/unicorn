@@ -3,7 +3,7 @@ extern crate alloc;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use unicorn_engine::unicorn_const::{
-    uc_error, Arch, HookType, MemType, Mode, Permission, SECOND_SCALE,
+    uc_error, Arch, HookType, MemType, Mode, Permission, SECOND_SCALE, TlbEntry, TlbType
 };
 use unicorn_engine::{InsnSysX86, RegisterARM, RegisterMIPS, RegisterPPC, RegisterX86, Unicorn};
 
@@ -771,4 +771,47 @@ fn x86_block_callback() {
     );
     assert_eq!(expects, *blocks_cell.borrow());
     assert_eq!(emu.remove_hook(hook), Ok(()));
+}
+
+#[test]
+fn x86_tlb_callback() {
+    #[derive(PartialEq, Debug)]
+    struct BlockExpectation(u64, u32);
+    let expects:u64 = 4;
+    let count: u64 = 0;
+    let count_cell = Rc::new(RefCell::new(count));
+
+    let callback_counter = count_cell.clone();
+    let tlb_callback = move |_: &mut Unicorn<'_, ()>, address: u64, _: MemType| -> Option<TlbEntry> {
+        let mut blocks = callback_counter.borrow_mut();
+        *blocks += 1;
+        return Some(TlbEntry{paddr: address, perms: Permission::ALL});
+    };
+
+    let syscall_callback = move |uc:  &mut Unicorn<'_, ()>| {
+        assert_eq!(uc.ctl_flush_tlb(), Ok(()));
+    };
+
+    let code: Vec<u8> = vec![0xa3,0x00,0x00,0x20,0x00,0x00,0x00,0x00,0x00,0x0f,0x05,0xa3,0x00,0x00,0x20,0x00,0x00,0x00,0x00,0x00]; // movabs  dword ptr [0x200000], eax; syscall; movabs  dword ptr [0x200000], eax
+
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_64)
+        .expect("failed to initialize unicorn instance");
+    assert_eq!(emu.ctl_tlb_type(TlbType::VIRTUAL), Ok(()));
+    assert_eq!(emu.mem_map(0x1000, 0x1000, Permission::ALL), Ok(()));
+    assert_eq!(emu.mem_map(0x200000, 0x1000, Permission::ALL), Ok(()));
+    assert_eq!(emu.mem_write(0x1000, &code), Ok(()));
+
+    let tlb_hook = emu
+        .add_tlb_hook(0, !0u64, tlb_callback)
+        .expect("failed to add tlb hook");
+    let syscall_hook = emu
+        .add_insn_sys_hook(InsnSysX86::SYSCALL, 0, !0u64, syscall_callback)
+        .expect("failed to add syscall hook");
+    assert_eq!(
+        emu.emu_start(0x1000, (0x1000 + code.len()) as u64, 0, 0),
+        Ok(())
+    );
+    assert_eq!(expects, *count_cell.borrow());
+    assert_eq!(emu.remove_hook(tlb_hook), Ok(()));
+    assert_eq!(emu.remove_hook(syscall_hook), Ok(()));
 }
