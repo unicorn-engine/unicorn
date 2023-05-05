@@ -22,16 +22,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 package unicorn;
 
 public class MemRegion {
+    public long begin;
+    public long end;
+    public int perms;
 
-   public long begin;
-   public long end;
-   public int perms;
-
-   public MemRegion(long begin, long end, int perms) {
-      this.begin = begin;
-      this.end = end;
-      this.perms = perms;
-   }
-
+    public MemRegion(long begin, long end, int perms) {
+        this.begin = begin;
+        this.end = end;
+        this.perms = perms;
+    }
 }
-

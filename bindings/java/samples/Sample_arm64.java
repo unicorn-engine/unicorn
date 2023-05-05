@@ -28,88 +28,90 @@ import unicorn.*;
 
 public class Sample_arm64 {
 
-   // code to be emulated
-   public static final byte[] ARM_CODE = {-85,1,15,-117}; // add x11, x13, x15
-   
-   // memory address where emulation starts
-   public static final int ADDRESS = 0x10000;
-   
-   public static final long toInt(byte val[]) {
-      long res = 0;
-      for (int i = 0; i < val.length; i++) {
-         long v = val[i] & 0xff;
-         res = res + (v << (i * 8));
-      }
-      return res;
-   }
+    // code to be emulated
+    public static final byte[] ARM_CODE = { -85, 1, 15, -117 }; // add x11, x13, x15
 
-   public static final byte[] toBytes(long val) {
-      byte[] res = new byte[8];
-      for (int i = 0; i < 8; i++) {
-         res[i] = (byte)(val & 0xff);
-         val >>>= 8;
-      }
-      return res;
-   }
-   
-   // callback for tracing basic blocks
-   private static class MyBlockHook implements BlockHook {
-      public void hook(Unicorn u, long address, int size, Object user_data) {
-         System.out.print(String.format(">>> Tracing basic block at 0x%x, block size = 0x%x\n", address, size));
-      }
-   }
-      
-   // callback for tracing instruction
-   private static class MyCodeHook implements CodeHook {
-      public void hook(Unicorn u, long address, int size, Object user_data) {
-         System.out.print(String.format(">>> Tracing instruction at 0x%x, instruction size = 0x%x\n", address, size));
-      }
-   }
-   
-   static void test_arm64()
-   {
-   
-       Long x11 = 0x1234L;     // X11 register
-       Long x13 = 0x6789L;     // X13 register
-       Long x15 = 0x3333L;     // X15 register
-   
-       System.out.print("Emulate ARM64 code\n");
-   
-       // Initialize emulator in ARM mode
-       Unicorn u = new Unicorn(Unicorn.UC_ARCH_ARM64, Unicorn.UC_MODE_ARM);
-   
-       // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
-   
-       // write machine code to be emulated to memory
-       u.mem_write(ADDRESS, ARM_CODE);
-   
-       // initialize machine registers
-       u.reg_write(Unicorn.UC_ARM64_REG_X11, x11);
-       u.reg_write(Unicorn.UC_ARM64_REG_X13, x13);
-       u.reg_write(Unicorn.UC_ARM64_REG_X15, x15);
-   
-       // tracing all basic blocks with customized callback
-       u.hook_add(new MyBlockHook(), 1, 0, null);
-   
-       // tracing one instruction at ADDRESS with customized callback
-       u.hook_add(new MyCodeHook(), ADDRESS, ADDRESS, null);
-   
-       // emulate machine code in infinite time (last param = 0), or when
-       // finishing all the code.
-       u.emu_start(ADDRESS, ADDRESS + ARM_CODE.length, 0, 0);
-   
-       // now print out some registers
-       System.out.print(">>> Emulation done. Below is the CPU context\n");
-   
-       x11 = (Long)u.reg_read(Unicorn.UC_ARM64_REG_X11);
-       System.out.print(String.format(">>> X11 = 0x%x\n", x11.longValue()));
-   
-       u.close();
-   }
-   
-   public static void main(String args[])
-   {
-       test_arm64();
-   }
+    // memory address where emulation starts
+    public static final int ADDRESS = 0x10000;
+
+    public static final long toInt(byte val[]) {
+        long res = 0;
+        for (int i = 0; i < val.length; i++) {
+            long v = val[i] & 0xff;
+            res = res + (v << (i * 8));
+        }
+        return res;
+    }
+
+    public static final byte[] toBytes(long val) {
+        byte[] res = new byte[8];
+        for (int i = 0; i < 8; i++) {
+            res[i] = (byte) (val & 0xff);
+            val >>>= 8;
+        }
+        return res;
+    }
+
+    // callback for tracing basic blocks
+    private static class MyBlockHook implements BlockHook {
+        public void hook(Unicorn u, long address, int size, Object user_data) {
+            System.out.print(String.format(
+                ">>> Tracing basic block at 0x%x, block size = 0x%x\n", address,
+                size));
+        }
+    }
+
+    // callback for tracing instruction
+    private static class MyCodeHook implements CodeHook {
+        public void hook(Unicorn u, long address, int size, Object user_data) {
+            System.out.print(String.format(
+                ">>> Tracing instruction at 0x%x, instruction size = 0x%x\n",
+                address, size));
+        }
+    }
+
+    static void test_arm64() {
+
+        Long x11 = 0x1234L;     // X11 register
+        Long x13 = 0x6789L;     // X13 register
+        Long x15 = 0x3333L;     // X15 register
+
+        System.out.print("Emulate ARM64 code\n");
+
+        // Initialize emulator in ARM mode
+        Unicorn u = new Unicorn(Unicorn.UC_ARCH_ARM64, Unicorn.UC_MODE_ARM);
+
+        // map 2MB memory for this emulation
+        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+
+        // write machine code to be emulated to memory
+        u.mem_write(ADDRESS, ARM_CODE);
+
+        // initialize machine registers
+        u.reg_write(Unicorn.UC_ARM64_REG_X11, x11);
+        u.reg_write(Unicorn.UC_ARM64_REG_X13, x13);
+        u.reg_write(Unicorn.UC_ARM64_REG_X15, x15);
+
+        // tracing all basic blocks with customized callback
+        u.hook_add(new MyBlockHook(), 1, 0, null);
+
+        // tracing one instruction at ADDRESS with customized callback
+        u.hook_add(new MyCodeHook(), ADDRESS, ADDRESS, null);
+
+        // emulate machine code in infinite time (last param = 0), or when
+        // finishing all the code.
+        u.emu_start(ADDRESS, ADDRESS + ARM_CODE.length, 0, 0);
+
+        // now print out some registers
+        System.out.print(">>> Emulation done. Below is the CPU context\n");
+
+        x11 = (Long) u.reg_read(Unicorn.UC_ARM64_REG_X11);
+        System.out.print(String.format(">>> X11 = 0x%x\n", x11.longValue()));
+
+        u.close();
+    }
+
+    public static void main(String args[]) {
+        test_arm64();
+    }
 }

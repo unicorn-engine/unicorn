@@ -22,25 +22,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 package unicorn;
 
 public class X86_MMR {
+    public long base;
+    public int limit;
+    public int flags;
+    public short selector;
 
-   public long base;
-   public int limit;
-   public int flags;
-   public short selector;
+    public X86_MMR(long base, int limit, int flags, short selector) {
+        this.base = base;
+        this.limit = limit;
+        this.flags = flags;
+        this.selector = selector;
+    }
 
-   public X86_MMR(long base, int limit, int flags, short selector) {
-      this.base = base;
-      this.limit = limit;
-      this.flags = flags;
-      this.selector = selector;
-   }
-
-   public X86_MMR(long base, int limit) {
-      this.base = base;
-      this.limit = limit;
-      selector = 0;
-      flags = 0;
-   }
-
+    public X86_MMR(long base, int limit) {
+        this.base = base;
+        this.limit = limit;
+        selector = 0;
+        flags = 0;
+    }
 }
-

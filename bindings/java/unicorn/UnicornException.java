@@ -22,13 +22,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 package unicorn;
 
 public class UnicornException extends RuntimeException {
+    public UnicornException() {
+        super();
+    }
 
-   public UnicornException() {
-      super();
-   }
-   
-   public UnicornException(String msg) {
-      super(msg);
-   }
-   
+    public UnicornException(String msg) {
+        super(msg);
+    }
 }

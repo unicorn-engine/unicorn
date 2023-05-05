@@ -22,8 +22,5 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 package unicorn;
 
 public interface ReadHook extends Hook {
-
-   public void hook(Unicorn u, long address, int size, Object user);
-
+    public void hook(Unicorn u, long address, int size, Object user);
 }
-
