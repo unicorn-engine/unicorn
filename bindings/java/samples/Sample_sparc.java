@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /* Sample code to demonstrate how to emulate Sparc code */
 
+package samples;
+
 import unicorn.*;
 
 public class Sample_sparc {
@@ -71,7 +73,7 @@ public class Sample_sparc {
         }
     }
 
-    static void test_sparc() {
+    public static void test_sparc() {
         Long g1 = 0x1230L;     // G1 register
         Long g2 = 0x6789L;     // G2 register
         Long g3 = 0x5555L;     // G3 register

@@ -21,11 +21,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /* Sample code to demonstrate how to register read/write API */
 
+package samples;
+
 import unicorn.*;
 
 public class Sample_x86_mmr {
 
-    static void test_x86_mmr() {
+    public static void test_x86_mmr() {
         // Initialize emulator in X86-32bit mode
         Unicorn uc;
         try {

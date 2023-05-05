@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   Nguyen Tan Cong <shenlongbk@gmail.com>
 */
 
+package samples;
+
 import unicorn.*;
 import java.util.*;
 
@@ -430,7 +432,7 @@ public class SampleNetworkAuditing {
     }
     // end utilities
 
-    static void test_i386(byte[] code) {
+    public static void test_i386(byte[] code) {
         fd_chains.clean();
         System.out.printf("Emulate i386 code\n");
         try {

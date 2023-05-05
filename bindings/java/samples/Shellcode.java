@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /* Sample code to trace code with Linux code with syscall */
 
+package samples;
+
 import unicorn.*;
 
 public class Shellcode {
@@ -125,7 +127,7 @@ public class Shellcode {
         }
     }
 
-    static void test_i386() {
+    public static void test_i386() {
         Long r_esp = ADDRESS + 0x200000L;  // ESP register
 
         System.out.print("Emulate i386 code\n");

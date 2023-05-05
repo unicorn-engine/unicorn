@@ -11,6 +11,7 @@ JAVA_PLATFORM_INC := $(shell dirname `find $(JAVA_INC) -name jni_md.h`)
 UNICORN_INC=../../include
 
 SAMPLES := $(shell ls samples/*.java)
+TESTS := $(shell ls tests/*.java)
 SRC := $(shell ls unicorn/*.java)
 
 OS := $(shell uname)
@@ -32,6 +33,9 @@ INCS=-I$(JAVA_INC) -I$(JAVA_PLATFORM_INC) -I$(UNICORN_INC)
 CLASSPATH=./
 
 .SUFFIXES: .java .class
+
+tests/%.class: tests/%.java
+	$(JC) -classpath .:unicorn.jar:testdep/junit-4.13.2.jar $(JFLAGS) $<
 
 %.class: %.java
 	$(JC) -classpath .:unicorn.jar $(JFLAGS) $<
@@ -55,10 +59,14 @@ lib: libunicorn_java$(LIB_EXT) unicorn_Unicorn.h
 	$(CC) -o $< $(LDFLAGS) $(OBJS) $(LIBDIR) $(LIBS)
 
 samples: $(SAMPLES:.java=.class)
+tests: $(TESTS:.java=.class)
 jarfiles: $(SRC:.java=.class)
 
 jar: jarfiles
 	jar cf $(JARFILE) unicorn/*.class
+
+test: lib samples tests
+	java -cp .:testdep/hamcrest-2.2.jar:testdep/junit-4.13.2.jar org.junit.runner.JUnitCore $(subst /,.,$(TESTS:.java=))
 
 install: lib jar
 	cp libunicorn_java$(LIB_EXT) /usr/lib

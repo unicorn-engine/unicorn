@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /* Sample code to demonstrate how to emulate Mips code (big endian) */
 
+package samples;
+
 import unicorn.*;
 
 public class Sample_mips {
@@ -71,7 +73,7 @@ public class Sample_mips {
         }
     }
 
-    static void test_mips_eb() {
+    public static void test_mips_eb() {
 
         Long r1 = 0x6789L;     // R1 register
 
@@ -109,7 +111,7 @@ public class Sample_mips {
         u.close();
     }
 
-    static void test_mips_el() {
+    public static void test_mips_el() {
         Long r1 = 0x6789L;     // R1 register
 
         System.out.print("===========================\n");
