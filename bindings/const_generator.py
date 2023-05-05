@@ -75,7 +75,7 @@ template = {
     'java': {
             'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\npackage unicorn;\n\npublic interface %sConst {\n",
             'footer': "\n}\n",
-            'line_format': '   public static final int UC_%s = %s;\n',
+            'line_format': '    public static final int UC_%s = %s;\n',
             'out_file': './java/unicorn/%sConst.java',
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
@@ -90,7 +90,7 @@ template = {
             's390x.h' : 'S390x',
             'tricore.h' : 'TriCore',
             'unicorn.h': 'Unicorn',
-            'comment_open': '//',
+            'comment_open': '    //',
             'comment_close': '',
         },
     'dotnet': {

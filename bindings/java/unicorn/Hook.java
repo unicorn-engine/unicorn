@@ -26,4 +26,5 @@ package unicorn;
  */
 
 public interface Hook {
+
 }
