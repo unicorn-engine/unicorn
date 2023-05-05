@@ -3,6 +3,8 @@
 
 /* Sample code to demonstrate how to emulate ARM code */
 
+package samples;
+
 import unicorn.*;
 
 public class Sample_arm {
@@ -41,7 +43,7 @@ public class Sample_arm {
         }
     }
 
-    static void test_arm() {
+    public static void test_arm() {
 
         Long r0 = 0x1234L; // R0 register
         Long r2 = 0x6789L; // R1 register
@@ -85,7 +87,7 @@ public class Sample_arm {
         u.close();
     }
 
-    static void test_thumb() {
+    public static void test_thumb() {
 
         Long sp = 0x1234L; // R0 register
 

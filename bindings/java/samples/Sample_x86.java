@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /* Sample code to demonstrate how to emulate X86 code */
 
+package samples;
+
 import unicorn.*;
 
 public class Sample_x86 {
@@ -200,7 +202,7 @@ public class Sample_x86 {
         }
     }
 
-    static void test_i386() {
+    public static void test_i386() {
         Long r_ecx = 0x1234L;     // ECX register
         Long r_edx = 0x7890L;     // EDX register
 
@@ -266,7 +268,7 @@ public class Sample_x86 {
         uc.close();
     }
 
-    static void test_i386_inout() {
+    public static void test_i386_inout() {
         Long r_eax = 0x1234L;     // ECX register
         Long r_ecx = 0x6789L;     // EDX register
 
@@ -311,7 +313,7 @@ public class Sample_x86 {
         u.close();
     }
 
-    static void test_i386_jump() {
+    public static void test_i386_jump() {
         System.out.print("===================================\n");
         System.out.print("Emulate i386 code with jump\n");
 
@@ -339,7 +341,7 @@ public class Sample_x86 {
     }
 
     // emulate code that loop forever
-    static void test_i386_loop() {
+    public static void test_i386_loop() {
         Long r_ecx = 0x1234L;     // ECX register
         Long r_edx = 0x7890L;     // EDX register
 
@@ -376,7 +378,7 @@ public class Sample_x86 {
     }
 
     // emulate code that read invalid memory
-    static void test_i386_invalid_mem_read() {
+    public static void test_i386_invalid_mem_read() {
         Long r_ecx = 0x1234L;     // ECX register
         Long r_edx = 0x7890L;     // EDX register
 
@@ -424,7 +426,7 @@ public class Sample_x86 {
     }
 
     // emulate code that read invalid memory
-    static void test_i386_invalid_mem_write() {
+    public static void test_i386_invalid_mem_write() {
         Long r_ecx = 0x1234L;     // ECX register
         Long r_edx = 0x7890L;     // EDX register
 
@@ -489,7 +491,7 @@ public class Sample_x86 {
     }
 
     // emulate code that jump to invalid memory
-    static void test_i386_jump_invalid() {
+    public static void test_i386_jump_invalid() {
         Long r_ecx = 0x1234L;     // ECX register
         Long r_edx = 0x7890L;     // EDX register
 
@@ -535,7 +537,7 @@ public class Sample_x86 {
         u.close();
     }
 
-    static void test_x86_64() {
+    public static void test_x86_64() {
         long rax = 0x71f3029efd49d41dL;
         long rbx = 0xd87b45277f133ddbL;
         long rcx = 0xab40d1ffd8afc461L;
@@ -634,7 +636,7 @@ public class Sample_x86 {
         u.close();
     }
 
-    static void test_x86_16() {
+    public static void test_x86_16() {
         Long eax = 7L;
         Long ebx = 5L;
         Long esi = 6L;

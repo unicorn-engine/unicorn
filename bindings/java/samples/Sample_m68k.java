@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /* Sample code to demonstrate how to emulate m68k code */
 
+package samples;
+
 import unicorn.*;
 
 public class Sample_m68k {
@@ -70,7 +72,7 @@ public class Sample_m68k {
         }
     }
 
-    static void test_m68k() {
+    public static void test_m68k() {
         Long d0 = 0x0000L;     // d0 data register
         Long d1 = 0x0000L;     // d1 data register
         Long d2 = 0x0000L;     // d2 data register

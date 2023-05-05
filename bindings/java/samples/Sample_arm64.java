@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /* Sample code to demonstrate how to emulate ARM64 code */
 
+package samples;
+
 import unicorn.*;
 
 public class Sample_arm64 {
@@ -70,7 +72,7 @@ public class Sample_arm64 {
         }
     }
 
-    static void test_arm64() {
+    public static void test_arm64() {
 
         Long x11 = 0x1234L;     // X11 register
         Long x13 = 0x6789L;     // X13 register
