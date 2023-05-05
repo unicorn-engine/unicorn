@@ -82,7 +82,8 @@ public class Unicorn
 
     // required to load native method implementations
     static {
-        System.loadLibrary("unicorn_java"); // loads unicorn.dll or libunicorn.so
+        // load libunicorn_java.{so,dylib} or unicorn_java.dll
+        System.loadLibrary("unicorn_java");
         eventMemMap.put(UC_HOOK_MEM_READ_UNMAPPED, UC_MEM_READ_UNMAPPED);
         eventMemMap.put(UC_HOOK_MEM_WRITE_UNMAPPED, UC_MEM_WRITE_UNMAPPED);
         eventMemMap.put(UC_HOOK_MEM_FETCH_UNMAPPED, UC_MEM_FETCH_UNMAPPED);

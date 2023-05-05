@@ -1,29 +1,81 @@
-.PHONY: gen_const clean jar all lib samples install
+all: jar lib samples
 
-all: gen_const
-	$(MAKE) -f Makefile.build all
+JC=javac
 
-lib:
-	$(MAKE) -f Makefile.build lib
+JAVA_HOME := $(shell readlink -f `which $(JC)` | sed "s:/bin/$(JC)::")
 
-samples:
-	$(MAKE) -f  Makefile.build samples
+JAVA_INC := $(shell realpath $(JAVA_HOME)/include)
 
-jar:
-	$(MAKE) -f Makefile.build jar
+JAVA_PLATFORM_INC := $(shell dirname `find $(JAVA_INC) -name jni_md.h`)
+
+UNICORN_INC=../../include
+
+SAMPLES := $(shell ls samples/*.java)
+SRC := $(shell ls unicorn/*.java)
+
+OS := $(shell uname)
+ifeq ($(OS),Darwin)
+   LIB_EXT=.dylib
+else ifeq ($(OS),Linux)
+   LIB_EXT=.so
+else
+   LIB_EXT=.dll
+endif
+
+CC=gcc
+CFLAGS=-fPIC
+LDFLAGS=-shared -fPIC
+LIBS=-lunicorn
+LIBDIR=-L../../
+INCS=-I$(JAVA_INC) -I$(JAVA_PLATFORM_INC) -I$(UNICORN_INC)
+
+CLASSPATH=./
+
+.SUFFIXES: .java .class
+
+%.class: %.java
+	$(JC) -classpath .:unicorn.jar $(JFLAGS) $<
+
+OBJS=unicorn_Unicorn.o
+
+JARFILE=unicorn.jar
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
+
+unicorn_Unicorn.h: unicorn/Unicorn.java
+	javac -h . $<
+
+unicorn_Unicorn.o: unicorn_Unicorn.c unicorn_Unicorn.h
+	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
+
+libunicorn_java$(LIB_EXT): unicorn_Unicorn.o
+
+lib: libunicorn_java$(LIB_EXT) unicorn_Unicorn.h
+	$(CC) -o $< $(LDFLAGS) $(OBJS) $(LIBDIR) $(LIBS)
+
+samples: $(SAMPLES:.java=.class)
+jarfiles: $(SRC:.java=.class)
+
+jar: jarfiles
+	jar cf $(JARFILE) unicorn/*.class
 
 install: lib jar
-	$(MAKE) -f Makefile.build install
+	cp libunicorn_java$(LIB_EXT) /usr/lib
+	cp $(JARFILE) /usr/share/java
 
 uninstall:
-	$(MAKE) -f Makefile.build uninstall
+	rm /usr/lib/libunicorn_java$(LIB_EXT)
+	rm /usr/share/java/$(JARFILE)
 
 gen_const:
 	cd .. && python3 const_generator.py java
 
 clean:
-	rm -f unicorn/*.class
-	rm -f samples/*.class
-	rm -f *.so
-	rm -f *.dylib
-	rm -f *.dll
+	rm unicorn/*.class
+	rm samples/*.class
+	rm *.so
+	rm *.dylib
+	rm *.dll
+
+.PHONY: all lib samples jar install uninstall gen_const clean
