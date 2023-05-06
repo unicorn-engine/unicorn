@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -28,7 +29,7 @@ public class Unicorn
         implements UnicornConst, ArmConst, Arm64Const, M68kConst, SparcConst,
         MipsConst, X86Const {
 
-    public long eng;
+    private long eng;
     private int arch;
     private int mode;
 
@@ -70,15 +71,13 @@ public class Unicorn
     private ArrayList<Tuple> syscallList = new ArrayList<Tuple>();
 
     private Hashtable<Integer, ArrayList<Tuple>> eventMemLists =
-        new Hashtable<Integer, ArrayList<Tuple>>();
+        new Hashtable<>();
 
-    private ArrayList<ArrayList<Tuple>> allLists =
-        new ArrayList<ArrayList<Tuple>>();
+    private ArrayList<ArrayList<Tuple>> allLists = new ArrayList<>();
 
-    private static Hashtable<Integer, Integer> eventMemMap =
-        new Hashtable<Integer, Integer>();
-    private static Hashtable<Long, Unicorn> unicorns =
-        new Hashtable<Long, Unicorn>();
+    private static Hashtable<Integer, Integer> eventMemMap = new Hashtable<>();
+    private static Hashtable<Long, WeakReference<Unicorn>> unicorns =
+        new Hashtable<>();
 
     // required to load native method implementations
     static {
@@ -107,7 +106,7 @@ public class Unicorn
     * @see hook_add, unicorn.BlockHook
     */
     private static void invokeBlockCallbacks(long eng, long address, int size) {
-        Unicorn u = unicorns.get(eng);
+        Unicorn u = unicorns.get(eng).get();
         if (u != null) {
             for (Tuple p : u.blockList) {
                 BlockHook bh = (BlockHook) p.function;
@@ -126,7 +125,7 @@ public class Unicorn
     * @see hook_add, unicorn.InterruptHook
     */
     private static void invokeInterruptCallbacks(long eng, int intno) {
-        Unicorn u = unicorns.get(eng);
+        Unicorn u = unicorns.get(eng).get();
         if (u != null) {
             for (Tuple p : u.intrList) {
                 InterruptHook ih = (InterruptHook) p.function;
@@ -146,7 +145,7 @@ public class Unicorn
     * @see hook_add, unicorn.CodeHook
     */
     private static void invokeCodeCallbacks(long eng, long address, int size) {
-        Unicorn u = unicorns.get(eng);
+        Unicorn u = unicorns.get(eng).get();
         if (u != null) {
             for (Tuple p : u.codeList) {
                 CodeHook ch = (CodeHook) p.function;
@@ -174,7 +173,7 @@ public class Unicorn
     private static boolean invokeEventMemCallbacks(long eng, int type,
             long address, int size,
             long value) {
-        Unicorn u = unicorns.get(eng);
+        Unicorn u = unicorns.get(eng).get();
         boolean result = true;
         if (u != null) {
             ArrayList<Tuple> funcList = u.eventMemLists.get(type);
@@ -199,7 +198,7 @@ public class Unicorn
     * @see hook_add, unicorn.ReadHook
     */
     private static void invokeReadCallbacks(long eng, long address, int size) {
-        Unicorn u = unicorns.get(eng);
+        Unicorn u = unicorns.get(eng).get();
         if (u != null) {
             for (Tuple p : u.readList) {
                 ReadHook rh = (ReadHook) p.function;
@@ -221,7 +220,7 @@ public class Unicorn
     */
     private static void invokeWriteCallbacks(long eng, long address, int size,
             long value) {
-        Unicorn u = unicorns.get(eng);
+        Unicorn u = unicorns.get(eng).get();
         if (u != null) {
             for (Tuple p : u.writeList) {
                 WriteHook wh = (WriteHook) p.function;
@@ -243,7 +242,7 @@ public class Unicorn
     * @see hook_add, unicorn.InHook
     */
     private static int invokeInCallbacks(long eng, int port, int size) {
-        Unicorn u = unicorns.get(eng);
+        Unicorn u = unicorns.get(eng).get();
         int result = 0;
         if (u != null) {
             for (Tuple p : u.inList) {
@@ -267,7 +266,7 @@ public class Unicorn
     */
     private static void invokeOutCallbacks(long eng, int port, int size,
             int value) {
-        Unicorn u = unicorns.get(eng);
+        Unicorn u = unicorns.get(eng).get();
         int result = 0;
         if (u != null) {
             for (Tuple p : u.outList) {
@@ -287,7 +286,7 @@ public class Unicorn
     * @see hook_add, unicorn.SyscallHook
     */
     private static void invokeSyscallCallbacks(long eng) {
-        Unicorn u = unicorns.get(eng);
+        Unicorn u = unicorns.get(eng).get();
         int result = 0;
         if (u != null) {
             for (Tuple p : u.syscallList) {
@@ -353,7 +352,7 @@ public class Unicorn
         this.arch = arch;
         this.mode = mode;
         eng = open(arch, mode);
-        unicorns.put(eng, this);
+        unicorns.put(eng, new WeakReference<>(this));
         allLists.add(blockList);
         allLists.add(intrList);
         allLists.add(codeList);
@@ -369,7 +368,6 @@ public class Unicorn
     *
     */
     protected void finalize() {
-        unicorns.remove(eng);
         close();
     }
 
@@ -379,7 +377,7 @@ public class Unicorn
     * @return hexadecimal number as (major << 8 | minor), which encodes both major
     *         & minor versions.
     *
-    *         For example Unicorn version 1.2 whould yield 0x0102
+    *         For example Unicorn version 1.2 would yield 0x0102
     */
     public native static int version();
 
@@ -396,7 +394,15 @@ public class Unicorn
     * Close the underlying uc_engine* eng associated with this Unicorn object
     *
     */
-    public native void close() throws UnicornException;
+    private native void _close() throws UnicornException;
+
+    public void close() throws UnicornException {
+        if (eng != 0) {
+            _close();
+            unicorns.remove(eng);
+            eng = 0;
+        }
+    }
 
     /**
     * Query internal status of engine.
