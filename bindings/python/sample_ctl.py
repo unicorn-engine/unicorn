@@ -57,7 +57,7 @@ def test_uc_ctl_tb_cache():
 
     # Now we clear cache for all TBs.
     for i in range(8):
-        uc.ctl_remove_cache(addr + i * 512)
+        uc.ctl_remove_cache(addr + i * 512, addr + i * 512 + 1)
     
     evicted = time_emulation(uc, addr, addr + len(code))
 
@@ -66,7 +66,7 @@ def test_uc_ctl_tb_cache():
 def trace_new_edge(uc, cur, prev, data):
     print(f">>> Getting a new edge from {hex(prev.pc + prev.size - 1)} to {hex(cur.pc)}")
 
-def trace_tcg_sub(uc, address, arg1, arg2, data):
+def trace_tcg_sub(uc, address, arg1, arg2, size, data):
     print(f">>> Get a tcg sub opcode at {hex(address)} with args: {arg1} and {arg2}")
 
 def test_uc_ctl_exits():

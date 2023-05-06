@@ -210,7 +210,7 @@ UC_HOOK_EDGE_GEN_CB = ctypes.CFUNCTYPE(
     None, uc_engine, ctypes.POINTER(uc_tb), ctypes.POINTER(uc_tb), ctypes.c_void_p
 )
 UC_HOOK_TCG_OPCODE_CB = ctypes.CFUNCTYPE(
-    None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_void_p
+    None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_void_p
 )
 
 # access to error code via @errno of UcError
@@ -647,9 +647,9 @@ class Uc(object):
         return result.value
 
     @_catch_hook_exception
-    def _hook_tcg_op_cb(self, handle, address, arg1, arg2, user_data):
+    def _hook_tcg_op_cb(self, handle, address, arg1, arg2, size, user_data):
         (cb, data) = self._callbacks[user_data]
-        cb(self, address, arg1, arg2, user_data)
+        cb(self, address, arg1, arg2, size, user_data)
 
     @_catch_hook_exception
     def _hook_edge_gen_cb(self, handle, cur, prev, user_data):
