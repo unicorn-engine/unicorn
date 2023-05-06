@@ -177,7 +177,7 @@ _setup_prototype(_uc, "uc_mem_regions", ucerr, uc_engine, ctypes.POINTER(ctypes.
 _setup_prototype(_uc, "uc_hook_add", ucerr, uc_engine, ctypes.POINTER(uc_hook_h), ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint64)
 _setup_prototype(_uc, "uc_ctl", ucerr, uc_engine, ctypes.c_int)
 
-UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p)
+UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_void_p)
 UC_HOOK_INSN_INVALID_CB = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_void_p)
 UC_HOOK_MEM_INVALID_CB = ctypes.CFUNCTYPE(
     ctypes.c_bool, uc_engine, ctypes.c_int,
@@ -198,7 +198,7 @@ UC_HOOK_INSN_OUT_CB = ctypes.CFUNCTYPE(
     ctypes.c_int, ctypes.c_uint32, ctypes.c_void_p
 )
 UC_HOOK_INSN_SYSCALL_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_void_p)
-UC_HOOK_INSN_SYS_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_void_p)
+UC_HOOK_INSN_SYS_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)
 UC_HOOK_INSN_CPUID_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_void_p)
 UC_MMIO_READ_CB = ctypes.CFUNCTYPE(
     ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.c_void_p
@@ -423,6 +423,9 @@ class uc_arm64_cp_reg(ctypes.Structure):
         ("op2", ctypes.c_uint32),
         ("val", ctypes.c_uint64)
     ]
+
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, ", ".join("%s=%s" % (k, getattr(self, k)) for (k, _) in self._fields_))
 
 class uc_x86_mmr(ctypes.Structure):
     """Memory-Management Register for instructions IDTR, GDTR, LDTR, TR."""
@@ -696,11 +699,9 @@ class Uc(object):
     def _hook_insn_sys_cb(self, handle, reg, pcp_reg, user_data):
         cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(uc_arm64_cp_reg)).contents
 
-        uc_arm64_cp_reg_tuple = namedtuple("uc_arm64_cp_reg_tuple", ["crn", "crm", "op0", "op1", "op2", "val"])
-
         (cb, data) = self._callbacks[user_data]
 
-        return cb(self, reg, uc_arm64_cp_reg_tuple(cp_reg.crn, cp_reg.crm, cp_reg.op0, cp_reg.op1, cp_reg.op2, cp_reg.val), data)
+        return cb(self, reg, cp_reg, data)
 
     @_catch_hook_exception
     def _hook_insn_out_cb(self, handle, port, size, value, user_data):
