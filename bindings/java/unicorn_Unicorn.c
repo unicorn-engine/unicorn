@@ -388,10 +388,10 @@ JNIEXPORT jboolean JNICALL Java_unicorn_Unicorn_arch_1supported(JNIEnv *env,
 
 /*
  * Class:     unicorn_Unicorn
- * Method:    close
+ * Method:    _close
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_unicorn_Unicorn_close(JNIEnv *env, jobject self)
+JNIEXPORT void JNICALL Java_unicorn_Unicorn__1close(JNIEnv *env, jobject self)
 {
     uc_engine *eng = getEngine(env, self);
     uc_err err = uc_close(eng);
