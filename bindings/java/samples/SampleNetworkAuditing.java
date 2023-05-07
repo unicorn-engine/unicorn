@@ -100,7 +100,7 @@ public class SampleNetworkAuditing {
                 long buf = ecx;
                 long count = edx;
 
-                byte[] content = uc.mem_read(buf, count);
+                byte[] content = uc.mem_read(buf, (int) count);
 
                 String msg = String.format("write data=%s count=%d to fd(%d)",
                     new String(content), count, fd);
@@ -166,7 +166,7 @@ public class SampleNetworkAuditing {
                     long addrlen =
                         toInt(uc.mem_read(args + SIZE_REG * 2, SIZE_REG));
 
-                    byte[] sock_addr = uc.mem_read(umyaddr, addrlen);
+                    byte[] sock_addr = uc.mem_read(umyaddr, (int) addrlen);
 
                     String msg = String.format("fd(%d) bind to %s", fd,
                         parse_sock_address(sock_addr));
@@ -181,7 +181,7 @@ public class SampleNetworkAuditing {
                     long addrlen =
                         toInt(uc.mem_read(args + SIZE_REG * 2, SIZE_REG));
 
-                    byte[] sock_addr = uc.mem_read(uservaddr, addrlen);
+                    byte[] sock_addr = uc.mem_read(uservaddr, (int) addrlen);
                     String msg = String.format("fd(%d) connect to %s", fd,
                         parse_sock_address(sock_addr));
                     fd_chains.add_log(fd, msg);
@@ -211,7 +211,7 @@ public class SampleNetworkAuditing {
                         long upeer_len = toInt(uc.mem_read(upeer_addrlen, 4));
 
                         byte[] sock_addr =
-                            uc.mem_read(upeer_sockaddr, upeer_len);
+                            uc.mem_read(upeer_sockaddr, (int) upeer_len);
 
                         String msg =
                             String.format("fd(%d) accept client with upeer=%s",
@@ -227,7 +227,7 @@ public class SampleNetworkAuditing {
                     long flags =
                         toInt(uc.mem_read(args + SIZE_REG * 3, SIZE_REG));
 
-                    byte[] buf = uc.mem_read(buff, length);
+                    byte[] buf = uc.mem_read(buff, (int) length);
                     String msg = String.format("fd(%d) send data=%s", fd,
                         new String(buf));
                     fd_chains.add_log(fd, msg);

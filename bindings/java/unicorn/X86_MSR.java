@@ -2,7 +2,7 @@
 
 Java bindings for the Unicorn Emulator Engine
 
-Copyright(c) 2015 Chris Eagle
+Copyright(c) 2023 Robert Xiao
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,6 +21,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
-public interface ReadHook extends Hook {
-    public void hook(Unicorn u, long address, int size, Object user);
+/** Model-specific register */
+public class X86_MSR {
+    public int rid;
+    public long value;
+
+    public X86_MSR(int rid, long value) {
+        this.rid = rid;
+        this.value = value;
+    }
+
+    @Override
+    public String toString() {
+        return "X86_MSR [rid=" + rid + ", value=" + value + "]";
+    }
 }

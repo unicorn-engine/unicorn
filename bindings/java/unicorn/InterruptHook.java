@@ -21,6 +21,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
+/** Callback for {@code UC_HOOK_INTR} */
 public interface InterruptHook extends Hook {
+    /** Called when a CPU interrupt occurs.
+     * 
+     * @param u       {@link Unicorn} instance firing this hook
+     * @param intno   CPU-specific interrupt number
+     * @param user    user data provided when registering this hook
+     */
     public void hook(Unicorn u, int intno, Object user);
 }

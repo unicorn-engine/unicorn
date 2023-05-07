@@ -2,7 +2,7 @@
 
 Java bindings for the Unicorn Emulator Engine
 
-Copyright(c) 2016 Chris Eagle
+Copyright(c) 2015 Chris Eagle
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,20 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
-public class MemRegion {
-    public long begin;
-    public long end;
-    public int perms;
+/** Base interface for {@code UC_HOOK_INSN} hooks */
+public interface InstructionHook extends Hook {
 
-    public MemRegion(long begin, long end, int perms) {
-        this.begin = begin;
-        this.end = end;
-        this.perms = perms;
-    }
-
-    @Override
-    public String toString() {
-        return "MemRegion [begin=" + begin + ", end=" + end + ", perms=" +
-            perms + "]";
-    }
 }

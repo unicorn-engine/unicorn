@@ -104,7 +104,8 @@ public class Sample_x86 {
     }
 
     private static class MyWriteInvalidHook implements EventMemHook {
-        public boolean hook(Unicorn u, long address, int size, long value,
+        public boolean hook(Unicorn u, int type, long address, int size,
+                long value,
                 Object user) {
             System.out.printf(
                 ">>> Missing memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
@@ -131,16 +132,18 @@ public class Sample_x86 {
         }
     }
 
-    private static class MyRead64Hook implements ReadHook {
-        public void hook(Unicorn u, long address, int size, Object user) {
+    private static class MyRead64Hook implements MemHook {
+        public void hook(Unicorn u, int type, long address, int size,
+                long value, Object user) {
             System.out.printf(
                 ">>> Memory is being READ at 0x%x, data size = %d\n", address,
                 size);
         }
     }
 
-    private static class MyWrite64Hook implements WriteHook {
-        public void hook(Unicorn u, long address, int size, long value,
+    private static class MyWrite64Hook implements MemHook {
+        public void hook(Unicorn u, int type, long address, int size,
+                long value,
                 Object user) {
             System.out.printf(
                 ">>> Memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
@@ -295,9 +298,9 @@ public class Sample_x86 {
         u.hook_add(new MyCodeHook(), 1, 0, null);
 
         // handle IN instruction
-        u.hook_add(new MyInHook(), null);
+        u.hook_add(new MyInHook(), Unicorn.UC_X86_INS_IN, 1, 0, null);
         // handle OUT instruction
-        u.hook_add(new MyOutHook(), null);
+        u.hook_add(new MyOutHook(), Unicorn.UC_X86_INS_OUT, 1, 0, null);
 
         // emulate machine code in infinite time
         u.emu_start(ADDRESS, ADDRESS + X86_CODE32_INOUT.length, 0, 0);
@@ -454,6 +457,7 @@ public class Sample_x86 {
 
         // intercept invalid memory events
         u.hook_add(new MyWriteInvalidHook(), Unicorn.UC_HOOK_MEM_WRITE_UNMAPPED,
+            1, 0,
             null);
 
         // emulate machine code in infinite time
@@ -591,10 +595,10 @@ public class Sample_x86 {
         u.hook_add(new MyCode64Hook(), ADDRESS, ADDRESS + 20, null);
 
         // tracing all memory WRITE access (with @begin > @end)
-        u.hook_add(new MyWrite64Hook(), 1, 0, null);
+        u.hook_add(new MyWrite64Hook(), Unicorn.UC_HOOK_MEM_WRITE, 1, 0, null);
 
         // tracing all memory READ access (with @begin > @end)
-        u.hook_add(new MyRead64Hook(), 1, 0, null);
+        u.hook_add(new MyRead64Hook(), Unicorn.UC_HOOK_MEM_READ, 1, 0, null);
 
         // emulate machine code in infinite time (last param = 0), or when
         // finishing all the code.

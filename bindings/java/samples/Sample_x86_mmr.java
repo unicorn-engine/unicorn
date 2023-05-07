@@ -58,8 +58,8 @@ public class Sample_x86_mmr {
 
         // read the registers back out   
         eax = (int) ((Long) uc.reg_read(Unicorn.UC_X86_REG_EAX)).longValue();
-        ldtr2 = (X86_MMR) uc.reg_read(Unicorn.UC_X86_REG_LDTR);
-        gdtr2 = (X86_MMR) uc.reg_read(Unicorn.UC_X86_REG_GDTR);
+        ldtr2 = (X86_MMR) uc.reg_read(Unicorn.UC_X86_REG_LDTR, null);
+        gdtr2 = (X86_MMR) uc.reg_read(Unicorn.UC_X86_REG_GDTR, null);
 
         System.out.printf(">>> EAX = 0x%x\n", eax);
 

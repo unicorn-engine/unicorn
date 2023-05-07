@@ -21,6 +21,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
-public interface OutHook extends Hook {
+/** Callback for {@code UC_HOOK_INSN} with {@code UC_X86_INS_OUT} */
+public interface OutHook extends InstructionHook {
+    /** Called to handle an x86 OUT instruction.
+     * 
+     * @param u       {@link Unicorn} instance firing this hook
+     * @param port    I/O port number
+     * @param size    size of the request (1, 2, or 4 bytes)
+     * @param user    user data provided when registering this hook
+     */
     public void hook(Unicorn u, int port, int size, int value, Object user);
 }

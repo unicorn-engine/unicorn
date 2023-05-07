@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
+/** Memory-Management Register for instructions IDTR, GDTR, LDTR, TR. */
 public class X86_MMR {
     public long base;
     public int limit;
@@ -39,5 +40,11 @@ public class X86_MMR {
         this.limit = limit;
         selector = 0;
         flags = 0;
+    }
+
+    @Override
+    public String toString() {
+        return "X86_MMR [base=" + base + ", limit=" + limit + ", flags=" +
+            flags + ", selector=" + selector + "]";
     }
 }
