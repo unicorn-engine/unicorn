@@ -75,7 +75,7 @@ public class Sample_mips {
 
     public static void test_mips_eb() {
 
-        Long r1 = 0x6789L;     // R1 register
+        long r1 = 0x6789L;     // R1 register
 
         System.out.print("Emulate MIPS code (big-endian)\n");
 
@@ -105,14 +105,14 @@ public class Sample_mips {
         // now print out some registers
         System.out.print(">>> Emulation done. Below is the CPU context\n");
 
-        r1 = (Long) u.reg_read(Unicorn.UC_MIPS_REG_1);
-        System.out.print(String.format(">>> R1 = 0x%x\n", r1.intValue()));
+        r1 = u.reg_read(Unicorn.UC_MIPS_REG_1);
+        System.out.print(String.format(">>> R1 = 0x%x\n", r1));
 
         u.close();
     }
 
     public static void test_mips_el() {
-        Long r1 = 0x6789L;     // R1 register
+        long r1 = 0x6789L;     // R1 register
 
         System.out.print("===========================\n");
         System.out.print("Emulate MIPS code (little-endian)\n");
@@ -143,8 +143,8 @@ public class Sample_mips {
         // now print out some registers
         System.out.print(">>> Emulation done. Below is the CPU context\n");
 
-        r1 = (Long) u.reg_read(Unicorn.UC_MIPS_REG_1);
-        System.out.print(String.format(">>> R1 = 0x%x\n", r1.intValue()));
+        r1 = u.reg_read(Unicorn.UC_MIPS_REG_1);
+        System.out.print(String.format(">>> R1 = 0x%x\n", r1));
 
         u.close();
     }

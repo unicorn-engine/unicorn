@@ -73,26 +73,26 @@ public class Sample_m68k {
     }
 
     public static void test_m68k() {
-        Long d0 = 0x0000L;     // d0 data register
-        Long d1 = 0x0000L;     // d1 data register
-        Long d2 = 0x0000L;     // d2 data register
-        Long d3 = 0x0000L;     // d3 data register
-        Long d4 = 0x0000L;     // d4 data register
-        Long d5 = 0x0000L;     // d5 data register
-        Long d6 = 0x0000L;     // d6 data register
-        Long d7 = 0x0000L;     // d7 data register
+        long d0 = 0x0000L;     // d0 data register
+        long d1 = 0x0000L;     // d1 data register
+        long d2 = 0x0000L;     // d2 data register
+        long d3 = 0x0000L;     // d3 data register
+        long d4 = 0x0000L;     // d4 data register
+        long d5 = 0x0000L;     // d5 data register
+        long d6 = 0x0000L;     // d6 data register
+        long d7 = 0x0000L;     // d7 data register
 
-        Long a0 = 0x0000L;     // a0 address register
-        Long a1 = 0x0000L;     // a1 address register
-        Long a2 = 0x0000L;     // a2 address register
-        Long a3 = 0x0000L;     // a3 address register
-        Long a4 = 0x0000L;     // a4 address register
-        Long a5 = 0x0000L;     // a5 address register
-        Long a6 = 0x0000L;     // a6 address register
-        Long a7 = 0x0000L;     // a6 address register
+        long a0 = 0x0000L;     // a0 address register
+        long a1 = 0x0000L;     // a1 address register
+        long a2 = 0x0000L;     // a2 address register
+        long a3 = 0x0000L;     // a3 address register
+        long a4 = 0x0000L;     // a4 address register
+        long a5 = 0x0000L;     // a5 address register
+        long a6 = 0x0000L;     // a6 address register
+        long a7 = 0x0000L;     // a6 address register
 
-        Long pc = 0x0000L;     // program counter
-        Long sr = 0x0000L;     // status register
+        long pc = 0x0000L;     // program counter
+        long sr = 0x0000L;     // status register
 
         System.out.print("Emulate M68K code\n");
 
@@ -141,45 +141,45 @@ public class Sample_m68k {
         // now print out some registers
         System.out.print(">>> Emulation done. Below is the CPU context\n");
 
-        d0 = (Long) u.reg_read(Unicorn.UC_M68K_REG_D0);
-        d1 = (Long) u.reg_read(Unicorn.UC_M68K_REG_D1);
-        d2 = (Long) u.reg_read(Unicorn.UC_M68K_REG_D2);
-        d3 = (Long) u.reg_read(Unicorn.UC_M68K_REG_D3);
-        d4 = (Long) u.reg_read(Unicorn.UC_M68K_REG_D4);
-        d5 = (Long) u.reg_read(Unicorn.UC_M68K_REG_D5);
-        d6 = (Long) u.reg_read(Unicorn.UC_M68K_REG_D6);
-        d7 = (Long) u.reg_read(Unicorn.UC_M68K_REG_D7);
+        d0 = u.reg_read(Unicorn.UC_M68K_REG_D0);
+        d1 = u.reg_read(Unicorn.UC_M68K_REG_D1);
+        d2 = u.reg_read(Unicorn.UC_M68K_REG_D2);
+        d3 = u.reg_read(Unicorn.UC_M68K_REG_D3);
+        d4 = u.reg_read(Unicorn.UC_M68K_REG_D4);
+        d5 = u.reg_read(Unicorn.UC_M68K_REG_D5);
+        d6 = u.reg_read(Unicorn.UC_M68K_REG_D6);
+        d7 = u.reg_read(Unicorn.UC_M68K_REG_D7);
 
-        a0 = (Long) u.reg_read(Unicorn.UC_M68K_REG_A0);
-        a1 = (Long) u.reg_read(Unicorn.UC_M68K_REG_A1);
-        a2 = (Long) u.reg_read(Unicorn.UC_M68K_REG_A2);
-        a3 = (Long) u.reg_read(Unicorn.UC_M68K_REG_A3);
-        a4 = (Long) u.reg_read(Unicorn.UC_M68K_REG_A4);
-        a5 = (Long) u.reg_read(Unicorn.UC_M68K_REG_A5);
-        a6 = (Long) u.reg_read(Unicorn.UC_M68K_REG_A6);
-        a7 = (Long) u.reg_read(Unicorn.UC_M68K_REG_A7);
+        a0 = u.reg_read(Unicorn.UC_M68K_REG_A0);
+        a1 = u.reg_read(Unicorn.UC_M68K_REG_A1);
+        a2 = u.reg_read(Unicorn.UC_M68K_REG_A2);
+        a3 = u.reg_read(Unicorn.UC_M68K_REG_A3);
+        a4 = u.reg_read(Unicorn.UC_M68K_REG_A4);
+        a5 = u.reg_read(Unicorn.UC_M68K_REG_A5);
+        a6 = u.reg_read(Unicorn.UC_M68K_REG_A6);
+        a7 = u.reg_read(Unicorn.UC_M68K_REG_A7);
 
-        pc = (Long) u.reg_read(Unicorn.UC_M68K_REG_PC);
-        sr = (Long) u.reg_read(Unicorn.UC_M68K_REG_SR);
+        pc = u.reg_read(Unicorn.UC_M68K_REG_PC);
+        sr = u.reg_read(Unicorn.UC_M68K_REG_SR);
 
         System.out.print(String.format(">>> A0 = 0x%x\t\t>>> D0 = 0x%x\n",
-            a0.intValue(), d0.intValue()));
+            a0, d0));
         System.out.print(String.format(">>> A1 = 0x%x\t\t>>> D1 = 0x%x\n",
-            a1.intValue(), d1.intValue()));
+            a1, d1));
         System.out.print(String.format(">>> A2 = 0x%x\t\t>>> D2 = 0x%x\n",
-            a2.intValue(), d2.intValue()));
+            a2, d2));
         System.out.print(String.format(">>> A3 = 0x%x\t\t>>> D3 = 0x%x\n",
-            a3.intValue(), d3.intValue()));
+            a3, d3));
         System.out.print(String.format(">>> A4 = 0x%x\t\t>>> D4 = 0x%x\n",
-            a4.intValue(), d4.intValue()));
+            a4, d4));
         System.out.print(String.format(">>> A5 = 0x%x\t\t>>> D5 = 0x%x\n",
-            a5.intValue(), d5.intValue()));
+            a5, d5));
         System.out.print(String.format(">>> A6 = 0x%x\t\t>>> D6 = 0x%x\n",
-            a6.intValue(), d6.intValue()));
+            a6, d6));
         System.out.print(String.format(">>> A7 = 0x%x\t\t>>> D7 = 0x%x\n",
-            a7.intValue(), d7.intValue()));
-        System.out.print(String.format(">>> PC = 0x%x\n", pc.intValue()));
-        System.out.print(String.format(">>> SR = 0x%x\n", sr.intValue()));
+            a7, d7));
+        System.out.print(String.format(">>> PC = 0x%x\n", pc));
+        System.out.print(String.format(">>> SR = 0x%x\n", sr));
 
         u.close();
     }

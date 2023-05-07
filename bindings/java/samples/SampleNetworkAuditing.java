@@ -67,11 +67,11 @@ public class SampleNetworkAuditing {
             if (intno != 0x80) {
                 return;
             }
-            Long eax = (Long) uc.reg_read(Unicorn.UC_X86_REG_EAX);
-            Long ebx = (Long) uc.reg_read(Unicorn.UC_X86_REG_EBX);
-            Long ecx = (Long) uc.reg_read(Unicorn.UC_X86_REG_ECX);
-            Long edx = (Long) uc.reg_read(Unicorn.UC_X86_REG_EDX);
-            Long eip = (Long) uc.reg_read(Unicorn.UC_X86_REG_EIP);
+            long eax = uc.reg_read(Unicorn.UC_X86_REG_EAX);
+            long ebx = uc.reg_read(Unicorn.UC_X86_REG_EBX);
+            long ecx = uc.reg_read(Unicorn.UC_X86_REG_ECX);
+            long edx = uc.reg_read(Unicorn.UC_X86_REG_EDX);
+            long eip = uc.reg_read(Unicorn.UC_X86_REG_EIP);
 
             // System.out.printf(">>> INTERRUPT %d\n", toInt(eax));
 
@@ -113,7 +113,7 @@ public class SampleNetworkAuditing {
                 long mode = edx;
                 String filename = read_string(uc, filename_addr);
 
-                Long dummy_fd = get_id();
+                long dummy_fd = get_id();
                 uc.reg_write(Unicorn.UC_X86_REG_EAX, dummy_fd);
 
                 String msg = String.format(
@@ -133,8 +133,8 @@ public class SampleNetworkAuditing {
                 System.out.printf(">>> SYS_DUP2 oldfd=%d newfd=%d\n", ebx, ecx);
             } else if (eax == 102) { // sys_socketcall
                 // ref: http://www.skyfree.org/linux/kernel_network/socket.html
-                Long call = (Long) uc.reg_read(Unicorn.UC_X86_REG_EBX);
-                Long args = (Long) uc.reg_read(Unicorn.UC_X86_REG_ECX);
+                long call = uc.reg_read(Unicorn.UC_X86_REG_EBX);
+                long args = uc.reg_read(Unicorn.UC_X86_REG_ECX);
 
                 // int sys_socketcall(int call, unsigned long *args)
                 if (call == 1) { // sys_socket
@@ -146,7 +146,7 @@ public class SampleNetworkAuditing {
                     long protocol =
                         toInt(uc.mem_read(args + SIZE_REG * 2, SIZE_REG));
 
-                    Long dummy_fd = get_id();
+                    long dummy_fd = get_id();
                     uc.reg_write(Unicorn.UC_X86_REG_EAX, dummy_fd);
 
                     if (family == 2) {  // AF_INET            

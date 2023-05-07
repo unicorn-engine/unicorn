@@ -94,8 +94,8 @@ public class Sample_x86 {
                 ">>> Tracing instruction at 0x%x, instruction size = 0x%x\n",
                 address, size);
 
-            Long eflags = (Long) u.reg_read(Unicorn.UC_X86_REG_EFLAGS);
-            System.out.printf(">>> --- EFLAGS is 0x%x\n", eflags.intValue());
+            long eflags = u.reg_read(Unicorn.UC_X86_REG_EFLAGS);
+            System.out.printf(">>> --- EFLAGS is 0x%x\n", eflags);
 
             // Uncomment below code to stop the emulation using uc_emu_stop()
             // if (address == 0x1000009)
@@ -120,11 +120,11 @@ public class Sample_x86 {
     // callback for tracing instruction
     private static class MyCode64Hook implements CodeHook {
         public void hook(Unicorn u, long address, int size, Object user_data) {
-            Long r_rip = (Long) u.reg_read(Unicorn.UC_X86_REG_RIP);
+            long r_rip = u.reg_read(Unicorn.UC_X86_REG_RIP);
             System.out.printf(
                 ">>> Tracing instruction at 0x%x, instruction size = 0x%x\n",
                 address, size);
-            System.out.printf(">>> RIP is 0x%x\n", r_rip.longValue());
+            System.out.printf(">>> RIP is 0x%x\n", r_rip);
 
             // Uncomment below code to stop the emulation using uc_emu_stop()
             // if (address == 0x1000009)
@@ -155,11 +155,11 @@ public class Sample_x86 {
     // this returns the data read from the port
     private static class MyInHook implements InHook {
         public int hook(Unicorn u, int port, int size, Object user_data) {
-            Long r_eip = (Long) u.reg_read(Unicorn.UC_X86_REG_EIP);
+            long r_eip = u.reg_read(Unicorn.UC_X86_REG_EIP);
 
             System.out.printf(
                 "--- reading from port 0x%x, size: %d, address: 0x%x\n", port,
-                size, r_eip.intValue());
+                size, r_eip);
 
             switch (size) {
             case 1:
@@ -180,34 +180,34 @@ public class Sample_x86 {
     private static class MyOutHook implements OutHook {
         public void hook(Unicorn u, int port, int size, int value,
                 Object user) {
-            Long eip = (Long) u.reg_read(Unicorn.UC_X86_REG_EIP);
-            Long tmp = null;
+            long eip = u.reg_read(Unicorn.UC_X86_REG_EIP);
+            long tmp = 0;
             System.out.printf(
                 "--- writing to port 0x%x, size: %d, value: 0x%x, address: 0x%x\n",
-                port, size, value, eip.intValue());
+                port, size, value, eip);
 
             // confirm that value is indeed the value of AL/AX/EAX
             switch (size) {
             default:
                 return;   // should never reach this
             case 1:
-                tmp = (Long) u.reg_read(Unicorn.UC_X86_REG_AL);
+                tmp = u.reg_read(Unicorn.UC_X86_REG_AL);
                 break;
             case 2:
-                tmp = (Long) u.reg_read(Unicorn.UC_X86_REG_AX);
+                tmp = u.reg_read(Unicorn.UC_X86_REG_AX);
                 break;
             case 4:
-                tmp = (Long) u.reg_read(Unicorn.UC_X86_REG_EAX);
+                tmp = u.reg_read(Unicorn.UC_X86_REG_EAX);
                 break;
             }
 
-            System.out.printf("--- register value = 0x%x\n", tmp.intValue());
+            System.out.printf("--- register value = 0x%x\n", tmp);
         }
     }
 
     public static void test_i386() {
-        Long r_ecx = 0x1234L;     // ECX register
-        Long r_edx = 0x7890L;     // EDX register
+        long r_ecx = 0x1234L;     // ECX register
+        long r_edx = 0x7890L;     // EDX register
 
         System.out.print("Emulate i386 code\n");
 
@@ -254,10 +254,10 @@ public class Sample_x86 {
         // now print out some registers
         System.out.print(">>> Emulation done. Below is the CPU context\n");
 
-        r_ecx = (Long) uc.reg_read(Unicorn.UC_X86_REG_ECX);
-        r_edx = (Long) uc.reg_read(Unicorn.UC_X86_REG_EDX);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx.intValue());
-        System.out.printf(">>> EDX = 0x%x\n", r_edx.intValue());
+        r_ecx = uc.reg_read(Unicorn.UC_X86_REG_ECX);
+        r_edx = uc.reg_read(Unicorn.UC_X86_REG_EDX);
+        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
+        System.out.printf(">>> EDX = 0x%x\n", r_edx);
 
         // read from memory
         try {
@@ -272,8 +272,8 @@ public class Sample_x86 {
     }
 
     public static void test_i386_inout() {
-        Long r_eax = 0x1234L;     // ECX register
-        Long r_ecx = 0x6789L;     // EDX register
+        long r_eax = 0x1234L;     // ECX register
+        long r_ecx = 0x6789L;     // EDX register
 
         System.out.print("===================================\n");
         System.out.print("Emulate i386 code with IN/OUT instructions\n");
@@ -308,10 +308,10 @@ public class Sample_x86 {
         // now print out some registers
         System.out.print(">>> Emulation done. Below is the CPU context\n");
 
-        r_eax = (Long) u.reg_read(Unicorn.UC_X86_REG_EAX);
-        r_ecx = (Long) u.reg_read(Unicorn.UC_X86_REG_ECX);
-        System.out.printf(">>> EAX = 0x%x\n", r_eax.intValue());
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx.intValue());
+        r_eax = u.reg_read(Unicorn.UC_X86_REG_EAX);
+        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
+        System.out.printf(">>> EAX = 0x%x\n", r_eax);
+        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
 
         u.close();
     }
@@ -345,8 +345,8 @@ public class Sample_x86 {
 
     // emulate code that loop forever
     public static void test_i386_loop() {
-        Long r_ecx = 0x1234L;     // ECX register
-        Long r_edx = 0x7890L;     // EDX register
+        long r_ecx = 0x1234L;     // ECX register
+        long r_edx = 0x7890L;     // EDX register
 
         System.out.print("===================================\n");
         System.out.print("Emulate i386 code that loop forever\n");
@@ -372,18 +372,18 @@ public class Sample_x86 {
         // now print out some registers
         System.out.print(">>> Emulation done. Below is the CPU context\n");
 
-        r_ecx = (Long) u.reg_read(Unicorn.UC_X86_REG_ECX);
-        r_edx = (Long) u.reg_read(Unicorn.UC_X86_REG_EDX);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx.intValue());
-        System.out.printf(">>> EDX = 0x%x\n", r_edx.intValue());
+        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
+        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX);
+        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
+        System.out.printf(">>> EDX = 0x%x\n", r_edx);
 
         u.close();
     }
 
     // emulate code that read invalid memory
     public static void test_i386_invalid_mem_read() {
-        Long r_ecx = 0x1234L;     // ECX register
-        Long r_edx = 0x7890L;     // EDX register
+        long r_ecx = 0x1234L;     // ECX register
+        long r_edx = 0x7890L;     // EDX register
 
         System.out.print("===================================\n");
         System.out.print("Emulate i386 code that read from invalid memory\n");
@@ -420,18 +420,18 @@ public class Sample_x86 {
         // now print out some registers
         System.out.print(">>> Emulation done. Below is the CPU context\n");
 
-        r_ecx = (Long) u.reg_read(Unicorn.UC_X86_REG_ECX);
-        r_edx = (Long) u.reg_read(Unicorn.UC_X86_REG_EDX);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx.intValue());
-        System.out.printf(">>> EDX = 0x%x\n", r_edx.intValue());
+        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
+        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX);
+        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
+        System.out.printf(">>> EDX = 0x%x\n", r_edx);
 
         u.close();
     }
 
     // emulate code that read invalid memory
     public static void test_i386_invalid_mem_write() {
-        Long r_ecx = 0x1234L;     // ECX register
-        Long r_edx = 0x7890L;     // EDX register
+        long r_ecx = 0x1234L;     // ECX register
+        long r_edx = 0x7890L;     // EDX register
 
         System.out.print("===================================\n");
         System.out.print("Emulate i386 code that write to invalid memory\n");
@@ -472,10 +472,10 @@ public class Sample_x86 {
         // now print out some registers
         System.out.print(">>> Emulation done. Below is the CPU context\n");
 
-        r_ecx = (Long) u.reg_read(Unicorn.UC_X86_REG_ECX);
-        r_edx = (Long) u.reg_read(Unicorn.UC_X86_REG_EDX);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx.intValue());
-        System.out.printf(">>> EDX = 0x%x\n", r_edx.intValue());
+        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
+        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX);
+        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
+        System.out.printf(">>> EDX = 0x%x\n", r_edx);
 
         // read from memory
         byte tmp[] = u.mem_read(0xaaaaaaaa, 4);
@@ -496,8 +496,8 @@ public class Sample_x86 {
 
     // emulate code that jump to invalid memory
     public static void test_i386_jump_invalid() {
-        Long r_ecx = 0x1234L;     // ECX register
-        Long r_edx = 0x7890L;     // EDX register
+        long r_ecx = 0x1234L;     // ECX register
+        long r_edx = 0x7890L;     // EDX register
 
         System.out.print("===================================\n");
         System.out.print("Emulate i386 code that jumps to invalid memory\n");
@@ -533,10 +533,10 @@ public class Sample_x86 {
         // now print out some registers
         System.out.print(">>> Emulation done. Below is the CPU context\n");
 
-        r_ecx = (Long) u.reg_read(Unicorn.UC_X86_REG_ECX);
-        r_edx = (Long) u.reg_read(Unicorn.UC_X86_REG_EDX);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx.intValue());
-        System.out.printf(">>> EDX = 0x%x\n", r_edx.intValue());
+        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
+        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX);
+        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
+        System.out.printf(">>> EDX = 0x%x\n", r_edx);
 
         u.close();
     }
@@ -607,43 +607,43 @@ public class Sample_x86 {
         // now print out some registers
         System.out.print(">>> Emulation done. Below is the CPU context\n");
 
-        Long r_rax = (Long) u.reg_read(Unicorn.UC_X86_REG_RAX);
-        Long r_rbx = (Long) u.reg_read(Unicorn.UC_X86_REG_RBX);
-        Long r_rcx = (Long) u.reg_read(Unicorn.UC_X86_REG_RCX);
-        Long r_rdx = (Long) u.reg_read(Unicorn.UC_X86_REG_RDX);
-        Long r_rsi = (Long) u.reg_read(Unicorn.UC_X86_REG_RSI);
-        Long r_rdi = (Long) u.reg_read(Unicorn.UC_X86_REG_RDI);
-        Long r_r8 = (Long) u.reg_read(Unicorn.UC_X86_REG_R8);
-        Long r_r9 = (Long) u.reg_read(Unicorn.UC_X86_REG_R9);
-        Long r_r10 = (Long) u.reg_read(Unicorn.UC_X86_REG_R10);
-        Long r_r11 = (Long) u.reg_read(Unicorn.UC_X86_REG_R11);
-        Long r_r12 = (Long) u.reg_read(Unicorn.UC_X86_REG_R12);
-        Long r_r13 = (Long) u.reg_read(Unicorn.UC_X86_REG_R13);
-        Long r_r14 = (Long) u.reg_read(Unicorn.UC_X86_REG_R14);
-        Long r_r15 = (Long) u.reg_read(Unicorn.UC_X86_REG_R15);
+        long r_rax = u.reg_read(Unicorn.UC_X86_REG_RAX);
+        long r_rbx = u.reg_read(Unicorn.UC_X86_REG_RBX);
+        long r_rcx = u.reg_read(Unicorn.UC_X86_REG_RCX);
+        long r_rdx = u.reg_read(Unicorn.UC_X86_REG_RDX);
+        long r_rsi = u.reg_read(Unicorn.UC_X86_REG_RSI);
+        long r_rdi = u.reg_read(Unicorn.UC_X86_REG_RDI);
+        long r_r8 = u.reg_read(Unicorn.UC_X86_REG_R8);
+        long r_r9 = u.reg_read(Unicorn.UC_X86_REG_R9);
+        long r_r10 = u.reg_read(Unicorn.UC_X86_REG_R10);
+        long r_r11 = u.reg_read(Unicorn.UC_X86_REG_R11);
+        long r_r12 = u.reg_read(Unicorn.UC_X86_REG_R12);
+        long r_r13 = u.reg_read(Unicorn.UC_X86_REG_R13);
+        long r_r14 = u.reg_read(Unicorn.UC_X86_REG_R14);
+        long r_r15 = u.reg_read(Unicorn.UC_X86_REG_R15);
 
-        System.out.printf(">>> RAX = 0x%x\n", r_rax.longValue());
-        System.out.printf(">>> RBX = 0x%x\n", r_rbx.longValue());
-        System.out.printf(">>> RCX = 0x%x\n", r_rcx.longValue());
-        System.out.printf(">>> RDX = 0x%x\n", r_rdx.longValue());
-        System.out.printf(">>> RSI = 0x%x\n", r_rsi.longValue());
-        System.out.printf(">>> RDI = 0x%x\n", r_rdi.longValue());
-        System.out.printf(">>> R8 = 0x%x\n", r_r8.longValue());
-        System.out.printf(">>> R9 = 0x%x\n", r_r9.longValue());
-        System.out.printf(">>> R10 = 0x%x\n", r_r10.longValue());
-        System.out.printf(">>> R11 = 0x%x\n", r_r11.longValue());
-        System.out.printf(">>> R12 = 0x%x\n", r_r12.longValue());
-        System.out.printf(">>> R13 = 0x%x\n", r_r13.longValue());
-        System.out.printf(">>> R14 = 0x%x\n", r_r14.longValue());
-        System.out.printf(">>> R15 = 0x%x\n", r_r15.longValue());
+        System.out.printf(">>> RAX = 0x%x\n", r_rax);
+        System.out.printf(">>> RBX = 0x%x\n", r_rbx);
+        System.out.printf(">>> RCX = 0x%x\n", r_rcx);
+        System.out.printf(">>> RDX = 0x%x\n", r_rdx);
+        System.out.printf(">>> RSI = 0x%x\n", r_rsi);
+        System.out.printf(">>> RDI = 0x%x\n", r_rdi);
+        System.out.printf(">>> R8 = 0x%x\n", r_r8);
+        System.out.printf(">>> R9 = 0x%x\n", r_r9);
+        System.out.printf(">>> R10 = 0x%x\n", r_r10);
+        System.out.printf(">>> R11 = 0x%x\n", r_r11);
+        System.out.printf(">>> R12 = 0x%x\n", r_r12);
+        System.out.printf(">>> R13 = 0x%x\n", r_r13);
+        System.out.printf(">>> R14 = 0x%x\n", r_r14);
+        System.out.printf(">>> R15 = 0x%x\n", r_r15);
 
         u.close();
     }
 
     public static void test_x86_16() {
-        Long eax = 7L;
-        Long ebx = 5L;
-        Long esi = 6L;
+        long eax = 7L;
+        long ebx = 5L;
+        long esi = 6L;
 
         System.out.print("Emulate x86 16-bit code\n");
 
