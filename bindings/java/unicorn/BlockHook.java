@@ -21,6 +21,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
+/** Callback for {@code UC_HOOK_BLOCK} */
 public interface BlockHook extends Hook {
+    /** Called on each basic block within the hooked range.
+     * 
+     * @param u       {@link Unicorn} instance firing this hook
+     * @param address address of the first instruction in the block
+     * @param size    size of the block, in bytes
+     * @param user    user data provided when registering this hook
+     */
     public void hook(Unicorn u, long address, int size, Object user);
 }

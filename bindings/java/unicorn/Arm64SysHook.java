@@ -2,7 +2,7 @@
 
 Java bindings for the Unicorn Emulator Engine
 
-Copyright(c) 2015 Chris Eagle
+Copyright(c) 2023 Robert Xiao
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,22 +21,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
-/** Callback for {@code UC_HOOK_MEM_VALID}
- * (<code>UC_HOOK_MEM_{READ,WRITE,FETCH}</code> and/or
- * {@code UC_HOOK_MEM_READ_AFTER}) */
-public interface MemHook extends Hook {
-    /** Called when a valid memory access occurs within the registered range.
+/** Callback for {@code UC_HOOK_INSN} with {@code UC_ARM64_INS_MRS},
+ * {@code UC_ARM64_INS_MSR}, {@code UC_ARM64_INS_SYS}
+ * or {@code UC_ARM64_INS_SYSL} */
+public interface Arm64SysHook extends InstructionHook {
+    /** Called to handle an AArch64 MRS, MSR, SYS or SYSL instruction.
      * 
      * @param u       {@link Unicorn} instance firing this hook
-     * @param type    type of the memory access: one of {@code UC_MEM_READ},
-     *                {@code UC_MEM_WRITE} or {@code UC_MEM_READ_AFTER}.
-     * @param address address of the memory access
-     * @param size    size of the memory access
-     * @param value   value read ({@code UC_MEM_READ_AFTER} only) or written
-     *                ({@code UC_MEM_WRITE} only). Not meaningful for
-     *                {@code UC_MEM_READ} events.
+     * @param reg     source or destination register
+     *                ({@code UC_ARM64_REG_X*} constant)
+     * @param cp_reg  coprocessor register specification
+     *                ({@code .val} = current value of {@code reg})
      * @param user    user data provided when registering this hook
+     * @return        1 to skip the instruction (marking it as handled),
+     *                0 to let QEMU handle it
      */
-    public void hook(Unicorn u, int type, long address, int size, long value,
-            Object user);
+    public int hook(Unicorn u, int reg, Arm64_CP cp_reg, Object user);
 }

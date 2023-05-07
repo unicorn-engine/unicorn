@@ -21,10 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
-/**
- * Base class for all unicorn hooking interfaces
- */
-
+/** Base interface for all Unicorn hooks */
 public interface Hook {
 
 }

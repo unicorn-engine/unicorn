@@ -2,7 +2,7 @@
 
 Java bindings for the Unicorn Emulator Engine
 
-Copyright(c) 2016 Chris Eagle
+Copyright(c) 2023 Robert Xiao
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,20 +21,23 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
-public class MemRegion {
-    public long begin;
-    public long end;
-    public int perms;
+/** ARM64 coprocessor registers for instructions MRS, MSR, SYS, SYSL */
+public class Arm64_CP {
+    public int crn, crm, op0, op1, op2;
+    public long val;
 
-    public MemRegion(long begin, long end, int perms) {
-        this.begin = begin;
-        this.end = end;
-        this.perms = perms;
+    public Arm64_CP(int crn, int crm, int op0, int op1, int op2, long val) {
+        this.crn = crn;
+        this.crm = crm;
+        this.op0 = op0;
+        this.op1 = op1;
+        this.op2 = op2;
+        this.val = val;
     }
 
     @Override
     public String toString() {
-        return "MemRegion [begin=" + begin + ", end=" + end + ", perms=" +
-            perms + "]";
+        return "Arm64_CP [crn=" + crn + ", crm=" + crm + ", op0=" + op0 +
+            ", op1=" + op1 + ", op2=" + op2 + ", val=" + val + "]";
     }
 }

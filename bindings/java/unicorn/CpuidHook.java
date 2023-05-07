@@ -2,7 +2,7 @@
 
 Java bindings for the Unicorn Emulator Engine
 
-Copyright(c) 2016 Chris Eagle
+Copyright(c) 2023 Robert Xiao
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,20 +21,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
-public class MemRegion {
-    public long begin;
-    public long end;
-    public int perms;
-
-    public MemRegion(long begin, long end, int perms) {
-        this.begin = begin;
-        this.end = end;
-        this.perms = perms;
-    }
-
-    @Override
-    public String toString() {
-        return "MemRegion [begin=" + begin + ", end=" + end + ", perms=" +
-            perms + "]";
-    }
+/** Callback for {@code UC_HOOK_INSN} with {@code UC_X86_INS_CPUID} */
+public interface CpuidHook extends InstructionHook {
+    /** Called to handle an x86 CPUID instruction.
+     * 
+     * @param u       {@link Unicorn} instance firing this hook
+     * @param user    user data provided when registering this hook
+     * @return        1 to skip the instruction (marking it as handled),
+     *                0 to let QEMU handle it
+     */
+    public int hook(Unicorn u, Object user);
 }

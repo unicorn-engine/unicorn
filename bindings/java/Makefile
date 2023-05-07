@@ -51,7 +51,7 @@ unicorn_Unicorn.h: unicorn/Unicorn.java
 	javac -h . $<
 
 unicorn_Unicorn.o: unicorn_Unicorn.c unicorn_Unicorn.h
-	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
+	$(CC) -O2 -Wall -Wextra -Wno-unused-parameter -c $(CFLAGS) $(INCS) $< -o $@
 
 libunicorn_java$(LIB_EXT): unicorn_Unicorn.o
 
@@ -66,7 +66,7 @@ jar: jarfiles
 	jar cf $(JARFILE) unicorn/*.class
 
 test: lib samples tests
-	java -cp .:testdep/hamcrest-2.2.jar:testdep/junit-4.13.2.jar org.junit.runner.JUnitCore $(subst /,.,$(TESTS:.java=))
+	java -Xcheck:jni -cp .:testdep/hamcrest-2.2.jar:testdep/junit-4.13.2.jar org.junit.runner.JUnitCore $(subst /,.,$(TESTS:.java=))
 
 install: lib jar
 	cp libunicorn_java$(LIB_EXT) /usr/lib

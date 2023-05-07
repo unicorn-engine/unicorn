@@ -2,6 +2,8 @@ package tests;
 
 import static org.junit.Assert.assertEquals;
 
+import java.math.BigInteger;
+
 import org.junit.Test;
 
 import unicorn.Unicorn;
@@ -14,9 +16,14 @@ public class RegressionTests {
     public void testARM64VReg() {
         Unicorn uc = new Unicorn(Unicorn.UC_ARCH_ARM64, Unicorn.UC_MODE_ARM);
         uc.reg_write(Unicorn.UC_ARM64_REG_X0, 0x1);
-        uc.reg_write(Unicorn.UC_ARM64_REG_V0, 0x2);
+        uc.reg_write(Unicorn.UC_ARM64_REG_V0, BigInteger.valueOf(0x1234));
         uc.reg_read(Unicorn.UC_ARM64_REG_X0);
-        uc.reg_read(Unicorn.UC_ARM64_REG_V0); // should not crash
+        assertEquals("V0 value", BigInteger.valueOf(0x1234),
+            uc.reg_read(Unicorn.UC_ARM64_REG_V0, null)); // should not crash
+        assertEquals("V0 low byte", 0x34,
+            uc.reg_read(Unicorn.UC_ARM64_REG_B0));
+        assertEquals("V0 low halfword", 0x1234,
+            uc.reg_read(Unicorn.UC_ARM64_REG_H0));
         uc.close();
     }
 
@@ -48,7 +55,7 @@ public class RegressionTests {
         u.close();
     }
 
-    /** Test that close() can be called multiple times without crashing */
+    /** Test that Unicorn instances are properly garbage-collected */
     @Test
     public void testUnicornsWillGC() {
         final boolean[] close_called = { false };
