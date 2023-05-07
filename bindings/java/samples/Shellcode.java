@@ -67,9 +67,9 @@ public class Shellcode {
                 "Tracing instruction at 0x%x, instruction size = 0x%x\n",
                 address, size));
 
-            Long r_eip = (Long) u.reg_read(Unicorn.UC_X86_REG_EIP);
+            long r_eip = u.reg_read(Unicorn.UC_X86_REG_EIP);
             System.out.print(
-                String.format("*** EIP = %x ***: ", r_eip.intValue()));
+                String.format("*** EIP = %x ***: ", r_eip));
 
             size = Math.min(16, size);
 
@@ -83,8 +83,8 @@ public class Shellcode {
 
     public static class MyInterruptHook implements InterruptHook {
         public void hook(Unicorn u, int intno, Object user) {
-            Long r_ecx;
-            Long r_edx;
+            long r_ecx;
+            long r_edx;
             int size;
 
             // only handle Linux syscall
@@ -92,27 +92,27 @@ public class Shellcode {
                 return;
             }
 
-            Long r_eax = (Long) u.reg_read(Unicorn.UC_X86_REG_EAX);
-            Long r_eip = (Long) u.reg_read(Unicorn.UC_X86_REG_EIP);
+            long r_eax = u.reg_read(Unicorn.UC_X86_REG_EAX);
+            long r_eip = u.reg_read(Unicorn.UC_X86_REG_EIP);
 
-            switch (r_eax.intValue()) {
+            switch ((int) r_eax) {
             default:
                 System.out.print(
                     String.format(">>> 0x%x: interrupt 0x%x, EAX = 0x%x\n",
-                        r_eip.intValue(), intno, r_eax.intValue()));
+                        r_eip, intno, r_eax));
                 break;
             case 1: // sys_exit
                 System.out.print(String.format(
                     ">>> 0x%x: interrupt 0x%x, SYS_EXIT. quit!\n\n",
-                    r_eip.intValue(), intno));
+                    r_eip, intno));
                 u.emu_stop();
                 break;
             case 4: // sys_write
                 // ECX = buffer address
-                r_ecx = (Long) u.reg_read(Unicorn.UC_X86_REG_ECX);
+                r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
 
                 // EDX = buffer size
-                r_edx = (Long) u.reg_read(Unicorn.UC_X86_REG_EDX);
+                r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX);
 
                 // read the buffer in
                 size = (int) Math.min(256, r_edx);
@@ -120,15 +120,15 @@ public class Shellcode {
                 byte[] buffer = u.mem_read(r_ecx, size);
                 System.out.print(String.format(
                     ">>> 0x%x: interrupt 0x%x, SYS_WRITE. buffer = 0x%x, size = %u, content = '%s'\n",
-                    r_eip.intValue(), intno, r_ecx.intValue(),
-                    r_edx.intValue(), new String(buffer)));
+                    r_eip, intno, r_ecx,
+                    r_edx, new String(buffer)));
                 break;
             }
         }
     }
 
     public static void test_i386() {
-        Long r_esp = ADDRESS + 0x200000L;  // ESP register
+        long r_esp = ADDRESS + 0x200000L;  // ESP register
 
         System.out.print("Emulate i386 code\n");
 
