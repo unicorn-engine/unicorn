@@ -250,7 +250,19 @@ typedef void (*uc_cb_insn_out_t)(uc_engine *uc, uint32_t port, int size,
                                  uint32_t value, void *user_data);
 
 typedef struct uc_tlb_entry uc_tlb_entry;
-typedef enum uc_mem_type uc_mem_type;
+// All type of memory accesses for UC_HOOK_MEM_*
+typedef enum uc_mem_type {
+    UC_MEM_READ = 16,      // Memory is read from
+    UC_MEM_WRITE,          // Memory is written to
+    UC_MEM_FETCH,          // Memory is fetched
+    UC_MEM_READ_UNMAPPED,  // Unmapped memory is read from
+    UC_MEM_WRITE_UNMAPPED, // Unmapped memory is written to
+    UC_MEM_FETCH_UNMAPPED, // Unmapped memory is fetched
+    UC_MEM_WRITE_PROT,     // Write to write protected, but mapped, memory
+    UC_MEM_READ_PROT,      // Read from read protected, but mapped, memory
+    UC_MEM_FETCH_PROT,     // Fetch from non-executable, but mapped, memory
+    UC_MEM_READ_AFTER,     // Memory is read from (successful access)
+} uc_mem_type;
 
 /*
   Callback function for tlb lookups
@@ -314,20 +326,6 @@ typedef uint64_t (*uc_cb_mmio_read_t)(uc_engine *uc, uint64_t offset,
 typedef void (*uc_cb_mmio_write_t)(uc_engine *uc, uint64_t offset,
                                    unsigned size, uint64_t value,
                                    void *user_data);
-
-// All type of memory accesses for UC_HOOK_MEM_*
-enum uc_mem_type {
-    UC_MEM_READ = 16,      // Memory is read from
-    UC_MEM_WRITE,          // Memory is written to
-    UC_MEM_FETCH,          // Memory is fetched
-    UC_MEM_READ_UNMAPPED,  // Unmapped memory is read from
-    UC_MEM_WRITE_UNMAPPED, // Unmapped memory is written to
-    UC_MEM_FETCH_UNMAPPED, // Unmapped memory is fetched
-    UC_MEM_WRITE_PROT,     // Write to write protected, but mapped, memory
-    UC_MEM_READ_PROT,      // Read from read protected, but mapped, memory
-    UC_MEM_FETCH_PROT,     // Fetch from non-executable, but mapped, memory
-    UC_MEM_READ_AFTER,     // Memory is read from (successful access)
-};
 
 // These are all op codes we support to hook for UC_HOOK_TCG_OP_CODE.
 // Be cautious since it may bring much more overhead than UC_HOOK_CODE without
