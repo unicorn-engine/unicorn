@@ -21,8 +21,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
-/** Callback for UC_HOOK_EDGE_GENERATED */
+/** Callback for {@code UC_HOOK_EDGE_GENERATED} */
 public interface EdgeGeneratedHook extends Hook {
+    /** Called whenever a jump is made to a new (untranslated) basic block.
+     * 
+     * @param u       {@link Unicorn} instance firing this hook
+     * @param cur_tb  newly translated block being entered
+     * @param prev_tb previous block being exited
+     * @param user    user data provided when registering this hook
+     */
     public void hook(Unicorn u, TranslationBlock cur_tb,
             TranslationBlock prev_tb, Object user);
 }
