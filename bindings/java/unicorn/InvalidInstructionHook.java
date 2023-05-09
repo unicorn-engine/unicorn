@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
-/* Callback for {@code UC_HOOK_INSN_INVALID} */
+/** Callback for {@code UC_HOOK_INSN_INVALID} */
 public interface InvalidInstructionHook extends Hook {
     /** Called when an invalid instruction is encountered.
      * 

@@ -28,6 +28,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Hashtable;
 
+/** Unicorn is a lightweight multi-platform, multi-architecture CPU emulator framework. */
 public class Unicorn
         implements UnicornConst, Arm64Const, ArmConst, M68kConst, MipsConst,
         PpcConst, RiscvConst, S390xConst, SparcConst, TriCoreConst, X86Const {
@@ -58,42 +59,46 @@ public class Unicorn
         }
 
         /**
-        * Read register value. See {@link Unicorn#reg_read(int)}.
+        * Read register value from saved context.
         *
         * @param regid Register ID that is to be retrieved. This function only supports
         *        integer registers at most 64 bits long.
         * @return value of the register.
+        * @see Unicorn#reg_read(int)
         */
         public long reg_read(int regid) throws UnicornException {
             return do_reg_read_long(nativePtr, 1, arch, regid);
         }
 
         /**
-         * Read register value. See {@link Unicorn#reg_read(int, Object)}.
+         * Read register value from saved context.
          * 
          * @param regid Register ID that is to be retrieved.
          * @param opt Options for this register, or null if no options are required.
          * @return value of the register - Long, BigInteger, or structure.
+         * @see Unicorn#reg_read(int, Object)
          */
         public Object reg_read(int regid, Object opt) throws UnicornException {
             return do_reg_read_obj(nativePtr, 1, arch, regid, opt);
         }
 
         /**
-        * Write to register. See {@link Unicorn#reg_write(int, long)}.
+        * Write to register in saved context.
         *
         * @param regid Register ID that is to be modified.
         * @param value Object containing the new register value.
+        * @see Unicorn#reg_write(int, long)
         */
         public void reg_write(int regid, long value) throws UnicornException {
             do_reg_write_long(nativePtr, 1, arch, regid, value);
         }
 
         /**
-        * Write to register. See {@link Unicorn#reg_write(int, Object)}.
+        * Write to register in saved context.
         *
         * @param regid Register ID that is to be modified.
         * @param value Object containing the new register value.
+        * @see Unicorn#reg_write(int, Object)
         */
         public void reg_write(int regid, Object value) throws UnicornException {
             do_reg_write_obj(nativePtr, 1, arch, regid, value);
@@ -108,9 +113,9 @@ public class Unicorn
     /**
     * Create a new Unicorn object
     *
-    * @param arch Architecture type (UC_ARCH_*)
-    * @param mode Hardware mode. This is combined of UC_MODE_*
-    * @see unicorn.UnicornConst
+    * @param arch Architecture type. One of the {@code UC_ARCH_*} constants.
+    * @param mode Hardware mode. Bitwise combination of {@code UC_MODE_*} constants.
+    * @see UnicornConst
     *
     */
     public Unicorn(int arch, int mode) throws UnicornException {
@@ -121,10 +126,10 @@ public class Unicorn
     }
 
     /**
-    * Close the underlying uc_engine* eng associated with this Unicorn object
-    *
+    * Close the C {@code uc_engine} associated with this Unicorn object,
+    * freeing all associated resources. After calling this method, the
+    * API will no longer be usable.
     */
-
     public void close() throws UnicornException {
         if (nativePtr != 0) {
             _close(nativePtr);
@@ -133,8 +138,7 @@ public class Unicorn
     }
 
     /**
-    * Perform native cleanup tasks associated with a Unicorn object
-    *
+    * Automatically close the {@code uc_engine} upon GC finalization.
     */
     @Override
     protected void finalize() {
@@ -144,10 +148,9 @@ public class Unicorn
     /**
     * Return combined API version & major and minor version numbers.
     *
-    * @return hexadecimal number as (major << 8 | minor), which encodes both major
-    *         & minor versions.
-    *
-    *         For example Unicorn version 1.2 would yield 0x0102
+    * @return version number as {@code (major << 8 | minor)}, which encodes
+    *         both major & minor versions.
+    *         For example, Unicorn version 1.2 would yield 0x0102.
     */
     public static int version() {
         return _version();
@@ -156,25 +159,26 @@ public class Unicorn
     /**
     * Determine if the given architecture is supported by this library.
     *
-    * @param arch Architecture type (UC_ARCH_*)
-    * @return true if this library supports the given arch.
-    * @see unicorn.UnicornConst
+    * @param arch Architecture type ({@code UC_ARCH_*} constant)
+    * @return {@code true} if this library supports the given arch.
+    * @see UnicornConst
     */
     public static boolean arch_supported(int arch) {
         return _arch_supported(arch);
     }
 
     /**
-    * Emulate machine code in a specific duration of time.
+    * Emulate machine code for a specific length of time or number of
+    * instructions.
     *
     * @param begin   Address where emulation starts
-    * @param until   Address where emulation stops (i.e when this address is hit)
-    * @param timeout Duration to emulate the code (in microseconds). When this
-    *                value is 0, we will emulate the code in infinite time, until
-    *                the code is finished.
-    * @param count   The number of instructions to be emulated. When this value is
-    *                0, we will emulate all the code available, until the code is
-    *                finished.
+    * @param until   Address where emulation stops (i.e. when this address is hit)
+    * @param timeout Duration to emulate the code for, in microseconds, or 0 to
+    *                run indefinitely.
+    * @param count   The maximum number of instructions to execute, or 0 to
+    *                execute indefinitely.
+    * @throws UnicornException if an unhandled CPU exception or other error
+    *                occurs during emulation.
     */
     public void emu_start(long begin, long until, long timeout,
             long count)
@@ -183,9 +187,11 @@ public class Unicorn
     }
 
     /**
-    * Stop emulation (which was started by emu_start() ).
-    * This is typically called from callback functions registered via tracing APIs.
-    * NOTE: for now, this will stop the execution only after the current block.
+    * Stop emulation (which was started by {@link #emu_start()}).
+    *
+    * This can be called from hook callbacks or from a separate thread.
+    * NOTE: for now, this will stop the execution only after the current
+    * basic block.
     */
     public void emu_stop() throws UnicornException {
         _emu_stop(nativePtr);
@@ -380,20 +386,21 @@ public class Unicorn
     }
 
     /**
-    * Read register value. This reads any register that would return a Long
-    * from {@link #reg_read(int, Object)}.
+    * Read register value of at most 64 bits in size.
     *
     * @param regid Register ID that is to be retrieved. This function only supports
     *        integer registers at most 64 bits long.
     * @return value of the register.
+    * @see {@link #reg_read(int, Object)} to read larger registers or
+    *      registers requiring configuration.
     */
     public long reg_read(int regid) throws UnicornException {
         return do_reg_read_long(nativePtr, 0, arch, regid);
     }
 
     /**
-     * Read register value. The return type depends on regid as follows.
-     * opt should be null unless otherwise specified.
+     * Read register value. The return type depends on {@code regid} as
+     * follows. {@code opt} should be {@code null} unless otherwise specified.
      * <ul>
      *  <li>{@code UC_X86_REG_*TR} => {@link X86_MMR}
      *  <li>{@code UC_X86_REG_FP*} => {@link X86_Float80}
@@ -408,8 +415,10 @@ public class Unicorn
      * </ul>
      * 
      * @param regid Register ID that is to be retrieved.
-     * @param opt Options for this register, or null if no options are required.
-     * @return value of the register - Long, BigInteger, or structure.
+     * @param opt Options for this register, or {@code null} if no options
+     *        are required.
+     * @return value of the register - {@link Long}, {@link BigInteger},
+     *         or other class.
      */
     public Object reg_read(int regid, Object opt) throws UnicornException {
         return do_reg_read_obj(nativePtr, 0, arch, regid, opt);
@@ -421,13 +430,15 @@ public class Unicorn
     *
     * @param regid Register ID that is to be modified.
     * @param value Object containing the new register value.
+    * @see {@link #reg_read(int, Object)} to write larger registers or
+    *      registers requiring configuration.
     */
     public void reg_write(int regid, long value) throws UnicornException {
         do_reg_write_long(nativePtr, 0, arch, regid, value);
     }
 
     /**
-    * Write to register. The type of {@code value} depends on regid:
+    * Write to register. The type of {@code value} depends on {@code regid}:
     * <ul>
     *  <li>{@code UC_X86_REG_*TR} => {@link X86_MMR}
     *  <li>{@code UC_X86_REG_FP*} => {@link X86_Float80}
@@ -464,115 +475,172 @@ public class Unicorn
     /**
     * Write to memory.
     *
-    * @param address Start addres of the memory region to be written.
-    * @param bytes   The values to be written into memory. bytes.length bytes will
-    *                be written.
+    * @param address Start address of the memory region to be written.
+    * @param bytes   The values to be written into memory. {@code bytes.length}
+    *                bytes will be written.
     */
     public void mem_write(long address, byte[] bytes) throws UnicornException {
         _mem_write(nativePtr, address, bytes);
     }
 
     /**
-    * Query internal status of engine.
+    * Query the internal status of the engine.
     *
-    * @param type   query type. See UC_QUERY_*
-    * @param result save the internal status queried
-    *
-    * @return: error code. see UC_ERR_*
-    * @see unicorn.UnicornConst
+    * @param type query type, one of the {@code UC_QUERY_*} constants.
+    * @return result of the query
+    * @see UnicornConst
     */
     public long query(int type) throws UnicornException {
         return _query(nativePtr, type);
     }
 
     /**
-    * Report the last error number when some API function fail.
-    * Like glibc's errno, uc_errno might not retain its old value once accessed.
+    * Report the last error number when some API functions fail.
+    * {@code errno} may not retain its old value once accessed.
     *
-    * @return Error code of uc_err enum type (UC_ERR_*, see above)
-    * @see unicorn.UnicornConst
+    * @return Error code, one of the {@code UC_ERR_*} constants.
+    * @see UnicornConst
     */
     public int errno() {
         return _errno(nativePtr);
     }
 
     /**
-    * Return a string describing given error code.
+    * Return a string describing the given error code.
     *
-    * @param code Error code (see UC_ERR_* above)
-    * @return Returns a String that describes the error code
-    * @see unicorn.UnicornConst
+    * @param code Error code, one of the {@code UC_ERR_*} constants.
+    * @return a String that describes the error code
+    * @see UnicornConst
     */
     public static String strerror(int code) {
         return _strerror(code);
     }
 
-    public int ctl_get_mode() {
+    /**
+     * Get the current emulation mode.
+     * 
+     * @return a bitwise OR of {@code UC_MODE_*} constants.
+     */
+    public int ctl_get_mode() throws UnicornException {
         return _ctl_get_mode(nativePtr);
     }
 
-    public int ctl_get_arch() {
+    /**
+     * Get the current emulation architecture.
+     * 
+     * @return a {@code UC_ARCH_*} constant.
+     */
+    public int ctl_get_arch() throws UnicornException {
         return _ctl_get_arch(nativePtr);
     }
 
-    public long ctl_get_timeout() {
+    /** Get the current execution timeout, in nanoseconds. */
+    public long ctl_get_timeout() throws UnicornException {
         return _ctl_get_timeout(nativePtr);
     }
 
-    public int ctl_get_page_size() {
+    /** Get the current page size, in bytes. */
+    public int ctl_get_page_size() throws UnicornException {
         return _ctl_get_page_size(nativePtr);
     }
 
-    public void ctl_set_page_size(int page_size) {
+    /** Set the current page size, in bytes.
+     * 
+     * @param page_size Requested page type. Must be a power of two.
+     * @throws UnicornException if the architecture does not support setting
+     *                          the page size.
+     */
+    public void ctl_set_page_size(int page_size) throws UnicornException {
         _ctl_set_page_size(nativePtr, page_size);
     }
 
-    public void ctl_exits_enabled(boolean value) {
+    /** Enable or disable multiple exit support.
+     *
+     * Exits provide a more flexible way to terminate execution, versus using
+     * the {@code until} parameter to {@link #emu_start}. When exits are
+     * enabled, execution will stop at any of the configured exit addresses,
+     * and the {@code until} parameter will be ignored.
+     */
+    public void ctl_exits_enabled(boolean value) throws UnicornException {
         _ctl_set_use_exits(nativePtr, value);
     }
 
-    public long ctl_get_exits_cnt() {
+    /** Get the current number of active exits.
+     * 
+     * @return The number of exit addresses currently configured
+     * @throws UnicornException if exits are not enabled
+     */
+    public long ctl_get_exits_cnt() throws UnicornException {
         return _ctl_get_exits_cnt(nativePtr);
     }
 
-    public long[] ctl_get_exits() {
+    /** Get the current active exits.
+     * 
+     * @return An array of active exit addresses.
+     * @throws UnicornException if exits are not enabled
+     */
+    public long[] ctl_get_exits() throws UnicornException {
         return _ctl_get_exits(nativePtr);
     }
 
-    public void ctl_set_exits(long[] exits) {
+    /** Set the active exit addresses.
+     * 
+     * @param exits An array of exit addresses to use.
+     * @throws UnicornException if exits are not enabled
+     */
+    public void ctl_set_exits(long[] exits) throws UnicornException {
         _ctl_set_exits(nativePtr, exits);
     }
 
-    public int ctl_get_cpu_model() {
+    /** Get the emulated CPU model.
+     * 
+     * @return One of the {@code UC_CPU_<ARCH>_*} constants. See the
+     *         appropriate Const class for a list of valid constants.
+     */
+    public int ctl_get_cpu_model() throws UnicornException {
         return _ctl_get_cpu_model(nativePtr);
     }
 
-    /**
-    * Set the emulated cpu model.
-    *
-    * @param cpu_model CPU model type (see UC_CPU_*).
-    */
-    public void ctl_set_cpu_model(int cpu_model) {
+    /** Set the emulated CPU model. Note that this option can only be called
+     * immediately after constructing the Unicorn object, before any other APIs
+     * are called.
+     * 
+     * @param cpu_model One of the {@code UC_CPU_<ARCH>_*} constants. See the
+     *                  appropriate Const class for a list of valid constants.
+     */
+    public void ctl_set_cpu_model(int cpu_model) throws UnicornException {
         _ctl_set_cpu_model(nativePtr, cpu_model);
     }
 
-    public TranslationBlock ctl_request_cache(long address) {
+    /** Request the TB cache at a specific address. */
+    public TranslationBlock ctl_request_cache(long address)
+            throws UnicornException {
         return _ctl_request_cache(nativePtr, address);
     }
 
-    public void ctl_remove_cache(long address, long end) {
+    /** Invalidate the TB cache at a specific range of addresses. */
+    public void ctl_remove_cache(long address, long end)
+            throws UnicornException {
         _ctl_remove_cache(nativePtr, address, end);
     }
 
-    public void ctl_flush_tb() {
+    /** Flush the entire TB cache, invalidating all translation blocks. */
+    public void ctl_flush_tb() throws UnicornException {
         _ctl_flush_tb(nativePtr);
     }
 
-    public void ctl_flush_tlb() {
+    /** Flush the TLB cache, invalidating all TLB cache entries and
+     * translation blocks. */
+    public void ctl_flush_tlb() throws UnicornException {
         _ctl_flush_tlb(nativePtr);
     }
 
-    public void ctl_tlb_mode(int mode) {
+    /** Change the TLB implementation.
+     * 
+     * @param mode One of the {@code UC_TLB_*} constants.
+     * @see UnicornConst
+     */
+    public void ctl_tlb_mode(int mode) throws UnicornException {
         _ctl_tlb_mode(nativePtr, mode);
     }
 
@@ -584,10 +652,10 @@ public class Unicorn
     }
 
     /**
-    * Register a UC_HOOK_INTR hook. The registered callback function will be
-    * invoked whenever an interrupt instruction is executed.
+    * Register a {@code UC_HOOK_INTR} hook. The hook function will be invoked
+    * whenever a CPU interrupt occurs.
     *
-    * @param callback  Implementation of a InterruptHook interface
+    * @param callback  Implementation of a {@link InterruptHook} interface
     * @param user_data User data to be passed to the callback function each time
     *                  the event is triggered
     */
@@ -598,12 +666,13 @@ public class Unicorn
     }
 
     /**
-    * Register a UC_HOOK_INSN hook. The registered callback function will be
+    * Register a {@code UC_HOOK_INSN} hook. The hook function will be
     * invoked whenever the matching special instruction is executed.
     * The exact interface called will depend on the instruction being hooked.
     *
-    * @param callback  Implementation of an InstructionHook sub-interface
-    * @param insn      UC_<ARCH>_INS_<INSN> constant, e.g. UC_X86_INS_IN or UC_ARM64_INS_MRS
+    * @param callback  Implementation of an {@link InstructionHook} sub-interface
+    * @param insn      {@code UC_<ARCH>_INS_<INSN>} constant, e.g.
+    *                  {@code UC_X86_INS_IN} or {@code UC_ARM64_INS_MRS}
     * @param begin     Start address of hooking range
     * @param end       End address of hooking range
     * @param user_data User data to be passed to the callback function each time
@@ -618,12 +687,12 @@ public class Unicorn
     }
 
     /**
-    * Register a UC_HOOK_CODE hook. The registered callback function will be
+    * Register a {@code UC_HOOK_CODE} hook. The hook function will be
     * invoked when an instruction is executed from the address range
     * begin <= PC <= end. For the special case in which begin > end, the
     * callback will be invoked for ALL instructions.
     *
-    * @param callback  Implementation of a CodeHook interface
+    * @param callback  Implementation of a {@link CodeHook} interface
     * @param begin     Start address of hooking range
     * @param end       End address of hooking range
     * @param user_data User data to be passed to the callback function each time
@@ -637,13 +706,13 @@ public class Unicorn
     }
 
     /**
-    * Register a UC_HOOK_BLOCK hook. The registered callback function will be
+    * Register a {@code UC_HOOK_BLOCK} hook. The hook function will be
     * invoked when a basic block is entered and the address of the basic block
     * (BB) falls in the range begin <= BB <= end. For the special case in which
     * begin > end, the callback will be invoked whenver any basic block is
     * entered.
     *
-    * @param callback  Implementation of a BlockHook interface
+    * @param callback  Implementation of a {@link BlockHook} interface
     * @param begin     Start address of hooking range
     * @param end       End address of hooking range
     * @param user_data User data to be passed to the callback function each time
@@ -657,14 +726,16 @@ public class Unicorn
     }
 
     /**
-    * Register a UC_HOOK_MEM_VALID hook (UC_HOOK_MEM_{READ,WRITE_FETCH} and/or
-    * UC_HOOK_MEM_READ_AFTER. The registered callback function will be
+    * Register a {@code UC_HOOK_MEM_VALID} hook
+    * ({@code UC_HOOK_MEM_[READ,WRITE,FETCH]} and/or
+    * {@code UC_HOOK_MEM_READ_AFTER}. The registered callback function will be
     * invoked whenever a corresponding memory operation is performed within the
     * address range begin <= addr <= end. For the special case in which
     * begin > end, the callback will be invoked for ALL memory operations.
     *
-    * @param callback  Implementation of a MemHook interface
-    * @param type      UC_HOOK_MEM_* constant for a valid memory event
+    * @param callback  Implementation of a {@link MemHook} interface
+    * @param type      Bitwise OR of {@code UC_HOOK_MEM_*} constants for valid
+    *                  memory events
     * @param begin     Start address of memory range
     * @param end       End address of memory range
     * @param user_data User data to be passed to the callback function each time
@@ -678,17 +749,16 @@ public class Unicorn
     }
 
     /**
-    * Register a UC_HOOK_MEM_XXX_UNMAPPED and/or UC_HOOK_MEM_XXX_PROT hook.
-    * The registered callback function will be invoked whenever a memory
-    * operation is attempted from an invalid or protected memory address.
-    * The registered callback function will be invoked whenever a
-    * corresponding memory operation is performed within the  address range
-    * begin <= addr <= end. For the special case in which begin > end, the
-    * callback will be invoked for ALL memory operations.
+    * Register a {@code UC_HOOK_MEM_*_UNMAPPED} and/or
+    * {@code UC_HOOK_MEM_*_PROT} hook.
+    * The hook function will be invoked whenever a memory operation is
+    * attempted from an invalid or protected memory address within the address
+    * range begin <= addr <= end. For the special case in which begin > end,
+    * the callback will be invoked for ALL invalid memory operations.
     *
-    * @param callback  Implementation of a EventMemHook interface
-    * @param type      Type of memory event being hooked such as
-    *                  UC_HOOK_MEM_READ_UNMAPPED or UC_HOOK_MEM_WRITE_PROT
+    * @param callback  Implementation of a {@link EventMemHook} interface
+    * @param type      Bitwise OR of {@code UC_HOOK_MEM_*} constants for
+    *                  invalid memory events.
     * @param begin     Start address of memory range
     * @param end       End address of memory range
     * @param user_data User data to be passed to the callback function each time
@@ -701,12 +771,33 @@ public class Unicorn
             _hook_add(nativePtr, type, callback, user_data, begin, end));
     }
 
+    /**
+    * Register a {@code UC_HOOK_INSN_INVALID} hook. The hook function will be
+    * invoked whenever an invalid instruction is encountered.
+    *
+    * @param callback  Implementation of a {@link InvalidInstructionHook}
+    *                  interface
+    * @param user_data User data to be passed to the callback function each time
+    *                  the event is triggered
+    */
     public long hook_add(InvalidInstructionHook callback,
             Object user_data) {
         return registerHook(_hook_add(nativePtr, UC_HOOK_INSN_INVALID, callback,
             user_data, 1, 0));
     }
 
+    /**
+    * Register a {@code UC_HOOK_EDGE_GENERATED} hook. The hook function will be
+    * invoked whenever a jump is made to a new (untranslated) basic block with
+    * a start address in the range of begin <= pc <= end. For the special case
+    * in which begin > end, the callback will be invoked for ALL new edges.
+    *
+    * @param callback  Implementation of a {@link EdgeGeneratedHook} interface
+    * @param begin     Start address
+    * @param end       End address
+    * @param user_data User data to be passed to the callback function each time
+    *                  the event is triggered
+    */
     public long hook_add(EdgeGeneratedHook callback, long begin, long end,
             Object user_data)
             throws UnicornException {
@@ -714,6 +805,20 @@ public class Unicorn
             callback, user_data, begin, end));
     }
 
+    /**
+    * Register a {@code UC_HOOK_TCG_OPCODE} hook. The hook function will be
+    * invoked whenever a matching instruction is executed within the
+    * registered range.
+    *
+    * @param callback  Implementation of a {@link TcgOpcodeHook} interface
+    * @param begin     Start address
+    * @param end       End address
+    * @param opcode    Opcode to hook. One of the {@code UC_TCG_OP_*} constants.
+    * @param flags     Flags to filter opcode matches. A bitwise-OR of
+    *                  {@code UC_TCG_OP_FLAG_*} constants.
+    * @param user_data User data to be passed to the callback function each time
+    *                  the event is triggered
+    */
     public long hook_add(TcgOpcodeHook callback, long begin, long end,
             int opcode, int flags,
             Object user_data)
@@ -722,6 +827,18 @@ public class Unicorn
             user_data, begin, end, opcode, flags));
     }
 
+    /**
+    * Register a {@code UC_HOOK_TLB_FILL} hook. The hook function will be
+    * invoked to map a virtual address within the registered range to a
+    * physical address. These hooks will only be called if the TLB mode (set
+    * via {@link #ctl_tlb_mode}) is set to {@code UC_TLB_VIRTUAL}.
+    *
+    * @param callback  Implementation of a {@link TlbFillHook} interface
+    * @param begin     Start address
+    * @param end       End address
+    * @param user_data User data to be passed to the callback function each time
+    *                  the event is triggered
+    */
     public long hook_add(TlbFillHook callback, long begin, long end,
             Object user_data) throws UnicornException {
         return registerHook(_hook_add(nativePtr, UC_HOOK_TLB_FILL, callback,
@@ -730,7 +847,7 @@ public class Unicorn
 
     /** Remove a hook that was previously registered.
      * 
-     * @param hook The return value from any hook_add function.
+     * @param hook The return value from any {@code hook_add} function.
      */
     public void hook_del(long hook) throws UnicornException {
         if (hooks.contains(hook)) {
@@ -743,6 +860,16 @@ public class Unicorn
 
     /**
      * Create a memory-mapped I/O range.
+     *
+     * @param address  Starting memory address of the MMIO area
+     * @param size     Size of the MMIO area
+     * @param read_cb  Implementation of {@link MmioReadHandler} to handle read
+     *                 operations, or {@code null} for non-readable memory
+     * @param user_data_read User data to be passed to the read callback
+     * @param write_cb Implementation of {@link MmioWriteHandler} to handle
+     *                 write operations, or {@code null} for non-writable memory
+     * @param user_data_write User data to be passed to the write callback
+     * @throws UnicornException
      */
     public void mmio_map(long address, long size, MmioReadHandler read_cb,
             Object user_data_read, MmioWriteHandler write_cb,
@@ -757,12 +884,12 @@ public class Unicorn
     }
 
     /**
-    * Map a range of memory.
+    * Map a range of memory, automatically allocating backing host memory.
     *
     * @param address Base address of the memory range
-    * @param size    Size of the memory block.
-    * @param perms   Permissions on the memory block. A combination of
-    *                UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC
+    * @param size    Size of the memory block
+    * @param perms   Permissions on the memory block. A bitwise combination
+    *                of {@code UC_PROT_*} constants.
     */
     public void mem_map(long address, long size, int perms)
             throws UnicornException {
@@ -770,16 +897,17 @@ public class Unicorn
     }
 
     /**
-    * Map existing host memory in for emulation.
-    * This API adds a memory region that can be used by emulation.
+    * Map a range of memory, backed by an existing region of host memory.
+    * This API enables direct access to emulator memory without going through
+    * {@link #mem_read} and {@link #mem_write}.
     *
     * @param address Base address of the memory range
-    * @param buf     Direct-mapped Buffer referencing the memory to
-    *                map into the emulator. IMPORTANT: You are responsible
-    *                for ensuring that this Buffer remains alive as long
-    *                as the emulator is running!
-    * @param perms   Permissions on the memory block. A combination of
-    *                UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC
+    * @param buf     Direct Buffer referencing the memory to map into the
+    *                emulator. IMPORTANT: You are responsible for ensuring
+    *                that this Buffer remains alive as long as the memory
+    *                remains mapped!
+    * @param perms   Permissions on the memory block. A bitwise combination
+    *                of {@code UC_PROT_*} constants.
     */
     public void mem_map_ptr(long address, Buffer buf, int perms)
             throws UnicornException {
@@ -801,8 +929,8 @@ public class Unicorn
     *
     * @param address Base address of the memory range
     * @param size    Size of the memory block.
-    * @param perms   New permissions on the memory block. A combination of
-    *                UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC
+    * @param perms   Permissions on the memory block. A bitwise combination
+    *                of {@code UC_PROT_*} constants.
     */
     public void mem_protect(long address, long size, int perms)
             throws UnicornException {
@@ -810,15 +938,20 @@ public class Unicorn
     }
 
     /**
-    * Retrieve all memory regions mapped by mem_map() and mem_map_ptr()
-    * NOTE: memory regions may be split by mem_unmap()
+    * Retrieve all memory regions mapped by {@link #mem_map},
+    * {@link #mmio_map} and {@link #mem_map_ptr}.
+    * NOTE: memory regions may be split by {@link #mem_unmap}.
     *
-    * @return list of mapped regions.
+    * @return array of mapped regions.
     */
     public MemRegion[] mem_regions() throws UnicornException {
         return _mem_regions(nativePtr);
     }
 
+    /**
+     * Save the current CPU state of the emulator. The resulting context can be
+     * restored on any emulator with the same {@code arch} and {@code mode}.
+     */
     public Context context_save() throws UnicornException {
         long ptr = _context_alloc(nativePtr);
         Context context = new Context();
@@ -829,6 +962,10 @@ public class Unicorn
         return context;
     }
 
+    /**
+     * Update a {@link Context} object with the current CPU state of the
+     * emulator.
+     */
     public void context_update(Context context) throws UnicornException {
         if (context.arch != arch || context.mode != mode) {
             throw new UnicornException(
@@ -837,6 +974,9 @@ public class Unicorn
         _context_save(nativePtr, context.nativePtr);
     }
 
+    /**
+     * Restore the current CPU context from a saved copy.
+     */
     public void context_restore(Context context) throws UnicornException {
         if (context.arch != arch || context.mode != mode) {
             throw new UnicornException(
