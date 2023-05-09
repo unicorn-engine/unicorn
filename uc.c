@@ -2384,16 +2384,6 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     return err;
 }
 
-gint cmp_vaddr(gconstpointer a, gconstpointer b, gpointer user_data)
-{
-    uint64_t va = (uint64_t)a;
-    uint64_t vb = (uint64_t)b;
-    if (va == vb) {
-        return 0;
-    }
-    return va < vb ? -1 : 1;
-}
-
 #ifdef UNICORN_TRACER
 uc_tracer *get_tracer()
 {
