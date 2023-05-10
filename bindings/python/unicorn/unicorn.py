@@ -130,12 +130,17 @@ uc_engine = ctypes.c_void_p
 uc_context = ctypes.c_void_p
 uc_hook_h = ctypes.c_size_t
 
+def _structure_repr(self):
+    return "%s(%s)" % (self.__class__.__name__, ", ".join("%s=%s" % (k, getattr(self, k)) for (k, _) in self._fields_))
+
 class _uc_mem_region(ctypes.Structure):
     _fields_ = [
         ("begin", ctypes.c_uint64),
         ("end",   ctypes.c_uint64),
         ("perms", ctypes.c_uint32),
     ]
+
+    __repr__ = _structure_repr
 
 class uc_tb(ctypes.Structure):
     """"TranslationBlock"""
@@ -144,6 +149,8 @@ class uc_tb(ctypes.Structure):
         ("icount", ctypes.c_uint16),
         ("size", ctypes.c_uint16)
     ]
+
+    __repr__ = _structure_repr
 
 _setup_prototype(_uc, "uc_version", ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 _setup_prototype(_uc, "uc_arch_supported", ctypes.c_bool, ctypes.c_int)
@@ -413,6 +420,8 @@ class uc_arm_cp_reg(ctypes.Structure):
         ("val", ctypes.c_uint64)
     ]
 
+    __repr__ = _structure_repr
+
 class uc_arm64_cp_reg(ctypes.Structure):
     """ARM64 coprocessors registers for instructions MRS, MSR"""
     _fields_ = [
@@ -424,8 +433,7 @@ class uc_arm64_cp_reg(ctypes.Structure):
         ("val", ctypes.c_uint64)
     ]
 
-    def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, ", ".join("%s=%s" % (k, getattr(self, k)) for (k, _) in self._fields_))
+    __repr__ = _structure_repr
 
 class uc_x86_mmr(ctypes.Structure):
     """Memory-Management Register for instructions IDTR, GDTR, LDTR, TR."""
@@ -436,11 +444,15 @@ class uc_x86_mmr(ctypes.Structure):
         ("flags", ctypes.c_uint32),     # not used by GDTR and IDTR
     ]
 
+    __repr__ = _structure_repr
+
 class uc_x86_msr(ctypes.Structure):
     _fields_ = [
         ("rid", ctypes.c_uint32),
         ("value", ctypes.c_uint64),
     ]
+
+    __repr__ = _structure_repr
 
 class uc_x86_float80(ctypes.Structure):
     """Float80"""
@@ -449,6 +461,7 @@ class uc_x86_float80(ctypes.Structure):
         ("exponent", ctypes.c_uint16),
     ]
 
+    __repr__ = _structure_repr
 
 class uc_x86_xmm(ctypes.Structure):
     """128-bit xmm register"""
@@ -456,6 +469,8 @@ class uc_x86_xmm(ctypes.Structure):
         ("low_qword", ctypes.c_uint64),
         ("high_qword", ctypes.c_uint64),
     ]
+
+    __repr__ = _structure_repr
 
 class uc_x86_ymm(ctypes.Structure):
     """256-bit ymm register"""
@@ -466,12 +481,16 @@ class uc_x86_ymm(ctypes.Structure):
         ("fourth_qword", ctypes.c_uint64),
     ]
 
+    __repr__ = _structure_repr
+
 class uc_arm64_neon128(ctypes.Structure):
     """128-bit neon register"""
     _fields_ = [
         ("low_qword", ctypes.c_uint64),
         ("high_qword", ctypes.c_uint64),
     ]
+
+    __repr__ = _structure_repr
 
 # Subclassing ref to allow property assignment.
 class UcRef(weakref.ref):
