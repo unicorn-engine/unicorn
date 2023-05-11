@@ -90,7 +90,7 @@ public interface Rh850Const {
 // RH8509 Registers aliases.
 
    public static final int UC_RH850_REG_ZERO = 0;
-   public static final int UC_RH850_REG_SP = 2;
+   public static final int UC_RH850_REG_SP = 3;
    public static final int UC_RH850_REG_EP = 30;
    public static final int UC_RH850_REG_LP = 31;
 

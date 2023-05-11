@@ -88,7 +88,7 @@ module UnicornEngine
 # RH8509 Registers aliases.
 
 	UC_RH850_REG_ZERO = 0
-	UC_RH850_REG_SP = 2
+	UC_RH850_REG_SP = 3
 	UC_RH850_REG_EP = 30
 	UC_RH850_REG_LP = 31
 end
