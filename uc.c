@@ -521,47 +521,63 @@ uc_err uc_close(uc_engine *uc)
 UNICORN_EXPORT
 uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
 {
-    int ret = UC_ERR_OK;
-
-    UC_INIT(uc);
-
-    if (uc->reg_read) {
-        ret = uc->reg_read(uc, (unsigned int *)ids, vals, count);
-    } else {
-        return UC_ERR_HANDLE;
-    }
-
-    return ret;
+    return uc_reg_read_batch2(uc, ids, vals, NULL, count);
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
 {
-    int ret = UC_ERR_OK;
+    return uc_reg_write_batch2(uc, ids, (const void *const *)vals, NULL, count);
+}
 
+UNICORN_EXPORT
+uc_err uc_reg_read_batch2(uc_engine *uc, int *ids, void *const *vals,
+                          size_t *sizes, int count)
+{
     UC_INIT(uc);
 
-    if (uc->reg_write) {
-        ret = uc->reg_write(uc, (unsigned int *)ids, vals, count);
+    if (uc->reg_read) {
+        return uc->reg_read(uc, (unsigned int *)ids, vals, sizes, count);
     } else {
         return UC_ERR_HANDLE;
     }
+}
 
-    return ret;
+UNICORN_EXPORT
+uc_err uc_reg_write_batch2(uc_engine *uc, int *ids, const void *const *vals,
+                           size_t *sizes, int count)
+{
+    UC_INIT(uc);
+
+    if (uc->reg_write) {
+        return uc->reg_write(uc, (unsigned int *)ids, vals, sizes, count);
+    } else {
+        return UC_ERR_HANDLE;
+    }
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
 {
-    UC_INIT(uc);
-    return uc_reg_read_batch(uc, &regid, &value, 1);
+    return uc_reg_read_batch2(uc, &regid, &value, NULL, 1);
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
 {
-    UC_INIT(uc);
-    return uc_reg_write_batch(uc, &regid, (void *const *)&value, 1);
+    return uc_reg_write_batch2(uc, &regid, &value, NULL, 1);
+}
+
+UNICORN_EXPORT
+uc_err uc_reg_read2(uc_engine *uc, int regid, void *value, size_t *size)
+{
+    return uc_reg_read_batch2(uc, &regid, &value, size, 1);
+}
+
+UNICORN_EXPORT
+uc_err uc_reg_write2(uc_engine *uc, int regid, const void *value, size_t *size)
+{
+    return uc_reg_write_batch2(uc, &regid, &value, size, 1);
 }
 
 // check if a memory area is mapped
@@ -1889,13 +1905,42 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
 UNICORN_EXPORT
 uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value)
 {
-    return uc_context_reg_write_batch(ctx, &regid, (void *const *)&value, 1);
+    return uc_context_reg_write_batch2(ctx, &regid, &value, NULL, 1);
 }
 
 UNICORN_EXPORT
 uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value)
 {
-    return uc_context_reg_read_batch(ctx, &regid, &value, 1);
+    return uc_context_reg_read_batch2(ctx, &regid, &value, NULL, 1);
+}
+
+UNICORN_EXPORT
+uc_err uc_context_reg_write2(uc_context *ctx, int regid, const void *value,
+                             size_t *size)
+{
+    return uc_context_reg_write_batch2(ctx, &regid, &value, size, 1);
+}
+
+UNICORN_EXPORT
+uc_err uc_context_reg_read2(uc_context *ctx, int regid, void *value,
+                            size_t *size)
+{
+    return uc_context_reg_read_batch2(ctx, &regid, &value, size, 1);
+}
+
+UNICORN_EXPORT
+uc_err uc_context_reg_write_batch(uc_context *ctx, int *ids, void *const *vals,
+                                  int count)
+{
+    return uc_context_reg_write_batch2(ctx, ids, (const void *const *)vals,
+                                       NULL, count);
+}
+
+UNICORN_EXPORT
+uc_err uc_context_reg_read_batch(uc_context *ctx, int *ids, void **vals,
+                                 int count)
+{
+    return uc_context_reg_read_batch2(ctx, ids, vals, NULL, count);
 }
 
 // Keep in mind that we don't a uc_engine when r/w the registers of a context.
@@ -2023,37 +2068,34 @@ static void find_context_reg_rw_function(uc_arch arch, uc_mode mode,
 }
 
 UNICORN_EXPORT
-uc_err uc_context_reg_write_batch(uc_context *ctx, int *ids, void *const *vals,
-                                  int count)
+uc_err uc_context_reg_write_batch2(uc_context *ctx, int *ids,
+                                   const void *const *vals, size_t *sizes,
+                                   int count)
 {
-    int ret = UC_ERR_OK;
     context_reg_rw_t rw;
 
     find_context_reg_rw_function(ctx->arch, ctx->mode, &rw);
     if (rw.context_reg_write) {
-        ret = rw.context_reg_write(ctx, (unsigned int *)ids, vals, count);
+        return rw.context_reg_write(ctx, (unsigned int *)ids, vals, sizes,
+                                    count);
     } else {
         return UC_ERR_HANDLE;
     }
-
-    return ret;
 }
 
 UNICORN_EXPORT
-uc_err uc_context_reg_read_batch(uc_context *ctx, int *ids, void **vals,
-                                 int count)
+uc_err uc_context_reg_read_batch2(uc_context *ctx, int *ids, void *const *vals,
+                                  size_t *sizes, int count)
 {
-    int ret = UC_ERR_OK;
     context_reg_rw_t rw;
 
     find_context_reg_rw_function(ctx->arch, ctx->mode, &rw);
     if (rw.context_reg_read) {
-        ret = rw.context_reg_read(ctx, (unsigned int *)ids, vals, count);
+        return rw.context_reg_read(ctx, (unsigned int *)ids, vals, sizes,
+                                   count);
     } else {
         return UC_ERR_HANDLE;
     }
-
-    return ret;
 }
 
 UNICORN_EXPORT

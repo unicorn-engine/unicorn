@@ -784,10 +784,9 @@ const char *uc_strerror(uc_err code);
 
  @uc: handle returned by uc_open()
  @regid:  register ID that is to be modified.
- @value:  pointer to the value that will set to register @regid
+ @value:  pointer to the value that will be written to register @regid
 
- @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
-   for detailed error).
+ @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is invalid
 */
 UNICORN_EXPORT
 uc_err uc_reg_write(uc_engine *uc, int regid, const void *value);
@@ -799,22 +798,49 @@ uc_err uc_reg_write(uc_engine *uc, int regid, const void *value);
  @regid:  register ID that is to be retrieved.
  @value:  pointer to a variable storing the register value.
 
- @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
-   for detailed error).
+ @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is invalid
 */
 UNICORN_EXPORT
 uc_err uc_reg_read(uc_engine *uc, int regid, void *value);
 
 /*
+ Write to register.
+
+ @uc: handle returned by uc_open()
+ @regid:  register ID that is to be modified.
+ @value:  pointer to the value that will be written to register @regid
+ @size:   size of value being written; on return, size of value written
+
+ @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is
+ invalid; UC_ERR_NOMEM if value is not large enough.
+*/
+UNICORN_EXPORT
+uc_err uc_reg_write2(uc_engine *uc, int regid, const void *value, size_t *size);
+
+/*
+ Read register value.
+
+ @uc: handle returned by uc_open()
+ @regid:  register ID that is to be retrieved.
+ @value:  pointer to a variable storing the register value.
+ @size:   size of value buffer; on return, size of value read
+
+ @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is
+ invalid; UC_ERR_NOMEM if value is not large enough.
+*/
+UNICORN_EXPORT
+uc_err uc_reg_read2(uc_engine *uc, int regid, void *value, size_t *size);
+
+/*
  Write multiple register values.
 
  @uc: handle returned by uc_open()
- @rges:  array of register IDs to store
- @value: pointer to array of register values
+ @regs:  array of register IDs to store
+ @vals:  array of pointers to register values
  @count: length of both *regs and *vals
 
- @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
-   for detailed error).
+ @return UC_ERR_OK on success; UC_ERR_ARG if some register number or value is
+ invalid
 */
 UNICORN_EXPORT
 uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals,
@@ -824,15 +850,48 @@ uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals,
  Read multiple register values.
 
  @uc: handle returned by uc_open()
- @rges:  array of register IDs to retrieve
- @value: pointer to array of values to hold registers
+ @regs:  array of register IDs to retrieve
+ @vals:  array of pointers to register values
  @count: length of both *regs and *vals
 
- @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
-   for detailed error).
+ @return UC_ERR_OK on success; UC_ERR_ARG if some register number or value is
+ invalid
 */
 UNICORN_EXPORT
 uc_err uc_reg_read_batch(uc_engine *uc, int *regs, void **vals, int count);
+
+/*
+ Write multiple register values.
+
+ @uc: handle returned by uc_open()
+ @regs:  array of register IDs to store
+ @value: array of pointers to register values
+ @sizes: array of sizes of each value; on return, sizes of each stored register
+ @count: length of *regs, *vals and *sizes
+
+ @return UC_ERR_OK on success; UC_ERR_ARG if some register number or value is
+ invalid; UC_ERR_NOMEM if some value is not large enough.
+*/
+UNICORN_EXPORT
+uc_err uc_reg_write_batch2(uc_engine *uc, int *regs, const void *const *vals,
+                           size_t *sizes, int count);
+
+/*
+ Read multiple register values.
+
+ @uc: handle returned by uc_open()
+ @regs:  array of register IDs to retrieve
+ @value: pointer to array of values to hold registers
+ @sizes: array of sizes of each value; on return, sizes of each retrieved
+ register
+ @count: length of *regs, *vals and *sizes
+
+ @return UC_ERR_OK on success; UC_ERR_ARG if some register number or value is
+ invalid; UC_ERR_NOMEM if some value is not large enough.
+*/
+UNICORN_EXPORT
+uc_err uc_reg_read_batch2(uc_engine *uc, int *regs, void *const *vals,
+                          size_t *sizes, int count);
 
 /*
  Write to a range of bytes in memory.
@@ -1136,10 +1195,9 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context);
 
  @ctx: handle returned by uc_context_alloc()
  @regid:  register ID that is to be modified.
- @value:  pointer to the value that will set to register @regid
+ @value:  pointer to the value that will be written to register @regid
 
- @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
-   for detailed error).
+ @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is invalid
 */
 UNICORN_EXPORT
 uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value);
@@ -1151,11 +1209,40 @@ uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value);
  @regid:  register ID that is to be retrieved.
  @value:  pointer to a variable storing the register value.
 
- @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
-   for detailed error).
+ @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is invalid
 */
 UNICORN_EXPORT
 uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value);
+
+/*
+ Write value to a register of a context.
+
+ @ctx: handle returned by uc_context_alloc()
+ @regid:  register ID that is to be modified.
+ @value:  pointer to the value that will be written to register @regid
+ @size:   size of value being written; on return, size of value written
+
+ @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is
+ invalid; UC_ERR_NOMEM if value is not large enough.
+*/
+UNICORN_EXPORT
+uc_err uc_context_reg_write2(uc_context *ctx, int regid, const void *value,
+                             size_t *size);
+
+/*
+ Read register value from a context.
+
+ @ctx: handle returned by uc_context_alloc()
+ @regid:  register ID that is to be retrieved.
+ @value:  pointer to a variable storing the register value.
+ @size:   size of value buffer; on return, size of value read
+
+ @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is
+ invalid; UC_ERR_NOMEM if value is not large enough.
+*/
+UNICORN_EXPORT
+uc_err uc_context_reg_read2(uc_context *ctx, int regid, void *value,
+                            size_t *size);
 
 /*
  Write multiple register values to registers of a context.
@@ -1186,6 +1273,40 @@ uc_err uc_context_reg_write_batch(uc_context *ctx, int *regs, void *const *vals,
 UNICORN_EXPORT
 uc_err uc_context_reg_read_batch(uc_context *ctx, int *regs, void **vals,
                                  int count);
+
+/*
+ Write multiple register values to registers of a context.
+
+ @ctx: handle returned by uc_context_alloc()
+ @regs:  array of register IDs to store
+ @value: array of pointers to register values
+ @sizes: array of sizes of each value; on return, sizes of each stored register
+ @count: length of *regs, *vals and *sizes
+
+ @return UC_ERR_OK on success; UC_ERR_ARG if some register number or value is
+ invalid; UC_ERR_NOMEM if some value is not large enough.
+*/
+UNICORN_EXPORT
+uc_err uc_context_reg_write_batch2(uc_context *ctx, int *regs,
+                                   const void *const *vals, size_t *sizes,
+                                   int count);
+
+/*
+ Read multiple register values from a context.
+
+ @ctx: handle returned by uc_context_alloc()
+ @regs:  array of register IDs to retrieve
+ @value: pointer to array of values to hold registers
+ @sizes: array of sizes of each value; on return, sizes of each retrieved
+ register
+ @count: length of *regs, *vals and *sizes
+
+ @return UC_ERR_OK on success; UC_ERR_ARG if some register number or value is
+ invalid; UC_ERR_NOMEM if some value is not large enough.
+*/
+UNICORN_EXPORT
+uc_err uc_context_reg_read_batch2(uc_context *ctx, int *regs, void *const *vals,
+                                  size_t *sizes, int count);
 
 /*
  Restore the current CPU context from a saved copy.

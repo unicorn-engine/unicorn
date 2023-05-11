@@ -49,71 +49,97 @@ void m68k_reg_reset(struct uc_struct *uc)
     env->pc = 0;
 }
 
-static void reg_read(CPUM68KState *env, unsigned int regid, void *value)
+static uc_err reg_read(CPUM68KState *env, unsigned int regid, void *value,
+                       size_t *size)
 {
-    if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
-        *(int32_t *)value = env->aregs[regid - UC_M68K_REG_A0];
-    else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
-        *(int32_t *)value = env->dregs[regid - UC_M68K_REG_D0];
-    else {
+    uc_err ret = UC_ERR_ARG;
+
+    if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7) {
+        CHECK_REG_TYPE(uint32_t);
+        *(uint32_t *)value = env->aregs[regid - UC_M68K_REG_A0];
+    } else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7) {
+        CHECK_REG_TYPE(uint32_t);
+        *(uint32_t *)value = env->dregs[regid - UC_M68K_REG_D0];
+    } else {
         switch (regid) {
         default:
             break;
         case UC_M68K_REG_PC:
-            *(int32_t *)value = env->pc;
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->pc;
             break;
         case UC_M68K_REG_SR:
-            *(int32_t *)value = env->sr;
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->sr;
             break;
         }
     }
+
+    return ret;
 }
 
-static void reg_write(CPUM68KState *env, unsigned int regid, const void *value)
+static uc_err reg_write(CPUM68KState *env, unsigned int regid,
+                        const void *value, size_t *size)
 {
-    if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
+    uc_err ret = UC_ERR_ARG;
+
+    if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7) {
+        CHECK_REG_TYPE(uint32_t);
         env->aregs[regid - UC_M68K_REG_A0] = *(uint32_t *)value;
-    else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
+    } else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7) {
+        CHECK_REG_TYPE(uint32_t);
         env->dregs[regid - UC_M68K_REG_D0] = *(uint32_t *)value;
-    else {
+    } else {
         switch (regid) {
         default:
             break;
         case UC_M68K_REG_PC:
+            CHECK_REG_TYPE(uint32_t);
             env->pc = *(uint32_t *)value;
             break;
         case UC_M68K_REG_SR:
+            CHECK_REG_TYPE(uint32_t);
             cpu_m68k_set_sr(env, *(uint32_t *)value);
             break;
         }
     }
+
+    return ret;
 }
 
-int m68k_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                  int count)
+int m68k_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                  size_t *sizes, int count)
 {
     CPUM68KState *env = &(M68K_CPU(uc->cpu)->env);
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
-int m68k_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                   int count)
+int m68k_reg_write(struct uc_struct *uc, unsigned int *regs,
+                   const void *const *vals, size_t *sizes, int count)
 {
     CPUM68KState *env = &(M68K_CPU(uc->cpu)->env);
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
         if (regid == UC_M68K_REG_PC) {
             // force to quit execution and flush TB
             uc->quit_request = true;
@@ -121,39 +147,47 @@ int m68k_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
         }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 DEFAULT_VISIBILITY
 int m68k_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void **vals, int count)
+                          void *const *vals, size_t *sizes, int count)
 {
     CPUM68KState *env = (CPUM68KState *)ctx->data;
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 DEFAULT_VISIBILITY
 int m68k_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, int count)
+                           const void *const *vals, size_t *sizes, int count)
 {
     CPUM68KState *env = (CPUM68KState *)ctx->data;
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 static int m68k_cpus_init(struct uc_struct *uc, const char *cpu_model)

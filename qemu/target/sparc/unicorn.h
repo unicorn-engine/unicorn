@@ -5,19 +5,20 @@
 #define UC_QEMU_TARGET_SPARC_H
 
 // functions to read & write registers
-int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                   int count);
-int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                    int count);
+int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                   size_t *sizes, int count);
+int sparc_reg_write(struct uc_struct *uc, unsigned int *regs,
+                    const void *const *vals, size_t *sizes, int count);
 
 int sparc_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                           void **vals, int count);
+                           void *const *vals, size_t *sizes, int count);
 int sparc_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                            void *const *vals, int count);
+                            const void *const *vals, size_t *sizes, int count);
 int sparc64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                             void **vals, int count);
+                             void *const *vals, size_t *sizes, int count);
 int sparc64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                              void *const *vals, int count);
+                              const void *const *vals, size_t *sizes,
+                              int count);
 
 void sparc_reg_reset(struct uc_struct *uc);
 

@@ -206,20 +206,25 @@ static uc_err write_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
     return UC_ERR_OK;
 }
 
-static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
+static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value,
+                       size_t *size)
 {
-    uc_err ret = UC_ERR_OK;
+    uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
+        CHECK_REG_TYPE(uint32_t);
         *(uint32_t *)value = env->regs[regid - UC_ARM_REG_R0];
     } else if (regid >= UC_ARM_REG_Q0 && regid <= UC_ARM_REG_Q15) {
+        CHECK_REG_TYPE(uint64_t[2]);
         uint32_t reg_index = regid - UC_ARM_REG_Q0;
         *(uint64_t *)value = env->vfp.zregs[reg_index].d[0];
         *(((uint64_t *)value) + 1) = env->vfp.zregs[reg_index].d[1];
     } else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31) {
+        CHECK_REG_TYPE(uint64_t);
         uint32_t reg_index = regid - UC_ARM_REG_D0;
         *(uint64_t *)value = env->vfp.zregs[reg_index / 2].d[reg_index & 1];
     } else if (regid >= UC_ARM_REG_S0 && regid <= UC_ARM_REG_S31) {
+        CHECK_REG_TYPE(uint32_t);
         uint32_t reg_index = regid - UC_ARM_REG_S0;
         uint64_t reg_value = env->vfp.zregs[reg_index / 4].d[reg_index % 4 / 2];
 
@@ -232,88 +237,115 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
         switch (regid) {
         case UC_ARM_REG_APSR:
             if (arm_feature(env, ARM_FEATURE_M)) {
+                CHECK_REG_TYPE(int32_t);
                 *(int32_t *)value = v7m_mrs_xpsr(env, 0);
             } else {
+                CHECK_REG_TYPE(int32_t);
                 *(int32_t *)value =
                     cpsr_read(env) & (CPSR_NZCV | CPSR_Q | CPSR_GE);
             }
             break;
         case UC_ARM_REG_APSR_NZCV:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = cpsr_read(env) & CPSR_NZCV;
             break;
         case UC_ARM_REG_CPSR:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = cpsr_read(env);
             break;
         case UC_ARM_REG_SPSR:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = env->spsr;
             break;
         // case UC_ARM_REG_SP:
         case UC_ARM_REG_R13:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = env->regs[13];
             break;
         // case UC_ARM_REG_LR:
         case UC_ARM_REG_R14:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = env->regs[14];
             break;
         // case UC_ARM_REG_PC:
         case UC_ARM_REG_R15:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = env->regs[15];
             break;
         case UC_ARM_REG_C1_C0_2:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = env->cp15.cpacr_el1;
             break;
         case UC_ARM_REG_C13_C0_3:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = env->cp15.tpidrro_el[0];
             break;
         case UC_ARM_REG_FPEXC:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = env->vfp.xregs[ARM_VFP_FPEXC];
             break;
         case UC_ARM_REG_FPSCR:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = vfp_get_fpscr(env);
             break;
         case UC_ARM_REG_FPSID:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = env->vfp.xregs[ARM_VFP_FPSID];
             break;
         case UC_ARM_REG_IPSR:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = v7m_mrs_xpsr(env, 5);
             break;
         case UC_ARM_REG_MSP:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = helper_v7m_mrs(env, 8);
             break;
         case UC_ARM_REG_PSP:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = helper_v7m_mrs(env, 9);
             break;
         case UC_ARM_REG_IAPSR:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = v7m_mrs_xpsr(env, 1);
             break;
         case UC_ARM_REG_EAPSR:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = v7m_mrs_xpsr(env, 2);
             break;
         case UC_ARM_REG_XPSR:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = v7m_mrs_xpsr(env, 3);
             break;
         case UC_ARM_REG_EPSR:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = v7m_mrs_xpsr(env, 6);
             break;
         case UC_ARM_REG_IEPSR:
+            CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = v7m_mrs_xpsr(env, 7);
             break;
         case UC_ARM_REG_PRIMASK:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = helper_v7m_mrs(env, 16);
             break;
         case UC_ARM_REG_BASEPRI:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = helper_v7m_mrs(env, 17);
             break;
         case UC_ARM_REG_BASEPRI_MAX:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = helper_v7m_mrs(env, 18);
             break;
         case UC_ARM_REG_FAULTMASK:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = helper_v7m_mrs(env, 19);
             break;
         case UC_ARM_REG_CONTROL:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = helper_v7m_mrs(env, 20);
             break;
         case UC_ARM_REG_CP_REG:
+            CHECK_REG_TYPE(uc_arm_cp_reg);
             ret = read_cp_reg(env, (uc_arm_cp_reg *)value);
             break;
         }
@@ -322,20 +354,25 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
     return ret;
 }
 
-static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
+static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
+                        size_t *size)
 {
-    uc_err ret = UC_ERR_OK;
+    uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
+        CHECK_REG_TYPE(uint32_t);
         env->regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
     } else if (regid >= UC_ARM_REG_Q0 && regid <= UC_ARM_REG_Q15) {
+        CHECK_REG_TYPE(uint64_t[2]);
         uint32_t reg_index = regid - UC_ARM_REG_Q0;
         env->vfp.zregs[reg_index].d[0] = *(uint64_t *)value;
         env->vfp.zregs[reg_index].d[1] = *(((uint64_t *)value) + 1);
     } else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31) {
+        CHECK_REG_TYPE(uint64_t);
         uint32_t reg_index = regid - UC_ARM_REG_D0;
         env->vfp.zregs[reg_index / 2].d[reg_index & 1] = *(uint64_t *)value;
     } else if (regid >= UC_ARM_REG_S0 && regid <= UC_ARM_REG_S31) {
+        CHECK_REG_TYPE(uint32_t);
         uint32_t reg_index = regid - UC_ARM_REG_S0;
         uint64_t *p_reg_value =
             &env->vfp.zregs[reg_index / 4].d[reg_index % 4 / 2];
@@ -350,6 +387,7 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
     } else {
         switch (regid) {
         case UC_ARM_REG_APSR:
+            CHECK_REG_TYPE(uint32_t);
             if (!arm_feature(env, ARM_FEATURE_M)) {
                 cpsr_write(env, *(uint32_t *)value,
                            (CPSR_NZCV | CPSR_Q | CPSR_GE), CPSRWriteByUnicorn);
@@ -360,26 +398,32 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
             }
             break;
         case UC_ARM_REG_APSR_NZCV:
+            CHECK_REG_TYPE(uint32_t);
             cpsr_write(env, *(uint32_t *)value, CPSR_NZCV, CPSRWriteByUnicorn);
             arm_rebuild_hflags(env);
             break;
         case UC_ARM_REG_CPSR:
+            CHECK_REG_TYPE(uint32_t);
             cpsr_write(env, *(uint32_t *)value, ~0, CPSRWriteByUnicorn);
             arm_rebuild_hflags(env);
             break;
         case UC_ARM_REG_SPSR:
+            CHECK_REG_TYPE(uint32_t);
             env->spsr = *(uint32_t *)value;
             break;
         // case UC_ARM_REG_SP:
         case UC_ARM_REG_R13:
+            CHECK_REG_TYPE(uint32_t);
             env->regs[13] = *(uint32_t *)value;
             break;
         // case UC_ARM_REG_LR:
         case UC_ARM_REG_R14:
+            CHECK_REG_TYPE(uint32_t);
             env->regs[14] = *(uint32_t *)value;
             break;
         // case UC_ARM_REG_PC:
         case UC_ARM_REG_R15:
+            CHECK_REG_TYPE(uint32_t);
             env->pc = (*(uint32_t *)value & ~1);
             env->thumb = (*(uint32_t *)value & 1);
             env->uc->thumb = (*(uint32_t *)value & 1);
@@ -390,87 +434,114 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
             //     break;
 
         case UC_ARM_REG_C13_C0_3:
+            CHECK_REG_TYPE(int32_t);
             env->cp15.tpidrro_el[0] = *(int32_t *)value;
             break;
         case UC_ARM_REG_FPEXC:
+            CHECK_REG_TYPE(int32_t);
             env->vfp.xregs[ARM_VFP_FPEXC] = *(int32_t *)value;
             break;
         case UC_ARM_REG_FPSCR:
+            CHECK_REG_TYPE(int32_t);
             vfp_set_fpscr(env, *(int32_t *)value);
             break;
         case UC_ARM_REG_FPSID:
+            CHECK_REG_TYPE(int32_t);
             env->vfp.xregs[ARM_VFP_FPSID] = *(int32_t *)value;
             break;
         case UC_ARM_REG_IPSR:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1000, 5, *(uint32_t *)value);
             break;
         case UC_ARM_REG_MSP:
+            CHECK_REG_TYPE(uint32_t);
             helper_v7m_msr(env, 8, *(uint32_t *)value);
             break;
         case UC_ARM_REG_PSP:
+            CHECK_REG_TYPE(uint32_t);
             helper_v7m_msr(env, 9, *(uint32_t *)value);
             break;
         case UC_ARM_REG_CONTROL:
+            CHECK_REG_TYPE(uint32_t);
             helper_v7m_msr(env, 20, *(uint32_t *)value);
             break;
         case UC_ARM_REG_EPSR:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1000, 6, *(uint32_t *)value);
             break;
         case UC_ARM_REG_IEPSR:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1000, 7, *(uint32_t *)value);
             break;
         case UC_ARM_REG_PRIMASK:
+            CHECK_REG_TYPE(uint32_t);
             helper_v7m_msr(env, 16, *(uint32_t *)value);
             break;
         case UC_ARM_REG_BASEPRI:
+            CHECK_REG_TYPE(uint32_t);
             helper_v7m_msr(env, 17, *(uint32_t *)value);
             break;
         case UC_ARM_REG_BASEPRI_MAX:
+            CHECK_REG_TYPE(uint32_t);
             helper_v7m_msr(env, 18, *(uint32_t *)value);
             break;
         case UC_ARM_REG_FAULTMASK:
+            CHECK_REG_TYPE(uint32_t);
             helper_v7m_msr(env, 19, *(uint32_t *)value);
             break;
         case UC_ARM_REG_APSR_NZCVQ:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1000, 0, *(uint32_t *)value);
             break;
         case UC_ARM_REG_APSR_G:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b0100, 0, *(uint32_t *)value);
             break;
         case UC_ARM_REG_APSR_NZCVQG:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1100, 0, *(uint32_t *)value);
             break;
         case UC_ARM_REG_IAPSR:
         case UC_ARM_REG_IAPSR_NZCVQ:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1000, 1, *(uint32_t *)value);
             break;
         case UC_ARM_REG_IAPSR_G:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b0100, 1, *(uint32_t *)value);
             break;
         case UC_ARM_REG_IAPSR_NZCVQG:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1100, 1, *(uint32_t *)value);
             break;
         case UC_ARM_REG_EAPSR:
         case UC_ARM_REG_EAPSR_NZCVQ:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1000, 2, *(uint32_t *)value);
             break;
         case UC_ARM_REG_EAPSR_G:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b0100, 2, *(uint32_t *)value);
             break;
         case UC_ARM_REG_EAPSR_NZCVQG:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1100, 2, *(uint32_t *)value);
             break;
         case UC_ARM_REG_XPSR:
         case UC_ARM_REG_XPSR_NZCVQ:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1000, 3, *(uint32_t *)value);
             break;
         case UC_ARM_REG_XPSR_G:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b0100, 3, *(uint32_t *)value);
             break;
         case UC_ARM_REG_XPSR_NZCVQG:
+            CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1100, 3, *(uint32_t *)value);
             break;
         case UC_ARM_REG_CP_REG:
+            CHECK_REG_TYPE(uc_arm_cp_reg);
             ret = write_cp_reg(env, (uc_arm_cp_reg *)value);
             break;
         }
@@ -479,8 +550,8 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
     return ret;
 }
 
-int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                 int count)
+int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                 size_t *sizes, int count)
 {
     CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
@@ -489,17 +560,20 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
         if (err) {
             return err;
         }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
-int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                  int count)
+int arm_reg_write(struct uc_struct *uc, unsigned int *regs,
+                  const void *const *vals, size_t *sizes, int count)
 {
     CPUArchState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
@@ -508,7 +582,7 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value);
+        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
         if (err) {
             return err;
         }
@@ -519,12 +593,12 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
         }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 DEFAULT_VISIBILITY
 int arm_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                         void **vals, int count)
+                         void *const *vals, size_t *sizes, int count)
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
     int i;
@@ -533,18 +607,21 @@ int arm_context_reg_read(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
         if (err) {
             return err;
         }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 DEFAULT_VISIBILITY
 int arm_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                          void *const *vals, int count)
+                          const void *const *vals, size_t *sizes, int count)
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
     int i;
@@ -553,13 +630,13 @@ int arm_context_reg_write(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value);
+        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
         if (err) {
             return err;
         }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 static bool arm_stop_interrupt(struct uc_struct *uc, int intno)

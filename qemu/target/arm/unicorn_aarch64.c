@@ -138,97 +138,127 @@ static uc_err write_cp_reg(CPUARMState *env, uc_arm64_cp_reg *cp)
     return UC_ERR_OK;
 }
 
-static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
+static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value,
+                       size_t *size)
 {
-    uc_err ret = UC_ERR_OK;
+    uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_ARM64_REG_V0 && regid <= UC_ARM64_REG_V31) {
         regid += UC_ARM64_REG_Q0 - UC_ARM64_REG_V0;
     }
     if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28) {
-        *(int64_t *)value = env->xregs[regid - UC_ARM64_REG_X0];
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->xregs[regid - UC_ARM64_REG_X0];
     } else if (regid >= UC_ARM64_REG_W0 && regid <= UC_ARM64_REG_W30) {
-        *(int32_t *)value = READ_DWORD(env->xregs[regid - UC_ARM64_REG_W0]);
+        CHECK_REG_TYPE(uint32_t);
+        *(uint32_t *)value = READ_DWORD(env->xregs[regid - UC_ARM64_REG_W0]);
     } else if (regid >= UC_ARM64_REG_Q0 && regid <= UC_ARM64_REG_Q31) { // FIXME
+        CHECK_REG_TYPE(float64[2]);
         float64 *dst = (float64 *)value;
         uint32_t reg_index = regid - UC_ARM64_REG_Q0;
         dst[0] = env->vfp.zregs[reg_index].d[0];
         dst[1] = env->vfp.zregs[reg_index].d[1];
     } else if (regid >= UC_ARM64_REG_D0 && regid <= UC_ARM64_REG_D31) {
+        CHECK_REG_TYPE(float64);
         *(float64 *)value = env->vfp.zregs[regid - UC_ARM64_REG_D0].d[0];
     } else if (regid >= UC_ARM64_REG_S0 && regid <= UC_ARM64_REG_S31) {
+        CHECK_REG_TYPE(int32_t);
         *(int32_t *)value =
             READ_DWORD(env->vfp.zregs[regid - UC_ARM64_REG_S0].d[0]);
     } else if (regid >= UC_ARM64_REG_H0 && regid <= UC_ARM64_REG_H31) {
+        CHECK_REG_TYPE(int16_t);
         *(int16_t *)value =
             READ_WORD(env->vfp.zregs[regid - UC_ARM64_REG_H0].d[0]);
     } else if (regid >= UC_ARM64_REG_B0 && regid <= UC_ARM64_REG_B31) {
+        CHECK_REG_TYPE(int8_t);
         *(int8_t *)value =
             READ_BYTE_L(env->vfp.zregs[regid - UC_ARM64_REG_B0].d[0]);
     } else if (regid >= UC_ARM64_REG_ELR_EL0 && regid <= UC_ARM64_REG_ELR_EL3) {
+        CHECK_REG_TYPE(uint64_t);
         *(uint64_t *)value = env->elr_el[regid - UC_ARM64_REG_ELR_EL0];
     } else if (regid >= UC_ARM64_REG_SP_EL0 && regid <= UC_ARM64_REG_SP_EL3) {
+        CHECK_REG_TYPE(uint64_t);
         *(uint64_t *)value = env->sp_el[regid - UC_ARM64_REG_SP_EL0];
     } else if (regid >= UC_ARM64_REG_ESR_EL0 && regid <= UC_ARM64_REG_ESR_EL3) {
+        CHECK_REG_TYPE(uint64_t);
         *(uint64_t *)value = env->cp15.esr_el[regid - UC_ARM64_REG_ESR_EL0];
     } else if (regid >= UC_ARM64_REG_FAR_EL0 && regid <= UC_ARM64_REG_FAR_EL3) {
+        CHECK_REG_TYPE(uint64_t);
         *(uint64_t *)value = env->cp15.far_el[regid - UC_ARM64_REG_FAR_EL0];
     } else if (regid >= UC_ARM64_REG_VBAR_EL0 &&
                regid <= UC_ARM64_REG_VBAR_EL3) {
+        CHECK_REG_TYPE(uint64_t);
         *(uint64_t *)value = env->cp15.vbar_el[regid - UC_ARM64_REG_VBAR_EL0];
     } else {
         switch (regid) {
         default:
             break;
         case UC_ARM64_REG_CPACR_EL1:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = env->cp15.cpacr_el1;
             break;
         case UC_ARM64_REG_TPIDR_EL0:
-            *(int64_t *)value = env->cp15.tpidr_el[0];
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->cp15.tpidr_el[0];
             break;
         case UC_ARM64_REG_TPIDRRO_EL0:
-            *(int64_t *)value = env->cp15.tpidrro_el[0];
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->cp15.tpidrro_el[0];
             break;
         case UC_ARM64_REG_TPIDR_EL1:
-            *(int64_t *)value = env->cp15.tpidr_el[1];
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->cp15.tpidr_el[1];
             break;
         case UC_ARM64_REG_X29:
-            *(int64_t *)value = env->xregs[29];
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->xregs[29];
             break;
         case UC_ARM64_REG_X30:
-            *(int64_t *)value = env->xregs[30];
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->xregs[30];
             break;
         case UC_ARM64_REG_PC:
+            CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = env->pc;
             break;
         case UC_ARM64_REG_SP:
-            *(int64_t *)value = env->xregs[31];
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->xregs[31];
             break;
         case UC_ARM64_REG_NZCV:
-            *(int32_t *)value = cpsr_read(env) & CPSR_NZCV;
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = cpsr_read(env) & CPSR_NZCV;
             break;
         case UC_ARM64_REG_PSTATE:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = pstate_read(env);
             break;
         case UC_ARM64_REG_TTBR0_EL1:
+            CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = env->cp15.ttbr0_el[1];
             break;
         case UC_ARM64_REG_TTBR1_EL1:
+            CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = env->cp15.ttbr1_el[1];
             break;
         case UC_ARM64_REG_PAR_EL1:
+            CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = env->cp15.par_el[1];
             break;
         case UC_ARM64_REG_MAIR_EL1:
+            CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = env->cp15.mair_el[1];
             break;
         case UC_ARM64_REG_CP_REG:
+            CHECK_REG_TYPE(uc_arm64_cp_reg);
             ret = read_cp_reg(env, (uc_arm64_cp_reg *)value);
             break;
         case UC_ARM64_REG_FPCR:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = vfp_get_fpcr(env);
             break;
         case UC_ARM64_REG_FPSR:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = vfp_get_fpsr(env);
             break;
         }
@@ -237,98 +267,128 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
     return ret;
 }
 
-static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
+static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
+                        size_t *size)
 {
-    uc_err ret = UC_ERR_OK;
+    uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_ARM64_REG_V0 && regid <= UC_ARM64_REG_V31) {
         regid += UC_ARM64_REG_Q0 - UC_ARM64_REG_V0;
     }
     if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28) {
+        CHECK_REG_TYPE(uint64_t);
         env->xregs[regid - UC_ARM64_REG_X0] = *(uint64_t *)value;
     } else if (regid >= UC_ARM64_REG_W0 && regid <= UC_ARM64_REG_W30) {
+        CHECK_REG_TYPE(uint32_t);
         WRITE_DWORD(env->xregs[regid - UC_ARM64_REG_W0], *(uint32_t *)value);
     } else if (regid >= UC_ARM64_REG_Q0 && regid <= UC_ARM64_REG_Q31) {
+        CHECK_REG_TYPE(float64[2]);
         float64 *src = (float64 *)value;
         uint32_t reg_index = regid - UC_ARM64_REG_Q0;
         env->vfp.zregs[reg_index].d[0] = src[0];
         env->vfp.zregs[reg_index].d[1] = src[1];
     } else if (regid >= UC_ARM64_REG_D0 && regid <= UC_ARM64_REG_D31) {
+        CHECK_REG_TYPE(float64);
         env->vfp.zregs[regid - UC_ARM64_REG_D0].d[0] = *(float64 *)value;
     } else if (regid >= UC_ARM64_REG_S0 && regid <= UC_ARM64_REG_S31) {
+        CHECK_REG_TYPE(int32_t);
         WRITE_DWORD(env->vfp.zregs[regid - UC_ARM64_REG_S0].d[0],
                     *(int32_t *)value);
     } else if (regid >= UC_ARM64_REG_H0 && regid <= UC_ARM64_REG_H31) {
+        CHECK_REG_TYPE(int16_t);
         WRITE_WORD(env->vfp.zregs[regid - UC_ARM64_REG_H0].d[0],
                    *(int16_t *)value);
     } else if (regid >= UC_ARM64_REG_B0 && regid <= UC_ARM64_REG_B31) {
+        CHECK_REG_TYPE(int8_t);
         WRITE_BYTE_L(env->vfp.zregs[regid - UC_ARM64_REG_B0].d[0],
                      *(int8_t *)value);
     } else if (regid >= UC_ARM64_REG_ELR_EL0 && regid <= UC_ARM64_REG_ELR_EL3) {
+        CHECK_REG_TYPE(uint64_t);
         env->elr_el[regid - UC_ARM64_REG_ELR_EL0] = *(uint64_t *)value;
     } else if (regid >= UC_ARM64_REG_SP_EL0 && regid <= UC_ARM64_REG_SP_EL3) {
+        CHECK_REG_TYPE(uint64_t);
         env->sp_el[regid - UC_ARM64_REG_SP_EL0] = *(uint64_t *)value;
     } else if (regid >= UC_ARM64_REG_ESR_EL0 && regid <= UC_ARM64_REG_ESR_EL3) {
+        CHECK_REG_TYPE(uint64_t);
         env->cp15.esr_el[regid - UC_ARM64_REG_ESR_EL0] = *(uint64_t *)value;
     } else if (regid >= UC_ARM64_REG_FAR_EL0 && regid <= UC_ARM64_REG_FAR_EL3) {
+        CHECK_REG_TYPE(uint64_t);
         env->cp15.far_el[regid - UC_ARM64_REG_FAR_EL0] = *(uint64_t *)value;
     } else if (regid >= UC_ARM64_REG_VBAR_EL0 &&
                regid <= UC_ARM64_REG_VBAR_EL3) {
+        CHECK_REG_TYPE(uint64_t);
         env->cp15.vbar_el[regid - UC_ARM64_REG_VBAR_EL0] = *(uint64_t *)value;
     } else {
         switch (regid) {
         default:
             break;
         case UC_ARM64_REG_CPACR_EL1:
+            CHECK_REG_TYPE(uint32_t);
             env->cp15.cpacr_el1 = *(uint32_t *)value;
             break;
         case UC_ARM64_REG_TPIDR_EL0:
+            CHECK_REG_TYPE(uint64_t);
             env->cp15.tpidr_el[0] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_TPIDRRO_EL0:
+            CHECK_REG_TYPE(uint64_t);
             env->cp15.tpidrro_el[0] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_TPIDR_EL1:
+            CHECK_REG_TYPE(uint64_t);
             env->cp15.tpidr_el[1] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_X29:
+            CHECK_REG_TYPE(uint64_t);
             env->xregs[29] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_X30:
+            CHECK_REG_TYPE(uint64_t);
             env->xregs[30] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_PC:
+            CHECK_REG_TYPE(uint64_t);
             env->pc = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_SP:
+            CHECK_REG_TYPE(uint64_t);
             env->xregs[31] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_NZCV:
+            CHECK_REG_TYPE(uint32_t);
             cpsr_write(env, *(uint32_t *)value, CPSR_NZCV, CPSRWriteRaw);
             break;
         case UC_ARM64_REG_PSTATE:
+            CHECK_REG_TYPE(uint32_t);
             pstate_write(env, *(uint32_t *)value);
             break;
         case UC_ARM64_REG_TTBR0_EL1:
+            CHECK_REG_TYPE(uint64_t);
             env->cp15.ttbr0_el[1] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_TTBR1_EL1:
+            CHECK_REG_TYPE(uint64_t);
             env->cp15.ttbr1_el[1] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_PAR_EL1:
+            CHECK_REG_TYPE(uint64_t);
             env->cp15.par_el[1] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_MAIR_EL1:
+            CHECK_REG_TYPE(uint64_t);
             env->cp15.mair_el[1] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_CP_REG:
+            CHECK_REG_TYPE(uc_arm64_cp_reg);
             ret = write_cp_reg(env, (uc_arm64_cp_reg *)value);
             arm_rebuild_hflags(env);
             break;
         case UC_ARM64_REG_FPCR:
+            CHECK_REG_TYPE(uint32_t);
             vfp_set_fpcr(env, *(uint32_t *)value);
             break;
         case UC_ARM64_REG_FPSR:
+            CHECK_REG_TYPE(uint32_t);
             vfp_set_fpsr(env, *(uint32_t *)value);
             break;
         }
@@ -337,8 +397,8 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
     return ret;
 }
 
-int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                   int count)
+int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                   size_t *sizes, int count)
 {
     CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
@@ -347,7 +407,7 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
         if (err) {
             return err;
         }
@@ -356,8 +416,8 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
     return UC_ERR_OK;
 }
 
-int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                    int count)
+int arm64_reg_write(struct uc_struct *uc, unsigned int *regs,
+                    const void *const *vals, size_t *sizes, int count)
 {
     CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
@@ -366,7 +426,7 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value);
+        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
         if (err) {
             return err;
         }
@@ -383,10 +443,10 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 DEFAULT_VISIBILITY
 #ifdef TARGET_WORDS_BIGENDIAN
 int arm64eb_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                             void **vals, int count)
+                             void *const *vals, size_t *sizes, int count)
 #else
 int arm64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                           void **vals, int count)
+                           void *const *vals, size_t *sizes, int count)
 #endif
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
@@ -396,22 +456,22 @@ int arm64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
         if (err) {
             return err;
         }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 DEFAULT_VISIBILITY
 #ifdef TARGET_WORDS_BIGENDIAN
 int arm64eb_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                              void *const *vals, int count)
+                              const void *const *vals, size_t *sizes, int count)
 #else
 int arm64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                            void *const *vals, int count)
+                            const void *const *vals, size_t *sizes, int count)
 #endif
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
@@ -421,13 +481,13 @@ int arm64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value);
+        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
         if (err) {
             return err;
         }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 static int arm64_cpus_init(struct uc_struct *uc, const char *cpu_model)
