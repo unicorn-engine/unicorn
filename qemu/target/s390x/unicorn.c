@@ -53,80 +53,99 @@ void s390_reg_reset(struct uc_struct *uc)
     env->psw.addr = 0;
 }
 
-static void reg_read(CPUS390XState *env, unsigned int regid, void *value)
+static uc_err reg_read(CPUS390XState *env, unsigned int regid, void *value,
+                       size_t *size)
 {
+    uc_err ret = UC_ERR_ARG;
+
     if (regid >= UC_S390X_REG_R0 && regid <= UC_S390X_REG_R15) {
+        CHECK_REG_TYPE(uint64_t);
         *(uint64_t *)value = env->regs[regid - UC_S390X_REG_R0];
-        return;
-    }
-
-    if (regid >= UC_S390X_REG_A0 && regid <= UC_S390X_REG_A15) {
+    } else if (regid >= UC_S390X_REG_A0 && regid <= UC_S390X_REG_A15) {
+        CHECK_REG_TYPE(uint32_t);
         *(uint32_t *)value = env->regs[regid - UC_S390X_REG_A0];
-        return;
+    } else {
+        switch (regid) {
+        default:
+            break;
+        case UC_S390X_REG_PC:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->psw.addr;
+            break;
+        case UC_S390X_REG_PSWM:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = get_psw_mask(env);
+            break;
+        }
     }
 
-    switch (regid) {
-    default:
-        break;
-    case UC_S390X_REG_PC:
-        *(uint64_t *)value = env->psw.addr;
-        break;
-    case UC_S390X_REG_PSWM:
-        *(uint64_t *)value = get_psw_mask(env);
-        break;
-    }
+    return ret;
 }
 
-static void reg_write(CPUS390XState *env, unsigned int regid, const void *value)
+static uc_err reg_write(CPUS390XState *env, unsigned int regid,
+                        const void *value, size_t *size)
 {
+    uc_err ret = UC_ERR_ARG;
+
     if (regid >= UC_S390X_REG_R0 && regid <= UC_S390X_REG_R15) {
+        CHECK_REG_TYPE(uint64_t);
         env->regs[regid - UC_S390X_REG_R0] = *(uint64_t *)value;
-        return;
-    }
-
-    if (regid >= UC_S390X_REG_A0 && regid <= UC_S390X_REG_A15) {
+    } else if (regid >= UC_S390X_REG_A0 && regid <= UC_S390X_REG_A15) {
+        CHECK_REG_TYPE(uint32_t);
         env->regs[regid - UC_S390X_REG_A0] = *(uint32_t *)value;
-        return;
+    } else {
+        switch (regid) {
+        default:
+            break;
+        case UC_S390X_REG_PC:
+            CHECK_REG_TYPE(uint64_t);
+            env->psw.addr = *(uint64_t *)value;
+            break;
+        case UC_S390X_REG_PSWM:
+            CHECK_REG_TYPE(uint64_t);
+            env->psw.mask = *(uint64_t *)value;
+            env->cc_op = (env->psw.mask >> 44) & 3;
+            break;
+        }
     }
-
-    switch (regid) {
-    default:
-        break;
-    case UC_S390X_REG_PC:
-        env->psw.addr = *(uint64_t *)value;
-        break;
-    case UC_S390X_REG_PSWM:
-        env->psw.mask = *(uint64_t *)value;
-        env->cc_op = (env->psw.mask >> 44) & 3;
-        break;
-    }
+    return ret;
 }
 
-static int s390_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                         int count)
+DEFAULT_VISIBILITY
+int s390_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                  size_t *sizes, int count)
 {
     CPUS390XState *env = &(S390_CPU(uc->cpu)->env);
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
-static int s390_reg_write(struct uc_struct *uc, unsigned int *regs,
-                          void *const *vals, int count)
+DEFAULT_VISIBILITY
+int s390_reg_write(struct uc_struct *uc, unsigned int *regs,
+                   const void *const *vals, size_t *sizes, int count)
 {
     CPUS390XState *env = &(S390_CPU(uc->cpu)->env);
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
         if (regid == UC_S390X_REG_PC) {
             // force to quit execution and flush TB
             uc->quit_request = true;
@@ -134,39 +153,47 @@ static int s390_reg_write(struct uc_struct *uc, unsigned int *regs,
         }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 DEFAULT_VISIBILITY
 int s390_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void **vals, int count)
+                          void *const *vals, size_t *sizes, int count)
 {
     CPUS390XState *env = (CPUS390XState *)ctx->data;
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 DEFAULT_VISIBILITY
 int s390_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, int count)
+                           const void *const *vals, size_t *sizes, int count)
 {
     CPUS390XState *env = (CPUS390XState *)ctx->data;
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 static int s390_cpus_init(struct uc_struct *uc, const char *cpu_model)

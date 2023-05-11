@@ -83,103 +83,144 @@ void sparc_reg_reset(struct uc_struct *uc)
     env->regwptr = env->regbase;
 }
 
-static void reg_read(CPUSPARCState *env, unsigned int regid, void *value)
+static uc_err reg_read(CPUSPARCState *env, unsigned int regid, void *value, size_t *size)
 {
-    if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
-        *(int64_t *)value = env->gregs[regid - UC_SPARC_REG_G0];
-    else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7)
-        *(int64_t *)value = env->regwptr[regid - UC_SPARC_REG_O0];
-    else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7)
-        *(int64_t *)value = env->regwptr[8 + regid - UC_SPARC_REG_L0];
-    else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7)
-        *(int64_t *)value = env->regwptr[16 + regid - UC_SPARC_REG_I0];
-    else {
+    uc_err ret = UC_ERR_ARG;
+
+    if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->gregs[regid - UC_SPARC_REG_G0];
+    } else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->regwptr[regid - UC_SPARC_REG_O0];
+    } else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->regwptr[8 + regid - UC_SPARC_REG_L0];
+    } else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->regwptr[16 + regid - UC_SPARC_REG_I0];
+    } else {
         switch(regid) {
-            default: break;
-            case UC_SPARC_REG_PC:
-                *(int64_t *)value = env->pc;
-                break;
+        default:
+            break;
+        case UC_SPARC_REG_PC:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->pc;
+            break;
         }
     }
+
+    return ret;
 }
 
-static void reg_write(CPUSPARCState *env, unsigned int regid, const void *value)
+static uc_err reg_write(CPUSPARCState *env, unsigned int regid, const void *value, size_t *size)
 {
-    if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
+    uc_err ret = UC_ERR_ARG;
+
+    if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7) {
+        CHECK_REG_TYPE(uint64_t);
         env->gregs[regid - UC_SPARC_REG_G0] = *(uint64_t *)value;
-    else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7)
+    } else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7) {
+        CHECK_REG_TYPE(uint64_t);
         env->regwptr[regid - UC_SPARC_REG_O0] = *(uint64_t *)value;
-    else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7)
+    } else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7) {
+        CHECK_REG_TYPE(uint64_t);
         env->regwptr[8 + regid - UC_SPARC_REG_L0] = *(uint64_t *)value;
-    else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7)
+    } else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7) {
+        CHECK_REG_TYPE(uint64_t);
         env->regwptr[16 + regid - UC_SPARC_REG_I0] = *(uint64_t *)value;
-    else {
+    } else {
         switch(regid) {
-            default: break;
-            case UC_SPARC_REG_PC:
-                    env->pc = *(uint64_t *)value;
-                    env->npc = *(uint64_t *)value + 4;
-                    break;
+        default:
+            break;
+        case UC_SPARC_REG_PC:
+            CHECK_REG_TYPE(uint64_t);
+            env->pc = *(uint64_t *)value;
+            env->npc = *(uint64_t *)value + 4;
+            break;
         }
     }
+
+    return ret;
 }
 
-int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
+int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals, size_t *sizes, int count)
 {
     CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
-int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, int count)
+int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, const void* const* vals, size_t *sizes, int count)
 {
     CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
+        if (regid == UC_SPARC_REG_PC) {
+            // force to quit execution and flush TB
+            uc->quit_request = true;
+            break_translation_loop(uc);
+        }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 DEFAULT_VISIBILITY
-int sparc64_context_reg_read(struct uc_context *ctx, unsigned int *regs, void **vals, int count)
+int sparc64_context_reg_read(struct uc_context *ctx, unsigned int *regs, void *const *vals, size_t *sizes, int count)
 {
     CPUSPARCState *env = (CPUSPARCState *)ctx->data;
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 DEFAULT_VISIBILITY
-int sparc64_context_reg_write(struct uc_context *ctx, unsigned int *regs, void *const *vals, int count)
+int sparc64_context_reg_write(struct uc_context *ctx, unsigned int *regs, const void *const *vals, size_t *sizes, int count)
 {
     CPUSPARCState *env = (CPUSPARCState *)ctx->data;
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
     }
 
-    return 0;
+    return UC_ERR_OK;
 }
 
 static int sparc_cpus_init(struct uc_struct *uc, const char *cpu_model)

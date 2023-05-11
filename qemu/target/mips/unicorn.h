@@ -5,27 +5,28 @@
 #define UC_QEMU_TARGET_MIPS_H
 
 // functions to read & write registers
-int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                  int count);
-int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                   int count);
+int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                  size_t *sizes, int count);
+int mips_reg_write(struct uc_struct *uc, unsigned int *regs,
+                   const void *const *vals, size_t *sizes, int count);
 
 int mips_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void **vals, int count);
+                          void *const *vals, size_t *sizes, int count);
 int mips_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, int count);
+                           const void *const *vals, size_t *sizes, int count);
 int mipsel_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                            void **vals, int count);
+                            void *const *vals, size_t *sizes, int count);
 int mipsel_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                             void *const *vals, int count);
+                             const void *const *vals, size_t *sizes, int count);
 int mips64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                            void **vals, int count);
+                            void *const *vals, size_t *sizes, int count);
 int mips64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                             void *const *vals, int count);
+                             const void *const *vals, size_t *sizes, int count);
 int mips64el_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                              void **vals, int count);
+                              void *const *vals, size_t *sizes, int count);
 int mips64el_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                               void *const *vals, int count);
+                               const void *const *vals, size_t *sizes,
+                               int count);
 
 void mips_reg_reset(struct uc_struct *uc);
 
