@@ -403,7 +403,7 @@ struct uc_struct {
     uint32_t tcg_buffer_size; // The buffer size we are going to use
 #ifdef WIN32
     PVOID seh_handle;
-    void* seh_closure;
+    void *seh_closure;
 #endif
 };
 
