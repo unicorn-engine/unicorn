@@ -88,7 +88,7 @@ const (
 // RH8509 Registers aliases.
 
 	RH850_REG_ZERO = 0
-	RH850_REG_SP = 2
+	RH850_REG_SP = 3
 	RH850_REG_EP = 30
 	RH850_REG_LP = 31
 )

@@ -93,7 +93,7 @@ module Rh850 =
     // RH8509 Registers aliases.
 
     let UC_RH850_REG_ZERO = 0
-    let UC_RH850_REG_SP = 2
+    let UC_RH850_REG_SP = 3
     let UC_RH850_REG_EP = 30
     let UC_RH850_REG_LP = 31
 
