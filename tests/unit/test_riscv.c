@@ -634,12 +634,13 @@ static void test_riscv_correct_address_in_long_jump_hook(void)
     OK(uc_close(uc));
 }
 
-static void test_riscv_mmu_prepare_tlb(uc_engine *uc, uint32_t data_address, uint32_t code_address)
+static void test_riscv_mmu_prepare_tlb(uc_engine *uc, uint32_t data_address,
+                                       uint32_t code_address)
 {
     uint64_t tlbe;
     uint32_t sptbr = 0x2000;
 
-    OK(uc_mem_map(uc, sptbr, 0x3000, UC_PROT_ALL)); //tlb base
+    OK(uc_mem_map(uc, sptbr, 0x3000, UC_PROT_ALL)); // tlb base
 
     tlbe = ((sptbr + 0x1000) >> 2) | 1;
     OK(uc_mem_write(uc, sptbr, &tlbe, sizeof(tlbe)));
@@ -647,13 +648,14 @@ static void test_riscv_mmu_prepare_tlb(uc_engine *uc, uint32_t data_address, uin
     OK(uc_mem_write(uc, sptbr + 0x1000, &tlbe, sizeof(tlbe)));
 
     tlbe = (code_address >> 2) | (7 << 1) | 1;
-    OK(uc_mem_write(uc, sptbr + 0x2000 + 0x15*8, &tlbe, sizeof(tlbe)));
+    OK(uc_mem_write(uc, sptbr + 0x2000 + 0x15 * 8, &tlbe, sizeof(tlbe)));
 
     tlbe = (data_address >> 2) | (7 << 1) | 1;
-    OK(uc_mem_write(uc, sptbr + 0x2000 + 0x16*8, &tlbe, sizeof(tlbe)));
+    OK(uc_mem_write(uc, sptbr + 0x2000 + 0x16 * 8, &tlbe, sizeof(tlbe)));
 }
 
-static void test_riscv_mmu_hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *userdata)
+static void test_riscv_mmu_hook_code(uc_engine *uc, uint64_t address,
+                                     uint32_t size, void *userdata)
 {
     if (address == 0x15010) {
         OK(uc_emu_stop(uc));
@@ -678,7 +680,16 @@ static void test_riscv_mmu(void)
     csrw      mepc, t1
     mret
     */
-    char code_m[] = "\x1b\x0e\xf0\xff" "\x13\x1e\xfe\x03" "\x13\x0e\x2e\x00" "\x73\x10\x0e\x18" "\xb7\x12\x00\x00" "\x9b\x82\x02\x82" "\x73\x90\x02\x30" "\x37\x53\x01\x00" "\x73\x10\x13\x34" "\x73\x00\x20\x30";
+    char code_m[] = "\x1b\x0e\xf0\xff"
+                    "\x13\x1e\xfe\x03"
+                    "\x13\x0e\x2e\x00"
+                    "\x73\x10\x0e\x18"
+                    "\xb7\x12\x00\x00"
+                    "\x9b\x82\x02\x82"
+                    "\x73\x90\x02\x30"
+                    "\x37\x53\x01\x00"
+                    "\x73\x10\x13\x34"
+                    "\x73\x00\x20\x30";
 
     /*
     li t0, 0x41414141
@@ -686,7 +697,11 @@ static void test_riscv_mmu(void)
     sw t0, 0(t1)
     nop
     */
-    char code_s[] = "\xb7\x42\x41\x41" "\x9b\x82\x12\x14" "\x37\x63\x01\x00" "\x23\x20\x53\x00" "\x13\x00\x00\x00";
+    char code_s[] = "\xb7\x42\x41\x41"
+                    "\x9b\x82\x12\x14"
+                    "\x37\x63\x01\x00"
+                    "\x23\x20\x53\x00"
+                    "\x13\x00\x00\x00";
 
     OK(uc_open(UC_ARCH_RISCV, UC_MODE_RISCV64, &uc));
     OK(uc_ctl_tlb_mode(uc, UC_TLB_CPU));

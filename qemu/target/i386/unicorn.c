@@ -986,7 +986,7 @@ static int reg_write(CPUX86State *env, unsigned int regid, const void *value,
             goto write_cr;
         case UC_X86_REG_CR4:
             cpu_x86_update_cr4(env, *(uint32_t *)value);
-write_cr:
+        write_cr:
             env->cr[regid - UC_X86_REG_CR0] = *(uint32_t *)value;
             break;
         case UC_X86_REG_DR0:
@@ -1169,16 +1169,16 @@ write_cr:
         default:
             break;
         case UC_X86_REG_CR0:
-            cpu_x86_update_cr0(env, *(uint32_t *) value);
+            cpu_x86_update_cr0(env, *(uint32_t *)value);
             goto write_cr64;
         case UC_X86_REG_CR1:
         case UC_X86_REG_CR2:
         case UC_X86_REG_CR3:
-            cpu_x86_update_cr3(env, *(uint32_t *) value);
+            cpu_x86_update_cr3(env, *(uint32_t *)value);
             goto write_cr64;
         case UC_X86_REG_CR4:
-            cpu_x86_update_cr4(env, *(uint32_t *) value);
-write_cr64:
+            cpu_x86_update_cr4(env, *(uint32_t *)value);
+        write_cr64:
             env->cr[regid - UC_X86_REG_CR0] = *(uint64_t *)value;
             break;
         case UC_X86_REG_DR0:

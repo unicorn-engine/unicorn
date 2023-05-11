@@ -11,7 +11,7 @@ $ cstool riscv64 1305100093850502
  0  13 05 10 00  addi	a0, zero, 1
  4  93 85 05 02  addi	a1, a1, 0x20
 #endif
-//#define RISCV_CODE "\x13\x05\x10\x00\x93\x85\x05\x02\x93\x85\x05\x02"
+// #define RISCV_CODE "\x13\x05\x10\x00\x93\x85\x05\x02\x93\x85\x05\x02"
 #define RISCV_CODE "\x13\x05\x10\x00\x93\x85\x05\x02"
 
 // memory address where emulation starts

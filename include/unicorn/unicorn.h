@@ -264,13 +264,15 @@ typedef enum uc_mem_type {
 
   @vaddr: virtuall address for lookup
   @rw: the access mode
-  @result: result entry, contains physical address (paddr) and permitted access type (perms) for the entry
+  @result: result entry, contains physical address (paddr) and permitted access
+  type (perms) for the entry
 
   @return: return true if the entry was found. If a callback is present but
   no one returns true a pagefault is generated.
 */
-typedef bool (*uc_cb_tlbevent_t)(uc_engine *uc, uint64_t vaddr, uc_mem_type type,
-                                 uc_tlb_entry *result, void *user_data);
+typedef bool (*uc_cb_tlbevent_t)(uc_engine *uc, uint64_t vaddr,
+                                 uc_mem_type type, uc_tlb_entry *result,
+                                 void *user_data);
 
 // Represent a TranslationBlock.
 typedef struct uc_tb {
@@ -510,11 +512,12 @@ typedef enum uc_query_type {
 
 // unicorn tlb type selection
 typedef enum uc_tlb_type {
-  // The default unicorn virtuall TLB implementation.
+    // The default unicorn virtuall TLB implementation.
     // The tlb implementation of the CPU, best to use for full system emulation.
     UC_TLB_CPU = 0,
     // This tlb defaults to virtuall address == physical address
-    // Also a hook is availible to override the tlb entries (see uc_cb_tlbevent_t).
+    // Also a hook is availible to override the tlb entries (see
+    // uc_cb_tlbevent_t).
     UC_TLB_VIRTUAL
 } uc_tlb_type;
 
@@ -652,7 +655,8 @@ See sample_ctl.c for a detailed example.
     uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_TB_REQUEST_CACHE, 2), (address), (tb))
 #define uc_ctl_flush_tb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_FLUSH, 0))
 #define uc_ctl_flush_tlb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TLB_FLUSH, 0))
-#define uc_ctl_tlb_mode(uc, mode) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TLB_TYPE, 1), (mode))
+#define uc_ctl_tlb_mode(uc, mode)                                              \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TLB_TYPE, 1), (mode))
 #define uc_ctl_get_tcg_buffer_size(uc, size)                                   \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_TCG_BUFFER_SIZE, 1), (size))
 #define uc_ctl_set_tcg_buffer_size(uc, size)                                   \
