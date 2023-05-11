@@ -130,12 +130,17 @@ uc_engine = ctypes.c_void_p
 uc_context = ctypes.c_void_p
 uc_hook_h = ctypes.c_size_t
 
+def _structure_repr(self):
+    return "%s(%s)" % (self.__class__.__name__, ", ".join("%s=%s" % (k, getattr(self, k)) for (k, _) in self._fields_))
+
 class _uc_mem_region(ctypes.Structure):
     _fields_ = [
         ("begin", ctypes.c_uint64),
         ("end",   ctypes.c_uint64),
         ("perms", ctypes.c_uint32),
     ]
+
+    __repr__ = _structure_repr
 
 class uc_tb(ctypes.Structure):
     """"TranslationBlock"""
@@ -144,6 +149,8 @@ class uc_tb(ctypes.Structure):
         ("icount", ctypes.c_uint16),
         ("size", ctypes.c_uint16)
     ]
+
+    __repr__ = _structure_repr
 
 _setup_prototype(_uc, "uc_version", ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 _setup_prototype(_uc, "uc_arch_supported", ctypes.c_bool, ctypes.c_int)
@@ -177,7 +184,7 @@ _setup_prototype(_uc, "uc_mem_regions", ucerr, uc_engine, ctypes.POINTER(ctypes.
 _setup_prototype(_uc, "uc_hook_add", ucerr, uc_engine, ctypes.POINTER(uc_hook_h), ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint64)
 _setup_prototype(_uc, "uc_ctl", ucerr, uc_engine, ctypes.c_int)
 
-UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p)
+UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_void_p)
 UC_HOOK_INSN_INVALID_CB = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_void_p)
 UC_HOOK_MEM_INVALID_CB = ctypes.CFUNCTYPE(
     ctypes.c_bool, uc_engine, ctypes.c_int,
@@ -198,7 +205,7 @@ UC_HOOK_INSN_OUT_CB = ctypes.CFUNCTYPE(
     ctypes.c_int, ctypes.c_uint32, ctypes.c_void_p
 )
 UC_HOOK_INSN_SYSCALL_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_void_p)
-UC_HOOK_INSN_SYS_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_void_p)
+UC_HOOK_INSN_SYS_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)
 UC_HOOK_INSN_CPUID_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_void_p)
 UC_MMIO_READ_CB = ctypes.CFUNCTYPE(
     ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.c_void_p
@@ -210,7 +217,7 @@ UC_HOOK_EDGE_GEN_CB = ctypes.CFUNCTYPE(
     None, uc_engine, ctypes.POINTER(uc_tb), ctypes.POINTER(uc_tb), ctypes.c_void_p
 )
 UC_HOOK_TCG_OPCODE_CB = ctypes.CFUNCTYPE(
-    None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_void_p
+    None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_void_p
 )
 
 # access to error code via @errno of UcError
@@ -413,6 +420,8 @@ class uc_arm_cp_reg(ctypes.Structure):
         ("val", ctypes.c_uint64)
     ]
 
+    __repr__ = _structure_repr
+
 class uc_arm64_cp_reg(ctypes.Structure):
     """ARM64 coprocessors registers for instructions MRS, MSR"""
     _fields_ = [
@@ -424,6 +433,8 @@ class uc_arm64_cp_reg(ctypes.Structure):
         ("val", ctypes.c_uint64)
     ]
 
+    __repr__ = _structure_repr
+
 class uc_x86_mmr(ctypes.Structure):
     """Memory-Management Register for instructions IDTR, GDTR, LDTR, TR."""
     _fields_ = [
@@ -433,11 +444,15 @@ class uc_x86_mmr(ctypes.Structure):
         ("flags", ctypes.c_uint32),     # not used by GDTR and IDTR
     ]
 
+    __repr__ = _structure_repr
+
 class uc_x86_msr(ctypes.Structure):
     _fields_ = [
         ("rid", ctypes.c_uint32),
         ("value", ctypes.c_uint64),
     ]
+
+    __repr__ = _structure_repr
 
 class uc_x86_float80(ctypes.Structure):
     """Float80"""
@@ -446,6 +461,7 @@ class uc_x86_float80(ctypes.Structure):
         ("exponent", ctypes.c_uint16),
     ]
 
+    __repr__ = _structure_repr
 
 class uc_x86_xmm(ctypes.Structure):
     """128-bit xmm register"""
@@ -453,6 +469,8 @@ class uc_x86_xmm(ctypes.Structure):
         ("low_qword", ctypes.c_uint64),
         ("high_qword", ctypes.c_uint64),
     ]
+
+    __repr__ = _structure_repr
 
 class uc_x86_ymm(ctypes.Structure):
     """256-bit ymm register"""
@@ -463,12 +481,16 @@ class uc_x86_ymm(ctypes.Structure):
         ("fourth_qword", ctypes.c_uint64),
     ]
 
+    __repr__ = _structure_repr
+
 class uc_arm64_neon128(ctypes.Structure):
     """128-bit neon register"""
     _fields_ = [
         ("low_qword", ctypes.c_uint64),
         ("high_qword", ctypes.c_uint64),
     ]
+
+    __repr__ = _structure_repr
 
 # Subclassing ref to allow property assignment.
 class UcRef(weakref.ref):
@@ -647,9 +669,9 @@ class Uc(object):
         return result.value
 
     @_catch_hook_exception
-    def _hook_tcg_op_cb(self, handle, address, arg1, arg2, user_data):
+    def _hook_tcg_op_cb(self, handle, address, arg1, arg2, size, user_data):
         (cb, data) = self._callbacks[user_data]
-        cb(self, address, arg1, arg2, user_data)
+        cb(self, address, arg1, arg2, size, user_data)
 
     @_catch_hook_exception
     def _hook_edge_gen_cb(self, handle, cur, prev, user_data):
@@ -696,11 +718,9 @@ class Uc(object):
     def _hook_insn_sys_cb(self, handle, reg, pcp_reg, user_data):
         cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(uc_arm64_cp_reg)).contents
 
-        uc_arm64_cp_reg_tuple = namedtuple("uc_arm64_cp_reg_tuple", ["crn", "crm", "op0", "op1", "op2", "val"])
-
         (cb, data) = self._callbacks[user_data]
 
-        return cb(self, reg, uc_arm64_cp_reg_tuple(cp_reg.crn, cp_reg.crm, cp_reg.op0, cp_reg.op1, cp_reg.op2, cp_reg.val), data)
+        return cb(self, reg, cp_reg, data)
 
     @_catch_hook_exception
     def _hook_insn_out_cb(self, handle, port, size, value, user_data):
