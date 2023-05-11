@@ -100,7 +100,7 @@ typedef enum uc_rh850_reg {
 
 //> RH8509 Registers aliases.
 #define UC_RH850_REG_ZERO        UC_RH850_REG_R0
-#define UC_RH850_REG_SP          UC_RH850_REG_R2
+#define UC_RH850_REG_SP          UC_RH850_REG_R3
 #define UC_RH850_REG_EP          UC_RH850_REG_R30
 #define UC_RH850_REG_LP          UC_RH850_REG_R31
 
