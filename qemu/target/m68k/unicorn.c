@@ -39,7 +39,7 @@ static void m68k_release(void *ctx)
     }
 }
 
-void m68k_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env = uc->cpu->env_ptr;
 
@@ -49,9 +49,11 @@ void m68k_reg_reset(struct uc_struct *uc)
     env->pc = 0;
 }
 
-static uc_err reg_read(CPUM68KState *env, unsigned int regid, void *value,
-                       size_t *size)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
+    CPUM68KState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7) {
@@ -78,9 +80,11 @@ static uc_err reg_read(CPUM68KState *env, unsigned int regid, void *value,
     return ret;
 }
 
-static uc_err reg_write(CPUM68KState *env, unsigned int regid,
-                        const void *value, size_t *size, int *setpc)
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
+    CPUM68KState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7) {
@@ -108,84 +112,6 @@ static uc_err reg_write(CPUM68KState *env, unsigned int regid,
     return ret;
 }
 
-static uc_err reg_read_batch(CPUM68KState *env, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-static uc_err reg_write_batch(CPUM68KState *env, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count,
-                              int *setpc)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        uc_err err =
-            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-int m68k_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                  size_t *sizes, int count)
-{
-    CPUM68KState *env = &(M68K_CPU(uc->cpu)->env);
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-int m68k_reg_write(struct uc_struct *uc, unsigned int *regs,
-                   const void *const *vals, size_t *sizes, int count)
-{
-    CPUM68KState *env = &(M68K_CPU(uc->cpu)->env);
-    int setpc = 0;
-    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
-    if (err) {
-        return err;
-    }
-    if (setpc) {
-        // force to quit execution and flush TB
-        uc->quit_request = true;
-        break_translation_loop(uc);
-    }
-
-    return UC_ERR_OK;
-}
-
-DEFAULT_VISIBILITY
-int m68k_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void *const *vals, size_t *sizes, int count)
-{
-    CPUM68KState *env = (CPUM68KState *)ctx->data;
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-DEFAULT_VISIBILITY
-int m68k_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           const void *const *vals, size_t *sizes, int count)
-{
-    CPUM68KState *env = (CPUM68KState *)ctx->data;
-    int setpc = 0;
-    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
-}
-
 static int m68k_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     M68kCPU *cpu;
@@ -198,12 +124,12 @@ static int m68k_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-void m68k_uc_init(struct uc_struct *uc)
+void uc_init(struct uc_struct *uc)
 {
     uc->release = m68k_release;
-    uc->reg_read = m68k_reg_read;
-    uc->reg_write = m68k_reg_write;
-    uc->reg_reset = m68k_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->set_pc = m68k_set_pc;
     uc->get_pc = m68k_get_pc;
     uc->cpus_init = m68k_cpus_init;

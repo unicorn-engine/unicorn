@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _sparc
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_sparc
+#define reg_read reg_read_sparc
+#define reg_write reg_write_sparc
+#define uc_init uc_init_sparc
 #define uc_add_inline_hook uc_add_inline_hook_sparc
 #define uc_del_inline_hook uc_del_inline_hook_sparc
 #define tb_invalidate_phys_range tb_invalidate_phys_range_sparc
@@ -1415,7 +1418,4 @@
 #define helper_wrpil helper_wrpil_sparc
 #define helper_done helper_done_sparc
 #define helper_retry helper_retry_sparc
-#define sparc_reg_reset sparc_reg_reset_sparc
-#define sparc_reg_read sparc_reg_read_sparc
-#define sparc_reg_write sparc_reg_write_sparc
 #endif

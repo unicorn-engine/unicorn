@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _riscv64
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_riscv64
+#define reg_read reg_read_riscv64
+#define reg_write reg_write_riscv64
+#define uc_init uc_init_riscv64
 #define uc_add_inline_hook uc_add_inline_hook_riscv64
 #define uc_del_inline_hook uc_del_inline_hook_riscv64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_riscv64
@@ -1361,9 +1364,6 @@
 #define riscv_translate_init riscv_translate_init_riscv64
 #define restore_state_to_opc restore_state_to_opc_riscv64
 #define cpu_riscv_init cpu_riscv_init_riscv64
-#define riscv_reg_reset riscv_reg_reset_riscv64
-#define riscv_reg_read riscv_reg_read_riscv64
-#define riscv_reg_write riscv_reg_write_riscv64
 #define helper_fcvt_l_s helper_fcvt_l_s_riscv64
 #define helper_fcvt_lu_s helper_fcvt_lu_s_riscv64
 #define helper_fcvt_s_l helper_fcvt_s_l_riscv64

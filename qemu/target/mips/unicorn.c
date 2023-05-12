@@ -49,7 +49,7 @@ static void mips_release(void *ctx)
     g_free(cpu->env.tlb);
 }
 
-void mips_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env;
     (void)uc;
@@ -59,9 +59,11 @@ void mips_reg_reset(struct uc_struct *uc)
     env->active_tc.PC = 0;
 }
 
-static uc_err reg_read(CPUMIPSState *env, unsigned int regid, void *value,
-                       size_t *size)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
+    CPUMIPSState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31) {
@@ -101,9 +103,11 @@ static uc_err reg_read(CPUMIPSState *env, unsigned int regid, void *value,
     return ret;
 }
 
-static uc_err reg_write(CPUMIPSState *env, unsigned int regid,
-                        const void *value, size_t *size, int *setpc)
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
+    CPUMIPSState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31) {
@@ -148,115 +152,6 @@ static uc_err reg_write(CPUMIPSState *env, unsigned int regid,
     return ret;
 }
 
-static uc_err reg_read_batch(CPUMIPSState *env, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-static uc_err reg_write_batch(CPUMIPSState *env, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count,
-                              int *setpc)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        uc_err err =
-            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                  size_t *sizes, int count)
-{
-    CPUMIPSState *env = &(MIPS_CPU(uc->cpu)->env);
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-int mips_reg_write(struct uc_struct *uc, unsigned int *regs,
-                   const void *const *vals, size_t *sizes, int count)
-{
-    CPUMIPSState *env = &(MIPS_CPU(uc->cpu)->env);
-    int setpc = 0;
-    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
-    if (err) {
-        return err;
-    }
-    if (setpc) {
-        // force to quit execution and flush TB
-        uc->quit_request = true;
-        break_translation_loop(uc);
-    }
-
-    return UC_ERR_OK;
-}
-
-DEFAULT_VISIBILITY
-#ifdef TARGET_MIPS64
-#ifdef TARGET_WORDS_BIGENDIAN
-int mips64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                            void *const *vals, size_t *sizes, int count)
-#else
-int mips64el_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                              void *const *vals, size_t *sizes, int count)
-#endif
-#else // if TARGET_MIPS
-#ifdef TARGET_WORDS_BIGENDIAN
-int mips_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void *const *vals, size_t *sizes, int count)
-#else
-int mipsel_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                            void *const *vals, size_t *sizes, int count)
-#endif
-#endif
-{
-    CPUMIPSState *env = (CPUMIPSState *)ctx->data;
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-DEFAULT_VISIBILITY
-#ifdef TARGET_MIPS64
-#ifdef TARGET_WORDS_BIGENDIAN
-int mips64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                             const void *const *vals, size_t *sizes, int count)
-#else
-int mips64el_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                               const void *const *vals, size_t *sizes,
-                               int count)
-#endif
-#else // if TARGET_MIPS
-#ifdef TARGET_WORDS_BIGENDIAN
-int mips_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           const void *const *vals, size_t *sizes, int count)
-#else
-int mipsel_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                             const void *const *vals, size_t *sizes, int count)
-#endif
-#endif
-{
-    CPUMIPSState *env = (CPUMIPSState *)ctx->data;
-    int setpc = 0;
-    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
-}
-
 static int mips_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     MIPSCPU *cpu;
@@ -270,23 +165,11 @@ static int mips_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-#ifdef TARGET_MIPS64
-#ifdef TARGET_WORDS_BIGENDIAN
-void mips64_uc_init(struct uc_struct *uc)
-#else
-void mips64el_uc_init(struct uc_struct *uc)
-#endif
-#else // if TARGET_MIPS
-#ifdef TARGET_WORDS_BIGENDIAN
-void mips_uc_init(struct uc_struct *uc)
-#else
-void mipsel_uc_init(struct uc_struct *uc)
-#endif
-#endif
+void uc_init(struct uc_struct *uc)
 {
-    uc->reg_read = mips_reg_read;
-    uc->reg_write = mips_reg_write;
-    uc->reg_reset = mips_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->release = mips_release;
     uc->set_pc = mips_set_pc;
     uc->get_pc = mips_get_pc;

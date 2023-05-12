@@ -27,7 +27,7 @@ static uint64_t tricore_get_pc(struct uc_struct *uc)
     return ((CPUTriCoreState *)uc->cpu->env_ptr)->PC;
 }
 
-void tricore_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUTriCoreState *env;
     (void)uc;
@@ -39,9 +39,11 @@ void tricore_reg_reset(struct uc_struct *uc)
     env->PC = 0;
 }
 
-static uc_err reg_read(CPUTriCoreState *env, unsigned int regid, void *value,
-                       size_t *size)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
+    CPUTriCoreState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_TRICORE_REG_A0 && regid <= UC_TRICORE_REG_A9) {
@@ -139,9 +141,11 @@ static uc_err reg_read(CPUTriCoreState *env, unsigned int regid, void *value,
     return ret;
 }
 
-static uc_err reg_write(CPUTriCoreState *env, unsigned int regid,
-                        const void *value, size_t *size, int *setpc)
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
+    CPUTriCoreState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_TRICORE_REG_A0 && regid <= UC_TRICORE_REG_A9) {
@@ -240,82 +244,6 @@ static uc_err reg_write(CPUTriCoreState *env, unsigned int regid,
     return ret;
 }
 
-static uc_err reg_read_batch(CPUTriCoreState *env, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-static uc_err reg_write_batch(CPUTriCoreState *env, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count,
-                              int *setpc)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        uc_err err =
-            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-int tricore_reg_read(struct uc_struct *uc, unsigned int *regs,
-                     void *const *vals, size_t *sizes, int count)
-{
-    CPUTriCoreState *env = &(TRICORE_CPU(uc->cpu)->env);
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-int tricore_reg_write(struct uc_struct *uc, unsigned int *regs,
-                      const void *const *vals, size_t *sizes, int count)
-{
-    CPUTriCoreState *env = &(TRICORE_CPU(uc->cpu)->env);
-    int setpc = 0;
-    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
-    if (err) {
-        return err;
-    }
-    if (setpc) {
-        // force to quit execution and flush TB
-        uc->quit_request = true;
-        break_translation_loop(uc);
-    }
-
-    return UC_ERR_OK;
-}
-
-int tricore_context_reg_read(struct uc_context *uc, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-{
-    CPUTriCoreState *env = (CPUTriCoreState *)uc->data;
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-int tricore_context_reg_write(struct uc_context *uc, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count)
-{
-    CPUTriCoreState *env = (CPUTriCoreState *)uc->data;
-    int setpc = 0;
-    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
-}
-
 static int tricore_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     TriCoreCPU *cpu;
@@ -347,11 +275,12 @@ static void tricore_release(void *ctx)
     }
 }
 
-void tricore_uc_init(struct uc_struct *uc)
+DEFAULT_VISIBILITY
+void uc_init(struct uc_struct *uc)
 {
-    uc->reg_read = tricore_reg_read;
-    uc->reg_write = tricore_reg_write;
-    uc->reg_reset = tricore_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->set_pc = tricore_set_pc;
     uc->get_pc = tricore_get_pc;
     uc->cpus_init = tricore_cpus_init;

@@ -91,7 +91,7 @@ static void arm_release(void *ctx)
     g_hash_table_destroy(cpu->cp_regs);
 }
 
-void arm_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env;
     (void)uc;
@@ -206,9 +206,11 @@ static uc_err write_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
     return UC_ERR_OK;
 }
 
-static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value,
-                       size_t *size)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
+    CPUARMState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
@@ -354,9 +356,11 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value,
     return ret;
 }
 
-static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
-                        size_t *size, int *setpc)
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
+    CPUARMState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
@@ -549,84 +553,6 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
     }
 
     return ret;
-}
-
-static uc_err reg_read_batch(CPUARMState *env, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-static uc_err reg_write_batch(CPUARMState *env, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count,
-                              int *setpc)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        uc_err err =
-            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                 size_t *sizes, int count)
-{
-    CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-int arm_reg_write(struct uc_struct *uc, unsigned int *regs,
-                  const void *const *vals, size_t *sizes, int count)
-{
-    CPUArchState *env = &(ARM_CPU(uc->cpu)->env);
-    int setpc = 0;
-    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
-    if (err) {
-        return err;
-    }
-    if (setpc) {
-        // force to quit execution and flush TB
-        uc->quit_request = true;
-        break_translation_loop(uc);
-    }
-
-    return UC_ERR_OK;
-}
-
-DEFAULT_VISIBILITY
-int arm_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                         void *const *vals, size_t *sizes, int count)
-{
-    CPUARMState *env = (CPUARMState *)ctx->data;
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-DEFAULT_VISIBILITY
-int arm_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                          const void *const *vals, size_t *sizes, int count)
-{
-    CPUARMState *env = (CPUARMState *)ctx->data;
-    int setpc = 0;
-    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
 }
 
 static bool arm_stop_interrupt(struct uc_struct *uc, int intno)
@@ -827,11 +753,12 @@ static uc_err uc_arm_context_restore(struct uc_struct *uc, uc_context *context)
     return UC_ERR_OK;
 }
 
-void arm_uc_init(struct uc_struct *uc)
+DEFAULT_VISIBILITY
+void uc_init(struct uc_struct *uc)
 {
-    uc->reg_read = arm_reg_read;
-    uc->reg_write = arm_reg_write;
-    uc->reg_reset = arm_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->set_pc = arm_set_pc;
     uc->get_pc = arm_get_pc;
     uc->stop_interrupt = arm_stop_interrupt;

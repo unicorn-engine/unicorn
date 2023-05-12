@@ -65,7 +65,7 @@ static void x86_release(void *ctx)
     free(xcc->model);
 }
 
-void x86_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env = uc->cpu->env_ptr;
 
@@ -211,9 +211,11 @@ static int x86_msr_write(CPUX86State *env, uc_x86_msr *msr)
     return 0;
 }
 
-static uc_err reg_read(CPUX86State *env, unsigned int regid, void *value,
-                       size_t *size, uc_mode mode)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
+    CPUX86State *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     switch (regid) {
@@ -989,9 +991,11 @@ static uc_err reg_read(CPUX86State *env, unsigned int regid, void *value,
     return ret;
 }
 
-static uc_err reg_write(CPUX86State *env, unsigned int regid, const void *value,
-                        size_t *size, uc_mode mode, int *setpc)
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
+    CPUX86State *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     switch (regid) {
@@ -1806,88 +1810,6 @@ static uc_err reg_write(CPUX86State *env, unsigned int regid, const void *value,
     return ret;
 }
 
-static uc_err reg_read_batch(CPUX86State *env, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count,
-                             int mode)
-{
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL, mode);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-static uc_err reg_write_batch(CPUX86State *env, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count,
-                              int mode, int *setpc)
-{
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        err =
-            reg_write(env, regid, value, sizes ? sizes + i : NULL, mode, setpc);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                 size_t *sizes, int count)
-{
-    CPUX86State *env = &(X86_CPU(uc->cpu)->env);
-    return reg_read_batch(env, regs, vals, sizes, count, uc->mode);
-}
-
-int x86_reg_write(struct uc_struct *uc, unsigned int *regs,
-                  const void *const *vals, size_t *sizes, int count)
-{
-    CPUX86State *env = &(X86_CPU(uc->cpu)->env);
-    int setpc = 0;
-    uc_err err =
-        reg_write_batch(env, regs, vals, sizes, count, uc->mode, &setpc);
-    if (err) {
-        return err;
-    }
-    if (setpc) {
-        // force to quit execution and flush TB
-        uc->quit_request = true;
-        break_translation_loop(uc);
-    }
-
-    return UC_ERR_OK;
-}
-
-DEFAULT_VISIBILITY
-int x86_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                         void *const *vals, size_t *sizes, int count)
-{
-    CPUX86State *env = (CPUX86State *)ctx->data;
-    return reg_read_batch(env, regs, vals, sizes, count, ctx->mode);
-}
-
-DEFAULT_VISIBILITY
-int x86_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                          const void *const *vals, size_t *sizes, int count)
-{
-    CPUX86State *env = (CPUX86State *)ctx->data;
-    int setpc = 0;
-    return reg_write_batch(env, regs, vals, sizes, count, ctx->mode, &setpc);
-}
-
 static bool x86_stop_interrupt(struct uc_struct *uc, int intno)
 {
     switch (intno) {
@@ -1945,11 +1867,11 @@ static int x86_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-void x86_uc_init(struct uc_struct *uc)
+void uc_init(struct uc_struct *uc)
 {
-    uc->reg_read = x86_reg_read;
-    uc->reg_write = x86_reg_write;
-    uc->reg_reset = x86_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->release = x86_release;
     uc->set_pc = x86_set_pc;
     uc->get_pc = x86_get_pc;

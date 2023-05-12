@@ -77,11 +77,13 @@ static void riscv_release(void *ctx)
     }
 }
 
-void riscv_reg_reset(struct uc_struct *uc) {}
+static void reg_reset(struct uc_struct *uc) {}
 
-static uc_err reg_read(CPURISCVState *env, unsigned int regid, void *value,
-                       size_t *size)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
+    CPURISCVState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_RISCV_REG_X0 && regid <= UC_RISCV_REG_X31) {
@@ -127,9 +129,11 @@ static uc_err reg_read(CPURISCVState *env, unsigned int regid, void *value,
     return ret;
 }
 
-static uc_err reg_write(CPURISCVState *env, unsigned int regid,
-                        const void *value, size_t *size, int *setpc)
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
+    CPURISCVState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_RISCV_REG_X0 && regid <= UC_RISCV_REG_X31) {
@@ -175,96 +179,6 @@ static uc_err reg_write(CPURISCVState *env, unsigned int regid,
     return ret;
 }
 
-static uc_err reg_read_batch(CPURISCVState *env, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-static uc_err reg_write_batch(CPURISCVState *env, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count,
-                              int *setpc)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        uc_err err =
-            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-int riscv_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                   size_t *sizes, int count)
-{
-    CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-int riscv_reg_write(struct uc_struct *uc, unsigned int *regs,
-                    const void *const *vals, size_t *sizes, int count)
-{
-    CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
-    int setpc = 0;
-    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
-    if (err) {
-        return err;
-    }
-    if (setpc) {
-        // force to quit execution and flush TB
-        uc->quit_request = true;
-        break_translation_loop(uc);
-    }
-
-    return UC_ERR_OK;
-}
-
-DEFAULT_VISIBILITY
-#ifdef TARGET_RISCV32
-int riscv32_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-#else
-/* TARGET_RISCV64 */
-int riscv64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-#endif
-{
-    CPURISCVState *env = (CPURISCVState *)ctx->data;
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-DEFAULT_VISIBILITY
-#ifdef TARGET_RISCV32
-int riscv32_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count)
-#else
-/* TARGET_RISCV64 */
-int riscv64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count)
-#endif
-{
-    CPURISCVState *env = (CPURISCVState *)ctx->data;
-    int setpc = 0;
-    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
-}
-
 static bool riscv_stop_interrupt(struct uc_struct *uc, int intno)
 {
     // detect stop exception
@@ -298,16 +212,11 @@ static int riscv_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-#ifdef TARGET_RISCV32
-void riscv32_uc_init(struct uc_struct *uc)
-#else
-/* TARGET_RISCV64 */
-void riscv64_uc_init(struct uc_struct *uc)
-#endif
+void uc_init(struct uc_struct *uc)
 {
-    uc->reg_read = riscv_reg_read;
-    uc->reg_write = riscv_reg_write;
-    uc->reg_reset = riscv_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->release = riscv_release;
     uc->set_pc = riscv_set_pc;
     uc->get_pc = riscv_get_pc;
