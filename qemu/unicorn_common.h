@@ -130,12 +130,10 @@ static inline void uc_common_init(struct uc_struct* uc)
 }
 
 #define CHECK_REG_TYPE(type) do {             \
-    if (unlikely(size)) {                     \
-        if (unlikely(*size < sizeof(type))) { \
-            return UC_ERR_NOMEM;              \
-        }                                     \
-        *size = sizeof(type);                 \
+    if (unlikely(*size < sizeof(type))) {     \
+        return UC_ERR_NOMEM;                  \
     }                                         \
+    *size = sizeof(type);                     \
     ret = UC_ERR_OK;                          \
 } while(0)
 

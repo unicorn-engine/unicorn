@@ -136,7 +136,7 @@ static void ppc_release(void *ctx)
     ppc_cpu_unrealize(tcg_ctx->uc->cpu);
 }
 
-void ppc_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env;
     env = uc->cpu->env_ptr;
@@ -146,9 +146,11 @@ void ppc_reg_reset(struct uc_struct *uc)
 }
 
 // http://www.csit-sun.pub.ro/~cpop/Documentatie_SMP/Motorola_PowerPC/PowerPc/GenInfo/pemch2.pdf
-static uc_err reg_read(CPUPPCState *env, unsigned int regid, void *value,
-                       size_t *size)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
+    CPUPPCState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31) {
@@ -170,9 +172,9 @@ static uc_err reg_read(CPUPPCState *env, unsigned int regid, void *value,
             break;
         case UC_PPC_REG_CR: {
             CHECK_REG_TYPE(uint32_t);
-            uint32_t val;
-            val = 0;
-            for (int i = 0; i < 8; i++) {
+            int i;
+            uint32_t val = 0;
+            for (i = 0; i < 8; i++) {
                 val <<= 4;
                 val |= env->crf[i];
             }
@@ -205,10 +207,11 @@ static uc_err reg_read(CPUPPCState *env, unsigned int regid, void *value,
     return ret;
 }
 
-static uc_err reg_write(CPUPPCState *env, unsigned int regid, const void *value,
-                        size_t *size, int *setpc)
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
-    int i;
+    CPUPPCState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31) {
@@ -231,6 +234,7 @@ static uc_err reg_write(CPUPPCState *env, unsigned int regid, const void *value,
             break;
         case UC_PPC_REG_CR: {
             CHECK_REG_TYPE(uint32_t);
+            int i;
             uint32_t val = *(uint32_t *)value;
             for (i = 7; i >= 0; i--) {
                 env->crf[i] = val & 0b1111;
@@ -264,94 +268,6 @@ static uc_err reg_write(CPUPPCState *env, unsigned int regid, const void *value,
     return ret;
 }
 
-static uc_err reg_read_batch(CPUPPCState *env, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-static uc_err reg_write_batch(CPUPPCState *env, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count,
-                              int *setpc)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        uc_err err =
-            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-int ppc_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                 size_t *sizes, int count)
-{
-    CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-int ppc_reg_write(struct uc_struct *uc, unsigned int *regs,
-                  const void *const *vals, size_t *sizes, int count)
-{
-    CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
-    int setpc = 0;
-    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
-    if (err) {
-        return err;
-    }
-    if (setpc) {
-        // force to quit execution and flush TB
-        uc->quit_request = true;
-        break_translation_loop(uc);
-    }
-
-    return UC_ERR_OK;
-}
-
-DEFAULT_VISIBILITY
-#ifdef TARGET_PPC64
-int ppc64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, size_t *sizes, int count)
-#else
-int ppc_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                         void *const *vals, size_t *sizes, int count)
-#endif
-{
-    CPUPPCState *env = (CPUPPCState *)ctx->data;
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-DEFAULT_VISIBILITY
-#ifdef TARGET_PPC64
-int ppc64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                            const void *const *vals, size_t *sizes, int count)
-#else
-int ppc_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                          const void *const *vals, size_t *sizes, int count)
-#endif
-{
-    CPUPPCState *env = (CPUPPCState *)ctx->data;
-    int setpc = 0;
-    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
-}
-
 PowerPCCPU *cpu_ppc_init(struct uc_struct *uc);
 static int ppc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
@@ -365,15 +281,11 @@ static int ppc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-#ifdef TARGET_PPC64
-void ppc64_uc_init(struct uc_struct *uc)
-#else
-void ppc_uc_init(struct uc_struct *uc)
-#endif
+void uc_init(struct uc_struct *uc)
 {
-    uc->reg_read = ppc_reg_read;
-    uc->reg_write = ppc_reg_write;
-    uc->reg_reset = ppc_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->release = ppc_release;
     uc->set_pc = ppc_set_pc;
     uc->get_pc = ppc_get_pc;

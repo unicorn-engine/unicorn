@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _mips64
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_mips64
+#define reg_read reg_read_mips64
+#define reg_write reg_write_mips64
+#define uc_init uc_init_mips64
 #define uc_add_inline_hook uc_add_inline_hook_mips64
 #define uc_del_inline_hook uc_del_inline_hook_mips64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_mips64
@@ -2385,9 +2388,6 @@
 #define cpu_mips_realize_env cpu_mips_realize_env_mips64
 #define cpu_state_reset cpu_state_reset_mips64
 #define restore_state_to_opc restore_state_to_opc_mips64
-#define mips_reg_reset mips_reg_reset_mips64
-#define mips_reg_read mips_reg_read_mips64
-#define mips_reg_write mips_reg_write_mips64
 #define ieee_rm ieee_rm_mips64
 #define mips_defs mips_defs_mips64
 #define mips_defs_number mips_defs_number_mips64

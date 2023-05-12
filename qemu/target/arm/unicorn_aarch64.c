@@ -88,7 +88,7 @@ static void arm64_release(void *ctx)
     g_hash_table_destroy(cpu->cp_regs);
 }
 
-void arm64_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env = uc->cpu->env_ptr;
     memset(env->xregs, 0, sizeof(env->xregs));
@@ -138,9 +138,11 @@ static uc_err write_cp_reg(CPUARMState *env, uc_arm64_cp_reg *cp)
     return UC_ERR_OK;
 }
 
-static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value,
-                       size_t *size)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
+    CPUARMState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_ARM64_REG_V0 && regid <= UC_ARM64_REG_V31) {
@@ -267,9 +269,11 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value,
     return ret;
 }
 
-static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
-                        size_t *size, int *setpc)
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
+    CPUARMState *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     if (regid >= UC_ARM64_REG_V0 && regid <= UC_ARM64_REG_V31) {
@@ -398,94 +402,6 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
     return ret;
 }
 
-static uc_err reg_read_batch(CPUARMState *env, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-static uc_err reg_write_batch(CPUARMState *env, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count,
-                              int *setpc)
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        uc_err err =
-            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
-}
-
-int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                   size_t *sizes, int count)
-{
-    CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-int arm64_reg_write(struct uc_struct *uc, unsigned int *regs,
-                    const void *const *vals, size_t *sizes, int count)
-{
-    CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
-    int setpc = 0;
-    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
-    if (err) {
-        return err;
-    }
-    if (setpc) {
-        // force to quit execution and flush TB
-        uc->quit_request = true;
-        break_translation_loop(uc);
-    }
-
-    return UC_ERR_OK;
-}
-
-DEFAULT_VISIBILITY
-#ifdef TARGET_WORDS_BIGENDIAN
-int arm64eb_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                             void *const *vals, size_t *sizes, int count)
-#else
-int arm64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, size_t *sizes, int count)
-#endif
-{
-    CPUARMState *env = (CPUARMState *)ctx->data;
-    return reg_read_batch(env, regs, vals, sizes, count);
-}
-
-DEFAULT_VISIBILITY
-#ifdef TARGET_WORDS_BIGENDIAN
-int arm64eb_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                              const void *const *vals, size_t *sizes, int count)
-#else
-int arm64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                            const void *const *vals, size_t *sizes, int count)
-#endif
-{
-    CPUARMState *env = (CPUARMState *)ctx->data;
-    int setpc = 0;
-    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
-}
-
 static int arm64_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     ARMCPU *cpu;
@@ -499,11 +415,11 @@ static int arm64_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-void arm64_uc_init(struct uc_struct *uc)
+void uc_init(struct uc_struct *uc)
 {
-    uc->reg_read = arm64_reg_read;
-    uc->reg_write = arm64_reg_write;
-    uc->reg_reset = arm64_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->set_pc = arm64_set_pc;
     uc->get_pc = arm64_get_pc;
     uc->release = arm64_release;

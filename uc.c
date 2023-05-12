@@ -82,14 +82,14 @@ unsigned int uc_version(unsigned int *major, unsigned int *minor)
            UC_API_EXTRA;
 }
 
-static int default_reg_read(struct uc_struct *uc, unsigned int *regs,
-                            void *const *vals, size_t *sizes, int count)
+static uc_err default_reg_read(void *env, int mode, unsigned int regid,
+                               void *value, size_t *size)
 {
     return UC_ERR_HANDLE;
 }
 
-static int default_reg_write(struct uc_struct *uc, unsigned int *regs,
-                             const void *const *vals, size_t *sizes, int count)
+static uc_err default_reg_write(void *env, int mode, unsigned int regid,
+                                const void *value, size_t *size, int *setpc)
 {
     return UC_ERR_HANDLE;
 }
@@ -203,7 +203,7 @@ bool uc_arch_supported(uc_arch arch)
 
 #define UC_INIT(uc)                                                            \
     if (unlikely(!(uc)->init_done)) {                                          \
-        int __init_ret = uc_init(uc);                                          \
+        int __init_ret = uc_init_engine(uc);                                   \
         if (unlikely(__init_ret != UC_ERR_OK)) {                               \
             return __init_ret;                                                 \
         }                                                                      \
@@ -223,7 +223,7 @@ static gint uc_exits_cmp(gconstpointer a, gconstpointer b, gpointer user_data)
     }
 }
 
-static uc_err uc_init(uc_engine *uc)
+static uc_err uc_init_engine(uc_engine *uc)
 {
 
     if (uc->init_done) {
@@ -295,7 +295,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 free(uc);
                 return UC_ERR_MODE;
             }
-            uc->init_arch = m68k_uc_init;
+            uc->init_arch = uc_init_m68k;
             break;
 #endif
 #ifdef UNICORN_HAS_X86
@@ -305,7 +305,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 free(uc);
                 return UC_ERR_MODE;
             }
-            uc->init_arch = x86_uc_init;
+            uc->init_arch = uc_init_x86_64;
             break;
 #endif
 #ifdef UNICORN_HAS_ARM
@@ -314,7 +314,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 free(uc);
                 return UC_ERR_MODE;
             }
-            uc->init_arch = arm_uc_init;
+            uc->init_arch = uc_init_arm;
 
             if (mode & UC_MODE_THUMB) {
                 uc->thumb = 1;
@@ -327,7 +327,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 free(uc);
                 return UC_ERR_MODE;
             }
-            uc->init_arch = arm64_uc_init;
+            uc->init_arch = uc_init_aarch64;
             break;
 #endif
 
@@ -342,23 +342,23 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
             if (mode & UC_MODE_BIG_ENDIAN) {
 #ifdef UNICORN_HAS_MIPS
                 if (mode & UC_MODE_MIPS32) {
-                    uc->init_arch = mips_uc_init;
+                    uc->init_arch = uc_init_mips;
                 }
 #endif
 #ifdef UNICORN_HAS_MIPS64
                 if (mode & UC_MODE_MIPS64) {
-                    uc->init_arch = mips64_uc_init;
+                    uc->init_arch = uc_init_mips64;
                 }
 #endif
             } else { // little endian
 #ifdef UNICORN_HAS_MIPSEL
                 if (mode & UC_MODE_MIPS32) {
-                    uc->init_arch = mipsel_uc_init;
+                    uc->init_arch = uc_init_mipsel;
                 }
 #endif
 #ifdef UNICORN_HAS_MIPS64EL
                 if (mode & UC_MODE_MIPS64) {
-                    uc->init_arch = mips64el_uc_init;
+                    uc->init_arch = uc_init_mips64el;
                 }
 #endif
             }
@@ -373,9 +373,9 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 return UC_ERR_MODE;
             }
             if (mode & UC_MODE_SPARC64) {
-                uc->init_arch = sparc64_uc_init;
+                uc->init_arch = uc_init_sparc64;
             } else {
-                uc->init_arch = sparc_uc_init;
+                uc->init_arch = uc_init_sparc;
             }
             break;
 #endif
@@ -387,9 +387,9 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 return UC_ERR_MODE;
             }
             if (mode & UC_MODE_PPC64) {
-                uc->init_arch = ppc64_uc_init;
+                uc->init_arch = uc_init_ppc64;
             } else {
-                uc->init_arch = ppc_uc_init;
+                uc->init_arch = uc_init_ppc;
             }
             break;
 #endif
@@ -401,9 +401,9 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 return UC_ERR_MODE;
             }
             if (mode & UC_MODE_RISCV32) {
-                uc->init_arch = riscv32_uc_init;
+                uc->init_arch = uc_init_riscv32;
             } else if (mode & UC_MODE_RISCV64) {
-                uc->init_arch = riscv64_uc_init;
+                uc->init_arch = uc_init_riscv64;
             } else {
                 free(uc);
                 return UC_ERR_MODE;
@@ -416,7 +416,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 free(uc);
                 return UC_ERR_MODE;
             }
-            uc->init_arch = s390_uc_init;
+            uc->init_arch = uc_init_s390x;
             break;
 #endif
 #ifdef UNICORN_HAS_TRICORE
@@ -425,7 +425,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 free(uc);
                 return UC_ERR_MODE;
             }
-            uc->init_arch = tricore_uc_init;
+            uc->init_arch = uc_init_tricore;
             break;
 #endif
         }
@@ -519,62 +519,158 @@ uc_err uc_close(uc_engine *uc)
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
+uc_err uc_reg_read_batch(uc_engine *uc, int *regs, void **vals, int count)
 {
     UC_INIT(uc);
-    return uc->reg_read(uc, (unsigned int *)ids, vals, NULL, count);
+    reg_read_t reg_read = uc->reg_read;
+    void *env = uc->cpu->env_ptr;
+    int mode = uc->mode;
+    int i;
+
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        void *value = vals[i];
+        size_t size = (size_t)-1;
+        uc_err err = reg_read(env, mode, regid, value, &size);
+        if (err) {
+            return err;
+        }
+    }
+
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
+uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals,
+                          int count)
 {
     UC_INIT(uc);
-    return uc->reg_write(uc, (unsigned int *)ids, (const void *const *)vals,
-                         NULL, count);
+    reg_write_t reg_write = uc->reg_write;
+    void *env = uc->cpu->env_ptr;
+    int mode = uc->mode;
+    int setpc = 0;
+    int i;
+
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        const void *value = vals[i];
+        size_t size = (size_t)-1;
+        uc_err err = reg_write(env, mode, regid, value, &size, &setpc);
+        if (err) {
+            return err;
+        }
+    }
+    if (setpc) {
+        // force to quit execution and flush TB
+        uc->quit_request = true;
+        break_translation_loop(uc);
+    }
+
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_read_batch2(uc_engine *uc, int *ids, void *const *vals,
+uc_err uc_reg_read_batch2(uc_engine *uc, int *regs, void *const *vals,
                           size_t *sizes, int count)
 {
     UC_INIT(uc);
-    return uc->reg_read(uc, (unsigned int *)ids, vals, sizes, count);
+    reg_read_t reg_read = uc->reg_read;
+    void *env = uc->cpu->env_ptr;
+    int mode = uc->mode;
+    int i;
+
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        void *value = vals[i];
+        uc_err err = reg_read(env, mode, regid, value, sizes + i);
+        if (err) {
+            return err;
+        }
+    }
+
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_write_batch2(uc_engine *uc, int *ids, const void *const *vals,
+uc_err uc_reg_write_batch2(uc_engine *uc, int *regs, const void *const *vals,
                            size_t *sizes, int count)
 {
     UC_INIT(uc);
-    return uc->reg_write(uc, (unsigned int *)ids, vals, sizes, count);
+    reg_write_t reg_write = uc->reg_write;
+    void *env = uc->cpu->env_ptr;
+    int mode = uc->mode;
+    int setpc = 0;
+    int i;
+
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        const void *value = vals[i];
+        uc_err err = reg_write(env, mode, regid, value, sizes + i, &setpc);
+        if (err) {
+            return err;
+        }
+    }
+    if (setpc) {
+        // force to quit execution and flush TB
+        uc->quit_request = true;
+        break_translation_loop(uc);
+    }
+
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
 {
     UC_INIT(uc);
-    return uc->reg_read(uc, (unsigned int *)&regid, &value, NULL, 1);
+    size_t size = (size_t)-1;
+    return uc->reg_read(uc->cpu->env_ptr, uc->mode, regid, value, &size);
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
 {
     UC_INIT(uc);
-    return uc->reg_write(uc, (unsigned int *)&regid, &value, NULL, 1);
+    int setpc = 0;
+    size_t size = (size_t)-1;
+    uc_err err =
+        uc->reg_write(uc->cpu->env_ptr, uc->mode, regid, value, &size, &setpc);
+    if (err) {
+        return err;
+    }
+    if (setpc) {
+        // force to quit execution and flush TB
+        uc->quit_request = true;
+        break_translation_loop(uc);
+    }
+
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_read2(uc_engine *uc, int regid, void *value, size_t *size)
 {
     UC_INIT(uc);
-    return uc->reg_read(uc, (unsigned int *)&regid, &value, size, 1);
+    return uc->reg_read(uc->cpu->env_ptr, uc->mode, regid, value, size);
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_write2(uc_engine *uc, int regid, const void *value, size_t *size)
 {
     UC_INIT(uc);
-    return uc->reg_write(uc, (unsigned int *)&regid, &value, size, 1);
+    int setpc = 0;
+    uc_err err =
+        uc->reg_write(uc->cpu->env_ptr, uc->mode, regid, value, size, &setpc);
+    if (err) {
+        return err;
+    }
+    if (setpc) {
+        // force to quit execution and flush TB
+        uc->quit_request = true;
+        break_translation_loop(uc);
+    }
+
+    return UC_ERR_OK;
 }
 
 // check if a memory area is mapped
@@ -1893,79 +1989,36 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
     }
 }
 
-UNICORN_EXPORT
-uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value)
-{
-    return uc_context_reg_write_batch2(ctx, &regid, &value, NULL, 1);
-}
-
-UNICORN_EXPORT
-uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value)
-{
-    return uc_context_reg_read_batch2(ctx, &regid, &value, NULL, 1);
-}
-
-UNICORN_EXPORT
-uc_err uc_context_reg_write2(uc_context *ctx, int regid, const void *value,
-                             size_t *size)
-{
-    return uc_context_reg_write_batch2(ctx, &regid, &value, size, 1);
-}
-
-UNICORN_EXPORT
-uc_err uc_context_reg_read2(uc_context *ctx, int regid, void *value,
-                            size_t *size)
-{
-    return uc_context_reg_read_batch2(ctx, &regid, &value, size, 1);
-}
-
-UNICORN_EXPORT
-uc_err uc_context_reg_write_batch(uc_context *ctx, int *ids, void *const *vals,
-                                  int count)
-{
-    return uc_context_reg_write_batch2(ctx, ids, (const void *const *)vals,
-                                       NULL, count);
-}
-
-UNICORN_EXPORT
-uc_err uc_context_reg_read_batch(uc_context *ctx, int *ids, void **vals,
-                                 int count)
-{
-    return uc_context_reg_read_batch2(ctx, ids, vals, NULL, count);
-}
-
 // Keep in mind that we don't a uc_engine when r/w the registers of a context.
-static void find_context_reg_rw_function(uc_arch arch, uc_mode mode,
-                                         context_reg_rw_t *rw)
+static context_reg_rw_t find_context_reg_rw(uc_arch arch, uc_mode mode)
 {
     // We believe that the arch/mode pair is correct.
+    context_reg_rw_t rw = {default_reg_read, default_reg_write};
     switch (arch) {
     default:
-        rw->context_reg_read = NULL;
-        rw->context_reg_write = NULL;
         break;
 #ifdef UNICORN_HAS_M68K
     case UC_ARCH_M68K:
-        rw->context_reg_read = m68k_context_reg_read;
-        rw->context_reg_write = m68k_context_reg_write;
+        rw.read = reg_read_m68k;
+        rw.write = reg_write_m68k;
         break;
 #endif
 #ifdef UNICORN_HAS_X86
     case UC_ARCH_X86:
-        rw->context_reg_read = x86_context_reg_read;
-        rw->context_reg_write = x86_context_reg_write;
+        rw.read = reg_read_x86_64;
+        rw.write = reg_write_x86_64;
         break;
 #endif
 #ifdef UNICORN_HAS_ARM
     case UC_ARCH_ARM:
-        rw->context_reg_read = arm_context_reg_read;
-        rw->context_reg_write = arm_context_reg_write;
+        rw.read = reg_read_arm;
+        rw.write = reg_write_arm;
         break;
 #endif
 #ifdef UNICORN_HAS_ARM64
     case UC_ARCH_ARM64:
-        rw->context_reg_read = arm64_context_reg_read;
-        rw->context_reg_write = arm64_context_reg_write;
+        rw.read = reg_read_aarch64;
+        rw.write = reg_write_aarch64;
         break;
 #endif
 
@@ -1975,27 +2028,27 @@ static void find_context_reg_rw_function(uc_arch arch, uc_mode mode,
         if (mode & UC_MODE_BIG_ENDIAN) {
 #ifdef UNICORN_HAS_MIPS
             if (mode & UC_MODE_MIPS32) {
-                rw->context_reg_read = mips_context_reg_read;
-                rw->context_reg_write = mips_context_reg_write;
+                rw.read = reg_read_mips;
+                rw.write = reg_write_mips;
             }
 #endif
 #ifdef UNICORN_HAS_MIPS64
             if (mode & UC_MODE_MIPS64) {
-                rw->context_reg_read = mips64_context_reg_read;
-                rw->context_reg_write = mips64_context_reg_write;
+                rw.read = reg_read_mips64;
+                rw.write = reg_write_mips64;
             }
 #endif
         } else { // little endian
 #ifdef UNICORN_HAS_MIPSEL
             if (mode & UC_MODE_MIPS32) {
-                rw->context_reg_read = mipsel_context_reg_read;
-                rw->context_reg_write = mipsel_context_reg_write;
+                rw.read = reg_read_mipsel;
+                rw.write = reg_write_mipsel;
             }
 #endif
 #ifdef UNICORN_HAS_MIPS64EL
             if (mode & UC_MODE_MIPS64) {
-                rw->context_reg_read = mips64el_context_reg_read;
-                rw->context_reg_write = mips64el_context_reg_write;
+                rw.read = reg_read_mips64el;
+                rw.write = reg_write_mips64el;
             }
 #endif
         }
@@ -2005,82 +2058,174 @@ static void find_context_reg_rw_function(uc_arch arch, uc_mode mode,
 #ifdef UNICORN_HAS_SPARC
     case UC_ARCH_SPARC:
         if (mode & UC_MODE_SPARC64) {
-            rw->context_reg_read = sparc64_context_reg_read;
-            rw->context_reg_write = sparc64_context_reg_write;
+            rw.read = reg_read_sparc64;
+            rw.write = reg_write_sparc64;
         } else {
-            rw->context_reg_read = sparc_context_reg_read;
-            rw->context_reg_write = sparc_context_reg_write;
+            rw.read = reg_read_sparc;
+            rw.write = reg_write_sparc;
         }
         break;
 #endif
 #ifdef UNICORN_HAS_PPC
     case UC_ARCH_PPC:
         if (mode & UC_MODE_PPC64) {
-            rw->context_reg_read = ppc64_context_reg_read;
-            rw->context_reg_write = ppc64_context_reg_write;
+            rw.read = reg_read_ppc64;
+            rw.write = reg_write_ppc64;
         } else {
-            rw->context_reg_read = ppc_context_reg_read;
-            rw->context_reg_write = ppc_context_reg_write;
+            rw.read = reg_read_ppc;
+            rw.write = reg_write_ppc;
         }
         break;
 #endif
 #ifdef UNICORN_HAS_RISCV
     case UC_ARCH_RISCV:
         if (mode & UC_MODE_RISCV32) {
-            rw->context_reg_read = riscv32_context_reg_read;
-            rw->context_reg_write = riscv32_context_reg_write;
+            rw.read = reg_read_riscv32;
+            rw.write = reg_write_riscv32;
         } else if (mode & UC_MODE_RISCV64) {
-            rw->context_reg_read = riscv64_context_reg_read;
-            rw->context_reg_write = riscv64_context_reg_write;
+            rw.read = reg_read_riscv64;
+            rw.write = reg_write_riscv64;
         }
         break;
 #endif
 #ifdef UNICORN_HAS_S390X
     case UC_ARCH_S390X:
-        rw->context_reg_read = s390_context_reg_read;
-        rw->context_reg_write = s390_context_reg_write;
+        rw.read = reg_read_s390x;
+        rw.write = reg_write_s390x;
         break;
 #endif
 #ifdef UNICORN_HAS_TRICORE
     case UC_ARCH_TRICORE:
-        rw->context_reg_read = tricore_context_reg_read;
-        rw->context_reg_write = tricore_context_reg_write;
+        rw.read = reg_read_tricore;
+        rw.write = reg_write_tricore;
         break;
 #endif
     }
 
-    return;
+    return rw;
 }
 
 UNICORN_EXPORT
-uc_err uc_context_reg_write_batch2(uc_context *ctx, int *ids,
+uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value)
+{
+    int setpc = 0;
+    size_t size = (size_t)-1;
+    return find_context_reg_rw(ctx->arch, ctx->mode)
+        .write(ctx->data, ctx->mode, regid, value, &size, &setpc);
+}
+
+UNICORN_EXPORT
+uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value)
+{
+    size_t size = (size_t)-1;
+    return find_context_reg_rw(ctx->arch, ctx->mode)
+        .read(ctx->data, ctx->mode, regid, value, &size);
+}
+
+UNICORN_EXPORT
+uc_err uc_context_reg_write2(uc_context *ctx, int regid, const void *value,
+                             size_t *size)
+{
+    int setpc = 0;
+    return find_context_reg_rw(ctx->arch, ctx->mode)
+        .write(ctx->data, ctx->mode, regid, value, size, &setpc);
+}
+
+UNICORN_EXPORT
+uc_err uc_context_reg_read2(uc_context *ctx, int regid, void *value,
+                            size_t *size)
+{
+    return find_context_reg_rw(ctx->arch, ctx->mode)
+        .read(ctx->data, ctx->mode, regid, value, size);
+}
+
+UNICORN_EXPORT
+uc_err uc_context_reg_write_batch(uc_context *ctx, int *regs, void *const *vals,
+                                  int count)
+{
+    reg_write_t reg_write = find_context_reg_rw(ctx->arch, ctx->mode).write;
+    void *env = ctx->data;
+    int mode = ctx->mode;
+    int setpc = 0;
+    int i;
+
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        const void *value = vals[i];
+        size_t size = (size_t)-1;
+        uc_err err = reg_write(env, mode, regid, value, &size, &setpc);
+        if (err) {
+            return err;
+        }
+    }
+
+    return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_context_reg_read_batch(uc_context *ctx, int *regs, void **vals,
+                                 int count)
+{
+    reg_read_t reg_read = find_context_reg_rw(ctx->arch, ctx->mode).read;
+    void *env = ctx->data;
+    int mode = ctx->mode;
+    int i;
+
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        void *value = vals[i];
+        size_t size = (size_t)-1;
+        uc_err err = reg_read(env, mode, regid, value, &size);
+        if (err) {
+            return err;
+        }
+    }
+
+    return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_context_reg_write_batch2(uc_context *ctx, int *regs,
                                    const void *const *vals, size_t *sizes,
                                    int count)
 {
-    context_reg_rw_t rw;
+    reg_write_t reg_write = find_context_reg_rw(ctx->arch, ctx->mode).write;
+    void *env = ctx->data;
+    int mode = ctx->mode;
+    int setpc = 0;
+    int i;
 
-    find_context_reg_rw_function(ctx->arch, ctx->mode, &rw);
-    if (rw.context_reg_write) {
-        return rw.context_reg_write(ctx, (unsigned int *)ids, vals, sizes,
-                                    count);
-    } else {
-        return UC_ERR_HANDLE;
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        const void *value = vals[i];
+        uc_err err = reg_write(env, mode, regid, value, sizes + i, &setpc);
+        if (err) {
+            return err;
+        }
     }
+
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
-uc_err uc_context_reg_read_batch2(uc_context *ctx, int *ids, void *const *vals,
+uc_err uc_context_reg_read_batch2(uc_context *ctx, int *regs, void *const *vals,
                                   size_t *sizes, int count)
 {
-    context_reg_rw_t rw;
+    reg_read_t reg_read = find_context_reg_rw(ctx->arch, ctx->mode).read;
+    void *env = ctx->data;
+    int mode = ctx->mode;
+    int i;
 
-    find_context_reg_rw_function(ctx->arch, ctx->mode, &rw);
-    if (rw.context_reg_read) {
-        return rw.context_reg_read(ctx, (unsigned int *)ids, vals, sizes,
-                                   count);
-    } else {
-        return UC_ERR_HANDLE;
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        void *value = vals[i];
+        uc_err err = reg_read(env, mode, regid, value, sizes + i);
+        if (err) {
+            return err;
+        }
     }
+
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
@@ -2099,7 +2244,6 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 UNICORN_EXPORT
 uc_err uc_context_free(uc_context *context)
 {
-
     return uc_free(context);
 }
 

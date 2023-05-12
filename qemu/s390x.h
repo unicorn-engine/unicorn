@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _s390x
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_s390x
+#define reg_read reg_read_s390x
+#define reg_write reg_write_s390x
+#define uc_init uc_init_s390x
 #define uc_add_inline_hook uc_add_inline_hook_s390x
 #define uc_del_inline_hook uc_del_inline_hook_s390x
 #define tb_invalidate_phys_range tb_invalidate_phys_range_s390x

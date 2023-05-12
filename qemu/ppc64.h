@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _ppc64
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_ppc64
+#define reg_read reg_read_ppc64
+#define reg_write reg_write_ppc64
+#define uc_init uc_init_ppc64
 #define uc_add_inline_hook uc_add_inline_hook_ppc64
 #define uc_del_inline_hook uc_del_inline_hook_ppc64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_ppc64
@@ -1280,9 +1283,6 @@
 #define gen_helper_cpsr_write gen_helper_cpsr_write_ppc64
 #define ppc_cpu_unrealize ppc_cpu_unrealize_ppc64
 #define ppc_cpu_instance_finalize ppc_cpu_instance_finalize_ppc64
-#define ppc_reg_reset ppc_reg_reset_ppc64
-#define ppc_reg_read ppc_reg_read_ppc64
-#define ppc_reg_write ppc_reg_write_ppc64
 #define ppc_cpu_do_interrupt ppc_cpu_do_interrupt_ppc64
 #define ppc_cpu_do_system_reset ppc_cpu_do_system_reset_ppc64
 #define ppc_cpu_do_fwnmi_machine_check ppc_cpu_do_fwnmi_machine_check_ppc64

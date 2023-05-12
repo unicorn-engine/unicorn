@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _aarch64
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_aarch64
+#define reg_read reg_read_aarch64
+#define reg_write reg_write_aarch64
+#define uc_init uc_init_aarch64
 #define uc_add_inline_hook uc_add_inline_hook_aarch64
 #define uc_del_inline_hook uc_del_inline_hook_aarch64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_aarch64
@@ -2959,9 +2962,6 @@
 #define helper_frint32_d helper_frint32_d_aarch64
 #define helper_frint64_d helper_frint64_d_aarch64
 #define helper_check_hcr_el2_trap helper_check_hcr_el2_trap_aarch64
-#define arm64_reg_reset arm64_reg_reset_aarch64
-#define arm64_reg_read arm64_reg_read_aarch64
-#define arm64_reg_write arm64_reg_write_aarch64
 #define mla_op mla_op_aarch64
 #define mls_op mls_op_aarch64
 #define sshl_op sshl_op_aarch64

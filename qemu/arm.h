@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _arm
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_arm
+#define reg_read reg_read_arm
+#define reg_write reg_write_arm
+#define uc_init uc_init_arm
 #define uc_add_inline_hook uc_add_inline_hook_arm
 #define uc_del_inline_hook uc_del_inline_hook_arm
 #define tb_invalidate_phys_range tb_invalidate_phys_range_arm
@@ -1970,9 +1973,6 @@
 #define helper_frint32_d helper_frint32_d_arm
 #define helper_frint64_d helper_frint64_d_arm
 #define helper_check_hcr_el2_trap helper_check_hcr_el2_trap_arm
-#define arm_reg_reset arm_reg_reset_arm
-#define arm_reg_read arm_reg_read_arm
-#define arm_reg_write arm_reg_write_arm
 #define mla_op mla_op_arm
 #define mls_op mls_op_arm
 #define sshl_op sshl_op_arm

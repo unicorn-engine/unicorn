@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _tricore
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_tricore
+#define reg_read reg_read_tricore
+#define reg_write reg_write_tricore
+#define uc_init uc_init_tricore
 #define uc_add_inline_hook uc_add_inline_hook_tricore
 #define uc_del_inline_hook uc_del_inline_hook_tricore
 #define tb_invalidate_phys_range tb_invalidate_phys_range_tricore

@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _mipsel
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_mipsel
+#define reg_read reg_read_mipsel
+#define reg_write reg_write_mipsel
+#define uc_init uc_init_mipsel
 #define uc_add_inline_hook uc_add_inline_hook_mipsel
 #define uc_del_inline_hook uc_del_inline_hook_mipsel
 #define tb_invalidate_phys_range tb_invalidate_phys_range_mipsel
@@ -2385,9 +2388,6 @@
 #define cpu_mips_realize_env cpu_mips_realize_env_mipsel
 #define cpu_state_reset cpu_state_reset_mipsel
 #define restore_state_to_opc restore_state_to_opc_mipsel
-#define mips_reg_reset mips_reg_reset_mipsel
-#define mips_reg_read mips_reg_read_mipsel
-#define mips_reg_write mips_reg_write_mipsel
 #define ieee_rm ieee_rm_mipsel
 #define mips_defs mips_defs_mipsel
 #define mips_defs_number mips_defs_number_mipsel

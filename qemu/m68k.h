@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _m68k
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_m68k
+#define reg_read reg_read_m68k
+#define reg_write reg_write_m68k
+#define uc_init uc_init_m68k
 #define uc_add_inline_hook uc_add_inline_hook_m68k
 #define uc_del_inline_hook uc_del_inline_hook_m68k
 #define tb_invalidate_phys_range tb_invalidate_phys_range_m68k
@@ -1433,7 +1436,4 @@
 #define register_m68k_insns register_m68k_insns_m68k
 #define gen_intermediate_code gen_intermediate_code_m68k
 #define restore_state_to_opc restore_state_to_opc_m68k
-#define m68k_reg_reset m68k_reg_reset_m68k
-#define m68k_reg_read m68k_reg_read_m68k
-#define m68k_reg_write m68k_reg_write_m68k
 #endif
