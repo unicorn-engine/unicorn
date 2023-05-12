@@ -206,7 +206,7 @@ static uc_err reg_read(CPUPPCState *env, unsigned int regid, void *value,
 }
 
 static uc_err reg_write(CPUPPCState *env, unsigned int regid, const void *value,
-                        size_t *size)
+                        size_t *size, int *setpc)
 {
     int i;
     uc_err ret = UC_ERR_ARG;
@@ -227,6 +227,7 @@ static uc_err reg_write(CPUPPCState *env, unsigned int regid, const void *value,
         case UC_PPC_REG_PC:
             CHECK_REG_TYPE(ppcreg_t);
             env->nip = *(ppcreg_t *)value;
+            *setpc = 1;
             break;
         case UC_PPC_REG_CR: {
             CHECK_REG_TYPE(uint32_t);
@@ -263,17 +264,15 @@ static uc_err reg_write(CPUPPCState *env, unsigned int regid, const void *value,
     return ret;
 }
 
-int ppc_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                 size_t *sizes, int count)
+static uc_err reg_read_batch(CPUPPCState *env, unsigned int *regs,
+                             void *const *vals, size_t *sizes, int count)
 {
-    CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
     int i;
-    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
         if (err) {
             return err;
         }
@@ -282,25 +281,45 @@ int ppc_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     return UC_ERR_OK;
 }
 
-int ppc_reg_write(struct uc_struct *uc, unsigned int *regs,
-                  const void *const *vals, size_t *sizes, int count)
+static uc_err reg_write_batch(CPUPPCState *env, unsigned int *regs,
+                              const void *const *vals, size_t *sizes, int count,
+                              int *setpc)
 {
-    CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
     int i;
-    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
+        uc_err err =
+            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
         if (err) {
             return err;
         }
-        if (regid == UC_PPC_REG_PC) {
-            // force to quit execution and flush TB
-            uc->quit_request = true;
-            break_translation_loop(uc);
-        }
+    }
+
+    return UC_ERR_OK;
+}
+
+int ppc_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                 size_t *sizes, int count)
+{
+    CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
+    return reg_read_batch(env, regs, vals, sizes, count);
+}
+
+int ppc_reg_write(struct uc_struct *uc, unsigned int *regs,
+                  const void *const *vals, size_t *sizes, int count)
+{
+    CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
+    int setpc = 0;
+    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
+    if (err) {
+        return err;
+    }
+    if (setpc) {
+        // force to quit execution and flush TB
+        uc->quit_request = true;
+        break_translation_loop(uc);
     }
 
     return UC_ERR_OK;
@@ -316,19 +335,7 @@ int ppc_context_reg_read(struct uc_context *ctx, unsigned int *regs,
 #endif
 {
     CPUPPCState *env = (CPUPPCState *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    return reg_read_batch(env, regs, vals, sizes, count);
 }
 
 DEFAULT_VISIBILITY
@@ -341,19 +348,8 @@ int ppc_context_reg_write(struct uc_context *ctx, unsigned int *regs,
 #endif
 {
     CPUPPCState *env = (CPUPPCState *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    int setpc = 0;
+    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
 }
 
 PowerPCCPU *cpu_ppc_init(struct uc_struct *uc);

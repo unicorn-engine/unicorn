@@ -83,7 +83,7 @@ static uc_err reg_read(CPUS390XState *env, unsigned int regid, void *value,
 }
 
 static uc_err reg_write(CPUS390XState *env, unsigned int regid,
-                        const void *value, size_t *size)
+                        const void *value, size_t *size, int *setpc)
 {
     uc_err ret = UC_ERR_ARG;
 
@@ -100,6 +100,7 @@ static uc_err reg_write(CPUS390XState *env, unsigned int regid,
         case UC_S390X_REG_PC:
             CHECK_REG_TYPE(uint64_t);
             env->psw.addr = *(uint64_t *)value;
+            *setpc = 1;
             break;
         case UC_S390X_REG_PSWM:
             CHECK_REG_TYPE(uint64_t);
@@ -111,18 +112,34 @@ static uc_err reg_write(CPUS390XState *env, unsigned int regid,
     return ret;
 }
 
-DEFAULT_VISIBILITY
-int s390_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                  size_t *sizes, int count)
+static uc_err reg_read_batch(CPUS390XState *env, unsigned int *regs,
+                             void *const *vals, size_t *sizes, int count)
 {
-    CPUS390XState *env = &(S390_CPU(uc->cpu)->env);
     int i;
-    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        if (err) {
+            return err;
+        }
+    }
+
+    return UC_ERR_OK;
+}
+
+static uc_err reg_write_batch(CPUS390XState *env, unsigned int *regs,
+                              const void *const *vals, size_t *sizes, int count,
+                              int *setpc)
+{
+    int i;
+
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        const void *value = vals[i];
+        uc_err err =
+            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
         if (err) {
             return err;
         }
@@ -132,25 +149,27 @@ int s390_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 }
 
 DEFAULT_VISIBILITY
+int s390_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                  size_t *sizes, int count)
+{
+    CPUS390XState *env = &(S390_CPU(uc->cpu)->env);
+    return reg_read_batch(env, regs, vals, sizes, count);
+}
+
+DEFAULT_VISIBILITY
 int s390_reg_write(struct uc_struct *uc, unsigned int *regs,
                    const void *const *vals, size_t *sizes, int count)
 {
     CPUS390XState *env = &(S390_CPU(uc->cpu)->env);
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-        if (regid == UC_S390X_REG_PC) {
-            // force to quit execution and flush TB
-            uc->quit_request = true;
-            break_translation_loop(uc);
-        }
+    int setpc = 0;
+    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
+    if (err) {
+        return err;
+    }
+    if (setpc) {
+        // force to quit execution and flush TB
+        uc->quit_request = true;
+        break_translation_loop(uc);
     }
 
     return UC_ERR_OK;
@@ -161,19 +180,7 @@ int s390_context_reg_read(struct uc_context *ctx, unsigned int *regs,
                           void *const *vals, size_t *sizes, int count)
 {
     CPUS390XState *env = (CPUS390XState *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    return reg_read_batch(env, regs, vals, sizes, count);
 }
 
 DEFAULT_VISIBILITY
@@ -181,19 +188,8 @@ int s390_context_reg_write(struct uc_context *ctx, unsigned int *regs,
                            const void *const *vals, size_t *sizes, int count)
 {
     CPUS390XState *env = (CPUS390XState *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    int setpc = 0;
+    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
 }
 
 static int s390_cpus_init(struct uc_struct *uc, const char *cpu_model)

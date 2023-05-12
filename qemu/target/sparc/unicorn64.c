@@ -113,7 +113,7 @@ static uc_err reg_read(CPUSPARCState *env, unsigned int regid, void *value, size
     return ret;
 }
 
-static uc_err reg_write(CPUSPARCState *env, unsigned int regid, const void *value, size_t *size)
+static uc_err reg_write(CPUSPARCState *env, unsigned int regid, const void *value, size_t *size, int *setpc)
 {
     uc_err ret = UC_ERR_ARG;
 
@@ -137,6 +137,7 @@ static uc_err reg_write(CPUSPARCState *env, unsigned int regid, const void *valu
             CHECK_REG_TYPE(uint64_t);
             env->pc = *(uint64_t *)value;
             env->npc = *(uint64_t *)value + 4;
+            *setpc = 1;
             break;
         }
     }
@@ -144,16 +145,14 @@ static uc_err reg_write(CPUSPARCState *env, unsigned int regid, const void *valu
     return ret;
 }
 
-int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals, size_t *sizes, int count)
+static uc_err reg_read_batch(CPUSPARCState *env, unsigned int *regs, void *const *vals, size_t *sizes, int count)
 {
-    CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
     int i;
-    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
         if (err) {
             return err;
         }
@@ -162,24 +161,40 @@ int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals, 
     return UC_ERR_OK;
 }
 
-int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, const void* const* vals, size_t *sizes, int count)
+static uc_err reg_write_batch(CPUSPARCState *env, unsigned int *regs, const void* const* vals, size_t *sizes, int count, int *setpc)
 {
-    CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
     int i;
-    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
+        uc_err err = reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
         if (err) {
             return err;
         }
-        if (regid == UC_SPARC_REG_PC) {
-            // force to quit execution and flush TB
-            uc->quit_request = true;
-            break_translation_loop(uc);
-        }
+    }
+
+    return UC_ERR_OK;
+}
+
+int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals, size_t *sizes, int count)
+{
+    CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
+    return reg_read_batch(env, regs, vals, sizes, count);
+}
+
+int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, const void* const* vals, size_t *sizes, int count)
+{
+    CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
+    int setpc = 0;
+    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
+    if (err) {
+        return err;
+    }
+    if (setpc) {
+        // force to quit execution and flush TB
+        uc->quit_request = true;
+        break_translation_loop(uc);
     }
 
     return UC_ERR_OK;
@@ -189,38 +204,15 @@ DEFAULT_VISIBILITY
 int sparc64_context_reg_read(struct uc_context *ctx, unsigned int *regs, void *const *vals, size_t *sizes, int count)
 {
     CPUSPARCState *env = (CPUSPARCState *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    return reg_read_batch(env, regs, vals, sizes, count);
 }
 
 DEFAULT_VISIBILITY
 int sparc64_context_reg_write(struct uc_context *ctx, unsigned int *regs, const void *const *vals, size_t *sizes, int count)
 {
     CPUSPARCState *env = (CPUSPARCState *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    int setpc = 0;
+    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
 }
 
 static int sparc_cpus_init(struct uc_struct *uc, const char *cpu_model)

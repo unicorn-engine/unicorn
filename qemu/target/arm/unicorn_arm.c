@@ -355,7 +355,7 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value,
 }
 
 static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
-                        size_t *size)
+                        size_t *size, int *setpc)
 {
     uc_err ret = UC_ERR_ARG;
 
@@ -428,6 +428,7 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
             env->thumb = (*(uint32_t *)value & 1);
             env->uc->thumb = (*(uint32_t *)value & 1);
             env->regs[15] = (*(uint32_t *)value & ~1);
+            *setpc = 1;
             break;
             // case UC_ARM_REG_C1_C0_2:
             //     env->cp15.c1_coproc = *(int32_t *)value;
@@ -550,20 +551,15 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
     return ret;
 }
 
-int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                 size_t *sizes, int count)
+static uc_err reg_read_batch(CPUARMState *env, unsigned int *regs,
+                             void *const *vals, size_t *sizes, int count)
 {
-    CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
-    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
+        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
         if (err) {
             return err;
         }
@@ -572,25 +568,45 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     return UC_ERR_OK;
 }
 
-int arm_reg_write(struct uc_struct *uc, unsigned int *regs,
-                  const void *const *vals, size_t *sizes, int count)
+static uc_err reg_write_batch(CPUARMState *env, unsigned int *regs,
+                              const void *const *vals, size_t *sizes, int count,
+                              int *setpc)
 {
-    CPUArchState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
-    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
+        uc_err err =
+            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
         if (err) {
             return err;
         }
-        if (regid == UC_ARM_REG_R15) {
-            // force to quit execution and flush TB
-            uc->quit_request = true;
-            break_translation_loop(uc);
-        }
+    }
+
+    return UC_ERR_OK;
+}
+
+int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                 size_t *sizes, int count)
+{
+    CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
+    return reg_read_batch(env, regs, vals, sizes, count);
+}
+
+int arm_reg_write(struct uc_struct *uc, unsigned int *regs,
+                  const void *const *vals, size_t *sizes, int count)
+{
+    CPUArchState *env = &(ARM_CPU(uc->cpu)->env);
+    int setpc = 0;
+    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
+    if (err) {
+        return err;
+    }
+    if (setpc) {
+        // force to quit execution and flush TB
+        uc->quit_request = true;
+        break_translation_loop(uc);
     }
 
     return UC_ERR_OK;
@@ -601,22 +617,7 @@ int arm_context_reg_read(struct uc_context *ctx, unsigned int *regs,
                          void *const *vals, size_t *sizes, int count)
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    return reg_read_batch(env, regs, vals, sizes, count);
 }
 
 DEFAULT_VISIBILITY
@@ -624,19 +625,8 @@ int arm_context_reg_write(struct uc_context *ctx, unsigned int *regs,
                           const void *const *vals, size_t *sizes, int count)
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    int setpc = 0;
+    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
 }
 
 static bool arm_stop_interrupt(struct uc_struct *uc, int intno)

@@ -79,7 +79,7 @@ static uc_err reg_read(CPUM68KState *env, unsigned int regid, void *value,
 }
 
 static uc_err reg_write(CPUM68KState *env, unsigned int regid,
-                        const void *value, size_t *size)
+                        const void *value, size_t *size, int *setpc)
 {
     uc_err ret = UC_ERR_ARG;
 
@@ -96,6 +96,7 @@ static uc_err reg_write(CPUM68KState *env, unsigned int regid,
         case UC_M68K_REG_PC:
             CHECK_REG_TYPE(uint32_t);
             env->pc = *(uint32_t *)value;
+            *setpc = 1;
             break;
         case UC_M68K_REG_SR:
             CHECK_REG_TYPE(uint32_t);
@@ -107,17 +108,15 @@ static uc_err reg_write(CPUM68KState *env, unsigned int regid,
     return ret;
 }
 
-int m68k_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                  size_t *sizes, int count)
+static uc_err reg_read_batch(CPUM68KState *env, unsigned int *regs,
+                             void *const *vals, size_t *sizes, int count)
 {
-    CPUM68KState *env = &(M68K_CPU(uc->cpu)->env);
     int i;
-    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
+        uc_err err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
         if (err) {
             return err;
         }
@@ -126,25 +125,45 @@ int m68k_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     return UC_ERR_OK;
 }
 
-int m68k_reg_write(struct uc_struct *uc, unsigned int *regs,
-                   const void *const *vals, size_t *sizes, int count)
+static uc_err reg_write_batch(CPUM68KState *env, unsigned int *regs,
+                              const void *const *vals, size_t *sizes, int count,
+                              int *setpc)
 {
-    CPUM68KState *env = &(M68K_CPU(uc->cpu)->env);
     int i;
-    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
+        uc_err err =
+            reg_write(env, regid, value, sizes ? sizes + i : NULL, setpc);
         if (err) {
             return err;
         }
-        if (regid == UC_M68K_REG_PC) {
-            // force to quit execution and flush TB
-            uc->quit_request = true;
-            break_translation_loop(uc);
-        }
+    }
+
+    return UC_ERR_OK;
+}
+
+int m68k_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                  size_t *sizes, int count)
+{
+    CPUM68KState *env = &(M68K_CPU(uc->cpu)->env);
+    return reg_read_batch(env, regs, vals, sizes, count);
+}
+
+int m68k_reg_write(struct uc_struct *uc, unsigned int *regs,
+                   const void *const *vals, size_t *sizes, int count)
+{
+    CPUM68KState *env = &(M68K_CPU(uc->cpu)->env);
+    int setpc = 0;
+    uc_err err = reg_write_batch(env, regs, vals, sizes, count, &setpc);
+    if (err) {
+        return err;
+    }
+    if (setpc) {
+        // force to quit execution and flush TB
+        uc->quit_request = true;
+        break_translation_loop(uc);
     }
 
     return UC_ERR_OK;
@@ -155,19 +174,7 @@ int m68k_context_reg_read(struct uc_context *ctx, unsigned int *regs,
                           void *const *vals, size_t *sizes, int count)
 {
     CPUM68KState *env = (CPUM68KState *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    return reg_read_batch(env, regs, vals, sizes, count);
 }
 
 DEFAULT_VISIBILITY
@@ -175,19 +182,8 @@ int m68k_context_reg_write(struct uc_context *ctx, unsigned int *regs,
                            const void *const *vals, size_t *sizes, int count)
 {
     CPUM68KState *env = (CPUM68KState *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    int setpc = 0;
+    return reg_write_batch(env, regs, vals, sizes, count, &setpc);
 }
 
 static int m68k_cpus_init(struct uc_struct *uc, const char *cpu_model)

@@ -990,7 +990,7 @@ static uc_err reg_read(CPUX86State *env, unsigned int regid, void *value,
 }
 
 static uc_err reg_write(CPUX86State *env, unsigned int regid, const void *value,
-                        size_t *size, uc_mode mode)
+                        size_t *size, uc_mode mode, int *setpc)
 {
     uc_err ret = UC_ERR_ARG;
 
@@ -1279,10 +1279,12 @@ static uc_err reg_write(CPUX86State *env, unsigned int regid, const void *value,
         case UC_X86_REG_EIP:
             CHECK_REG_TYPE(uint32_t);
             env->eip = *(uint32_t *)value;
+            *setpc = 1;
             break;
         case UC_X86_REG_IP:
             CHECK_REG_TYPE(uint16_t);
             env->eip = *(uint16_t *)value;
+            *setpc = 1;
             break;
         case UC_X86_REG_CS:
             CHECK_REG_TYPE(uint16_t);
@@ -1569,14 +1571,17 @@ static uc_err reg_write(CPUX86State *env, unsigned int regid, const void *value,
         case UC_X86_REG_RIP:
             CHECK_REG_TYPE(uint64_t);
             env->eip = *(uint64_t *)value;
+            *setpc = 1;
             break;
         case UC_X86_REG_EIP:
             CHECK_REG_TYPE(uint32_t);
             env->eip = *(uint32_t *)value;
+            *setpc = 1;
             break;
         case UC_X86_REG_IP:
             CHECK_REG_TYPE(uint16_t);
             WRITE_WORD(env->eip, *(uint16_t *)value);
+            *setpc = 1;
             break;
         case UC_X86_REG_CS:
             CHECK_REG_TYPE(uint16_t);
@@ -1801,17 +1806,17 @@ static uc_err reg_write(CPUX86State *env, unsigned int regid, const void *value,
     return ret;
 }
 
-int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                 size_t *sizes, int count)
+static uc_err reg_read_batch(CPUX86State *env, unsigned int *regs,
+                             void *const *vals, size_t *sizes, int count,
+                             int mode)
 {
-    CPUX86State *env = &(X86_CPU(uc->cpu)->env);
     int i;
     uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL, uc->mode);
+        err = reg_read(env, regid, value, sizes ? sizes + i : NULL, mode);
         if (err) {
             return err;
         }
@@ -1820,50 +1825,47 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     return UC_ERR_OK;
 }
 
-int x86_reg_write(struct uc_struct *uc, unsigned int *regs,
-                  const void *const *vals, size_t *sizes, int count)
+static uc_err reg_write_batch(CPUX86State *env, unsigned int *regs,
+                              const void *const *vals, size_t *sizes, int count,
+                              int mode, int *setpc)
 {
-    CPUX86State *env = &(X86_CPU(uc->cpu)->env);
     int i;
     uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL, uc->mode);
+        err =
+            reg_write(env, regid, value, sizes ? sizes + i : NULL, mode, setpc);
         if (err) {
             return err;
         }
-        switch (uc->mode) {
-        default:
-            break;
-        case UC_MODE_32:
-            switch (regid) {
-            default:
-                break;
-            case UC_X86_REG_EIP:
-            case UC_X86_REG_IP:
-                // force to quit execution and flush TB
-                uc->quit_request = true;
-                break_translation_loop(uc);
-                break;
-            }
+    }
 
-#ifdef TARGET_X86_64
-        case UC_MODE_64:
-            switch (regid) {
-            default:
-                break;
-            case UC_X86_REG_RIP:
-            case UC_X86_REG_EIP:
-            case UC_X86_REG_IP:
-                // force to quit execution and flush TB
-                uc->quit_request = true;
-                break_translation_loop(uc);
-                break;
-            }
-#endif
-        }
+    return UC_ERR_OK;
+}
+
+int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                 size_t *sizes, int count)
+{
+    CPUX86State *env = &(X86_CPU(uc->cpu)->env);
+    return reg_read_batch(env, regs, vals, sizes, count, uc->mode);
+}
+
+int x86_reg_write(struct uc_struct *uc, unsigned int *regs,
+                  const void *const *vals, size_t *sizes, int count)
+{
+    CPUX86State *env = &(X86_CPU(uc->cpu)->env);
+    int setpc = 0;
+    uc_err err =
+        reg_write_batch(env, regs, vals, sizes, count, uc->mode, &setpc);
+    if (err) {
+        return err;
+    }
+    if (setpc) {
+        // force to quit execution and flush TB
+        uc->quit_request = true;
+        break_translation_loop(uc);
     }
 
     return UC_ERR_OK;
@@ -1874,19 +1876,7 @@ int x86_context_reg_read(struct uc_context *ctx, unsigned int *regs,
                          void *const *vals, size_t *sizes, int count)
 {
     CPUX86State *env = (CPUX86State *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        err = reg_read(env, regid, value, sizes ? sizes + i : NULL, ctx->mode);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    return reg_read_batch(env, regs, vals, sizes, count, ctx->mode);
 }
 
 DEFAULT_VISIBILITY
@@ -1894,19 +1884,8 @@ int x86_context_reg_write(struct uc_context *ctx, unsigned int *regs,
                           const void *const *vals, size_t *sizes, int count)
 {
     CPUX86State *env = (CPUX86State *)ctx->data;
-    int i;
-    uc_err err;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        err = reg_write(env, regid, value, sizes ? sizes + i : NULL, ctx->mode);
-        if (err) {
-            return err;
-        }
-    }
-
-    return UC_ERR_OK;
+    int setpc = 0;
+    return reg_write_batch(env, regs, vals, sizes, count, ctx->mode, &setpc);
 }
 
 static bool x86_stop_interrupt(struct uc_struct *uc, int intno)
