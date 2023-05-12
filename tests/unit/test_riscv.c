@@ -222,8 +222,8 @@ static void test_riscv32_fp_move(void)
     uc_engine *uc;
     char code[] = "\xd3\x81\x10\x22"; // fmv.d f3, f1
 
-    uint32_t r_f1 = 0x1234;
-    uint32_t r_f3 = 0x5678;
+    uint64_t r_f1 = 0x123456781a2b3c4dULL;
+    uint64_t r_f3 = 0x56780246aaaabbbbULL;
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
                     sizeof(code) - 1);
@@ -238,8 +238,8 @@ static void test_riscv32_fp_move(void)
     OK(uc_reg_read(uc, UC_RISCV_REG_F1, &r_f1));
     OK(uc_reg_read(uc, UC_RISCV_REG_F3, &r_f3));
 
-    TEST_CHECK(r_f1 == 0x1234);
-    TEST_CHECK(r_f3 == 0x1234);
+    TEST_CHECK(r_f1 == 0x123456781a2b3c4dULL);
+    TEST_CHECK(r_f3 == 0x123456781a2b3c4dULL);
 
     uc_close(uc);
 }
@@ -249,8 +249,8 @@ static void test_riscv64_fp_move(void)
     uc_engine *uc;
     char code[] = "\xd3\x81\x10\x22"; // fmv.d f3, f1
 
-    uint64_t r_f1 = 0x12341234;
-    uint64_t r_f3 = 0x56785678;
+    uint64_t r_f1 = 0x123456781a2b3c4dULL;
+    uint64_t r_f3 = 0x56780246aaaabbbbULL;
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
@@ -265,8 +265,8 @@ static void test_riscv64_fp_move(void)
     OK(uc_reg_read(uc, UC_RISCV_REG_F1, &r_f1));
     OK(uc_reg_read(uc, UC_RISCV_REG_F3, &r_f3));
 
-    TEST_CHECK(r_f1 == 0x12341234);
-    TEST_CHECK(r_f3 == 0x12341234);
+    TEST_CHECK(r_f1 == 0x123456781a2b3c4dULL);
+    TEST_CHECK(r_f3 == 0x123456781a2b3c4dULL);
 
     uc_close(uc);
 }
