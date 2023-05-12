@@ -1520,7 +1520,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             mr = find_memory_region(uc, paddr);
             if (mr == NULL) {
                 uc->invalid_error = UC_ERR_MAP;
-                if (!uc->cpu->stopped) {
+                if (uc->nested_level > 0) {
                     cpu_exit(uc->cpu);
                     // XXX(@lazymio): We have to exit early so that the target register won't be overwritten
                     //                because qemu might generate tcg code like:
@@ -1534,7 +1534,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             uc->invalid_addr = paddr;
             uc->invalid_error = error_code;
             // printf("***** Invalid fetch (unmapped memory) at " TARGET_FMT_lx "\n", addr);
-            if (!uc->cpu->stopped) {
+            if (uc->nested_level > 0) {
                 cpu_exit(uc->cpu);
                 // See comments above
                 cpu_loop_exit(uc->cpu);
@@ -1592,7 +1592,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 uc->invalid_addr = paddr;
                 uc->invalid_error = UC_ERR_READ_PROT;
                 // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
-                if (!uc->cpu->stopped) {
+                if (uc->nested_level > 0) {
                     cpu_exit(uc->cpu);
                     // See comments above
                     cpu_loop_exit(uc->cpu);
@@ -1624,7 +1624,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 uc->invalid_addr = paddr;
                 uc->invalid_error = UC_ERR_FETCH_PROT;
                 // printf("***** Invalid fetch (non-executable) at " TARGET_FMT_lx "\n", addr);
-                if (!uc->cpu->stopped) {
+                if (uc->nested_level > 0) {
                     cpu_exit(uc->cpu);
                     // See comments above
                     cpu_loop_exit(uc->cpu);
