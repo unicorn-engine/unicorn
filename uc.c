@@ -82,6 +82,18 @@ unsigned int uc_version(unsigned int *major, unsigned int *minor)
            UC_API_EXTRA;
 }
 
+static int default_reg_read(struct uc_struct *uc, unsigned int *regs,
+                            void *const *vals, size_t *sizes, int count)
+{
+    return UC_ERR_HANDLE;
+}
+
+static int default_reg_write(struct uc_struct *uc, unsigned int *regs,
+                             const void *const *vals, size_t *sizes, int count)
+{
+    return UC_ERR_HANDLE;
+}
+
 UNICORN_EXPORT
 uc_err uc_errno(uc_engine *uc)
 {
@@ -264,6 +276,8 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         uc->errnum = UC_ERR_OK;
         uc->arch = arch;
         uc->mode = mode;
+        uc->reg_read = default_reg_read;
+        uc->reg_write = default_reg_write;
 
         // uc->ram_list = { .blocks = QLIST_HEAD_INITIALIZER(ram_list.blocks) };
         QLIST_INIT(&uc->ram_list.blocks);
@@ -507,13 +521,16 @@ uc_err uc_close(uc_engine *uc)
 UNICORN_EXPORT
 uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
 {
-    return uc_reg_read_batch2(uc, ids, vals, NULL, count);
+    UC_INIT(uc);
+    return uc->reg_read(uc, (unsigned int *)ids, vals, NULL, count);
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
 {
-    return uc_reg_write_batch2(uc, ids, (const void *const *)vals, NULL, count);
+    UC_INIT(uc);
+    return uc->reg_write(uc, (unsigned int *)ids, (const void *const *)vals,
+                         NULL, count);
 }
 
 UNICORN_EXPORT
@@ -521,12 +538,7 @@ uc_err uc_reg_read_batch2(uc_engine *uc, int *ids, void *const *vals,
                           size_t *sizes, int count)
 {
     UC_INIT(uc);
-
-    if (uc->reg_read) {
-        return uc->reg_read(uc, (unsigned int *)ids, vals, sizes, count);
-    } else {
-        return UC_ERR_HANDLE;
-    }
+    return uc->reg_read(uc, (unsigned int *)ids, vals, sizes, count);
 }
 
 UNICORN_EXPORT
@@ -534,36 +546,35 @@ uc_err uc_reg_write_batch2(uc_engine *uc, int *ids, const void *const *vals,
                            size_t *sizes, int count)
 {
     UC_INIT(uc);
-
-    if (uc->reg_write) {
-        return uc->reg_write(uc, (unsigned int *)ids, vals, sizes, count);
-    } else {
-        return UC_ERR_HANDLE;
-    }
+    return uc->reg_write(uc, (unsigned int *)ids, vals, sizes, count);
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
 {
-    return uc_reg_read_batch2(uc, &regid, &value, NULL, 1);
+    UC_INIT(uc);
+    return uc->reg_read(uc, (unsigned int *)&regid, &value, NULL, 1);
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
 {
-    return uc_reg_write_batch2(uc, &regid, &value, NULL, 1);
+    UC_INIT(uc);
+    return uc->reg_write(uc, (unsigned int *)&regid, &value, NULL, 1);
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_read2(uc_engine *uc, int regid, void *value, size_t *size)
 {
-    return uc_reg_read_batch2(uc, &regid, &value, size, 1);
+    UC_INIT(uc);
+    return uc->reg_read(uc, (unsigned int *)&regid, &value, size, 1);
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_write2(uc_engine *uc, int regid, const void *value, size_t *size)
 {
-    return uc_reg_write_batch2(uc, &regid, &value, size, 1);
+    UC_INIT(uc);
+    return uc->reg_write(uc, (unsigned int *)&regid, &value, size, 1);
 }
 
 // check if a memory area is mapped
