@@ -34,7 +34,7 @@ public class MemRegion {
 
     @Override
     public String toString() {
-        return "MemRegion [begin=" + begin + ", end=" + end + ", perms=" +
-            perms + "]";
+        return String.format("MemRegion [begin=0x%x, end=0x%x, perms=%d]",
+            begin, end, perms);
     }
 }

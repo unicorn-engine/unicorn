@@ -32,4 +32,10 @@ public class TranslationBlock {
         this.icount = icount;
         this.size = size;
     }
+
+    @Override
+    public String toString() {
+        return String.format("TranslationBlock [pc=0x%x, icount=%d, size=%d]",
+            pc, icount, size);
+    }
 }

@@ -563,8 +563,11 @@ public class Unicorn
      * {@code errno} may not retain its old value once accessed.
      *
      * @return Error code, one of the {@code UC_ERR_*} constants.
+     * @deprecated Not actually useful in Java; error numbers are always
+     * converted into {@link UnicornException} exceptions.
      * @see UnicornConst
      */
+    @Deprecated
     public int errno() {
         return _errno(nativePtr);
     }
