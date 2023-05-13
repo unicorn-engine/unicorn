@@ -27,6 +27,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** Unicorn is a lightweight multi-platform, multi-architecture CPU emulator framework. */
 public class Unicorn
@@ -37,6 +40,15 @@ public class Unicorn
     private int arch;
     private int mode;
     private Hashtable<Long, HookWrapper> hooks = new Hashtable<>();
+
+    /** Instead of handing out native pointers, we'll hand out a handle
+     * ID for safety. This prevents things like "double frees" - 
+     * accidentally releasing an unrelated object via handle reuse. */
+    private static AtomicLong allocCounter = new AtomicLong(0x1000);
+
+    private static long nextAllocCounter() {
+        return allocCounter.addAndGet(8);
+    }
 
     /** Wrapper around a registered hook */
     private static class HookWrapper {
@@ -676,8 +688,9 @@ public class Unicorn
     private long registerHook(long val) {
         HookWrapper wrapper = new HookWrapper();
         wrapper.nativePtr = val;
-        hooks.put(val, wrapper);
-        return val;
+        long index = nextAllocCounter();
+        hooks.put(index, wrapper);
+        return index;
     }
 
     /**
@@ -982,9 +995,9 @@ public class Unicorn
      * @param hook The return value from any {@code hook_add} function.
      */
     public void hook_del(long hook) throws UnicornException {
-        if (hooks.contains(hook)) {
-            hooks.remove(hooks, hook);
-            _hook_del(nativePtr, hook);
+        if (hooks.containsKey(hook)) {
+            HookWrapper wrapper = hooks.remove(hook);
+            _hook_del(nativePtr, wrapper.nativePtr);
         } else {
             throw new UnicornException("Hook is not registered!");
         }
