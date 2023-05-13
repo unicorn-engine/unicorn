@@ -393,6 +393,8 @@ public class Unicorn
      * @return value of the register.
      * @see {@link #reg_read(int, Object)} to read larger registers or
      *      registers requiring configuration.
+     * @throws UnicornException if the register is not valid for the current
+     *           architecture or mode.
      */
     public long reg_read(int regid) throws UnicornException {
         return do_reg_read_long(nativePtr, 0, arch, regid);
@@ -407,6 +409,7 @@ public class Unicorn
      *  <li>{@code UC_X86_REG_ST*} => {@link X86_Float80}
      *  <li>{@code UC_X86_REG_XMM*} => {@link BigInteger} (128 bits)
      *  <li>{@code UC_X86_REG_YMM*} => {@link BigInteger} (256 bits)
+     *  <li>{@code UC_X86_REG_ZMM*} => {@link BigInteger} (512 bits)
      *  <li>{@code UC_X86_REG_MSR} (opt: {@link X86_MSR}) => {@link Long}
      *  <li>{@code UC_ARM_REG_CP} (opt: {@link Arm_CP}) => {@link Long}
      *  <li>{@code UC_ARM64_REG_CP} (opt: {@link Arm64_CP}) => {@link Long}
@@ -419,6 +422,8 @@ public class Unicorn
      *        are required.
      * @return value of the register - {@link Long}, {@link BigInteger},
      *         or other class.
+     * @throws UnicornException if the register is not valid for the current
+     *           architecture or mode.
      */
     public Object reg_read(int regid, Object opt) throws UnicornException {
         return do_reg_read_obj(nativePtr, 0, arch, regid, opt);
@@ -432,6 +437,8 @@ public class Unicorn
      * @param value Object containing the new register value.
      * @see {@link #reg_read(int, Object)} to write larger registers or
      *      registers requiring configuration.
+     * @throws UnicornException if the register is not valid for the current
+     *           architecture or mode.
      */
     public void reg_write(int regid, long value) throws UnicornException {
         do_reg_write_long(nativePtr, 0, arch, regid, value);
@@ -445,6 +452,7 @@ public class Unicorn
      *  <li>{@code UC_X86_REG_ST*} => {@link X86_Float80}
      *  <li>{@code UC_X86_REG_XMM*} => {@link BigInteger} (128 bits)
      *  <li>{@code UC_X86_REG_YMM*} => {@link BigInteger} (256 bits)
+     *  <li>{@code UC_X86_REG_ZMM*} => {@link BigInteger} (512 bits)
      *  <li>{@code UC_X86_REG_MSR} => {@link X86_MSR}
      *  <li>{@code UC_ARM_REG_CP}  => {@link Arm_CP}
      *  <li>{@code UC_ARM64_REG_CP} => {@link Arm64_CP}
@@ -454,6 +462,8 @@ public class Unicorn
      *
      * @param regid Register ID that is to be modified.
      * @param value Object containing the new register value.
+     * @throws UnicornException if the register is not valid for the current
+     *           architecture or mode.
      */
     public void reg_write(int regid, Object value) throws UnicornException {
         do_reg_write_obj(nativePtr, 0, arch, regid, value);
@@ -631,7 +641,13 @@ public class Unicorn
         return _ctl_request_cache(nativePtr, address);
     }
 
-    /** Invalidate the TB cache at a specific range of addresses. */
+    /** Invalidate the TB cache for a specific range of addresses
+     * {@code [address, end)}. Note that invalidation will not include address
+     * {@code end} itself.
+     * 
+     * @param address The first address in the region to invalidate
+     * @param end     The last address in the region to invalidate, plus one
+     */
     public void ctl_remove_cache(long address, long end)
             throws UnicornException {
         _ctl_remove_cache(nativePtr, address, end);
@@ -1018,6 +1034,14 @@ public class Unicorn
      * Map a range of memory, backed by an existing region of host memory.
      * This API enables direct access to emulator memory without going through
      * {@link #mem_read} and {@link #mem_write}.
+     * <p>
+     * Usage note: The mapped memory region will correspond to the entire
+     * passed-in Buffer from position 0 (the origin) up to its capacity. The
+     * capacity MUST be a multiple of the page size. The current position and
+     * limit will be ignored.
+     * You can use {@link Buffer#slice()} to get a new Buffer sharing the same
+     * memory region, with the origin set to the current {@code position} and
+     * the capacity set to {@code limit - position}.
      *
      * @param address Base address of the memory range
      * @param buf     Direct Buffer referencing the memory to map into the
