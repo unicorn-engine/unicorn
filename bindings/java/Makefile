@@ -35,10 +35,10 @@ CLASSPATH=./
 .SUFFIXES: .java .class
 
 tests/%.class: tests/%.java
-	$(JC) -classpath .:unicorn.jar:testdep/junit-4.13.2.jar $(JFLAGS) $<
+	$(JC) -Xlint:deprecation -classpath .:unicorn.jar:testdep/junit-4.13.2.jar $(JFLAGS) $<
 
 %.class: %.java
-	$(JC) -classpath .:unicorn.jar $(JFLAGS) $<
+	$(JC) -Xlint:deprecation -classpath .:unicorn.jar $(JFLAGS) $<
 
 OBJS=unicorn_Unicorn.o
 
@@ -48,7 +48,7 @@ JARFILE=unicorn.jar
 	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
 
 unicorn_Unicorn.h: unicorn/Unicorn.java
-	javac -h . $<
+	$(JC) -h . $<
 
 unicorn_Unicorn.o: unicorn_Unicorn.c unicorn_Unicorn.h
 	$(CC) -O2 -Wall -Wextra -Wno-unused-parameter -c $(CFLAGS) $(INCS) $< -o $@
@@ -73,17 +73,17 @@ install: lib jar
 	cp $(JARFILE) /usr/share/java
 
 uninstall:
-	rm /usr/lib/libunicorn_java$(LIB_EXT)
-	rm /usr/share/java/$(JARFILE)
+	rm -f /usr/lib/libunicorn_java$(LIB_EXT)
+	rm -f /usr/share/java/$(JARFILE)
 
 gen_const:
 	cd .. && python3 const_generator.py java
 
 clean:
-	rm unicorn/*.class
-	rm samples/*.class
-	rm *.so
-	rm *.dylib
-	rm *.dll
+	rm -f unicorn/*.class
+	rm -f samples/*.class
+	rm -f *.so
+	rm -f *.dylib
+	rm -f *.dll
 
 .PHONY: all lib samples jar install uninstall gen_const clean

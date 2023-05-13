@@ -59,13 +59,13 @@ public class Unicorn
         }
 
         /**
-        * Read register value from saved context.
-        *
-        * @param regid Register ID that is to be retrieved. This function only supports
-        *        integer registers at most 64 bits long.
-        * @return value of the register.
-        * @see Unicorn#reg_read(int)
-        */
+         * Read register value from saved context.
+         *
+         * @param regid Register ID that is to be retrieved. This function only supports
+         *        integer registers at most 64 bits long.
+         * @return value of the register.
+         * @see Unicorn#reg_read(int)
+         */
         public long reg_read(int regid) throws UnicornException {
             return do_reg_read_long(nativePtr, 1, arch, regid);
         }
@@ -83,23 +83,23 @@ public class Unicorn
         }
 
         /**
-        * Write to register in saved context.
-        *
-        * @param regid Register ID that is to be modified.
-        * @param value Object containing the new register value.
-        * @see Unicorn#reg_write(int, long)
-        */
+         * Write to register in saved context.
+         *
+         * @param regid Register ID that is to be modified.
+         * @param value Object containing the new register value.
+         * @see Unicorn#reg_write(int, long)
+         */
         public void reg_write(int regid, long value) throws UnicornException {
             do_reg_write_long(nativePtr, 1, arch, regid, value);
         }
 
         /**
-        * Write to register in saved context.
-        *
-        * @param regid Register ID that is to be modified.
-        * @param value Object containing the new register value.
-        * @see Unicorn#reg_write(int, Object)
-        */
+         * Write to register in saved context.
+         *
+         * @param regid Register ID that is to be modified.
+         * @param value Object containing the new register value.
+         * @see Unicorn#reg_write(int, Object)
+         */
         public void reg_write(int regid, Object value) throws UnicornException {
             do_reg_write_obj(nativePtr, 1, arch, regid, value);
         }
@@ -111,13 +111,13 @@ public class Unicorn
     }
 
     /**
-    * Create a new Unicorn object
-    *
-    * @param arch Architecture type. One of the {@code UC_ARCH_*} constants.
-    * @param mode Hardware mode. Bitwise combination of {@code UC_MODE_*} constants.
-    * @see UnicornConst
-    *
-    */
+     * Create a new Unicorn object
+     *
+     * @param arch Architecture type. One of the {@code UC_ARCH_*} constants.
+     * @param mode Hardware mode. Bitwise combination of {@code UC_MODE_*} constants.
+     * @see UnicornConst
+     *
+     */
     public Unicorn(int arch, int mode) throws UnicornException {
         // remember these in case we need arch specific code
         this.arch = arch;
@@ -126,10 +126,10 @@ public class Unicorn
     }
 
     /**
-    * Close the C {@code uc_engine} associated with this Unicorn object,
-    * freeing all associated resources. After calling this method, the
-    * API will no longer be usable.
-    */
+     * Close the C {@code uc_engine} associated with this Unicorn object,
+     * freeing all associated resources. After calling this method, the
+     * API will no longer be usable.
+     */
     public void close() throws UnicornException {
         if (nativePtr != 0) {
             _close(nativePtr);
@@ -138,48 +138,48 @@ public class Unicorn
     }
 
     /**
-    * Automatically close the {@code uc_engine} upon GC finalization.
-    */
+     * Automatically close the {@code uc_engine} upon GC finalization.
+     */
     @Override
     protected void finalize() {
         close();
     }
 
     /**
-    * Return combined API version & major and minor version numbers.
-    *
-    * @return version number as {@code (major << 8 | minor)}, which encodes
-    *         both major & minor versions.
-    *         For example, Unicorn version 1.2 would yield 0x0102.
-    */
+     * Return combined API version & major and minor version numbers.
+     *
+     * @return version number as {@code (major << 8 | minor)}, which encodes
+     *         both major & minor versions.
+     *         For example, Unicorn version 1.2 would yield 0x0102.
+     */
     public static int version() {
         return _version();
     }
 
     /**
-    * Determine if the given architecture is supported by this library.
-    *
-    * @param arch Architecture type ({@code UC_ARCH_*} constant)
-    * @return {@code true} if this library supports the given arch.
-    * @see UnicornConst
-    */
+     * Determine if the given architecture is supported by this library.
+     *
+     * @param arch Architecture type ({@code UC_ARCH_*} constant)
+     * @return {@code true} if this library supports the given arch.
+     * @see UnicornConst
+     */
     public static boolean arch_supported(int arch) {
         return _arch_supported(arch);
     }
 
     /**
-    * Emulate machine code for a specific length of time or number of
-    * instructions.
-    *
-    * @param begin   Address where emulation starts
-    * @param until   Address where emulation stops (i.e. when this address is hit)
-    * @param timeout Duration to emulate the code for, in microseconds, or 0 to
-    *                run indefinitely.
-    * @param count   The maximum number of instructions to execute, or 0 to
-    *                execute indefinitely.
-    * @throws UnicornException if an unhandled CPU exception or other error
-    *                occurs during emulation.
-    */
+     * Emulate machine code for a specific length of time or number of
+     * instructions.
+     *
+     * @param begin   Address where emulation starts
+     * @param until   Address where emulation stops (i.e. when this address is hit)
+     * @param timeout Duration to emulate the code for, in microseconds, or 0 to
+     *                run indefinitely.
+     * @param count   The maximum number of instructions to execute, or 0 to
+     *                execute indefinitely.
+     * @throws UnicornException if an unhandled CPU exception or other error
+     *                occurs during emulation.
+     */
     public void emu_start(long begin, long until, long timeout,
             long count)
             throws UnicornException {
@@ -187,12 +187,12 @@ public class Unicorn
     }
 
     /**
-    * Stop emulation (which was started by {@link #emu_start()}).
-    *
-    * This can be called from hook callbacks or from a separate thread.
-    * NOTE: for now, this will stop the execution only after the current
-    * basic block.
-    */
+     * Stop emulation (which was started by {@link #emu_start()}).
+     *
+     * This can be called from hook callbacks or from a separate thread.
+     * NOTE: for now, this will stop the execution only after the current
+     * basic block.
+     */
     public void emu_stop() throws UnicornException {
         _emu_stop(nativePtr);
     }
@@ -386,14 +386,14 @@ public class Unicorn
     }
 
     /**
-    * Read register value of at most 64 bits in size.
-    *
-    * @param regid Register ID that is to be retrieved. This function only supports
-    *        integer registers at most 64 bits long.
-    * @return value of the register.
-    * @see {@link #reg_read(int, Object)} to read larger registers or
-    *      registers requiring configuration.
-    */
+     * Read register value of at most 64 bits in size.
+     *
+     * @param regid Register ID that is to be retrieved. This function only supports
+     *        integer registers at most 64 bits long.
+     * @return value of the register.
+     * @see {@link #reg_read(int, Object)} to read larger registers or
+     *      registers requiring configuration.
+     */
     public long reg_read(int regid) throws UnicornException {
         return do_reg_read_long(nativePtr, 0, arch, regid);
     }
@@ -425,93 +425,106 @@ public class Unicorn
     }
 
     /**
-    * Write to register. This sets any register that doesn't require special
-    * options and which is at most 64 bits long.
-    *
-    * @param regid Register ID that is to be modified.
-    * @param value Object containing the new register value.
-    * @see {@link #reg_read(int, Object)} to write larger registers or
-    *      registers requiring configuration.
-    */
+     * Write to register. This sets any register that doesn't require special
+     * options and which is at most 64 bits long.
+     *
+     * @param regid Register ID that is to be modified.
+     * @param value Object containing the new register value.
+     * @see {@link #reg_read(int, Object)} to write larger registers or
+     *      registers requiring configuration.
+     */
     public void reg_write(int regid, long value) throws UnicornException {
         do_reg_write_long(nativePtr, 0, arch, regid, value);
     }
 
     /**
-    * Write to register. The type of {@code value} depends on {@code regid}:
-    * <ul>
-    *  <li>{@code UC_X86_REG_*TR} => {@link X86_MMR}
-    *  <li>{@code UC_X86_REG_FP*} => {@link X86_Float80}
-    *  <li>{@code UC_X86_REG_ST*} => {@link X86_Float80}
-    *  <li>{@code UC_X86_REG_XMM*} => {@link BigInteger} (128 bits)
-    *  <li>{@code UC_X86_REG_YMM*} => {@link BigInteger} (256 bits)
-    *  <li>{@code UC_X86_REG_MSR} => {@link X86_MSR}
-    *  <li>{@code UC_ARM_REG_CP}  => {@link Arm_CP}
-    *  <li>{@code UC_ARM64_REG_CP} => {@link Arm64_CP}
-    *  <li>{@code UC_ARM64_REG_Q*} => {@link BigInteger} (128 bits)
-    *  <li>{@code UC_ARM64_REG_V*} => {@link BigInteger} (128 bits)
-    * </ul>
-    *
-    * @param regid Register ID that is to be modified.
-    * @param value Object containing the new register value.
-    */
+     * Write to register. The type of {@code value} depends on {@code regid}:
+     * <ul>
+     *  <li>{@code UC_X86_REG_*TR} => {@link X86_MMR}
+     *  <li>{@code UC_X86_REG_FP*} => {@link X86_Float80}
+     *  <li>{@code UC_X86_REG_ST*} => {@link X86_Float80}
+     *  <li>{@code UC_X86_REG_XMM*} => {@link BigInteger} (128 bits)
+     *  <li>{@code UC_X86_REG_YMM*} => {@link BigInteger} (256 bits)
+     *  <li>{@code UC_X86_REG_MSR} => {@link X86_MSR}
+     *  <li>{@code UC_ARM_REG_CP}  => {@link Arm_CP}
+     *  <li>{@code UC_ARM64_REG_CP} => {@link Arm64_CP}
+     *  <li>{@code UC_ARM64_REG_Q*} => {@link BigInteger} (128 bits)
+     *  <li>{@code UC_ARM64_REG_V*} => {@link BigInteger} (128 bits)
+     * </ul>
+     *
+     * @param regid Register ID that is to be modified.
+     * @param value Object containing the new register value.
+     */
     public void reg_write(int regid, Object value) throws UnicornException {
         do_reg_write_obj(nativePtr, 0, arch, regid, value);
     }
 
     /**
-    * Read from memory.
-    *
-    * @param address Start address of the memory region to be read.
-    * @param size    Number of bytes to be retrieved.
-    * @return Byte array containing the contents of the requested memory range.
-    */
+     * Read from memory.
+     *
+     * @param address Start address of the memory region to be read.
+     * @param size    Number of bytes to be retrieved.
+     * @return Byte array containing the contents of the requested memory range.
+     */
     public byte[] mem_read(long address, int size) throws UnicornException {
         byte[] result = new byte[size];
         _mem_read(nativePtr, address, result);
         return result;
     }
 
+    /** @deprecated Use {@link #mem_read(long, int)} instead. */
+    @Deprecated
+    public byte[] mem_read(long address, long size) throws UnicornException {
+        if (size < 0) {
+            throw new NegativeArraySizeException("size cannot be negative");
+        } else if (size > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("size must fit in an int");
+        }
+        byte[] result = new byte[(int) size];
+        _mem_read(nativePtr, address, result);
+        return result;
+    }
+
     /**
-    * Write to memory.
-    *
-    * @param address Start address of the memory region to be written.
-    * @param bytes   The values to be written into memory. {@code bytes.length}
-    *                bytes will be written.
-    */
+     * Write to memory.
+     *
+     * @param address Start address of the memory region to be written.
+     * @param bytes   The values to be written into memory. {@code bytes.length}
+     *                bytes will be written.
+     */
     public void mem_write(long address, byte[] bytes) throws UnicornException {
         _mem_write(nativePtr, address, bytes);
     }
 
     /**
-    * Query the internal status of the engine.
-    *
-    * @param type query type, one of the {@code UC_QUERY_*} constants.
-    * @return result of the query
-    * @see UnicornConst
-    */
+     * Query the internal status of the engine.
+     *
+     * @param type query type, one of the {@code UC_QUERY_*} constants.
+     * @return result of the query
+     * @see UnicornConst
+     */
     public long query(int type) throws UnicornException {
         return _query(nativePtr, type);
     }
 
     /**
-    * Report the last error number when some API functions fail.
-    * {@code errno} may not retain its old value once accessed.
-    *
-    * @return Error code, one of the {@code UC_ERR_*} constants.
-    * @see UnicornConst
-    */
+     * Report the last error number when some API functions fail.
+     * {@code errno} may not retain its old value once accessed.
+     *
+     * @return Error code, one of the {@code UC_ERR_*} constants.
+     * @see UnicornConst
+     */
     public int errno() {
         return _errno(nativePtr);
     }
 
     /**
-    * Return a string describing the given error code.
-    *
-    * @param code Error code, one of the {@code UC_ERR_*} constants.
-    * @return a String that describes the error code
-    * @see UnicornConst
-    */
+     * Return a string describing the given error code.
+     *
+     * @param code Error code, one of the {@code UC_ERR_*} constants.
+     * @return a String that describes the error code
+     * @see UnicornConst
+     */
     public static String strerror(int code) {
         return _strerror(code);
     }
@@ -652,13 +665,15 @@ public class Unicorn
     }
 
     /**
-    * Register a {@code UC_HOOK_INTR} hook. The hook function will be invoked
-    * whenever a CPU interrupt occurs.
-    *
-    * @param callback  Implementation of a {@link InterruptHook} interface
-    * @param user_data User data to be passed to the callback function each time
-    *                  the event is triggered
-    */
+     * Register a {@code UC_HOOK_INTR} hook. The hook function will be invoked
+     * whenever a CPU interrupt occurs.
+     *
+     * @param callback  Implementation of a {@link InterruptHook} interface
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
     public long hook_add(InterruptHook callback, Object user_data)
             throws UnicornException {
         return registerHook(
@@ -666,18 +681,20 @@ public class Unicorn
     }
 
     /**
-    * Register a {@code UC_HOOK_INSN} hook. The hook function will be
-    * invoked whenever the matching special instruction is executed.
-    * The exact interface called will depend on the instruction being hooked.
-    *
-    * @param callback  Implementation of an {@link InstructionHook} sub-interface
-    * @param insn      {@code UC_<ARCH>_INS_<INSN>} constant, e.g.
-    *                  {@code UC_X86_INS_IN} or {@code UC_ARM64_INS_MRS}
-    * @param begin     Start address of hooking range
-    * @param end       End address of hooking range
-    * @param user_data User data to be passed to the callback function each time
-    *                  the event is triggered
-    */
+     * Register a {@code UC_HOOK_INSN} hook. The hook function will be
+     * invoked whenever the matching special instruction is executed.
+     * The exact interface called will depend on the instruction being hooked.
+     *
+     * @param callback  Implementation of an {@link InstructionHook} sub-interface
+     * @param insn      {@code UC_<ARCH>_INS_<INSN>} constant, e.g.
+     *                  {@code UC_X86_INS_IN} or {@code UC_ARM64_INS_MRS}
+     * @param begin     Start address of hooking range
+     * @param end       End address of hooking range
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
     public long hook_add(InstructionHook callback, int insn, long begin,
             long end,
             Object user_data)
@@ -687,17 +704,81 @@ public class Unicorn
     }
 
     /**
-    * Register a {@code UC_HOOK_CODE} hook. The hook function will be
-    * invoked when an instruction is executed from the address range
-    * begin <= PC <= end. For the special case in which begin > end, the
-    * callback will be invoked for ALL instructions.
-    *
-    * @param callback  Implementation of a {@link CodeHook} interface
-    * @param begin     Start address of hooking range
-    * @param end       End address of hooking range
-    * @param user_data User data to be passed to the callback function each time
-    *                  the event is triggered
-    */
+     * Register a {@code UC_HOOK_INSN} hook for all program addresses.
+     * The exact interface called will depend on the instruction being hooked.
+     *
+     * @param callback  Implementation of an {@link InstructionHook}
+     *                  sub-interface
+     * @param insn      {@code UC_<ARCH>_INS_<INSN>} constant, e.g.
+     *                  {@code UC_X86_INS_IN} or {@code UC_ARM64_INS_MRS}
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
+    public long hook_add(InstructionHook callback, int insn, Object user_data)
+            throws UnicornException {
+        return hook_add(callback, insn, 1, 0, user_data);
+    }
+
+    /**
+     * Register a hook for the X86 IN instruction.
+     * The registered callback will be called whenever an IN instruction
+     * is executed.
+     * 
+     * @param callback  Object implementing the {@link InHook} interface
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
+    public long hook_add(InHook callback, Object user_data)
+            throws UnicornException {
+        return hook_add(callback, UC_X86_INS_IN, user_data);
+    }
+
+    /**
+     * Register a hook for the X86 OUT instruction.
+     * The registered callback will be called whenever an OUT instruction
+     * is executed.
+     * 
+     * @param callback  Object implementing the {@link InHook} interface
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
+    public long hook_add(OutHook callback, Object user_data)
+            throws UnicornException {
+        return hook_add(callback, UC_X86_INS_OUT, user_data);
+    }
+
+    /** @deprecated Use {@code hook_add(callback, UC_X86_INS_SYSCALL, begin,
+     *              end, user_data)} or {@code hook_add(callback,
+     *              UC_X86_INS_SYSENTER, begin, end, user_data)} instead.
+     */
+    @Deprecated
+    public long hook_add(SyscallHook callback, Object user_data)
+            throws UnicornException {
+        // Old implementation only registered SYSCALL, not SYSENTER.
+        // Since this is deprecated anyway, we retain the old behaviour.
+        return hook_add(callback, UC_X86_INS_SYSCALL, user_data);
+    }
+
+    /**
+     * Register a {@code UC_HOOK_CODE} hook. The hook function will be
+     * invoked when an instruction is executed from the address range
+     * begin <= PC <= end. For the special case in which begin > end, the
+     * callback will be invoked for ALL instructions.
+     *
+     * @param callback  Implementation of a {@link CodeHook} interface
+     * @param begin     Start address of hooking range
+     * @param end       End address of hooking range
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
     public long hook_add(CodeHook callback, long begin, long end,
             Object user_data)
             throws UnicornException {
@@ -706,18 +787,20 @@ public class Unicorn
     }
 
     /**
-    * Register a {@code UC_HOOK_BLOCK} hook. The hook function will be
-    * invoked when a basic block is entered and the address of the basic block
-    * (BB) falls in the range begin <= BB <= end. For the special case in which
-    * begin > end, the callback will be invoked whenver any basic block is
-    * entered.
-    *
-    * @param callback  Implementation of a {@link BlockHook} interface
-    * @param begin     Start address of hooking range
-    * @param end       End address of hooking range
-    * @param user_data User data to be passed to the callback function each time
-    *                  the event is triggered
-    */
+     * Register a {@code UC_HOOK_BLOCK} hook. The hook function will be
+     * invoked when a basic block is entered and the address of the basic
+     * block (BB) falls in the range begin <= BB <= end. For the special case
+     * in which begin > end, the callback will be invoked whenver any basic
+     * block is entered.
+     *
+     * @param callback  Implementation of a {@link BlockHook} interface
+     * @param begin     Start address of hooking range
+     * @param end       End address of hooking range
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
     public long hook_add(BlockHook callback, long begin, long end,
             Object user_data)
             throws UnicornException {
@@ -726,21 +809,24 @@ public class Unicorn
     }
 
     /**
-    * Register a {@code UC_HOOK_MEM_VALID} hook
-    * ({@code UC_HOOK_MEM_[READ,WRITE,FETCH]} and/or
-    * {@code UC_HOOK_MEM_READ_AFTER}. The registered callback function will be
-    * invoked whenever a corresponding memory operation is performed within the
-    * address range begin <= addr <= end. For the special case in which
-    * begin > end, the callback will be invoked for ALL memory operations.
-    *
-    * @param callback  Implementation of a {@link MemHook} interface
-    * @param type      Bitwise OR of {@code UC_HOOK_MEM_*} constants for valid
-    *                  memory events
-    * @param begin     Start address of memory range
-    * @param end       End address of memory range
-    * @param user_data User data to be passed to the callback function each time
-    *                  the event is triggered
-    */
+     * Register a {@code UC_HOOK_MEM_VALID} hook
+     * ({@code UC_HOOK_MEM_[READ,WRITE,FETCH]} and/or
+     * {@code UC_HOOK_MEM_READ_AFTER}. The registered callback function will
+     * be invoked whenever a corresponding memory operation is performed
+     * within the address range begin <= addr <= end. For the special case in
+     * which begin > end, the callback will be invoked for ALL memory
+     * operations.
+     *
+     * @param callback  Implementation of a {@link MemHook} interface
+     * @param type      Bitwise OR of {@code UC_HOOK_MEM_*} constants for
+     *                  valid memory events
+     * @param begin     Start address of memory range
+     * @param end       End address of memory range
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
     public long hook_add(MemHook callback, int type, long begin, long end,
             Object user_data)
             throws UnicornException {
@@ -749,21 +835,23 @@ public class Unicorn
     }
 
     /**
-    * Register a {@code UC_HOOK_MEM_*_UNMAPPED} and/or
-    * {@code UC_HOOK_MEM_*_PROT} hook.
-    * The hook function will be invoked whenever a memory operation is
-    * attempted from an invalid or protected memory address within the address
-    * range begin <= addr <= end. For the special case in which begin > end,
-    * the callback will be invoked for ALL invalid memory operations.
-    *
-    * @param callback  Implementation of a {@link EventMemHook} interface
-    * @param type      Bitwise OR of {@code UC_HOOK_MEM_*} constants for
-    *                  invalid memory events.
-    * @param begin     Start address of memory range
-    * @param end       End address of memory range
-    * @param user_data User data to be passed to the callback function each time
-    *                  the event is triggered
-    */
+     * Register a {@code UC_HOOK_MEM_*_UNMAPPED} and/or
+     * {@code UC_HOOK_MEM_*_PROT} hook.
+     * The hook function will be invoked whenever a memory operation is
+     * attempted from an invalid or protected memory address within the address
+     * range begin <= addr <= end. For the special case in which begin > end,
+     * the callback will be invoked for ALL invalid memory operations.
+     *
+     * @param callback  Implementation of a {@link EventMemHook} interface
+     * @param type      Bitwise OR of {@code UC_HOOK_MEM_*} constants for
+     *                  invalid memory events.
+     * @param begin     Start address of memory range
+     * @param end       End address of memory range
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
     public long hook_add(EventMemHook callback, int type, long begin, long end,
             Object user_data)
             throws UnicornException {
@@ -772,14 +860,34 @@ public class Unicorn
     }
 
     /**
-    * Register a {@code UC_HOOK_INSN_INVALID} hook. The hook function will be
-    * invoked whenever an invalid instruction is encountered.
-    *
-    * @param callback  Implementation of a {@link InvalidInstructionHook}
-    *                  interface
-    * @param user_data User data to be passed to the callback function each time
-    *                  the event is triggered
-    */
+     * Register a {@code UC_HOOK_MEM_*_UNMAPPED} and/or
+     * {@code UC_HOOK_MEM_*_PROT} hook for all memory addresses.
+     * 
+     * @param callback  Implementation of a {@link EventMemHook} interface
+     * @param type      Bitwise OR of {@code UC_HOOK_MEM_*} constants for
+     *                  invalid memory events.
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
+    public long hook_add(EventMemHook callback, int type, Object user_data)
+            throws UnicornException {
+        return registerHook(
+            _hook_add(nativePtr, type, callback, user_data, 1, 0));
+    }
+
+    /**
+     * Register a {@code UC_HOOK_INSN_INVALID} hook. The hook function will be
+     * invoked whenever an invalid instruction is encountered.
+     *
+     * @param callback  Implementation of a {@link InvalidInstructionHook}
+     *                  interface
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
     public long hook_add(InvalidInstructionHook callback,
             Object user_data) {
         return registerHook(_hook_add(nativePtr, UC_HOOK_INSN_INVALID, callback,
@@ -787,17 +895,20 @@ public class Unicorn
     }
 
     /**
-    * Register a {@code UC_HOOK_EDGE_GENERATED} hook. The hook function will be
-    * invoked whenever a jump is made to a new (untranslated) basic block with
-    * a start address in the range of begin <= pc <= end. For the special case
-    * in which begin > end, the callback will be invoked for ALL new edges.
-    *
-    * @param callback  Implementation of a {@link EdgeGeneratedHook} interface
-    * @param begin     Start address
-    * @param end       End address
-    * @param user_data User data to be passed to the callback function each time
-    *                  the event is triggered
-    */
+     * Register a {@code UC_HOOK_EDGE_GENERATED} hook. The hook function will
+     * be invoked whenever a jump is made to a new (untranslated) basic block
+     * with a start address in the range of begin <= pc <= end. For the
+     * special case in which begin > end, the callback will be invoked for ALL
+     * new edges.
+     *
+     * @param callback  Implementation of a {@link EdgeGeneratedHook} interface
+     * @param begin     Start address
+     * @param end       End address
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
     public long hook_add(EdgeGeneratedHook callback, long begin, long end,
             Object user_data)
             throws UnicornException {
@@ -806,19 +917,22 @@ public class Unicorn
     }
 
     /**
-    * Register a {@code UC_HOOK_TCG_OPCODE} hook. The hook function will be
-    * invoked whenever a matching instruction is executed within the
-    * registered range.
-    *
-    * @param callback  Implementation of a {@link TcgOpcodeHook} interface
-    * @param begin     Start address
-    * @param end       End address
-    * @param opcode    Opcode to hook. One of the {@code UC_TCG_OP_*} constants.
-    * @param flags     Flags to filter opcode matches. A bitwise-OR of
-    *                  {@code UC_TCG_OP_FLAG_*} constants.
-    * @param user_data User data to be passed to the callback function each time
-    *                  the event is triggered
-    */
+     * Register a {@code UC_HOOK_TCG_OPCODE} hook. The hook function will be
+     * invoked whenever a matching instruction is executed within the
+     * registered range.
+     *
+     * @param callback  Implementation of a {@link TcgOpcodeHook} interface
+     * @param begin     Start address
+     * @param end       End address
+     * @param opcode    Opcode to hook. One of the {@code UC_TCG_OP_*}
+     *                  constants.
+     * @param flags     Flags to filter opcode matches. A bitwise-OR of
+     *                  {@code UC_TCG_OP_FLAG_*} constants.
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
     public long hook_add(TcgOpcodeHook callback, long begin, long end,
             int opcode, int flags,
             Object user_data)
@@ -828,17 +942,19 @@ public class Unicorn
     }
 
     /**
-    * Register a {@code UC_HOOK_TLB_FILL} hook. The hook function will be
-    * invoked to map a virtual address within the registered range to a
-    * physical address. These hooks will only be called if the TLB mode (set
-    * via {@link #ctl_tlb_mode}) is set to {@code UC_TLB_VIRTUAL}.
-    *
-    * @param callback  Implementation of a {@link TlbFillHook} interface
-    * @param begin     Start address
-    * @param end       End address
-    * @param user_data User data to be passed to the callback function each time
-    *                  the event is triggered
-    */
+     * Register a {@code UC_HOOK_TLB_FILL} hook. The hook function will be
+     * invoked to map a virtual address within the registered range to a
+     * physical address. These hooks will only be called if the TLB mode (set
+     * via {@link #ctl_tlb_mode}) is set to {@code UC_TLB_VIRTUAL}.
+     *
+     * @param callback  Implementation of a {@link TlbFillHook} interface
+     * @param begin     Start address
+     * @param end       End address
+     * @param user_data User data to be passed to the callback function each
+     *                  time the event is triggered
+     * @return A value that can be passed to {@link #hook_del} to unregister
+     *         this hook
+     */
     public long hook_add(TlbFillHook callback, long begin, long end,
             Object user_data) throws UnicornException {
         return registerHook(_hook_add(nativePtr, UC_HOOK_TLB_FILL, callback,
@@ -863,11 +979,13 @@ public class Unicorn
      *
      * @param address  Starting memory address of the MMIO area
      * @param size     Size of the MMIO area
-     * @param read_cb  Implementation of {@link MmioReadHandler} to handle read
-     *                 operations, or {@code null} for non-readable memory
+     * @param read_cb  Implementation of {@link MmioReadHandler} to handle
+     *                 read operations, or {@code null} for non-readable
+     *                 memory
      * @param user_data_read User data to be passed to the read callback
      * @param write_cb Implementation of {@link MmioWriteHandler} to handle
-     *                 write operations, or {@code null} for non-writable memory
+     *                 write operations, or {@code null} for non-writable
+     *                 memory
      * @param user_data_write User data to be passed to the write callback
      * @throws UnicornException
      */
@@ -884,66 +1002,66 @@ public class Unicorn
     }
 
     /**
-    * Map a range of memory, automatically allocating backing host memory.
-    *
-    * @param address Base address of the memory range
-    * @param size    Size of the memory block
-    * @param perms   Permissions on the memory block. A bitwise combination
-    *                of {@code UC_PROT_*} constants.
-    */
+     * Map a range of memory, automatically allocating backing host memory.
+     *
+     * @param address Base address of the memory range
+     * @param size    Size of the memory block
+     * @param perms   Permissions on the memory block. A bitwise combination
+     *                of {@code UC_PROT_*} constants.
+     */
     public void mem_map(long address, long size, int perms)
             throws UnicornException {
         _mem_map(nativePtr, address, size, perms);
     }
 
     /**
-    * Map a range of memory, backed by an existing region of host memory.
-    * This API enables direct access to emulator memory without going through
-    * {@link #mem_read} and {@link #mem_write}.
-    *
-    * @param address Base address of the memory range
-    * @param buf     Direct Buffer referencing the memory to map into the
-    *                emulator. IMPORTANT: You are responsible for ensuring
-    *                that this Buffer remains alive as long as the memory
-    *                remains mapped!
-    * @param perms   Permissions on the memory block. A bitwise combination
-    *                of {@code UC_PROT_*} constants.
-    */
+     * Map a range of memory, backed by an existing region of host memory.
+     * This API enables direct access to emulator memory without going through
+     * {@link #mem_read} and {@link #mem_write}.
+     *
+     * @param address Base address of the memory range
+     * @param buf     Direct Buffer referencing the memory to map into the
+     *                emulator. IMPORTANT: You are responsible for ensuring
+     *                that this Buffer remains alive as long as the memory
+     *                remains mapped!
+     * @param perms   Permissions on the memory block. A bitwise combination
+     *                of {@code UC_PROT_*} constants.
+     */
     public void mem_map_ptr(long address, Buffer buf, int perms)
             throws UnicornException {
         _mem_map_ptr(nativePtr, address, buf, perms);
     }
 
     /**
-    * Unmap a range of memory.
-    *
-    * @param address Base address of the memory range
-    * @param size    Size of the memory block.
-    */
+     * Unmap a range of memory.
+     *
+     * @param address Base address of the memory range
+     * @param size    Size of the memory block.
+     */
     public void mem_unmap(long address, long size) throws UnicornException {
         _mem_unmap(nativePtr, address, size);
     }
 
     /**
-    * Change permissions on a range of memory.
-    *
-    * @param address Base address of the memory range
-    * @param size    Size of the memory block.
-    * @param perms   Permissions on the memory block. A bitwise combination
-    *                of {@code UC_PROT_*} constants.
-    */
+     * Change permissions on a range of memory.
+     *
+     * @param address Base address of the memory range
+     * @param size    Size of the memory block.
+     * @param perms   Permissions on the memory block. A bitwise combination
+     *                of {@code UC_PROT_*} constants.
+     */
     public void mem_protect(long address, long size, int perms)
             throws UnicornException {
         _mem_protect(nativePtr, address, size, perms);
     }
 
     /**
-    * Retrieve all memory regions mapped by {@link #mem_map},
-    * {@link #mmio_map} and {@link #mem_map_ptr}.
-    * NOTE: memory regions may be split by {@link #mem_unmap}.
-    *
-    * @return array of mapped regions.
-    */
+     * Retrieve all memory regions mapped by {@link #mem_map},
+     * {@link #mmio_map} and {@link #mem_map_ptr}.
+     * NOTE: memory regions may be split by {@link #mem_unmap}.
+     *
+     * @return array of mapped regions.
+     */
     public MemRegion[] mem_regions() throws UnicornException {
         return _mem_regions(nativePtr);
     }
@@ -1146,5 +1264,4 @@ public class Unicorn
 
     private static native void _ctl_tlb_mode(long uc, int mode)
             throws UnicornException;
-
 }
