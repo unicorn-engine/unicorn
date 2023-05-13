@@ -482,6 +482,34 @@ public class Unicorn
         do_reg_write_obj(nativePtr, 0, arch, regid, value);
     }
 
+    /** @deprecated Use individual calls to {@code reg_read} instead.
+     * This method is deprecated as it is much slower than
+     * {@link #reg_read(int)} for reading 64-bit-or-smaller registers.
+     */
+    @Deprecated
+    public Object[] reg_read_batch(int regids[]) throws UnicornException {
+        Object[] res = new Object[regids.length];
+        for (int i = 0; i < regids.length; i++) {
+            res[i] = reg_read(regids[i], null);
+        }
+        return res;
+    }
+
+    /** @deprecated Use individual calls to {@code reg_write} instead.
+     * This method is deprecated as it is much slower than
+     * {@link #reg_write(int, long)} for writing 64-bit-or-smaller registers.
+     */
+    @Deprecated
+    public void reg_write_batch(int regids[], Object vals[])
+            throws UnicornException {
+        if (regids.length != vals.length) {
+            throw new UnicornException(strerror(UC_ERR_ARG));
+        }
+        for (int i = 0; i < regids.length; i++) {
+            reg_write(regids[i], vals[i]);
+        }
+    }
+
     /**
      * Read from memory.
      *
@@ -1159,6 +1187,48 @@ public class Unicorn
                 "Context is not compatible with this Unicorn");
         }
         _context_restore(nativePtr, context.nativePtr);
+    }
+
+    /* Obsolete context implementation, for backwards compatibility only */
+    /** Structure to track contexts allocated using context_alloc, for
+     * memory safety. Not used for contexts created using
+     * {@link #context_save()}.
+     */
+    private static Hashtable<Long, Context> allocedContexts = new Hashtable<>();
+
+    /** @deprecated Use {@link #context_save()} instead. */
+    @Deprecated
+    public long context_alloc() {
+        long ptr = _context_alloc(nativePtr);
+        Context context = new Context();
+        context.nativePtr = ptr;
+        context.arch = arch;
+        context.mode = mode;
+        long index = nextAllocCounter();
+        allocedContexts.put(index, context);
+        return index;
+    }
+
+    /** @deprecated Do not use this method.
+     * 
+     * @param handle Value previously returned by {@link #context_alloc}
+     */
+    @Deprecated
+    public void free(long handle) {
+        allocedContexts.remove(handle);
+    }
+
+    /** @deprecated Use {@link #context_save()} or {@link #context_update}
+     * instead */
+    @Deprecated
+    public void context_save(long context) {
+        context_update(allocedContexts.get(context));
+    }
+
+    /** @deprecated Use {@link #context_restore(Context)} instead */
+    @Deprecated
+    public void context_restore(long context) {
+        context_restore(allocedContexts.get(context));
     }
 
     /* Native implementation */
