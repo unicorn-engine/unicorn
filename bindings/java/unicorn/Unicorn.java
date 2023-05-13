@@ -161,9 +161,9 @@ public class Unicorn
     /**
      * Return combined API version & major and minor version numbers.
      *
-     * @return version number as {@code (major << 8 | minor)}, which encodes
-     *         both major & minor versions.
-     *         For example, Unicorn version 1.2 would yield 0x0102.
+     * @return version number as {@code (major << 24 | minor << 16 |
+     *         patch << 8 | extra)}.
+     *         For example, Unicorn version 2.0.1 final would be 0x020001ff.
      */
     public static int version() {
         return _version();
