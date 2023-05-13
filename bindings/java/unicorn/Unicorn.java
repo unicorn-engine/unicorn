@@ -52,7 +52,8 @@ public class Unicorn
 
     /** Wrapper around a registered hook */
     private static class HookWrapper {
-        private long nativePtr;
+        Hook hook;
+        long nativePtr;
 
         @Override
         protected void finalize() {
@@ -685,8 +686,9 @@ public class Unicorn
         _ctl_tlb_mode(nativePtr, mode);
     }
 
-    private long registerHook(long val) {
+    private long registerHook(Hook hook, long val) {
         HookWrapper wrapper = new HookWrapper();
+        wrapper.hook = hook;
         wrapper.nativePtr = val;
         long index = nextAllocCounter();
         hooks.put(index, wrapper);
@@ -705,7 +707,7 @@ public class Unicorn
      */
     public long hook_add(InterruptHook callback, Object user_data)
             throws UnicornException {
-        return registerHook(
+        return registerHook(callback,
             _hook_add(nativePtr, UC_HOOK_INTR, callback, user_data, 1, 0));
     }
 
@@ -728,8 +730,8 @@ public class Unicorn
             long end,
             Object user_data)
             throws UnicornException {
-        return registerHook(_hook_add(nativePtr, UC_HOOK_INSN, callback,
-            user_data, begin, end, insn));
+        return registerHook(callback, _hook_add(nativePtr, UC_HOOK_INSN,
+            callback, user_data, begin, end, insn));
     }
 
     /**
@@ -811,8 +813,8 @@ public class Unicorn
     public long hook_add(CodeHook callback, long begin, long end,
             Object user_data)
             throws UnicornException {
-        return registerHook(_hook_add(nativePtr, UC_HOOK_CODE, callback,
-            user_data, begin, end));
+        return registerHook(callback, _hook_add(nativePtr, UC_HOOK_CODE,
+            callback, user_data, begin, end));
     }
 
     /**
@@ -833,8 +835,8 @@ public class Unicorn
     public long hook_add(BlockHook callback, long begin, long end,
             Object user_data)
             throws UnicornException {
-        return registerHook(_hook_add(nativePtr, UC_HOOK_BLOCK, callback,
-            user_data, begin, end));
+        return registerHook(callback, _hook_add(nativePtr, UC_HOOK_BLOCK,
+            callback, user_data, begin, end));
     }
 
     /**
@@ -859,7 +861,7 @@ public class Unicorn
     public long hook_add(MemHook callback, int type, long begin, long end,
             Object user_data)
             throws UnicornException {
-        return registerHook(
+        return registerHook(callback,
             _hook_add(nativePtr, type, callback, user_data, begin, end));
     }
 
@@ -884,7 +886,7 @@ public class Unicorn
     public long hook_add(EventMemHook callback, int type, long begin, long end,
             Object user_data)
             throws UnicornException {
-        return registerHook(
+        return registerHook(callback,
             _hook_add(nativePtr, type, callback, user_data, begin, end));
     }
 
@@ -902,7 +904,7 @@ public class Unicorn
      */
     public long hook_add(EventMemHook callback, int type, Object user_data)
             throws UnicornException {
-        return registerHook(
+        return registerHook(callback,
             _hook_add(nativePtr, type, callback, user_data, 1, 0));
     }
 
@@ -919,8 +921,8 @@ public class Unicorn
      */
     public long hook_add(InvalidInstructionHook callback,
             Object user_data) {
-        return registerHook(_hook_add(nativePtr, UC_HOOK_INSN_INVALID, callback,
-            user_data, 1, 0));
+        return registerHook(callback, _hook_add(nativePtr, UC_HOOK_INSN_INVALID,
+            callback, user_data, 1, 0));
     }
 
     /**
@@ -941,8 +943,8 @@ public class Unicorn
     public long hook_add(EdgeGeneratedHook callback, long begin, long end,
             Object user_data)
             throws UnicornException {
-        return registerHook(_hook_add(nativePtr, UC_HOOK_EDGE_GENERATED,
-            callback, user_data, begin, end));
+        return registerHook(callback, _hook_add(nativePtr,
+            UC_HOOK_EDGE_GENERATED, callback, user_data, begin, end));
     }
 
     /**
@@ -966,8 +968,8 @@ public class Unicorn
             int opcode, int flags,
             Object user_data)
             throws UnicornException {
-        return registerHook(_hook_add(nativePtr, UC_HOOK_TCG_OPCODE, callback,
-            user_data, begin, end, opcode, flags));
+        return registerHook(callback, _hook_add(nativePtr, UC_HOOK_TCG_OPCODE,
+            callback, user_data, begin, end, opcode, flags));
     }
 
     /**
@@ -986,8 +988,8 @@ public class Unicorn
      */
     public long hook_add(TlbFillHook callback, long begin, long end,
             Object user_data) throws UnicornException {
-        return registerHook(_hook_add(nativePtr, UC_HOOK_TLB_FILL, callback,
-            user_data, begin, end));
+        return registerHook(callback, _hook_add(nativePtr, UC_HOOK_TLB_FILL,
+            callback, user_data, begin, end));
     }
 
     /** Remove a hook that was previously registered.
@@ -1000,6 +1002,25 @@ public class Unicorn
             _hook_del(nativePtr, wrapper.nativePtr);
         } else {
             throw new UnicornException("Hook is not registered!");
+        }
+    }
+
+    /** Remove all registrations for a given {@link Hook} object.
+     * 
+     * @param hook A {@link Hook} object to unregister.
+     */
+    public void hook_del(Hook hook) throws UnicornException {
+        if (hook == null) {
+            // we use null for "special" hooks that can't be _hook_del'd
+            throw new NullPointerException("hook must not be null");
+        }
+        Iterator<Map.Entry<Long, HookWrapper>> it = hooks.entrySet().iterator();
+        while (it.hasNext()) {
+            HookWrapper wrapper = it.next().getValue();
+            if (wrapper.hook == hook) {
+                it.remove();
+                _hook_del(nativePtr, wrapper.nativePtr);
+            }
         }
     }
 
@@ -1026,7 +1047,7 @@ public class Unicorn
         long[] hooks = _mmio_map(nativePtr, address, size, read_cb,
             user_data_read, write_cb, user_data_write);
         for (long hook : hooks) {
-            registerHook(hook);
+            registerHook(null, hook);
         }
     }
 

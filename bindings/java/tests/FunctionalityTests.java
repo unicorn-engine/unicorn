@@ -1,15 +1,18 @@
 package tests;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import org.junit.Test;
 
+import unicorn.CodeHook;
 import unicorn.MemRegion;
 import unicorn.TlbFillHook;
 import unicorn.Unicorn;
+import unicorn.UnicornException;
 import unicorn.X86_Float80;
 
 public class FunctionalityTests {
@@ -179,6 +182,46 @@ public class FunctionalityTests {
         u.emu_start(ADDRESS, ADDRESS + X86_CODE.length, 0, 0);
         reg = (X86_Float80) u.reg_read(Unicorn.UC_X86_REG_ST0, null);
         assertEquals(Math.sin(-1.1), reg.toDouble(), 1e-12);
+        u.close();
+    }
+
+    @Test
+    public void testRemoveHook() {
+        byte[] X86_CODE = { 0x40, 0x40, 0x40, 0x40 }; // (inc eax) x 4
+        int ADDRESS = 0x10000;
+        final int[] hook_accum = { 0 };
+
+        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
+        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        u.mem_write(ADDRESS, X86_CODE);
+
+        CodeHook hook =
+            (uc, address, size, user) -> hook_accum[0] += (int) user;
+        long h1 = u.hook_add(hook, ADDRESS, ADDRESS, 1);
+        long h2 = u.hook_add(hook, ADDRESS + 1, ADDRESS + 1, 2);
+        long h3 = u.hook_add(hook, ADDRESS + 2, ADDRESS + 2, 4);
+        long h4 = u.hook_add(hook, ADDRESS + 3, ADDRESS + 3, 8);
+
+        hook_accum[0] = 0;
+        u.emu_start(ADDRESS, ADDRESS + X86_CODE.length, 0, 0);
+        assertEquals(15, hook_accum[0]);
+
+        u.hook_del(h2);
+
+        hook_accum[0] = 0;
+        u.emu_start(ADDRESS, ADDRESS + X86_CODE.length, 0, 0);
+        assertEquals(13, hook_accum[0]);
+
+        u.hook_del(hook);
+
+        hook_accum[0] = 0;
+        u.emu_start(ADDRESS, ADDRESS + X86_CODE.length, 0, 0);
+        assertEquals(0, hook_accum[0]);
+
+        assertThrows(UnicornException.class, () -> u.hook_del(h1));
+        assertThrows(UnicornException.class, () -> u.hook_del(h3));
+        assertThrows(UnicornException.class, () -> u.hook_del(h4));
+
         u.close();
     }
 }
