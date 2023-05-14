@@ -29,7 +29,7 @@ package samples;
 import unicorn.*;
 import java.util.*;
 
-public class SampleNetworkAuditing {
+public class SampleNetworkAuditing implements UnicornConst, X86Const {
 
     public static long next_id = 3;
     public static final int SIZE_REG = 4;
@@ -67,11 +67,11 @@ public class SampleNetworkAuditing {
             if (intno != 0x80) {
                 return;
             }
-            long eax = uc.reg_read(Unicorn.UC_X86_REG_EAX);
-            long ebx = uc.reg_read(Unicorn.UC_X86_REG_EBX);
-            long ecx = uc.reg_read(Unicorn.UC_X86_REG_ECX);
-            long edx = uc.reg_read(Unicorn.UC_X86_REG_EDX);
-            long eip = uc.reg_read(Unicorn.UC_X86_REG_EIP);
+            long eax = uc.reg_read(UC_X86_REG_EAX);
+            long ebx = uc.reg_read(UC_X86_REG_EBX);
+            long ecx = uc.reg_read(UC_X86_REG_ECX);
+            long edx = uc.reg_read(UC_X86_REG_EDX);
+            long eip = uc.reg_read(UC_X86_REG_EIP);
 
             // System.out.printf(">>> INTERRUPT %d\n", toInt(eax));
 
@@ -114,7 +114,7 @@ public class SampleNetworkAuditing {
                 String filename = read_string(uc, filename_addr);
 
                 long dummy_fd = get_id();
-                uc.reg_write(Unicorn.UC_X86_REG_EAX, dummy_fd);
+                uc.reg_write(UC_X86_REG_EAX, dummy_fd);
 
                 String msg = String.format(
                     "open file (filename=%s flags=%d mode=%d) with fd(%d)",
@@ -133,8 +133,8 @@ public class SampleNetworkAuditing {
                 System.out.printf(">>> SYS_DUP2 oldfd=%d newfd=%d\n", ebx, ecx);
             } else if (eax == 102) { // sys_socketcall
                 // ref: http://www.skyfree.org/linux/kernel_network/socket.html
-                long call = uc.reg_read(Unicorn.UC_X86_REG_EBX);
-                long args = uc.reg_read(Unicorn.UC_X86_REG_ECX);
+                long call = uc.reg_read(UC_X86_REG_EBX);
+                long args = uc.reg_read(UC_X86_REG_ECX);
 
                 // int sys_socketcall(int call, unsigned long *args)
                 if (call == 1) { // sys_socket
@@ -147,7 +147,7 @@ public class SampleNetworkAuditing {
                         toInt(uc.mem_read(args + SIZE_REG * 2, SIZE_REG));
 
                     long dummy_fd = get_id();
-                    uc.reg_write(Unicorn.UC_X86_REG_EAX, dummy_fd);
+                    uc.reg_write(UC_X86_REG_EAX, dummy_fd);
 
                     if (family == 2) {  // AF_INET            
                         String msg =
@@ -437,16 +437,16 @@ public class SampleNetworkAuditing {
         System.out.printf("Emulate i386 code\n");
         try {
             // Initialize emulator in X86-32bit mode
-            Unicorn mu = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
+            Unicorn mu = new Unicorn(UC_ARCH_X86, UC_MODE_32);
 
             // map 2MB memory for this emulation
-            mu.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+            mu.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
             // write machine code to be emulated to memory
             mu.mem_write(ADDRESS, code);
 
             // initialize stack
-            mu.reg_write(Unicorn.UC_X86_REG_ESP, ADDRESS + 0x200000L);
+            mu.reg_write(UC_X86_REG_ESP, ADDRESS + 0x200000L);
 
             // handle interrupt ourself
             mu.hook_add(new MyInterruptHook(), null);

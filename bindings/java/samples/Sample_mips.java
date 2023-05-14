@@ -28,48 +28,30 @@ package samples;
 
 import unicorn.*;
 
-public class Sample_mips {
+public class Sample_mips implements UnicornConst, MipsConst {
 
     // code to be emulated
-    public static final byte[] MIPS_CODE_EB = { 52, 33, 52, 86 };
-    public static final byte[] MIPS_CODE_EL = { 86, 52, 33, 52 };
+    public static final byte[] MIPS_CODE_EB = { 52, 33, 52, 86 }; // ori $at, $at, 0x3456
+    public static final byte[] MIPS_CODE_EL = { 86, 52, 33, 52 }; // ori $at, $at, 0x3456
 
     // memory address where emulation starts
     public static final int ADDRESS = 0x10000;
 
-    public static final long toInt(byte val[]) {
-        long res = 0;
-        for (int i = 0; i < val.length; i++) {
-            long v = val[i] & 0xff;
-            res = res + (v << (i * 8));
-        }
-        return res;
-    }
-
-    public static final byte[] toBytes(long val) {
-        byte[] res = new byte[8];
-        for (int i = 0; i < 8; i++) {
-            res[i] = (byte) (val & 0xff);
-            val >>>= 8;
-        }
-        return res;
-    }
-
     // callback for tracing basic blocks
     private static class MyBlockHook implements BlockHook {
         public void hook(Unicorn u, long address, int size, Object user_data) {
-            System.out.print(String.format(
+            System.out.format(
                 ">>> Tracing basic block at 0x%x, block size = 0x%x\n", address,
-                size));
+                size);
         }
     }
 
     // callback for tracing instruction
     private static class MyCodeHook implements CodeHook {
         public void hook(Unicorn u, long address, int size, Object user_data) {
-            System.out.print(String.format(
+            System.out.format(
                 ">>> Tracing instruction at 0x%x, instruction size = 0x%x\n",
-                address, size));
+                address, size);
         }
     }
 
@@ -77,20 +59,20 @@ public class Sample_mips {
 
         long r1 = 0x6789L;     // R1 register
 
-        System.out.print("Emulate MIPS code (big-endian)\n");
+        System.out.println("Emulate MIPS code (big-endian)");
 
         // Initialize emulator in MIPS mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_MIPS,
-            Unicorn.UC_MODE_MIPS32 + Unicorn.UC_MODE_BIG_ENDIAN);
+        Unicorn u =
+            new Unicorn(UC_ARCH_MIPS, UC_MODE_MIPS32 + UC_MODE_BIG_ENDIAN);
 
         // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        u.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
         u.mem_write(ADDRESS, MIPS_CODE_EB);
 
         // initialize machine registers
-        u.reg_write(Unicorn.UC_MIPS_REG_1, r1);
+        u.reg_write(UC_MIPS_REG_1, r1);
 
         // tracing all basic blocks with customized callback
         u.hook_add(new MyBlockHook(), 1, 0, null);
@@ -103,32 +85,29 @@ public class Sample_mips {
         u.emu_start(ADDRESS, ADDRESS + MIPS_CODE_EB.length, 0, 0);
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
+        System.out.println(">>> Emulation done. Below is the CPU context");
 
-        r1 = u.reg_read(Unicorn.UC_MIPS_REG_1);
-        System.out.print(String.format(">>> R1 = 0x%x\n", r1));
-
-        u.close();
+        r1 = u.reg_read(UC_MIPS_REG_1);
+        System.out.format(">>> R1 = 0x%x\n", r1);
     }
 
     public static void test_mips_el() {
         long r1 = 0x6789L;     // R1 register
 
-        System.out.print("===========================\n");
-        System.out.print("Emulate MIPS code (little-endian)\n");
+        System.out.println("Emulate MIPS code (little-endian)");
 
         // Initialize emulator in MIPS mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_MIPS,
-            Unicorn.UC_MODE_MIPS32 + Unicorn.UC_MODE_LITTLE_ENDIAN);
+        Unicorn u = new Unicorn(UC_ARCH_MIPS,
+            UC_MODE_MIPS32 + UC_MODE_LITTLE_ENDIAN);
 
         // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        u.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
         u.mem_write(ADDRESS, MIPS_CODE_EL);
 
         // initialize machine registers
-        u.reg_write(Unicorn.UC_MIPS_REG_1, r1);
+        u.reg_write(UC_MIPS_REG_1, r1);
 
         // tracing all basic blocks with customized callback
         u.hook_add(new MyBlockHook(), 1, 0, null);
@@ -141,16 +120,15 @@ public class Sample_mips {
         u.emu_start(ADDRESS, ADDRESS + MIPS_CODE_EL.length, 0, 0);
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
+        System.out.println(">>> Emulation done. Below is the CPU context");
 
-        r1 = u.reg_read(Unicorn.UC_MIPS_REG_1);
-        System.out.print(String.format(">>> R1 = 0x%x\n", r1));
-
-        u.close();
+        r1 = u.reg_read(UC_MIPS_REG_1);
+        System.out.format(">>> R1 = 0x%x\n", r1);
     }
 
     public static void main(String args[]) {
         test_mips_eb();
+        System.out.println("===========================");
         test_mips_el();
     }
 }

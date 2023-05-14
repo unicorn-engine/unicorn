@@ -28,137 +28,107 @@ package samples;
 
 import unicorn.*;
 
-public class Shellcode {
+public class Shellcode implements UnicornConst, X86Const {
 
-    public static final byte[] X86_CODE32 = { -21, 25, 49, -64, 49, -37, 49,
-        -46, 49, -55, -80, 4, -77, 1, 89, -78, 5, -51, -128, 49, -64, -80, 1,
-        49, -37, -51, -128, -24, -30, -1, -1, -1, 104, 101, 108, 108, 111 };
-    public static final byte[] X86_CODE32_SELF = { -21, 28, 90, -119, -42, -117,
-        2, 102, 61, -54, 125, 117, 6, 102, 5, 3, 3, -119, 2, -2, -62, 61, 65,
-        65, 65, 65, 117, -23, -1, -26, -24, -33, -1, -1, -1, 49, -46, 106, 11,
-        88, -103, 82, 104, 47, 47, 115, 104, 104, 47, 98, 105, 110, -119, -29,
-        82, 83, -119, -31, -54, 125, 65, 65, 65, 65, 65, 65, 65, 65 };
+    public static final byte[] X86_CODE32_SELF = Utils.hexToBytes(
+        "eb1c5a89d68b02663dca7d75066605030389" +
+            "02fec23d4141414175e9ffe6e8dfffffff31" +
+            "d26a0b589952682f2f7368682f62696e89e3" +
+            "525389e1ca7d4141414141414141");
 
     // memory address where emulation starts
     public static final int ADDRESS = 0x1000000;
 
-    public static final long toInt(byte val[]) {
-        long res = 0;
-        for (int i = 0; i < val.length; i++) {
-            long v = val[i] & 0xff;
-            res = res + (v << (i * 8));
+    public static CodeHook hook_code = (u, address, size, user) -> {
+        System.out.format(
+            "Tracing instruction at 0x%x, instruction size = 0x%x\n",
+            address, size);
+
+        long r_eip = u.reg_read(UC_X86_REG_EIP);
+        System.out.format("*** EIP = %x ***: ", r_eip);
+
+        byte[] tmp = u.mem_read(address, size);
+        for (int i = 0; i < tmp.length; i++) {
+            System.out.format("%x ", 0xff & tmp[i]);
         }
-        return res;
-    }
-
-    public static final byte[] toBytes(long val) {
-        byte[] res = new byte[8];
-        for (int i = 0; i < 8; i++) {
-            res[i] = (byte) (val & 0xff);
-            val >>>= 8;
-        }
-        return res;
-    }
-
-    public static class MyCodeHook implements CodeHook {
-        public void hook(Unicorn u, long address, int size, Object user) {
-
-            System.out.print(String.format(
-                "Tracing instruction at 0x%x, instruction size = 0x%x\n",
-                address, size));
-
-            long r_eip = u.reg_read(Unicorn.UC_X86_REG_EIP);
-            System.out.print(
-                String.format("*** EIP = %x ***: ", r_eip));
-
-            size = Math.min(16, size);
-
-            byte[] tmp = u.mem_read(address, size);
-            for (int i = 0; i < tmp.length; i++) {
-                System.out.print(String.format("%x ", 0xff & tmp[i]));
-            }
-            System.out.print("\n");
-        }
+        System.out.println();
     };
 
-    public static class MyInterruptHook implements InterruptHook {
-        public void hook(Unicorn u, int intno, Object user) {
-            long r_ecx;
-            long r_edx;
-            int size;
-
-            // only handle Linux syscall
-            if (intno != 0x80) {
-                return;
-            }
-
-            long r_eax = u.reg_read(Unicorn.UC_X86_REG_EAX);
-            long r_eip = u.reg_read(Unicorn.UC_X86_REG_EIP);
-
-            switch ((int) r_eax) {
-            default:
-                System.out.print(
-                    String.format(">>> 0x%x: interrupt 0x%x, EAX = 0x%x\n",
-                        r_eip, intno, r_eax));
-                break;
-            case 1: // sys_exit
-                System.out.print(String.format(
-                    ">>> 0x%x: interrupt 0x%x, SYS_EXIT. quit!\n\n",
-                    r_eip, intno));
-                u.emu_stop();
-                break;
-            case 4: // sys_write
-                // ECX = buffer address
-                r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
-
-                // EDX = buffer size
-                r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX);
-
-                // read the buffer in
-                size = (int) Math.min(256, r_edx);
-
-                byte[] buffer = u.mem_read(r_ecx, size);
-                System.out.print(String.format(
-                    ">>> 0x%x: interrupt 0x%x, SYS_WRITE. buffer = 0x%x, size = %u, content = '%s'\n",
-                    r_eip, intno, r_ecx,
-                    r_edx, new String(buffer)));
-                break;
-            }
+    public static InterruptHook hook_intr = (u, intno, user) -> {
+        // only handle Linux syscall
+        if (intno != 0x80) {
+            return;
         }
-    }
+
+        long r_eax = u.reg_read(UC_X86_REG_EAX);
+        long r_eip = u.reg_read(UC_X86_REG_EIP);
+
+        switch ((int) r_eax) {
+        default:
+            System.out.format(">>> 0x%x: interrupt 0x%x, EAX = 0x%x\n",
+                r_eip, intno, r_eax);
+            break;
+        case 1: // sys_exit
+            System.out.format(
+                ">>> 0x%x: interrupt 0x%x, SYS_EXIT. quit!\n\n",
+                r_eip, intno);
+            u.emu_stop();
+            break;
+        case 4: { // sys_write
+            // ECX = buffer address
+            long r_ecx = u.reg_read(UC_X86_REG_ECX);
+
+            // EDX = buffer size
+            long r_edx = u.reg_read(UC_X86_REG_EDX);
+
+            // read the buffer in
+            int size = (int) Math.min(256, r_edx);
+
+            try {
+                byte[] buffer = u.mem_read(r_ecx, size);
+                System.out.format(
+                    ">>> 0x%x: interrupt 0x%x, SYS_WRITE. buffer = 0x%x, size = %u, content = '%s'\n",
+                    r_eip, intno, r_ecx, r_edx, new String(buffer));
+            } catch (UnicornException e) {
+                System.out.format(
+                    ">>> 0x%x: interrupt 0x%x, SYS_WRITE. buffer = 0x%x, size = %u (cannot get content)\n",
+                    r_eip, intno, r_ecx, r_edx);
+            }
+            break;
+        }
+        }
+    };
 
     public static void test_i386() {
         long r_esp = ADDRESS + 0x200000L;  // ESP register
 
-        System.out.print("Emulate i386 code\n");
+        System.out.println("Emulate i386 code");
 
         // Initialize emulator in X86-32bit mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
+        Unicorn u = new Unicorn(UC_ARCH_X86, UC_MODE_32);
 
         // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        u.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
         u.mem_write(ADDRESS, X86_CODE32_SELF);
 
         // initialize machine registers
-        u.reg_write(Unicorn.UC_X86_REG_ESP, r_esp);
+        u.reg_write(UC_X86_REG_ESP, r_esp);
 
         // tracing all instructions by having @begin > @end
-        u.hook_add(new MyCodeHook(), 1, 0, null);
+        u.hook_add(hook_code, 1, 0, null);
 
         // handle interrupt ourself
-        u.hook_add(new MyInterruptHook(), null);
+        u.hook_add(hook_intr, null);
 
-        System.out.print("\n>>> Start tracing this Linux code\n");
+        System.out.println("\n>>> Start tracing this Linux code");
 
         // emulate machine code in infinite time
         // u.emu_start(ADDRESS, ADDRESS + X86_CODE32_SELF.length, 0, 12); <--- emulate only 12 instructions
         u.emu_start(ADDRESS, ADDRESS + X86_CODE32_SELF.length, 0, 0);
 
-        System.out.print("\n>>> Emulation done.\n");
-
-        u.close();
+        System.out.println("\n>>> Emulation done.");
     }
 
     public static void main(String args[]) {
@@ -167,7 +137,7 @@ public class Shellcode {
                 test_i386();
             }
         } else {
-            System.out.print("Syntax: java Shellcode <-32|-64>\n");
+            System.out.println("Syntax: java Shellcode <-32|-64>");
         }
 
     }

@@ -29,7 +29,6 @@ public class MemTests {
         assertEquals("two memory regions", 2, arr.length);
         assertMemRegion(ADDR1, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL, arr[0]);
         assertMemRegion(ADDR2, 4096, Unicorn.UC_PROT_READ, arr[1]);
-        uc.close();
     }
 
     @Test
@@ -71,8 +70,6 @@ public class MemTests {
         assertMemRegion(0x230000, 0x10000, Unicorn.UC_PROT_READ, mrs[7]);
         assertMemRegion(0x250000, 0x10000, Unicorn.UC_PROT_WRITE, mrs[8]);
         assertMemRegion(0x270000, 0x10000, Unicorn.UC_PROT_NONE, mrs[9]);
-
-        u.close();
     }
 
     @Test
@@ -111,8 +108,6 @@ public class MemTests {
 
         assertEquals("ecx", 0x44556679, u.reg_read(Unicorn.UC_X86_REG_ECX));
         assertEquals("edx", 0x22334453, u.reg_read(Unicorn.UC_X86_REG_EDX));
-
-        u.close();
     }
 
     @Test
@@ -132,7 +127,5 @@ public class MemTests {
         u.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_WRITE.length, 0, 0);
 
         assertEquals("buffer contents", 0x12345678, buffer.getInt(0xaaa));
-
-        u.close();
     }
 }
