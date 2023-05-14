@@ -26,6 +26,10 @@ public class X86_MSR {
     public int rid;
     public long value;
 
+    public X86_MSR(int rid) {
+        this(rid, 0);
+    }
+
     public X86_MSR(int rid, long value) {
         this.rid = rid;
         this.value = value;

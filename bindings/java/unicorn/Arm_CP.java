@@ -6,6 +6,11 @@ public class Arm_CP {
     public long val;
 
     public Arm_CP(int cp, int is64, int sec, int crn, int crm, int opc1,
+            int opc2) {
+        this(cp, is64, sec, crn, crm, opc1, opc2, 0);
+    }
+
+    public Arm_CP(int cp, int is64, int sec, int crn, int crm, int opc1,
             int opc2, long val) {
         this.cp = cp;
         this.is64 = is64;
