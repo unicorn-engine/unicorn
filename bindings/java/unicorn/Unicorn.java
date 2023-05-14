@@ -372,20 +372,24 @@ public class Unicorn
                 j++;
             }
         }
-        return new BigInteger(buf);
+        return new BigInteger(1, buf);
     }
 
     private static void do_reg_write_bigint(long ptr, int isContext, int regid,
             BigInteger value, int nbits) {
         byte[] val = value.toByteArray();
+        byte[] buf = new byte[nbits >> 3];
+        if (val.length == ((nbits >> 3) + 1) && val[0] == 0x00) {
+            // unsigned value >= 2^(nbits - 1): has a zero sign bit
+            val = Arrays.copyOfRange(val, 1, val.length);
+        } else if (val[0] < 0) {
+            Arrays.fill(buf, (byte) 0xff);
+        }
+
         if (val.length > (nbits >> 3)) {
             throw new IllegalArgumentException(
                 "input integer is too large for a " + nbits +
-                    "-bit register (got " + (val.length * 8) + " bits)");
-        }
-        byte[] buf = new byte[nbits >> 3];
-        if (val[0] < 0) {
-            Arrays.fill(buf, (byte) 0xff);
+                    "-bit register (got " + (value.bitLength() + 1) + " bits)");
         }
 
         if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
@@ -430,6 +434,9 @@ public class Unicorn
      *  <li>{@code UC_ARM64_REG_V*} => {@link BigInteger} (128 bits)
      * </ul>
      * 
+     * {@link BigInteger} registers always produce non-negative results (i.e.
+     * they read as unsigned integers).
+     * 
      * @param regid Register ID that is to be retrieved.
      * @param opt Options for this register, or {@code null} if no options
      *        are required.
@@ -472,6 +479,10 @@ public class Unicorn
      *  <li>{@code UC_ARM64_REG_Q*} => {@link BigInteger} (128 bits)
      *  <li>{@code UC_ARM64_REG_V*} => {@link BigInteger} (128 bits)
      * </ul>
+     * 
+     * {@link BigInteger} values can be signed or unsigned, as long as the
+     * value fits in the target register size. Values that are too large will
+     * be rejected.
      *
      * @param regid Register ID that is to be modified.
      * @param value Object containing the new register value.
