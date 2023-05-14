@@ -323,6 +323,7 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
             break;
         case UC_ARM64_REG_CP_REG:
             ret = write_cp_reg(env, (uc_arm64_cp_reg *)value);
+            arm_rebuild_hflags(env);
             break;
         case UC_ARM64_REG_FPCR:
             vfp_set_fpcr(env, *(uint32_t *)value);
