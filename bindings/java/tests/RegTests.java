@@ -33,7 +33,6 @@ public class RegTests {
         assertEquals(Math.sin(Math.log(Math.E) / Math.log(2)), reg1.toDouble(),
             1e-12);
         assertEquals(reg1.toDouble(), reg2.toDouble(), 1e-12);
-        u.close();
     }
 
     @Test
@@ -51,7 +50,6 @@ public class RegTests {
         u.emu_start(ADDRESS, ADDRESS + X86_CODE.length, 0, 0);
         reg = (X86_Float80) u.reg_read(Unicorn.UC_X86_REG_ST0, null);
         assertEquals(Math.sin(-1.1), reg.toDouble(), 1e-12);
-        u.close();
     }
 
     @Test
@@ -104,8 +102,6 @@ public class RegTests {
         b[0x70] = -0x80;
         uc.reg_write(reg, new BigInteger(b));
         assertEquals("write untrimmed value", b127, uc.reg_read(reg, null));
-
-        uc.close();
     }
 
     @Test
@@ -144,8 +140,6 @@ public class RegTests {
         assertEquals("v0.8h = v1.8h + v2.8h",
             new BigInteger("4860570d497678b4a5728c3e34a5f85c", 16),
             uc.reg_read(Unicorn.UC_ARM64_REG_V0, null));
-
-        uc.close();
     }
 
     @Test
@@ -200,7 +194,5 @@ public class RegTests {
             uc.reg_read(Unicorn.UC_ARM64_REG_X1));
         assertEquals("X1 low bits should be unchanged", 0x0000bbbbccccddddL,
             uc.reg_read(Unicorn.UC_ARM64_REG_X1) & 0xffffffffffffL);
-
-        uc.close();
     }
 }

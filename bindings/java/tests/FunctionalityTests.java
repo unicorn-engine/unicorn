@@ -122,8 +122,6 @@ public class FunctionalityTests {
             u.emu_stop();
         }).start();
         u.emu_start(ADDRESS, ADDRESS + X86_CODE.length, 0, 0);
-
-        u.close();
     }
 
     @Test
@@ -157,8 +155,6 @@ public class FunctionalityTests {
         uc.context_restore(ctx);
         assertEquals(0xfee1deadL, uc.reg_read(Unicorn.UC_ARM64_REG_X0));
         assertEquals(0xfee1deadL, ctx.reg_read(Unicorn.UC_ARM64_REG_X0));
-
-        uc.close();
     }
 
     @Test
@@ -188,6 +184,5 @@ public class FunctionalityTests {
         assertEquals(0xfee1deadL, uc.reg_read(Unicorn.UC_ARM64_REG_X0));
 
         uc.free(ctx);
-        uc.close();
     }
 }

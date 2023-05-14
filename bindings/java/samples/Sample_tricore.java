@@ -2,7 +2,7 @@
 
 Java bindings for the Unicorn Emulator Engine
 
-Copyright(c) 2015 Chris Eagle
+Copyright(c) 2023 Robert Xiao
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,25 +19,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 */
 
-/* Unicorn Emulator Engine */
-/* By Nguyen Anh Quynh, 2015 */
-
-/* Sample code to demonstrate how to emulate Sparc code */
+/* Sample code to demonstrate how to emulate TriCore code
+ * Ported from the C version originally by Eric Poole <eric.poole@aptiv.com>, 2022
+ */
 
 package samples;
 
 import unicorn.*;
 
-public class Sample_sparc implements UnicornConst, SparcConst {
-
+public class Sample_tricore implements UnicornConst, TriCoreConst {
     /** code to be emulated:
-     * {@code add %g1, %g2, %g3}
+     * {@code mov d1, #0x1; mov.u d0, #0x8000}
      */
-    private static final byte[] SPARC_CODE = Utils.hexToBytes("86004002");
-    //public static final byte[] SPARC_CODE = Utils.hexToBytes("bb700000"); //illegal code
+    private static final byte[] CODE = Utils.hexToBytes("8211bb000008");
 
     // memory address where emulation starts
-    private static final int ADDRESS = 0x10000;
+    private static final long ADDRESS = 0x10000;
 
     private static final BlockHook hook_block =
         (uc, address, size, user_data) -> {
@@ -53,43 +50,35 @@ public class Sample_sparc implements UnicornConst, SparcConst {
                 address, size);
         };
 
-    public static void test_sparc() {
-        long g1 = 0x1230L;     // G1 register
-        long g2 = 0x6789L;     // G2 register
-        long g3 = 0x5555L;     // G3 register
+    public static void test_tricore() {
+        System.out.println("Emulate TriCore code");
 
-        System.out.print("Emulate SPARC code\n");
-
-        // Initialize emulator in Sparc mode
-        Unicorn u = new Unicorn(UC_ARCH_SPARC, UC_MODE_32 | UC_MODE_BIG_ENDIAN);
+        Unicorn uc = new Unicorn(UC_ARCH_TRICORE, UC_MODE_LITTLE_ENDIAN);
 
         // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
-        u.mem_write(ADDRESS, SPARC_CODE);
-
-        // initialize machine registers
-        u.reg_write(UC_SPARC_REG_G1, g1);
-        u.reg_write(UC_SPARC_REG_G2, g2);
-        u.reg_write(UC_SPARC_REG_G3, g3);
+        uc.mem_write(ADDRESS, CODE);
 
         // tracing all basic blocks with customized callback
-        u.hook_add(hook_block, 1, 0, null);
+        uc.hook_add(hook_block, 1, 0, null);
 
         // tracing one instruction at ADDRESS with customized callback
-        u.hook_add(hook_code, ADDRESS, ADDRESS, null);
+        uc.hook_add(hook_code, ADDRESS, ADDRESS + CODE.length, null);
 
         // emulate machine code in infinite time (last param = 0), or when
         // finishing all the code.
-        u.emu_start(ADDRESS, ADDRESS + SPARC_CODE.length, 0, 0);
+        uc.emu_start(ADDRESS, ADDRESS + CODE.length, 0, 0);
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
-        System.out.format(">>> G3 = 0x%x\n", u.reg_read(UC_SPARC_REG_G3));
+        System.out.println(">>> Emulation done. Below is the CPU context");
+
+        System.out.format(">>> d0 = 0x%x\n", uc.reg_read(UC_TRICORE_REG_D0));
+        System.out.format(">>> d1 = 0x%x\n", uc.reg_read(UC_TRICORE_REG_D1));
     }
 
-    public static void main(String args[]) {
-        test_sparc();
+    public static final void main(String[] args) {
+        test_tricore();
     }
 }

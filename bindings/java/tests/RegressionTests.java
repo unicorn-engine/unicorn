@@ -24,7 +24,6 @@ public class RegressionTests {
             uc.reg_read(Unicorn.UC_ARM64_REG_B0));
         assertEquals("V0 low halfword", 0x1234,
             uc.reg_read(Unicorn.UC_ARM64_REG_H0));
-        uc.close();
     }
 
     /** Test for GH #1164: Java binding use CodeHook on Windows, will invoke callback before every instruction */

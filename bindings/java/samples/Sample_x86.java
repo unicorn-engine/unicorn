@@ -26,519 +26,653 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package samples;
 
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+
 import unicorn.*;
 
-public class Sample_x86 {
+public class Sample_x86 implements UnicornConst, X86Const {
 
-    // code to be emulated
-    public static final byte[] X86_CODE32 = { 65, 74 };
-    public static final byte[] X86_CODE32_JUMP =
-        { -21, 2, -112, -112, -112, -112, -112, -112 };
-    public static final byte[] X86_CODE32_SELF = { -21, 28, 90, -119, -42, -117,
-        2, 102, 61, -54, 125, 117, 6, 102, 5, 3, 3, -119, 2, -2, -62, 61, 65,
-        65, 65, 65, 117, -23, -1, -26, -24, -33, -1, -1, -1, 49, -46, 106, 11,
-        88, -103, 82, 104, 47, 47, 115, 104, 104, 47, 98, 105, 110, -119, -29,
-        82, 83, -119, -31, -54, 125, 65, 65, 65, 65 };
-    public static final byte[] X86_CODE32_LOOP = { 65, 74, -21, -2 };
-    public static final byte[] X86_CODE32_MEM_WRITE =
-        { -119, 13, -86, -86, -86, -86, 65, 74 };
-    public static final byte[] X86_CODE32_MEM_READ =
-        { -117, 13, -86, -86, -86, -86, 65, 74 };
-    public static final byte[] X86_CODE32_JMP_INVALID =
-        { -23, -23, -18, -18, -18, 65, 74 };
-    public static final byte[] X86_CODE32_INOUT =
-        { 65, -28, 63, 74, -26, 70, 67 };
-    public static final byte[] X86_CODE64 = { 65, -68, 59, -80, 40, 42, 73, 15,
-        -55, -112, 77, 15, -83, -49, 73, -121, -3, -112, 72, -127, -46, -118,
-        -50, 119, 53, 72, -9, -39, 77, 41, -12, 73, -127, -55, -10, -118, -58,
-        83, 77, -121, -19, 72, 15, -83, -46, 73, -9, -44, 72, -9, -31, 77, 25,
-        -59, 77, -119, -59, 72, -9, -42, 65, -72, 79, -115, 107, 89, 77, -121,
-        -48, 104, 106, 30, 9, 60, 89 };
-    public static final byte[] X86_CODE16 = { 0, 0 }; // add   byte ptr [bx + si], al
+    /** code to be emulated
+     * {@code INC ecx; DEC edx; PXOR xmm0, xmm1}
+     */
+    private static final byte[] X86_CODE32 = Utils.hexToBytes("414a660fefc1");
+    /** code to be emulated
+     * {@code jmp 4; nop; nop; nop; nop; nop; nop}
+     */
+    private static final byte[] X86_CODE32_JUMP =
+        Utils.hexToBytes("eb02909090909090");
+    // private static final byte[] X86_CODE32_SELF = Utils.hexToBytes("eb1c5a89d68b02663dca7d7506660503038902fec23d4141414175e9ffe6e8dfffffff31d26a0b589952682f2f7368682f62696e89e3525389e1ca7d41414141");
 
-    // memory address where emulation starts
+    /** code to be emulated
+     * {@code PUSH ecx; PUSH ecx; PUSH ecx; PUSH ecx}
+     */
+    // private static final byte[] X86_CODE32 = Utils.hexToBytes("51515151");
+
+    /** code to be emulated
+     * {@code INC ecx; DEC edx; self_loop: JMP self_loop}
+     */
+    private static final byte[] X86_CODE32_LOOP = Utils.hexToBytes("414aebfe");
+
+    /** code to be emulated
+     * {@code mov [0xaaaaaaaa], ecx; INC ecx; DEC edx}
+     */
+    private static final byte[] X86_CODE32_MEM_WRITE =
+        Utils.hexToBytes("890DAAAAAAAA414a");
+
+    /** code to be emulated
+     * {@code mov ecx, [0xaaaaaaaa]; INC ecx; DEC edx}
+     */
+    private static final byte[] X86_CODE32_MEM_READ =
+        Utils.hexToBytes("8B0DAAAAAAAA414a");
+
+    /** code to be emulated
+     * {@code inc eax; mov ebx, [0x100000]; inc edx}
+     */
+    private static final byte[] X86_CODE32_MEM_READ_IN_TB =
+        Utils.hexToBytes("408b1d0000100042");
+
+    /** code to be emulated
+     * {@code JMP outside; INC ecx; DEC edx}
+     */
+    private static final byte[] X86_CODE32_JMP_INVALID =
+        Utils.hexToBytes("e9e9eeeeee414a");
+
+    /** code to be emulated
+     * {@code INC ecx; IN AL, 0x3f; DEC edx; OUT 0x46, AL; INC ebx}
+     */
+    private static final byte[] X86_CODE32_INOUT =
+        Utils.hexToBytes("41E43F4aE64643");
+
+    /** code to be emulated
+     * {@code INC eax}
+     */
+    private static final byte[] X86_CODE32_INC = Utils.hexToBytes("40");
+
+    //private static final byte[] X86_CODE64 = Utils.hexToBytes("41BC3BB0282A490FC9904D0FADCF4987FD904881D28ACE773548F7D9"); // <== still crash
+    /** code to be emulated */
+    private static final byte[] X86_CODE64 =
+        Utils.hexToBytes("41BC3BB0282A490FC9904D0FADCF4987FD90" +
+            "4881D28ACE773548F7D94D29F44981C9F68A" +
+            "C6534D87ED480FADD249F7D448F7E14D19C5" +
+            "4D89C548F7D641B84F8D6B594D87D0686A1E" +
+            "093C59");
+    /** code to be emulated
+     * {@code add byte ptr [bx + si], al}
+     */
+    private static final byte[] X86_CODE16 = Utils.hexToBytes("0000");
+    /** code to be emulated
+     * {@code syscall}
+     */
+    private static final byte[] X86_CODE64_SYSCALL = Utils.hexToBytes("0f05");
+    /** code to be emulated
+     * {@code mov [0x20004], ecx; mov ecx, [0x20004]}
+     */
+    private static final byte[] X86_MMIO_CODE =
+        Utils.hexToBytes("890d040002008b0d04000200");
+    /** code to be emulated
+     * <pre>
+     * 0x1000 xor dword ptr [edi+0x3], eax ; edi=0x1000, eax=0xbc4177e6
+     * 0x1003 dw 0x3ea98b13
+     * </pre>
+     */
+    private static final byte[] X86_CODE32_SMC =
+        Utils.hexToBytes("314703138ba93e");
+
+    /** memory address where emulation starts */
     public static final int ADDRESS = 0x1000000;
 
-    public static final long toInt(byte val[]) {
-        long res = 0;
-        for (int i = 0; i < val.length; i++) {
-            long v = val[i] & 0xff;
-            res = res + (v << (i * 8));
-        }
-        return res;
-    }
+    private static final BlockHook hook_block =
+        (uc, address, size, user_data) -> {
+            System.out.format(
+                ">>> Tracing basic block at 0x%x, block size = 0x%x\n",
+                address, size);
+        };
 
-    public static final byte[] toBytes(long val) {
-        byte[] res = new byte[8];
-        for (int i = 0; i < 8; i++) {
-            res[i] = (byte) (val & 0xff);
-            val >>>= 8;
-        }
-        return res;
-    }
-
-    // callback for tracing basic blocks
-    // callback for tracing instruction
-    private static class MyBlockHook implements BlockHook {
-        public void hook(Unicorn u, long address, int size, Object user_data) {
-            System.out.printf(
-                ">>> Tracing basic block at 0x%x, block size = 0x%x\n", address,
-                size);
-        }
-    }
-
-    // callback for tracing instruction
-    private static class MyCodeHook implements CodeHook {
-        public void hook(Unicorn u, long address, int size, Object user_data) {
-            System.out.printf(
+    private static final CodeHook hook_code =
+        (uc, address, size, user_data) -> {
+            System.out.format(
                 ">>> Tracing instruction at 0x%x, instruction size = 0x%x\n",
                 address, size);
 
-            long eflags = u.reg_read(Unicorn.UC_X86_REG_EFLAGS);
-            System.out.printf(">>> --- EFLAGS is 0x%x\n", eflags);
+            long eflags = uc.reg_read(UC_X86_REG_EFLAGS);
+            System.out.format(">>> --- EFLAGS is 0x%x\n", eflags);
 
             // Uncomment below code to stop the emulation using uc_emu_stop()
             // if (address == 0x1000009)
-            //    u.emu_stop();
-        }
-    }
+            //    uc.emu_stop();
+        };
 
-    private static class MyWriteInvalidHook implements EventMemHook {
-        public boolean hook(Unicorn u, int type, long address, int size,
-                long value,
-                Object user) {
-            System.out.printf(
-                ">>> Missing memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
-                address, size, value);
-            // map this memory in with 2MB in size
-            u.mem_map(0xaaaa0000, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
-            // return true to indicate we want to continue
-            return true;
-        }
-    }
-
-    // callback for tracing instruction
-    private static class MyCode64Hook implements CodeHook {
-        public void hook(Unicorn u, long address, int size, Object user_data) {
-            long r_rip = u.reg_read(Unicorn.UC_X86_REG_RIP);
-            System.out.printf(
+    private static final CodeHook hook_code64 =
+        (uc, address, size, user_data) -> {
+            long rip = uc.reg_read(UC_X86_REG_RIP);
+            System.out.format(
                 ">>> Tracing instruction at 0x%x, instruction size = 0x%x\n",
                 address, size);
-            System.out.printf(">>> RIP is 0x%x\n", r_rip);
+            System.out.format(">>> RIP is 0x%x\n", rip);
+        };
 
-            // Uncomment below code to stop the emulation using uc_emu_stop()
-            // if (address == 0x1000009)
-            //    uc_emu_stop(handle);
-        }
-    }
+    private static final EventMemHook hook_mem_invalid =
+        (uc, type, address, size, value, user) -> {
+            switch (type) {
+            default:
+                // return false to indicate we want to stop emulation
+                return false;
+            case UC_MEM_WRITE_UNMAPPED:
+                System.out.printf(
+                    ">>> Missing memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
+                    address, size, value);
+                // map this memory in with 2MB in size
+                uc.mem_map(0xaaaa0000L, 2 * 1024 * 1024, UC_PROT_ALL);
+                // return true to indicate we want to continue
+                return true;
+            }
+        };
 
-    private static class MyRead64Hook implements MemHook {
-        public void hook(Unicorn u, int type, long address, int size,
-                long value, Object user) {
-            System.out.printf(
-                ">>> Memory is being READ at 0x%x, data size = %d\n", address,
-                size);
-        }
-    }
-
-    private static class MyWrite64Hook implements MemHook {
-        public void hook(Unicorn u, int type, long address, int size,
-                long value,
-                Object user) {
-            System.out.printf(
-                ">>> Memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
-                address, size, value);
-        }
-    }
+    private static final MemHook hook_mem64 =
+        (uc, type, address, size, value, user_data) -> {
+            switch (type) {
+            default:
+                break;
+            case UC_MEM_READ:
+                System.out.format(
+                    ">>> Memory is being READ at 0x%x, data size = %d\n",
+                    address, size);
+                break;
+            case UC_MEM_WRITE:
+                System.out.format(
+                    ">>> Memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
+                    address, size, value);
+                break;
+            }
+        };
 
     // callback for IN instruction (X86).
     // this returns the data read from the port
-    private static class MyInHook implements InHook {
-        public int hook(Unicorn u, int port, int size, Object user_data) {
-            long r_eip = u.reg_read(Unicorn.UC_X86_REG_EIP);
+    private static final InHook hook_in = (uc, port, size, user) -> {
+        long r_eip = uc.reg_read(UC_X86_REG_EIP);
 
-            System.out.printf(
-                "--- reading from port 0x%x, size: %d, address: 0x%x\n", port,
-                size, r_eip);
+        System.out.printf(
+            "--- reading from port 0x%x, size: %d, address: 0x%x\n", port,
+            size, r_eip);
 
-            switch (size) {
-            case 1:
-                // read 1 byte to AL
-                return 0xf1;
-            case 2:
-                // read 2 byte to AX
-                return 0xf2;
-            case 4:
-                // read 4 byte to EAX
-                return 0xf4;
-            }
-            return 0;
+        switch (size) {
+        case 1:
+            // read 1 byte to AL
+            return 0xf1;
+        case 2:
+            // read 2 byte to AX
+            return 0xf2;
+        case 4:
+            // read 4 byte to EAX
+            return 0xf4;
         }
-    }
+        return 0;
+    };
 
     // callback for OUT instruction (X86).
-    private static class MyOutHook implements OutHook {
-        public void hook(Unicorn u, int port, int size, int value,
-                Object user) {
-            long eip = u.reg_read(Unicorn.UC_X86_REG_EIP);
-            long tmp = 0;
-            System.out.printf(
-                "--- writing to port 0x%x, size: %d, value: 0x%x, address: 0x%x\n",
-                port, size, value, eip);
+    private static final OutHook hook_out = (uc, port, size, value, user) -> {
+        long eip = uc.reg_read(UC_X86_REG_EIP);
+        long tmp = 0;
+        System.out.printf(
+            "--- writing to port 0x%x, size: %d, value: 0x%x, address: 0x%x\n",
+            port, size, value, eip);
 
-            // confirm that value is indeed the value of AL/AX/EAX
-            switch (size) {
-            default:
-                return;   // should never reach this
-            case 1:
-                tmp = u.reg_read(Unicorn.UC_X86_REG_AL);
-                break;
-            case 2:
-                tmp = u.reg_read(Unicorn.UC_X86_REG_AX);
-                break;
-            case 4:
-                tmp = u.reg_read(Unicorn.UC_X86_REG_EAX);
-                break;
-            }
-
-            System.out.printf("--- register value = 0x%x\n", tmp);
+        // confirm that value is indeed the value of AL/AX/EAX
+        switch (size) {
+        default:
+            return;   // should never reach this
+        case 1:
+            tmp = uc.reg_read(UC_X86_REG_AL);
+            break;
+        case 2:
+            tmp = uc.reg_read(UC_X86_REG_AX);
+            break;
+        case 4:
+            tmp = uc.reg_read(UC_X86_REG_EAX);
+            break;
         }
+
+        System.out.printf("--- register value = 0x%x\n", tmp);
+    };
+
+    // callback for SYSCALL instruction (X86).
+    private static final SyscallHook hook_syscall = (uc, user_data) -> {
+        long rax = uc.reg_read(UC_X86_REG_RAX);
+        if (rax == 0x100) {
+            rax = 0x200;
+            uc.reg_write(UC_X86_REG_RAX, rax);
+        } else {
+            System.out.format("ERROR: was not expecting rax=0x%x in syscall\n",
+                rax);
+        }
+    };
+
+    private static final EventMemHook hook_memalloc =
+        (uc, type, address, size, value, user_data) -> {
+            long aligned_address = address & ~(0xFFFL);
+            int aligned_size = ((int) (size / 0x1000) + 1) * 0x1000;
+
+            System.out.format(
+                ">>> Allocating block at 0x%x (0x%x), block size = 0x%x (0x%x)\n",
+                address, aligned_address, size, aligned_size);
+
+            uc.mem_map(aligned_address, aligned_size, UC_PROT_ALL);
+
+            // write machine code to be emulated to memory
+            uc.mem_write(aligned_address, X86_CODE32);
+
+            // this recovers from missing memory, so we return true
+            return true;
+        };
+
+    public static void test_miss_code() {
+        int r_ecx = 0x1234; // ECX register
+        int r_edx = 0x7890; // EDX register
+
+        System.out.println("Emulate i386 code - missing code");
+
+        // Initialize emulator in X86-32bit mode
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
+
+        // initialize machine registers
+        uc.reg_write(UC_X86_REG_ECX, r_ecx);
+        uc.reg_write(UC_X86_REG_EDX, r_edx);
+
+        // tracing all instruction by having @begin > @end
+        uc.hook_add(hook_code, 1, 0, null);
+
+        // auto-allocate memory on access
+        uc.hook_add(hook_memalloc, UC_HOOK_MEM_UNMAPPED, 1, 0, null);
+
+        // emulate machine code, without having the code in yet
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE32.length, 0, 0);
+
+        // now print out some registers
+        System.out.println(">>> Emulation done. Below is the CPU context");
+
+        System.out.format(">>> ECX = 0x%x\n", uc.reg_read(UC_X86_REG_ECX));
+        System.out.format(">>> EDX = 0x%x\n", uc.reg_read(UC_X86_REG_EDX));
     }
 
     public static void test_i386() {
-        long r_ecx = 0x1234L;     // ECX register
-        long r_edx = 0x7890L;     // EDX register
+        int tmp;
+        long r_ecx = 0x1234; // ECX register
+        long r_edx = 0x7890; // EDX register
+        // XMM0 and XMM1 registers, low qword then high qword
+        BigInteger r_xmm0 =
+            new BigInteger("000102030405060708090a0b0c0d0e0f", 16);
+        BigInteger r_xmm1 =
+            new BigInteger("00102030405060708090a0b0c0d0e0f0", 16);
 
-        System.out.print("Emulate i386 code\n");
+        System.out.println("Emulate i386 code");
 
         // Initialize emulator in X86-32bit mode
-        Unicorn uc;
-        try {
-            uc = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
-        } catch (UnicornException uex) {
-            System.out
-                    .println("Failed on uc_open() with error returned: " + uex);
-            return;
-        }
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
 
         // map 2MB memory for this emulation
-        uc.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
-        try {
-            uc.mem_write(ADDRESS, X86_CODE32);
-        } catch (UnicornException uex) {
-            System.out.println(
-                "Failed to write emulation code to memory, quit!\n");
-            return;
-        }
+        uc.mem_write(ADDRESS, X86_CODE32);
 
         // initialize machine registers
-        uc.reg_write(Unicorn.UC_X86_REG_ECX, r_ecx);
-        uc.reg_write(Unicorn.UC_X86_REG_EDX, r_edx);
+        uc.reg_write(UC_X86_REG_ECX, r_ecx);
+        uc.reg_write(UC_X86_REG_EDX, r_edx);
+        uc.reg_write(UC_X86_REG_XMM0, r_xmm0);
+        uc.reg_write(UC_X86_REG_XMM1, r_xmm1);
 
         // tracing all basic blocks with customized callback
-        uc.hook_add(new MyBlockHook(), 1, 0, null);
+        uc.hook_add(hook_block, 1, 0, null);
 
         // tracing all instruction by having @begin > @end
-        uc.hook_add(new MyCodeHook(), 1, 0, null);
+        uc.hook_add(hook_code, 1, 0, null);
 
         // emulate machine code in infinite time
-        try {
-            uc.emu_start(ADDRESS, ADDRESS + X86_CODE32.length, 0, 0);
-        } catch (UnicornException uex) {
-            System.out.printf("Failed on uc_emu_start() with error : %s\n",
-                uex.getMessage());
-        }
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE32.length, 0, 0);
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
+        System.out.println(">>> Emulation done. Below is the CPU context");
 
-        r_ecx = uc.reg_read(Unicorn.UC_X86_REG_ECX);
-        r_edx = uc.reg_read(Unicorn.UC_X86_REG_EDX);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
-        System.out.printf(">>> EDX = 0x%x\n", r_edx);
+        r_ecx = uc.reg_read(UC_X86_REG_ECX);
+        r_edx = uc.reg_read(UC_X86_REG_EDX);
+        r_xmm0 = (BigInteger) uc.reg_read(UC_X86_REG_XMM0, null);
+        System.out.format(">>> ECX = 0x%x\n", r_ecx);
+        System.out.format(">>> EDX = 0x%x\n", r_edx);
+        String xmm0_string =
+            String.format("%32s", r_xmm0.toString(16)).replace(' ', '0');
+        System.out.format(">>> XMM0 = 0x%s\n", xmm0_string);
 
         // read from memory
-        try {
-            byte[] tmp = uc.mem_read(ADDRESS, 4);
-            System.out.printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", ADDRESS,
-                toInt(tmp));
-        } catch (UnicornException ex) {
-            System.out.printf(">>> Failed to read 4 bytes from [0x%x]\n",
-                ADDRESS);
-        }
-        uc.close();
+        tmp = Utils.toInt(uc.mem_read(ADDRESS, 4));
+        System.out.format(">>> Read 4 bytes from [0x%x] = 0x%x\n", ADDRESS,
+            tmp);
     }
 
-    public static void test_i386_inout() {
-        long r_eax = 0x1234L;     // ECX register
-        long r_ecx = 0x6789L;     // EDX register
+    public static void test_i386_map_ptr() {
+        int tmp;
+        int r_ecx = 0x1234; // ECX register
+        int r_edx = 0x7890; // EDX register
 
-        System.out.print("===================================\n");
-        System.out.print("Emulate i386 code with IN/OUT instructions\n");
+        System.out.println("Emulate i386 code - use uc_mem_map_ptr()");
 
         // Initialize emulator in X86-32bit mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
 
-        // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
-
-        // write machine code to be emulated to memory
-        u.mem_write(ADDRESS, X86_CODE32_INOUT);
+        // malloc 2MB memory for this emulation
+        ByteBuffer mem = ByteBuffer.allocateDirect(2 * 1024 * 1024);
+        uc.mem_map_ptr(ADDRESS, mem, UC_PROT_ALL);
+        mem.put(X86_CODE32);
 
         // initialize machine registers
-        u.reg_write(Unicorn.UC_X86_REG_EAX, r_eax);
-        u.reg_write(Unicorn.UC_X86_REG_ECX, r_ecx);
+        uc.reg_write(UC_X86_REG_ECX, r_ecx);
+        uc.reg_write(UC_X86_REG_EDX, r_edx);
 
         // tracing all basic blocks with customized callback
-        u.hook_add(new MyBlockHook(), 1, 0, null);
+        uc.hook_add(hook_block, 1, 0, null);
 
-        // tracing all instructions
-        u.hook_add(new MyCodeHook(), 1, 0, null);
-
-        // handle IN instruction
-        u.hook_add(new MyInHook(), Unicorn.UC_X86_INS_IN, 1, 0, null);
-        // handle OUT instruction
-        u.hook_add(new MyOutHook(), Unicorn.UC_X86_INS_OUT, 1, 0, null);
+        // tracing all instruction by having @begin > @end
+        uc.hook_add(hook_code, 1, 0, null);
 
         // emulate machine code in infinite time
-        u.emu_start(ADDRESS, ADDRESS + X86_CODE32_INOUT.length, 0, 0);
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE32.length, 0, 0);
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
+        System.out.println(">>> Emulation done. Below is the CPU context");
+        System.out.format(">>> ECX = 0x%x\n", uc.reg_read(UC_X86_REG_ECX));
+        System.out.format(">>> EDX = 0x%x\n", uc.reg_read(UC_X86_REG_EDX));
 
-        r_eax = u.reg_read(Unicorn.UC_X86_REG_EAX);
-        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
-        System.out.printf(">>> EAX = 0x%x\n", r_eax);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
-
-        u.close();
+        // read from memory
+        tmp = Utils.toInt(uc.mem_read(ADDRESS, 4));
+        System.out.format(">>> Read 4 bytes from [0x%x] = 0x%x\n", ADDRESS,
+            tmp);
     }
 
     public static void test_i386_jump() {
-        System.out.print("===================================\n");
-        System.out.print("Emulate i386 code with jump\n");
+        System.out.println("Emulate i386 code with jump");
 
         // Initialize emulator in X86-32bit mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
 
         // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
-        u.mem_write(ADDRESS, X86_CODE32_JUMP);
+        uc.mem_write(ADDRESS, X86_CODE32_JUMP);
 
         // tracing 1 basic block with customized callback
-        u.hook_add(new MyBlockHook(), ADDRESS, ADDRESS, null);
+        uc.hook_add(hook_block, ADDRESS, ADDRESS, null);
 
         // tracing 1 instruction at ADDRESS
-        u.hook_add(new MyCodeHook(), ADDRESS, ADDRESS, null);
+        uc.hook_add(hook_code, ADDRESS, ADDRESS, null);
 
         // emulate machine code in infinite time
-        u.emu_start(ADDRESS, ADDRESS + X86_CODE32_JUMP.length, 0, 0);
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE32_JUMP.length, 0, 0);
 
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
-
-        u.close();
+        System.out.println(">>> Emulation done. Below is the CPU context");
     }
 
     // emulate code that loop forever
     public static void test_i386_loop() {
-        long r_ecx = 0x1234L;     // ECX register
-        long r_edx = 0x7890L;     // EDX register
+        int r_ecx = 0x1234; // ECX register
+        int r_edx = 0x7890; // EDX register
 
-        System.out.print("===================================\n");
-        System.out.print("Emulate i386 code that loop forever\n");
+        System.out.println("Emulate i386 code that loop forever");
 
         // Initialize emulator in X86-32bit mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
 
         // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
-        u.mem_write(ADDRESS, X86_CODE32_LOOP);
+        uc.mem_write(ADDRESS, X86_CODE32_LOOP);
 
         // initialize machine registers
-        u.reg_write(Unicorn.UC_X86_REG_ECX, r_ecx);
-        u.reg_write(Unicorn.UC_X86_REG_EDX, r_edx);
+        uc.reg_write(UC_X86_REG_ECX, r_ecx);
+        uc.reg_write(UC_X86_REG_EDX, r_edx);
 
         // emulate machine code in 2 seconds, so we can quit even
         // if the code loops
-        u.emu_start(ADDRESS, ADDRESS + X86_CODE32_LOOP.length,
-            2 * Unicorn.UC_SECOND_SCALE, 0);
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE32_LOOP.length,
+            2 * UC_SECOND_SCALE, 0);
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
-
-        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
-        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
-        System.out.printf(">>> EDX = 0x%x\n", r_edx);
-
-        u.close();
+        System.out.println(">>> Emulation done. Below is the CPU context");
+        System.out.format(">>> ECX = 0x%x\n", uc.reg_read(UC_X86_REG_ECX));
+        System.out.format(">>> EDX = 0x%x\n", uc.reg_read(UC_X86_REG_EDX));
     }
 
     // emulate code that read invalid memory
     public static void test_i386_invalid_mem_read() {
-        long r_ecx = 0x1234L;     // ECX register
-        long r_edx = 0x7890L;     // EDX register
+        int r_ecx = 0x1234; // ECX register
+        int r_edx = 0x7890; // EDX register
 
-        System.out.print("===================================\n");
-        System.out.print("Emulate i386 code that read from invalid memory\n");
+        System.out.println("Emulate i386 code that read from invalid memory");
 
         // Initialize emulator in X86-32bit mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
 
         // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
-        u.mem_write(ADDRESS, X86_CODE32_MEM_READ);
+        uc.mem_write(ADDRESS, X86_CODE32_MEM_READ);
 
         // initialize machine registers
-        u.reg_write(Unicorn.UC_X86_REG_ECX, r_ecx);
-        u.reg_write(Unicorn.UC_X86_REG_EDX, r_edx);
+        uc.reg_write(UC_X86_REG_ECX, r_ecx);
+        uc.reg_write(UC_X86_REG_EDX, r_edx);
 
         // tracing all basic blocks with customized callback
-        u.hook_add(new MyBlockHook(), 1, 0, null);
+        uc.hook_add(hook_block, 1, 0, null);
 
         // tracing all instruction by having @begin > @end
-        u.hook_add(new MyCodeHook(), 1, 0, null);
+        uc.hook_add(hook_code, 1, 0, null);
 
         // emulate machine code in infinite time
         try {
-            u.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_READ.length, 0, 0);
-        } catch (UnicornException uex) {
-            int err = u.errno();
-            System.out.printf(
-                "Failed on u.emu_start() with error returned: %s\n",
-                uex.getMessage());
+            uc.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_READ.length, 0, 0);
+            throw new RuntimeException("Expected a crash!");
+        } catch (UnicornException e) {
+            System.out.println("uc.emu_start failed as expected: " + e);
         }
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
-
-        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
-        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
-        System.out.printf(">>> EDX = 0x%x\n", r_edx);
-
-        u.close();
+        System.out.println(">>> Emulation done. Below is the CPU context");
+        System.out.format(">>> ECX = 0x%x\n", uc.reg_read(UC_X86_REG_ECX));
+        System.out.format(">>> EDX = 0x%x\n", uc.reg_read(UC_X86_REG_EDX));
     }
 
-    // emulate code that read invalid memory
+    // emulate code that write invalid memory
     public static void test_i386_invalid_mem_write() {
-        long r_ecx = 0x1234L;     // ECX register
-        long r_edx = 0x7890L;     // EDX register
+        int r_ecx = 0x1234; // ECX register
+        int r_edx = 0x7890; // EDX register
+        int tmp;
 
-        System.out.print("===================================\n");
-        System.out.print("Emulate i386 code that write to invalid memory\n");
+        System.out.println("Emulate i386 code that write to invalid memory");
 
         // Initialize emulator in X86-32bit mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
 
         // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
-        u.mem_write(ADDRESS, X86_CODE32_MEM_WRITE);
+        uc.mem_write(ADDRESS, X86_CODE32_MEM_WRITE);
 
         // initialize machine registers
-        u.reg_write(Unicorn.UC_X86_REG_ECX, r_ecx);
-        u.reg_write(Unicorn.UC_X86_REG_EDX, r_edx);
+        uc.reg_write(UC_X86_REG_ECX, r_ecx);
+        uc.reg_write(UC_X86_REG_EDX, r_edx);
 
         // tracing all basic blocks with customized callback
-        u.hook_add(new MyBlockHook(), 1, 0, null);
+        uc.hook_add(hook_block, 1, 0, null);
 
         // tracing all instruction by having @begin > @end
-        u.hook_add(new MyCodeHook(), 1, 0, null);
+        uc.hook_add(hook_code, 1, 0, null);
 
         // intercept invalid memory events
-        u.hook_add(new MyWriteInvalidHook(), Unicorn.UC_HOOK_MEM_WRITE_UNMAPPED,
-            1, 0,
-            null);
+        uc.hook_add(hook_mem_invalid,
+            UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED,
+            1, 0, null);
 
         // emulate machine code in infinite time
-        try {
-            u.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_WRITE.length, 0, 0);
-        } catch (UnicornException uex) {
-            System.out.printf(
-                "Failed on uc_emu_start() with error returned: %s\n",
-                uex.getMessage());
-        }
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_WRITE.length, 0, 0);
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
-
-        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
-        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
-        System.out.printf(">>> EDX = 0x%x\n", r_edx);
+        System.out.println(">>> Emulation done. Below is the CPU context");
+        System.out.format(">>> ECX = 0x%x\n", uc.reg_read(UC_X86_REG_ECX));
+        System.out.format(">>> EDX = 0x%x\n", uc.reg_read(UC_X86_REG_EDX));
 
         // read from memory
-        byte tmp[] = u.mem_read(0xaaaaaaaa, 4);
-        System.out.printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xaaaaaaaa,
-            toInt(tmp));
+        tmp = Utils.toInt(uc.mem_read(0xaaaaaaaaL, 4));
+        System.out.format(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xaaaaaaaa,
+            tmp);
 
         try {
-            u.mem_read(0xffffffaa, 4);
-            System.out.printf(">>> Read 4 bytes from [0x%x] = 0x%x\n",
-                0xffffffaa, toInt(tmp));
-        } catch (UnicornException uex) {
-            System.out.printf(">>> Failed to read 4 bytes from [0x%x]\n",
+            tmp = Utils.toInt(uc.mem_read(0xffffffaaL, 4));
+            throw new RuntimeException("Expected mem_read to fail");
+        } catch (UnicornException e) {
+            System.out.format(">>> Failed to read 4 bytes from [0x%x]\n",
                 0xffffffaa);
         }
-
-        u.close();
     }
 
     // emulate code that jump to invalid memory
     public static void test_i386_jump_invalid() {
-        long r_ecx = 0x1234L;     // ECX register
-        long r_edx = 0x7890L;     // EDX register
+        int r_ecx = 0x1234; // ECX register
+        int r_edx = 0x7890; // EDX register
 
-        System.out.print("===================================\n");
-        System.out.print("Emulate i386 code that jumps to invalid memory\n");
+        System.out.println("Emulate i386 code that jumps to invalid memory");
 
         // Initialize emulator in X86-32bit mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
 
         // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
-        u.mem_write(ADDRESS, X86_CODE32_JMP_INVALID);
+        uc.mem_write(ADDRESS, X86_CODE32_JMP_INVALID);
 
         // initialize machine registers
-        u.reg_write(Unicorn.UC_X86_REG_ECX, r_ecx);
-        u.reg_write(Unicorn.UC_X86_REG_EDX, r_edx);
+        uc.reg_write(UC_X86_REG_ECX, r_ecx);
+        uc.reg_write(UC_X86_REG_EDX, r_edx);
 
         // tracing all basic blocks with customized callback
-        u.hook_add(new MyBlockHook(), 1, 0, null);
+        uc.hook_add(hook_block, 1, 0, null);
 
         // tracing all instructions by having @begin > @end
-        u.hook_add(new MyCodeHook(), 1, 0, null);
+        uc.hook_add(hook_code, 1, 0, null);
 
         // emulate machine code in infinite time
         try {
-            u.emu_start(ADDRESS, ADDRESS + X86_CODE32_JMP_INVALID.length, 0, 0);
-        } catch (UnicornException uex) {
-            System.out.printf(
-                "Failed on uc_emu_start() with error returned: %s\n",
-                uex.getMessage());
+            uc.emu_start(ADDRESS, ADDRESS + X86_CODE32_JMP_INVALID.length, 0,
+                0);
+            throw new RuntimeException("Expected a crash!");
+        } catch (UnicornException e) {
+            System.out.println("uc.emu_start failed as expected: " + e);
         }
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
+        System.out.println(">>> Emulation done. Below is the CPU context");
+        System.out.format(">>> ECX = 0x%x\n", uc.reg_read(UC_X86_REG_ECX));
+        System.out.format(">>> EDX = 0x%x\n", uc.reg_read(UC_X86_REG_EDX));
+    }
 
-        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX);
-        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX);
-        System.out.printf(">>> ECX = 0x%x\n", r_ecx);
-        System.out.printf(">>> EDX = 0x%x\n", r_edx);
+    public static void test_i386_inout() {
+        int r_eax = 0x1234; // EAX register
+        int r_ecx = 0x6789; // ECX register
 
-        u.close();
+        System.out.println("Emulate i386 code with IN/OUT instructions");
+
+        // Initialize emulator in X86-32bit mode
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
+
+        // map 2MB memory for this emulation
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+
+        // write machine code to be emulated to memory
+        uc.mem_write(ADDRESS, X86_CODE32_INOUT);
+
+        // initialize machine registers
+        uc.reg_write(UC_X86_REG_EAX, r_eax);
+        uc.reg_write(UC_X86_REG_ECX, r_ecx);
+
+        // tracing all basic blocks with customized callback
+        uc.hook_add(hook_block, 1, 0, null);
+
+        // tracing all instructions
+        uc.hook_add(hook_code, 1, 0, null);
+
+        // uc IN instruction
+        uc.hook_add(hook_in, null);
+        // uc OUT instruction
+        uc.hook_add(hook_out, null);
+
+        // emulate machine code in infinite time
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE32_INOUT.length, 0, 0);
+
+        // now print out some registers
+        System.out.println(">>> Emulation done. Below is the CPU context");
+        System.out.format(">>> EAX = 0x%x\n", uc.reg_read(UC_X86_REG_EAX));
+        System.out.format(">>> ECX = 0x%x\n", uc.reg_read(UC_X86_REG_ECX));
+    }
+
+    // emulate code and save/restore the CPU context
+    public static void test_i386_context_save() {
+        int r_eax = 0x1; // EAX register
+
+        System.out.println("Save/restore CPU context in opaque blob");
+
+        // initialize emulator in X86-32bit mode
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
+
+        // map 8KB memory for this emulation
+        uc.mem_map(ADDRESS, 8 * 1024, UC_PROT_ALL);
+
+        // write machine code to be emulated to memory
+        uc.mem_write(ADDRESS, X86_CODE32_INC);
+
+        // initialize machine registers
+        uc.reg_write(UC_X86_REG_EAX, r_eax);
+
+        // emulate machine code in infinite time
+        System.out.println(">>> Running emulation for the first time");
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE32_INC.length, 0, 0);
+
+        // now print out some registers
+        System.out.println(">>> Emulation done. Below is the CPU context");
+        System.out.format(">>> EAX = 0x%x\n", uc.reg_read(UC_X86_REG_EAX));
+
+        // allocate and save the CPU context
+        System.out.println(">>> Saving CPU context");
+        Unicorn.Context context = uc.context_save();
+
+        // emulate machine code again
+        System.out.println(">>> Running emulation for the second time");
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE32_INC.length, 0, 0);
+
+        // now print out some registers
+        System.out.println(">>> Emulation done. Below is the CPU context");
+        System.out.format(">>> EAX = 0x%x\n", uc.reg_read(UC_X86_REG_EAX));
+
+        // restore CPU context
+        uc.context_restore(context);
+
+        // now print out some registers
+        System.out
+                .println(">>> CPU context restored. Below is the CPU context");
+        System.out.format(">>> EAX = 0x%x\n", uc.reg_read(UC_X86_REG_EAX));
+
+        // modify some registers of the context
+        context.reg_write(UC_X86_REG_EAX, 0xc8);
+
+        // and restore CPU context again
+        uc.context_restore(context);
+
+        // now print out some registers
+        System.out.format(
+            ">>> CPU context restored with modification. Below is the CPU context\n");
+        System.out.format(">>> EAX = 0x%x\n", uc.reg_read(UC_X86_REG_EAX));
     }
 
     public static void test_x86_64() {
@@ -557,156 +691,370 @@ public class Sample_x86 {
         long r14 = 0x595f72f6e4017f6eL;
         long r15 = 0x1efd97aea331ccccL;
 
-        long rsp = ADDRESS + 0x200000;
+        long rsp = ADDRESS + 0x200000L;
 
-        System.out.print("Emulate x86_64 code\n");
+        System.out.println("Emulate x86_64 code");
 
         // Initialize emulator in X86-64bit mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_64);
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_64);
 
         // map 2MB memory for this emulation
-        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
-        u.mem_write(ADDRESS, X86_CODE64);
+        uc.mem_write(ADDRESS, X86_CODE64);
 
         // initialize machine registers
-        u.reg_write(Unicorn.UC_X86_REG_RSP, rsp);
+        uc.reg_write(UC_X86_REG_RSP, rsp);
 
-        u.reg_write(Unicorn.UC_X86_REG_RAX, rax);
-        u.reg_write(Unicorn.UC_X86_REG_RBX, rbx);
-        u.reg_write(Unicorn.UC_X86_REG_RCX, rcx);
-        u.reg_write(Unicorn.UC_X86_REG_RDX, rdx);
-        u.reg_write(Unicorn.UC_X86_REG_RSI, rsi);
-        u.reg_write(Unicorn.UC_X86_REG_RDI, rdi);
-        u.reg_write(Unicorn.UC_X86_REG_R8, r8);
-        u.reg_write(Unicorn.UC_X86_REG_R9, r9);
-        u.reg_write(Unicorn.UC_X86_REG_R10, r10);
-        u.reg_write(Unicorn.UC_X86_REG_R11, r11);
-        u.reg_write(Unicorn.UC_X86_REG_R12, r12);
-        u.reg_write(Unicorn.UC_X86_REG_R13, r13);
-        u.reg_write(Unicorn.UC_X86_REG_R14, r14);
-        u.reg_write(Unicorn.UC_X86_REG_R15, r15);
+        uc.reg_write(UC_X86_REG_RAX, rax);
+        uc.reg_write(UC_X86_REG_RBX, rbx);
+        uc.reg_write(UC_X86_REG_RCX, rcx);
+        uc.reg_write(UC_X86_REG_RDX, rdx);
+        uc.reg_write(UC_X86_REG_RSI, rsi);
+        uc.reg_write(UC_X86_REG_RDI, rdi);
+        uc.reg_write(UC_X86_REG_R8, r8);
+        uc.reg_write(UC_X86_REG_R9, r9);
+        uc.reg_write(UC_X86_REG_R10, r10);
+        uc.reg_write(UC_X86_REG_R11, r11);
+        uc.reg_write(UC_X86_REG_R12, r12);
+        uc.reg_write(UC_X86_REG_R13, r13);
+        uc.reg_write(UC_X86_REG_R14, r14);
+        uc.reg_write(UC_X86_REG_R15, r15);
 
         // tracing all basic blocks with customized callback
-        u.hook_add(new MyBlockHook(), 1, 0, null);
+        uc.hook_add(hook_block, 1, 0, null);
 
         // tracing all instructions in the range [ADDRESS, ADDRESS+20]
-        u.hook_add(new MyCode64Hook(), ADDRESS, ADDRESS + 20, null);
+        uc.hook_add(hook_code64, ADDRESS, ADDRESS + 20, null);
 
         // tracing all memory WRITE access (with @begin > @end)
-        u.hook_add(new MyWrite64Hook(), Unicorn.UC_HOOK_MEM_WRITE, 1, 0, null);
+        uc.hook_add(hook_mem64, UC_HOOK_MEM_WRITE, 1, 0, null);
 
         // tracing all memory READ access (with @begin > @end)
-        u.hook_add(new MyRead64Hook(), Unicorn.UC_HOOK_MEM_READ, 1, 0, null);
+        uc.hook_add(hook_mem64, UC_HOOK_MEM_READ, 1, 0, null);
 
         // emulate machine code in infinite time (last param = 0), or when
         // finishing all the code.
-        u.emu_start(ADDRESS, ADDRESS + X86_CODE64.length, 0, 0);
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE64.length, 0, 0);
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
+        System.out.println(">>> Emulation done. Below is the CPU context");
 
-        long r_rax = u.reg_read(Unicorn.UC_X86_REG_RAX);
-        long r_rbx = u.reg_read(Unicorn.UC_X86_REG_RBX);
-        long r_rcx = u.reg_read(Unicorn.UC_X86_REG_RCX);
-        long r_rdx = u.reg_read(Unicorn.UC_X86_REG_RDX);
-        long r_rsi = u.reg_read(Unicorn.UC_X86_REG_RSI);
-        long r_rdi = u.reg_read(Unicorn.UC_X86_REG_RDI);
-        long r_r8 = u.reg_read(Unicorn.UC_X86_REG_R8);
-        long r_r9 = u.reg_read(Unicorn.UC_X86_REG_R9);
-        long r_r10 = u.reg_read(Unicorn.UC_X86_REG_R10);
-        long r_r11 = u.reg_read(Unicorn.UC_X86_REG_R11);
-        long r_r12 = u.reg_read(Unicorn.UC_X86_REG_R12);
-        long r_r13 = u.reg_read(Unicorn.UC_X86_REG_R13);
-        long r_r14 = u.reg_read(Unicorn.UC_X86_REG_R14);
-        long r_r15 = u.reg_read(Unicorn.UC_X86_REG_R15);
+        System.out.format(">>> RAX = 0x%x\n", uc.reg_read(UC_X86_REG_RAX));
+        System.out.format(">>> RBX = 0x%x\n", uc.reg_read(UC_X86_REG_RBX));
+        System.out.format(">>> RCX = 0x%x\n", uc.reg_read(UC_X86_REG_RCX));
+        System.out.format(">>> RDX = 0x%x\n", uc.reg_read(UC_X86_REG_RDX));
+        System.out.format(">>> RSI = 0x%x\n", uc.reg_read(UC_X86_REG_RSI));
+        System.out.format(">>> RDI = 0x%x\n", uc.reg_read(UC_X86_REG_RDI));
+        System.out.format(">>> R8 = 0x%x\n", uc.reg_read(UC_X86_REG_R8));
+        System.out.format(">>> R9 = 0x%x\n", uc.reg_read(UC_X86_REG_R9));
+        System.out.format(">>> R10 = 0x%x\n", uc.reg_read(UC_X86_REG_R10));
+        System.out.format(">>> R11 = 0x%x\n", uc.reg_read(UC_X86_REG_R11));
+        System.out.format(">>> R12 = 0x%x\n", uc.reg_read(UC_X86_REG_R12));
+        System.out.format(">>> R13 = 0x%x\n", uc.reg_read(UC_X86_REG_R13));
+        System.out.format(">>> R14 = 0x%x\n", uc.reg_read(UC_X86_REG_R14));
+        System.out.format(">>> R15 = 0x%x\n", uc.reg_read(UC_X86_REG_R15));
+    }
 
-        System.out.printf(">>> RAX = 0x%x\n", r_rax);
-        System.out.printf(">>> RBX = 0x%x\n", r_rbx);
-        System.out.printf(">>> RCX = 0x%x\n", r_rcx);
-        System.out.printf(">>> RDX = 0x%x\n", r_rdx);
-        System.out.printf(">>> RSI = 0x%x\n", r_rsi);
-        System.out.printf(">>> RDI = 0x%x\n", r_rdi);
-        System.out.printf(">>> R8 = 0x%x\n", r_r8);
-        System.out.printf(">>> R9 = 0x%x\n", r_r9);
-        System.out.printf(">>> R10 = 0x%x\n", r_r10);
-        System.out.printf(">>> R11 = 0x%x\n", r_r11);
-        System.out.printf(">>> R12 = 0x%x\n", r_r12);
-        System.out.printf(">>> R13 = 0x%x\n", r_r13);
-        System.out.printf(">>> R14 = 0x%x\n", r_r14);
-        System.out.printf(">>> R15 = 0x%x\n", r_r15);
+    public static void test_x86_64_syscall() {
+        long rax = 0x100;
 
-        u.close();
+        System.out.println("Emulate x86_64 code with 'syscall' instruction");
+
+        // Initialize emulator in X86-64bit mode
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_64);
+
+        // map 2MB memory for this emulation
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+
+        // write machine code to be emulated to memory
+        uc.mem_write(ADDRESS, X86_CODE64_SYSCALL);
+
+        // hook interrupts for syscall
+        uc.hook_add(hook_syscall, UC_X86_INS_SYSCALL, 1, 0, null);
+
+        // initialize machine registers
+        uc.reg_write(UC_X86_REG_RAX, rax);
+
+        // emulate machine code in infinite time (last param = 0), or when
+        // finishing all the code.
+        uc.emu_start(ADDRESS, ADDRESS + X86_CODE64_SYSCALL.length, 0, 0);
+
+        // now print out some registers
+        System.out.println(">>> Emulation done. Below is the CPU context");
+        System.out.format(">>> RAX = 0x%x\n", uc.reg_read(UC_X86_REG_RAX));
     }
 
     public static void test_x86_16() {
-        long eax = 7L;
-        long ebx = 5L;
-        long esi = 6L;
+        int eax = 7;
+        int ebx = 5;
+        int esi = 6;
 
-        System.out.print("Emulate x86 16-bit code\n");
+        System.out.println("Emulate x86 16-bit code");
 
         // Initialize emulator in X86-16bit mode
-        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_16);
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_16);
 
         // map 8KB memory for this emulation
-        u.mem_map(0, 8 * 1024, Unicorn.UC_PROT_ALL);
+        uc.mem_map(0, 8 * 1024, UC_PROT_ALL);
 
         // write machine code to be emulated to memory
-        u.mem_write(0, X86_CODE16);
+        uc.mem_write(0, X86_CODE16);
 
         // initialize machine registers
-        u.reg_write(Unicorn.UC_X86_REG_EAX, eax);
-        u.reg_write(Unicorn.UC_X86_REG_EBX, ebx);
-        u.reg_write(Unicorn.UC_X86_REG_ESI, esi);
+        uc.reg_write(UC_X86_REG_EAX, eax);
+        uc.reg_write(UC_X86_REG_EBX, ebx);
+        uc.reg_write(UC_X86_REG_ESI, esi);
 
         // emulate machine code in infinite time (last param = 0), or when
         // finishing all the code.
-        u.emu_start(0, X86_CODE16.length, 0, 0);
+        uc.emu_start(0, X86_CODE16.length, 0, 0);
 
         // now print out some registers
-        System.out.print(">>> Emulation done. Below is the CPU context\n");
+        System.out.println(">>> Emulation done. Below is the CPU context");
 
         // read from memory
-        byte[] tmp = u.mem_read(11, 1);
-        System.out.printf(">>> Read 1 bytes from [0x%x] = 0x%x\n", 11,
-            toInt(tmp));
+        byte[] result = uc.mem_read(11, 1);
+        System.out.format(">>> Read 1 bytes from [0x%x] = 0x%x\n", 11,
+            result[0] & 0xff);
+    }
 
-        u.close();
+    public static void test_i386_invalid_mem_read_in_tb() {
+        int r_eax = 0x1234; // EAX register
+        int r_edx = 0x7890; // EDX register
+
+        System.out.format(
+            "Emulate i386 code that read invalid memory in the middle of a TB\n");
+
+        // Initialize emulator in X86-32bit mode
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
+
+        // map 2MB memory for this emulation
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+
+        // write machine code to be emulated to memory
+        uc.mem_write(ADDRESS, X86_CODE32_MEM_READ_IN_TB);
+
+        // initialize machine registers
+        uc.reg_write(UC_X86_REG_EAX, r_eax);
+        uc.reg_write(UC_X86_REG_EDX, r_edx);
+
+        // Add a dummy callback.
+        // Note: if this callback is not added, the EIP will not be updated,
+        // and EIP will read as ADDRESS after emu_start fails.
+        uc.hook_add((MemHook) (u, type, address, size, value, user) -> {
+        }, UC_HOOK_MEM_READ, 1, 0, null);
+
+        // Let it crash by design.
+        try {
+            uc.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_READ_IN_TB.length, 0,
+                0);
+            throw new RuntimeException("Expected uc.emu_start to fail");
+        } catch (UnicornException e) {
+            System.out.println(
+                "uc.emu_start() failed BY DESIGN with error returned: " + e);
+        }
+
+        System.out.println(">>> Emulation done. Below is the CPU context");
+
+        long r_eip = uc.reg_read(UC_X86_REG_EIP);
+        System.out.format(">>> EIP = 0x%x\n", r_eip);
+
+        if (r_eip != ADDRESS + 1) {
+            System.out.format(
+                ">>> ERROR: Wrong PC 0x%x when reading unmapped memory in the middle of TB!\n",
+                r_eip);
+        } else {
+            System.out.format(
+                ">>> The PC is correct after reading unmapped memory in the middle of TB.\n");
+        }
+    }
+
+    public static void test_i386_smc_xor() {
+        long r_edi = ADDRESS;    // ECX register
+        long r_eax = 0xbc4177e6L; // EDX register
+
+        System.out.println("Emulate i386 code that modfies itself");
+
+        // Initialize emulator in X86-32bit mode
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
+
+        // map 1KB memory for this emulation
+        uc.mem_map(ADDRESS, 0x1000, UC_PROT_ALL);
+
+        // write machine code to be emulated to memory
+        uc.mem_write(ADDRESS, X86_CODE32_SMC);
+
+        // initialize machine registers
+        uc.reg_write(UC_X86_REG_EDI, r_edi);
+        uc.reg_write(UC_X86_REG_EAX, r_eax);
+
+        // **Important Note**
+        //
+        // Since SMC code will cause TB regeneration, the XOR in fact would executed
+        // twice (the first execution won't take effect.). Thus, if you would like
+        // to use count to control the emulation, the count should be set to 2.
+        //
+        // uc.emu_start(ADDRESS, ADDRESS + 3, 0, 0);
+        uc.emu_start(ADDRESS, 0, 0, 2);
+
+        System.out.println(">>> Emulation done. Below is the result.");
+
+        int result = Utils.toInt(uc.mem_read(ADDRESS + 3, 4));
+
+        if (result == (0x3ea98b13 ^ 0xbc4177e6)) {
+            System.out.format(
+                ">>> SMC emulation is correct. 0x3ea98b13 ^ 0xbc4177e6 = 0x%x\n",
+                result);
+        } else {
+            System.out.format(
+                ">>> SMC emulation is wrong. 0x3ea98b13 ^ 0xbc4177e6 = 0x%x\n",
+                result);
+        }
+    }
+
+    private static final MmioReadHandler mmio_read_callback =
+        (uc, offset, size, user_data) -> {
+            System.out.format(
+                ">>> Read IO memory at offset 0x%d with 0x%d bytes and return 0x19260817\n",
+                offset, size);
+            // The value returned here would be written to ecx.
+            return 0x19260817;
+        };
+
+    private static final MmioWriteHandler mmio_write_callback =
+        (uc, offset, size, value, user_data) -> {
+            System.out.format(
+                ">>> Write value 0x%d to IO memory at offset 0x%d with 0x%d bytes\n",
+                value, offset, size);
+        };
+
+    public static void test_i386_mmio() {
+        long r_ecx = 0xdeadbeefL;
+
+        System.out.println("Emulate i386 code that uses MMIO");
+
+        // Initialize emulator in X86-32bit mode
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
+
+        // map 1KB memory for this emulation
+        uc.mem_map(ADDRESS, 0x1000, UC_PROT_ALL);
+
+        // write machine code to be emulated to memory
+        uc.mem_write(ADDRESS, X86_MMIO_CODE);
+        uc.mmio_map(0x20000, 0x4000, mmio_read_callback, null,
+            mmio_write_callback, null);
+
+        // prepare ecx
+        uc.reg_write(UC_X86_REG_ECX, r_ecx);
+
+        uc.emu_start(ADDRESS, ADDRESS + X86_MMIO_CODE.length, 0, 0);
+        System.out.format(">>> Emulation done. ECX=0x%x\n",
+            uc.reg_read(UC_X86_REG_ECX));
+    }
+
+    private static final EventMemHook test_i386_hook_mem_invalid_cb =
+        (uc, type, address, size, value, user_data) -> {
+            if (type == UC_MEM_READ_UNMAPPED || type == UC_MEM_WRITE_UNMAPPED) {
+                System.out.format(
+                    ">>> We have to add a map at 0x%x before continue execution!\n",
+                    address);
+                uc.mem_map(address, 0x1000, UC_PROT_ALL);
+            }
+
+            // If you really would like to continue the execution, make sure the memory
+            // is already mapped properly!
+            return true;
+        };
+
+    public static void test_i386_hook_mem_invalid() {
+        // mov eax, 0xdeadbeef;
+        // mov [0x8000], eax;
+        // mov eax, [0x10000];
+        byte[] code = Utils.hexToBytes("b8efbeaddea300800000a100000100");
+
+        System.out.println(
+            "Emulate i386 code that triggers invalid memory read/write.");
+
+        Unicorn uc = new Unicorn(UC_ARCH_X86, UC_MODE_32);
+        uc.mem_map(ADDRESS, 0x1000, UC_PROT_ALL);
+        uc.mem_write(ADDRESS, code);
+        long hook = uc.hook_add(test_i386_hook_mem_invalid_cb,
+            UC_HOOK_MEM_INVALID, 1, 0, null);
+        uc.emu_start(ADDRESS, ADDRESS + code.length, 0, 0);
+
+        uc.hook_del(hook);
     }
 
     public static void main(String args[]) {
         if (args.length == 1) {
-            if (args[0].equals("-32")) {
-                test_i386();
-                test_i386_inout();
-                test_i386_jump();
-                test_i386_loop();
-                test_i386_invalid_mem_read();
-                test_i386_invalid_mem_write();
-                test_i386_jump_invalid();
-            }
-
-            if (args[0].equals("-64")) {
-                test_x86_64();
-            }
-
             if (args[0].equals("-16")) {
                 test_x86_16();
-            }
-
-            // test memleak
-            if (args[0].equals("-0")) {
-                while (true) {
-                    test_i386();
-                    // test_x86_64();
-                }
+            } else if (args[0].equals("-32")) {
+                test_miss_code();
+                System.out.println("===================================");
+                test_i386();
+                System.out.println("===================================");
+                test_i386_map_ptr();
+                System.out.println("===================================");
+                test_i386_inout();
+                System.out.println("===================================");
+                test_i386_context_save();
+                System.out.println("===================================");
+                test_i386_jump();
+                System.out.println("===================================");
+                test_i386_loop();
+                System.out.println("===================================");
+                test_i386_invalid_mem_read();
+                System.out.println("===================================");
+                test_i386_invalid_mem_write();
+                System.out.println("===================================");
+                test_i386_jump_invalid();
+                // test_i386_invalid_c6c7();
+            } else if (args[0].equals("-64")) {
+                test_x86_64();
+                System.out.println("===================================");
+                test_x86_64_syscall();
+            } else if (args[0].equals("-h")) {
+                System.out.println(
+                    "Syntax: java samples.Sample_x86 <-16|-32|-64>");
             }
         } else {
-            System.out.print("Syntax: java Sample_x86 <-16|-32|-64>\n");
+            test_x86_16();
+            System.out.println("===================================");
+            test_miss_code();
+            System.out.println("===================================");
+            test_i386();
+            System.out.println("===================================");
+            test_i386_map_ptr();
+            System.out.println("===================================");
+            test_i386_inout();
+            System.out.println("===================================");
+            test_i386_context_save();
+            System.out.println("===================================");
+            test_i386_jump();
+            System.out.println("===================================");
+            test_i386_loop();
+            System.out.println("===================================");
+            test_i386_invalid_mem_read();
+            System.out.println("===================================");
+            test_i386_invalid_mem_write();
+            System.out.println("===================================");
+            test_i386_jump_invalid();
+            // test_i386_invalid_c6c7();
+            System.out.println("===================================");
+            test_x86_64();
+            System.out.println("===================================");
+            test_x86_64_syscall();
+            System.out.println("===================================");
+            test_i386_invalid_mem_read_in_tb();
+            System.out.println("===================================");
+            test_i386_smc_xor();
+            System.out.println("===================================");
+            test_i386_mmio();
+            System.out.println("===================================");
+            test_i386_hook_mem_invalid();
         }
-
     }
-
 }

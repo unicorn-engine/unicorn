@@ -59,7 +59,6 @@ public class HookTests {
         // TODO(nneonneo): I don't totally understand this output! Why 8 bytes at address 5?
         assertTranslationBlock(new TranslationBlock(ADDRESS + 5, 3, 8),
             u.ctl_request_cache(ADDRESS + 5));
-        u.close();
     }
 
     @Test
@@ -84,8 +83,6 @@ public class HookTests {
         u.ctl_tlb_mode(Unicorn.UC_TLB_VIRTUAL);
         u.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_READ.length, 0, 0);
         assertEquals("ecx", u.reg_read(Unicorn.UC_X86_REG_ECX), 0x04030201);
-
-        u.close();
     }
 
     @Test
@@ -124,7 +121,5 @@ public class HookTests {
         assertThrows(UnicornException.class, () -> u.hook_del(h1));
         assertThrows(UnicornException.class, () -> u.hook_del(h3));
         assertThrows(UnicornException.class, () -> u.hook_del(h4));
-
-        u.close();
     }
 }
