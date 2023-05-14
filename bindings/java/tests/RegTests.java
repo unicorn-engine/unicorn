@@ -1,12 +1,14 @@
 package tests;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 
 import java.math.BigInteger;
 
 import org.junit.Test;
 
+import unicorn.Arm64_CP;
 import unicorn.Unicorn;
 import unicorn.UnicornException;
 import unicorn.X86_Float80;
@@ -142,6 +144,62 @@ public class RegTests {
         assertEquals("v0.8h = v1.8h + v2.8h",
             new BigInteger("4860570d497678b4a5728c3e34a5f85c", 16),
             uc.reg_read(Unicorn.UC_ARM64_REG_V0, null));
+
+        uc.close();
+    }
+
+    @Test
+    public void testArm64EnablePAC() {
+        // paciza x1
+        final byte[] ARM64_CODE =
+            { (byte) 0xe1, 0x23, (byte) 0xc1, (byte) 0xda };
+
+        long ADDRESS = 0x100000;
+
+        Unicorn uc = new Unicorn(Unicorn.UC_ARCH_ARM64, Unicorn.UC_MODE_ARM);
+        uc.ctl_set_cpu_model(Unicorn.UC_CPU_ARM64_MAX);
+        uc.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
+        uc.mem_write(ADDRESS, ARM64_CODE);
+
+        Arm64_CP sctlr_el3 = new Arm64_CP(1, 1, 3, 6, 0);
+        sctlr_el3.val =
+            (Long) uc.reg_read(Unicorn.UC_ARM64_REG_CP_REG, sctlr_el3);
+        // NS | RW | API
+        sctlr_el3.val |= 1L | (1L << 10) | (1L << 17);
+        uc.reg_write(Unicorn.UC_ARM64_REG_CP_REG, sctlr_el3);
+        sctlr_el3.val =
+            (Long) uc.reg_read(Unicorn.UC_ARM64_REG_CP_REG, sctlr_el3);
+
+        Arm64_CP sctlr_el1 = new Arm64_CP(1, 0, 3, 0, 0);
+        sctlr_el1.val =
+            (Long) uc.reg_read(Unicorn.UC_ARM64_REG_CP_REG, sctlr_el1);
+        // EnIA | EnIB
+        sctlr_el1.val |= (1L << 31) | (1L << 30) | (1L << 27) | (1L << 13);
+        uc.reg_write(Unicorn.UC_ARM64_REG_CP_REG, sctlr_el1);
+        sctlr_el1.val =
+            (Long) uc.reg_read(Unicorn.UC_ARM64_REG_CP_REG, sctlr_el1);
+
+        Arm64_CP hcr_el2 = new Arm64_CP(1, 1, 3, 4, 0);
+        hcr_el2.val =
+            (Long) uc.reg_read(Unicorn.UC_ARM64_REG_CP_REG, hcr_el2);
+        // API
+        hcr_el2.val |= (1L << 41);
+        uc.reg_write(Unicorn.UC_ARM64_REG_CP_REG, hcr_el2);
+
+        Arm64_CP apiakeylo_el1 = new Arm64_CP(2, 1, 3, 0, 0);
+        apiakeylo_el1.val = 0x4141424243434444L;
+        uc.reg_write(Unicorn.UC_ARM64_REG_CP_REG, apiakeylo_el1);
+
+        Arm64_CP apiakeyhi_el1 = new Arm64_CP(2, 1, 3, 0, 1);
+        apiakeyhi_el1.val = 0x1234abcd4444aaaaL;
+        uc.reg_write(Unicorn.UC_ARM64_REG_CP_REG, apiakeyhi_el1);
+
+        uc.reg_write(Unicorn.UC_ARM64_REG_X1, 0x0000bbbbccccddddL);
+        uc.emu_start(ADDRESS, ADDRESS + ARM64_CODE.length, 0, 0);
+        assertNotEquals("X1 should be signed", 0x0000bbbbccccddddL,
+            uc.reg_read(Unicorn.UC_ARM64_REG_X1));
+        assertEquals("X1 low bits should be unchanged", 0x0000bbbbccccddddL,
+            uc.reg_read(Unicorn.UC_ARM64_REG_X1) & 0xffffffffffffL);
 
         uc.close();
     }

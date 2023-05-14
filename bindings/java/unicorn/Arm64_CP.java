@@ -26,6 +26,10 @@ public class Arm64_CP {
     public int crn, crm, op0, op1, op2;
     public long val;
 
+    public Arm64_CP(int crn, int crm, int op0, int op1, int op2) {
+        this(crn, crm, op0, op1, op2, 0);
+    }
+
     public Arm64_CP(int crn, int crm, int op0, int op1, int op2, long val) {
         this.crn = crn;
         this.crm = crm;
