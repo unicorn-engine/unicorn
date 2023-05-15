@@ -1,5 +1,6 @@
 package tests;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
@@ -9,6 +10,7 @@ import java.math.BigInteger;
 import org.junit.Test;
 
 import unicorn.Arm64_CP;
+import unicorn.SyscallHook;
 import unicorn.Unicorn;
 import unicorn.UnicornException;
 import unicorn.X86_Float80;
@@ -50,6 +52,43 @@ public class RegTests {
         u.emu_start(ADDRESS, ADDRESS + X86_CODE.length, 0, 0);
         reg = (X86_Float80) u.reg_read(Unicorn.UC_X86_REG_ST0, null);
         assertEquals(Math.sin(-1.1), reg.toDouble(), 1e-12);
+    }
+
+    /** Test batch register API. Ported from sample_batch_reg.c. Not a sample
+     * because the Java version of this API is deprecated.
+     */
+    @Test
+    public void testBatchReg() {
+        int[] syscall_abi = { Unicorn.UC_X86_REG_RAX, Unicorn.UC_X86_REG_RDI,
+            Unicorn.UC_X86_REG_RSI, Unicorn.UC_X86_REG_RDX,
+            Unicorn.UC_X86_REG_R10, Unicorn.UC_X86_REG_R8,
+            Unicorn.UC_X86_REG_R9 };
+
+        Object[] vals = { 200L, 10L, 11L, 12L, 13L, 14L, 15L };
+
+        long BASE = 0x10000L;
+
+        // mov rax, 100; mov rdi, 1; mov rsi, 2; mov rdx, 3; mov r10, 4; mov r8, 5; mov
+        // r9, 6; syscall
+        byte[] CODE =
+            samples.Utils.hexToBytes("48c7c06400000048c7c70100000048c7c602" +
+                "00000048c7c20300000049c7c20400000049" +
+                "c7c00500000049c7c1060000000f05");
+
+        Unicorn uc = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_64);
+        uc.reg_write_batch(syscall_abi, vals);
+        Object[] rvals = uc.reg_read_batch(syscall_abi);
+        assertArrayEquals(vals, rvals);
+
+        uc.hook_add((SyscallHook) (u, user_data) -> {
+            Object[] nvals = u.reg_read_batch(syscall_abi);
+            assertArrayEquals(new Object[] { 100L, 1L, 2L, 3L, 4L, 5L, 6L },
+                nvals);
+        }, Unicorn.UC_X86_INS_SYSCALL, 1, 0, null);
+
+        uc.mem_map(BASE, 0x1000, Unicorn.UC_PROT_ALL);
+        uc.mem_write(BASE, CODE);
+        uc.emu_start(BASE, BASE + CODE.length, 0, 0);
     }
 
     @Test
