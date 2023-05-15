@@ -264,12 +264,14 @@ public class Unicorn
                 X86_MSR reg = (X86_MSR) opt;
                 return (Long) _reg_read_x86_msr(ptr, isContext, reg.rid);
             }
+            break;
         case UC_ARCH_ARM:
             if (regid == UC_ARM_REG_CP_REG) {
                 Arm_CP reg = (Arm_CP) opt;
                 return (Long) _reg_read_arm_cp(ptr, isContext, reg.cp, reg.is64,
                     reg.sec, reg.crn, reg.crm, reg.opc1, reg.opc2);
             }
+            break;
         case UC_ARCH_ARM64:
             if (regid == UC_ARM64_REG_CP_REG) {
                 Arm64_CP reg = (Arm64_CP) opt;
@@ -280,6 +282,7 @@ public class Unicorn
                 (regid >= UC_ARM64_REG_V0 && regid <= UC_ARM64_REG_V31)) {
                 return do_reg_read_bigint(ptr, isContext, regid, 128);
             }
+            break;
         }
         return _reg_read_long(ptr, isContext, regid);
     }
@@ -330,6 +333,7 @@ public class Unicorn
                 _reg_write_x86_msr(ptr, isContext, reg.rid, reg.value);
                 return;
             }
+            break;
         case UC_ARCH_ARM:
             if (regid == UC_ARM_REG_CP_REG) {
                 Arm_CP reg = (Arm_CP) value;
@@ -337,6 +341,7 @@ public class Unicorn
                     reg.crn, reg.crm, reg.opc1, reg.opc2, reg.val);
                 return;
             }
+            break;
         case UC_ARCH_ARM64:
             if (regid == UC_ARM64_REG_CP_REG) {
                 Arm64_CP reg = (Arm64_CP) value;
@@ -350,6 +355,7 @@ public class Unicorn
                     128);
                 return;
             }
+            break;
         }
         _reg_write_long(ptr, isContext, regid, (Long) value);
     }

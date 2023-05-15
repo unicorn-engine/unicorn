@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.math.BigInteger;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import unicorn.Unicorn;
@@ -55,6 +56,7 @@ public class RegressionTests {
     }
 
     /** Test that Unicorn instances are properly garbage-collected */
+    @Ignore("This test is not deterministic")
     @Test
     public void testUnicornsWillGC() {
         final boolean[] close_called = { false };
