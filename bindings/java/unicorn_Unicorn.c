@@ -934,6 +934,9 @@ Java_unicorn_Unicorn__1hook_1add__JILunicorn_Hook_2Ljava_lang_Object_2JJ(
 
     struct hook_wrapper *hh =
         makeHookWrapper(env, self, callback, user_data, "hook", hook_sig);
+    if (hh == NULL) {
+        return 0;
+    }
     uc_err err = uc_hook_add((uc_engine *)uc, &hh->uc_hh, type, hook_callback,
                              hh, begin, end);
     if (err != UC_ERR_OK) {
@@ -994,6 +997,9 @@ Java_unicorn_Unicorn__1hook_1add__JILunicorn_Hook_2Ljava_lang_Object_2JJI(
 
     struct hook_wrapper *hh =
         makeHookWrapper(env, self, callback, user_data, "hook", hook_sig);
+    if (hh == NULL) {
+        return 0;
+    }
     uc_err err = uc_hook_add((uc_engine *)uc, &hh->uc_hh, type, hook_callback,
                              hh, begin, end, arg);
     if (err != UC_ERR_OK) {
@@ -1027,6 +1033,9 @@ Java_unicorn_Unicorn__1hook_1add__JILunicorn_Hook_2Ljava_lang_Object_2JJII(
 
     struct hook_wrapper *hh =
         makeHookWrapper(env, self, callback, user_data, "hook", hook_sig);
+    if (hh == NULL) {
+        return 0;
+    }
     uc_err err = uc_hook_add((uc_engine *)uc, &hh->uc_hh, type, hook_callback,
                              hh, begin, end, arg1, arg2);
     if (err != UC_ERR_OK) {
