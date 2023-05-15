@@ -1172,4 +1172,40 @@ public class TestSamples implements UnicornConst {
                 ">>> We have to add a map at 0x10000 before continue execution!\n",
             outContent.toString());
     }
+
+    @Test
+    public void testX86Mmr() {
+        assumeTrue(Unicorn.arch_supported(UC_ARCH_X86));
+        samples.Sample_x86_mmr.test_x86_mmr();
+        assertEquals(
+            "Test x86 MMR read/write\n" +
+                ">>> EAX = 0xdddddddd\n" +
+                ">>> LDTR.base = 0x22222222\n" +
+                ">>> LDTR.limit = 0x33333333\n" +
+                ">>> LDTR.flags = 0x44444444\n" +
+                ">>> LDTR.selector = 0x5555\n" +
+                "\n" +
+                ">>> GDTR.base = 0x77777777\n" +
+                ">>> GDTR.limit = 0x8888\n",
+            outContent.toString());
+    }
+
+    @Test
+    public void testX86Gdt() {
+        assumeTrue(Unicorn.arch_supported(UC_ARCH_X86));
+        samples.Sample_x86_mmr.gdt_demo();
+        assertEquals(
+            "Demonstrate GDT usage\n" +
+                "Executing at 0x1000000, ilen = 0x5\n" +
+                "mem write at 0x120ffc, size = 4, value = 0x1234567\n" +
+                "Executing at 0x1000005, ilen = 0x5\n" +
+                "mem write at 0x120ff8, size = 4, value = 0x89abcdef\n" +
+                "Executing at 0x100000a, ilen = 0xb\n" +
+                "mem write at 0x7efdd000, size = 4, value = 0x1234567\n" +
+                "Executing at 0x1000015, ilen = 0xb\n" +
+                "mem write at 0x7efdd004, size = 4, value = 0x89abcdef\n" +
+                "efcdab8967452301\n",
+            outContent.toString());
+    }
+
 }
