@@ -1415,6 +1415,17 @@ static void test_x86_vtlb(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_segmentation()
+{
+    uc_engine *uc;
+    uint64_t fs = 0x53;
+    uc_x86_mmr gdtr = { 0, 0xfffff8076d962000, 0x57, 0 };
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_reg_write(uc, UC_X86_REG_GDTR, &gdtr));
+    uc_assert_err(UC_ERR_EXCEPTION, uc_reg_write(uc, UC_X86_REG_FS, &fs));
+}
+
 
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
@@ -1461,4 +1472,5 @@ TEST_LIST = {
     {"test_x86_16_incorrect_ip", test_x86_16_incorrect_ip},
     {"test_x86_mmu", test_x86_mmu},
     {"test_x86_vtlb", test_x86_vtlb},
+    {"test_x86_segmentation", test_x86_segmentation},
     {NULL, NULL}};
