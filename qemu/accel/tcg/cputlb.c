@@ -2125,7 +2125,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 continue;
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
-            if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, addr, size, val, hook->user_data)))
+            if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, paddr, size, val, hook->user_data)))
                 break;
 
             // the last callback may already asked to stop emulation
@@ -2147,7 +2147,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             }
             uc->invalid_error = UC_ERR_OK;
         } else {
-            uc->invalid_addr = addr;
+            uc->invalid_addr = paddr;
             uc->invalid_error = UC_ERR_WRITE_PROT;
             // printf("***** Invalid memory write (ro) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->cpu);
