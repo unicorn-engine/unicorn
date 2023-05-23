@@ -650,6 +650,7 @@ static gint tb_page_addr_cmp(gconstpointer ap, gconstpointer bp, gpointer udata)
 struct page_collection *
 page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end)
 {
+#if 0
     struct page_collection *set = g_malloc(sizeof(*set));
     tb_page_addr_t index;
     PageDesc *pd;
@@ -664,9 +665,7 @@ page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t 
     assert_no_pages_locked();
 
  retry:
-#if 0
     g_tree_foreach(set->tree, page_entry_lock, NULL);
-#endif
 
     for (index = start; index <= end; index++) {
         TranslationBlock *tb;
@@ -677,9 +676,7 @@ page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t 
             continue;
         }
         if (page_trylock_add(uc, set, index << TARGET_PAGE_BITS)) {
-#if 0
             g_tree_foreach(set->tree, page_entry_unlock, NULL);
-#endif
             goto retry;
         }
         assert_page_locked(pd);
@@ -688,21 +685,24 @@ page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t 
                 (tb->page_addr[1] != -1 &&
                  page_trylock_add(uc, set, tb->page_addr[1]))) {
                 /* drop all locks, and reacquire in order */
-#if 0
                 g_tree_foreach(set->tree, page_entry_unlock, NULL);
-#endif
                 goto retry;
             }
         }
     }
     return set;
+#else
+    return NULL;
+#endif
 }
 
 void page_collection_unlock(struct page_collection *set)
 {
+#if 0
     /* entries are unlocked and freed via page_entry_destroy */
     g_tree_destroy(set->tree);
     g_free(set);
+#endif
 }
 
 static void page_lock_pair(struct uc_struct *uc, PageDesc **ret_p1, tb_page_addr_t phys1,
