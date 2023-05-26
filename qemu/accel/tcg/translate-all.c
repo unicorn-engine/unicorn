@@ -522,6 +522,7 @@ static inline void page_unlock_tb(struct uc_struct *uc, const TranslationBlock *
     }
 }
 
+#if 0
 static inline struct page_entry *
 page_entry_new(PageDesc *pd, tb_page_addr_t index)
 {
@@ -542,7 +543,6 @@ static void page_entry_destroy(gpointer p)
     g_free(pe);
 }
 
-#if 0
 /* returns false on success */
 static bool page_entry_trylock(struct page_entry *pe)
 {
@@ -582,7 +582,6 @@ static gboolean page_entry_unlock(gpointer key, gpointer value, gpointer data)
     }
     return FALSE;
 }
-#endif
 
 /*
  * Trylock a page, and if successful, add the page to a collection.
@@ -613,20 +612,14 @@ static bool page_trylock_add(struct uc_struct *uc, struct page_collection *set, 
      */
     if (set->max == NULL || pe->index > set->max->index) {
         set->max = pe;
-#if 0
         do_page_entry_lock(pe);
-#endif
         return false;
     }
     /*
      * Try to acquire out-of-order lock; if busy, return busy so that we acquire
      * locks in order.
      */
-#if 0
     return page_entry_trylock(pe);
-#else
-    return 0;
-#endif
 }
 
 static gint tb_page_addr_cmp(gconstpointer ap, gconstpointer bp, gpointer udata)
@@ -641,6 +634,7 @@ static gint tb_page_addr_cmp(gconstpointer ap, gconstpointer bp, gpointer udata)
     }
     return 1;
 }
+#endif
 
 /*
  * Lock a range of pages ([@start,@end[) as well as the pages of all
