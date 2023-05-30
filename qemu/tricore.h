@@ -125,6 +125,8 @@
 #define memory_map_ptr memory_map_ptr_tricore
 #define memory_cow memory_cow_tricore
 #define memory_unmap memory_unmap_tricore
+#define memory_moveout memory_moveout_tricore
+#define memory_movein memory_movein_tricore
 #define memory_free memory_free_tricore
 #define flatview_unref flatview_unref_tricore
 #define address_space_get_flatview address_space_get_flatview_tricore

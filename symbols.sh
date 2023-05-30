@@ -125,6 +125,8 @@ memory_map_io \
 memory_map_ptr \
 memory_cow \
 memory_unmap \
+memory_moveout \
+memory_movein \
 memory_free \
 flatview_unref \
 address_space_get_flatview \

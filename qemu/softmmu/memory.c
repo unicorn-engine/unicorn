@@ -208,9 +208,69 @@ void memory_region_filter_subregions(MemoryRegion *mr, int32_t level)
     memory_region_transaction_commit(mr);
 }
 
+static void memory_region_remove_mapped_block(struct uc_struct *uc, MemoryRegion *mr, bool free)
+{
+    size_t i;
+    for (i = 0; i < uc->mapped_block_count; i++) {
+        if (uc->mapped_blocks[i] == mr) {
+            uc->mapped_block_count--;
+            //shift remainder of array down over deleted pointer
+            memmove(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
+            if (free) {
+                mr->destructor(mr);
+                g_free(mr);
+            }
+            break;
+        }
+    }
+}
+
+void memory_moveout(struct uc_struct *uc, MemoryRegion *mr)
+{
+    hwaddr addr;
+    /* A bit dirty, but it works.
+     * The first subregion will be the one with the smalest priority.
+     * In case of CoW this will always be the region which is mapped initial and later be moved in the subregion of the container.
+     * The initial subregion is the one stored in mapped_blocks
+     * Because CoW is done after the snapshot level is increased there is only on subregion with 
+     */
+    memory_region_transaction_begin();
+    MemoryRegion *mr_block = QTAILQ_FIRST(&mr->subregions);
+
+    if (!mr_block) {
+        mr_block = mr;
+    }
+
+    if (uc->cpu) {
+        // We also need to remove all tb cache
+        uc->uc_invalidate_tb(uc, mr->addr, int128_get64(mr->size));
+
+        // Make sure all pages associated with the MemoryRegion are flushed
+        // Only need to do this if we are in a running state
+        for (addr = mr->addr; (int64_t)(mr->end - addr) > 0; addr += uc->target_page_size) {
+           tlb_flush_page(uc->cpu, addr);
+        }
+    }
+
+    memory_region_del_subregion(uc->system_memory, mr);
+    g_array_append_val(uc->unmapped_regions, mr);
+    memory_region_remove_mapped_block(uc, mr_block, false);
+    uc->memory_region_update_pending = true;
+    memory_region_transaction_commit(uc->system_memory);
+    /* dirty hack to save the snapshot level */
+    mr->container = (void *)(intptr_t)uc->snapshot_level;
+}
+
+void memory_movein(struct uc_struct *uc, MemoryRegion *mr)
+{
+    memory_region_transaction_begin();
+    memory_region_add_subregion_overlap(uc->system_memory, mr->addr, mr, mr->priority);
+    uc->memory_region_update_pending = true;
+    memory_region_transaction_commit(uc->system_memory);
+}
+
 void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 {
-    int i;
     hwaddr addr;
 
     if (uc->cpu) {
@@ -224,17 +284,7 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
         }
     }
     memory_region_del_subregion(uc->system_memory, mr);
-
-    for (i = 0; i < uc->mapped_block_count; i++) {
-        if (uc->mapped_blocks[i] == mr) {
-            uc->mapped_block_count--;
-            //shift remainder of array down over deleted pointer
-            memmove(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
-            mr->destructor(mr);
-            g_free(mr);
-            break;
-        }
-    }
+    memory_region_remove_mapped_block(uc, mr, true);
 }
 
 int memory_free(struct uc_struct *uc)

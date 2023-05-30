@@ -125,6 +125,8 @@
 #define memory_map_ptr memory_map_ptr_ppc
 #define memory_cow memory_cow_ppc
 #define memory_unmap memory_unmap_ppc
+#define memory_moveout memory_moveout_ppc
+#define memory_movein memory_movein_ppc
 #define memory_free memory_free_ppc
 #define flatview_unref flatview_unref_ppc
 #define address_space_get_flatview address_space_get_flatview_ppc

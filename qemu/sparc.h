@@ -125,6 +125,8 @@
 #define memory_map_ptr memory_map_ptr_sparc
 #define memory_cow memory_cow_sparc
 #define memory_unmap memory_unmap_sparc
+#define memory_moveout memory_moveout_sparc
+#define memory_movein memory_movein_sparc
 #define memory_free memory_free_sparc
 #define flatview_unref flatview_unref_sparc
 #define address_space_get_flatview address_space_get_flatview_sparc
