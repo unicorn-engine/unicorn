@@ -125,6 +125,8 @@
 #define memory_map_ptr memory_map_ptr_aarch64
 #define memory_cow memory_cow_aarch64
 #define memory_unmap memory_unmap_aarch64
+#define memory_moveout memory_moveout_aarch64
+#define memory_movein memory_movein_aarch64
 #define memory_free memory_free_aarch64
 #define flatview_unref flatview_unref_aarch64
 #define address_space_get_flatview address_space_get_flatview_aarch64

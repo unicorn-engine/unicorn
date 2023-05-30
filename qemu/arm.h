@@ -125,6 +125,8 @@
 #define memory_map_ptr memory_map_ptr_arm
 #define memory_cow memory_cow_arm
 #define memory_unmap memory_unmap_arm
+#define memory_moveout memory_moveout_arm
+#define memory_movein memory_movein_arm
 #define memory_free memory_free_arm
 #define flatview_unref flatview_unref_arm
 #define address_space_get_flatview address_space_get_flatview_arm

@@ -346,6 +346,39 @@ static void test_context_snapshot(void)
     OK(uc_close(uc));
 }
 
+static void test_snapshot_unmap(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    uint64_t tmp;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY|UC_CTL_CONTEXT_CPU));
+    OK(uc_mem_map(uc, 0x1000, 0x2000, UC_PROT_ALL));
+
+    tmp = 1;
+    OK(uc_mem_write(uc, 0x1000, &tmp, sizeof(tmp)));
+    tmp = 2;
+    OK(uc_mem_write(uc, 0x2000, &tmp, sizeof(tmp)));
+
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    uc_assert_err(UC_ERR_ARG, uc_mem_unmap(uc, 0x1000, 0x1000));
+    OK(uc_mem_unmap(uc, 0x1000, 0x2000));
+    uc_assert_err(UC_ERR_READ_UNMAPPED, uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    uc_assert_err(UC_ERR_READ_UNMAPPED, uc_mem_read(uc, 0x2000, &tmp, sizeof(tmp)));
+
+    OK(uc_context_restore(uc, ctx));
+    OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    TEST_CHECK(tmp == 1);
+    OK(uc_mem_read(uc, 0x2000, &tmp, sizeof(tmp)));
+    TEST_CHECK(tmp == 2);
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -359,4 +392,5 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_mem_protect_mmio", test_mem_protect_mmio},
              {"test_snapshot", test_snapshot},
              {"test_context_snapshot", test_context_snapshot},
+             {"test_snapshot_unmap", test_snapshot_unmap},
              {NULL, NULL}};

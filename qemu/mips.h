@@ -125,6 +125,8 @@
 #define memory_map_ptr memory_map_ptr_mips
 #define memory_cow memory_cow_mips
 #define memory_unmap memory_unmap_mips
+#define memory_moveout memory_moveout_mips
+#define memory_movein memory_movein_mips
 #define memory_free memory_free_mips
 #define flatview_unref flatview_unref_mips
 #define address_space_get_flatview address_space_get_flatview_mips

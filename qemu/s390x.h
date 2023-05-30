@@ -125,6 +125,8 @@
 #define memory_map_ptr memory_map_ptr_s390x
 #define memory_cow memory_cow_s390x
 #define memory_unmap memory_unmap_s390x
+#define memory_moveout memory_moveout_s390x
+#define memory_movein memory_movein_s390x
 #define memory_free memory_free_s390x
 #define flatview_unref flatview_unref_s390x
 #define address_space_get_flatview address_space_get_flatview_s390x

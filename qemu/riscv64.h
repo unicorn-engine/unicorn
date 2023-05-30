@@ -125,6 +125,8 @@
 #define memory_map_ptr memory_map_ptr_riscv64
 #define memory_cow memory_cow_riscv64
 #define memory_unmap memory_unmap_riscv64
+#define memory_moveout memory_moveout_riscv64
+#define memory_movein memory_movein_riscv64
 #define memory_free memory_free_riscv64
 #define flatview_unref flatview_unref_riscv64
 #define address_space_get_flatview address_space_get_flatview_riscv64

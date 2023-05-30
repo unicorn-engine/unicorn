@@ -260,6 +260,8 @@ static uc_err uc_init_engine(uc_engine *uc)
 
     uc->context_content = UC_CTL_CONTEXT_CPU;
 
+    uc->unmapped_regions = g_array_new(false, false, sizeof(MemoryRegion*));
+
     uc->init_done = true;
 
     return UC_ERR_OK;
@@ -490,6 +492,12 @@ uc_err uc_close(uc_engine *uc)
     mr->destructor(mr);
     g_free(uc->system_memory);
     g_free(uc->system_io);
+    for (size_t i = 0; i < uc->unmapped_regions->len; i++) {
+        mr = g_array_index(uc->unmapped_regions, MemoryRegion *, i);
+        mr->destructor(mr);
+        g_free(mr);
+    }
+    g_array_free(uc->unmapped_regions, true);
 
     // Thread relateds.
     if (uc->qemu_thread_data) {
@@ -1579,6 +1587,29 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     return UC_ERR_OK;
 }
 
+static
+uc_err uc_mem_unmap_snapshot(struct uc_struct *uc, uint64_t address, size_t size, MemoryRegion **ret)
+{
+    MemoryRegion *mr;
+
+    mr = uc->memory_mapping(uc, address);
+    while (mr->container != uc->system_memory) {
+        mr = mr->container;
+    }
+
+    if (mr->addr != address || int128_get64(mr->size) != size) {
+        return UC_ERR_ARG;
+    }
+
+    if (ret) {
+        *ret = mr;
+    }
+
+    uc->memory_moveout(uc, mr);
+
+    return UC_ERR_OK;
+}
+
 UNICORN_EXPORT
 uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
 {
@@ -1587,11 +1618,6 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
     size_t count, len;
 
     UC_INIT(uc);
-
-    // snapshot and unmapping can't be mixed
-    if (uc->snapshot_level > 0) {
-        return UC_ERR_ARG;
-    }
 
     if (size == 0) {
         // nothing to unmap
@@ -1609,9 +1635,12 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
     }
 
     // check that user's entire requested block is mapped
-    // TODO check for cow
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_NOMEM;
+    }
+
+    if (uc->snapshot_level > 0) {
+        return uc_mem_unmap_snapshot(uc, address, size, NULL);
     }
 
     // Now we know entire region is mapped, so do the unmap
@@ -2652,13 +2681,40 @@ static uc_err uc_snapshot(struct uc_struct *uc)
 
 static uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
 {
-    MemoryRegion *subregion, *subregion_next;
+    MemoryRegion *subregion, *subregion_next, *mr, *initial_mr;
+    int level;
 
     QTAILQ_FOREACH_SAFE(subregion, &uc->system_memory->subregions, subregions_link, subregion_next) {
         uc->memory_filter_subregions(subregion, uc->snapshot_level);
         if (QTAILQ_EMPTY(&subregion->subregions)) {
             uc->memory_unmap(uc, subregion);
         }
+    }
+
+    for (size_t i = uc->unmapped_regions->len; i-- > 0;) {
+        mr = g_array_index(uc->unmapped_regions, MemoryRegion *, i);
+        // same dirty hack as in memory_moveout see qemu/softmmu/memory.c
+        initial_mr = QTAILQ_FIRST(&mr->subregions);
+        if (!initial_mr) {
+            initial_mr = mr;
+        }
+        /* same dirty hack as in memory_moveout see qemu/softmmu/memory.c */
+        level = (intptr_t)mr->container;
+        mr->container = NULL;
+
+        if (level < uc->snapshot_level) {
+            break;
+        }
+        if (memory_overlap(uc, mr->addr, int128_get64(mr->size))) {
+            return UC_ERR_MAP;
+        }
+        uc->memory_movein(uc, mr);
+        uc->memory_filter_subregions(mr, uc->snapshot_level);
+        if (initial_mr != mr && QTAILQ_EMPTY(&mr->subregions)) {
+            uc->memory_unmap(uc, subregion);
+        }
+        mem_map(uc, initial_mr);
+	g_array_remove_range(uc->unmapped_regions, i, 1);
     }
     uc->snapshot_level--;
     return UC_ERR_OK;

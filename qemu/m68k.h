@@ -125,6 +125,8 @@
 #define memory_map_ptr memory_map_ptr_m68k
 #define memory_cow memory_cow_m68k
 #define memory_unmap memory_unmap_m68k
+#define memory_moveout memory_moveout_m68k
+#define memory_movein memory_movein_m68k
 #define memory_free memory_free_m68k
 #define flatview_unref flatview_unref_m68k
 #define address_space_get_flatview address_space_get_flatview_m68k
