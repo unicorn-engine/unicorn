@@ -805,10 +805,20 @@ found:
 }
 
 /* Note: start and end must be within the same ram block.  */
-bool cpu_physical_memory_test_and_clear_dirty(ram_addr_t start,
+bool cpu_physical_memory_test_and_clear_dirty(struct uc_struct *uc,
+                                              ram_addr_t start,
                                               ram_addr_t length,
                                               unsigned client)
 {
+    ram_addr_t start1;
+    RAMBlock *block;
+
+    start &= TARGET_PAGE_MASK;
+
+    block = qemu_get_ram_block(uc, start);
+    start1 = (uintptr_t)ramblock_ptr(block, start - block->offset);
+    tlb_reset_dirty(uc->cpu, start1, length);
+
     return false;
 }
 

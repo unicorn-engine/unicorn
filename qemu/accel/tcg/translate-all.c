@@ -1903,7 +1903,7 @@ void tb_invalidate_phys_range(struct uc_struct *uc, ram_addr_t start, ram_addr_t
  */
 void tb_invalidate_phys_page_fast(struct uc_struct *uc, struct page_collection *pages,
                                   tb_page_addr_t start, int len,
-                                  uintptr_t retaddr)
+                                  uintptr_t retaddr, vaddr mem_vaddr)
 {
     PageDesc *p;
 
@@ -1911,6 +1911,12 @@ void tb_invalidate_phys_page_fast(struct uc_struct *uc, struct page_collection *
 
     p = page_find(uc, start >> TARGET_PAGE_BITS);
     if (!p) {
+        tlb_set_dirty(uc->cpu, mem_vaddr);
+        return;
+    }
+
+    if (!p->first_tb) {
+        tlb_set_dirty(uc->cpu, mem_vaddr);
         return;
     }
 

@@ -614,7 +614,7 @@ void tlb_flush_page_all_cpus_synced(CPUState *src, target_ulong addr)
    can be detected */
 void tlb_protect_code(struct uc_struct *uc, ram_addr_t ram_addr)
 {
-    cpu_physical_memory_test_and_clear_dirty(ram_addr, TARGET_PAGE_SIZE,
+    cpu_physical_memory_test_and_clear_dirty(uc, ram_addr, TARGET_PAGE_SIZE,
                                              DIRTY_MEMORY_CODE);
 }
 
@@ -1153,7 +1153,7 @@ static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
     if (!cpu_physical_memory_get_dirty_flag(ram_addr, DIRTY_MEMORY_CODE)) {
         struct page_collection *pages
             = page_collection_lock(cpu->uc, ram_addr, ram_addr + size);
-        tb_invalidate_phys_page_fast(cpu->uc, pages, ram_addr, size, retaddr);
+        tb_invalidate_phys_page_fast(cpu->uc, pages, ram_addr, size, retaddr, mem_vaddr);
         page_collection_unlock(pages);
     }
 
