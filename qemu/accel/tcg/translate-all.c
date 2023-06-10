@@ -869,35 +869,113 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     return buf;
 }
 #elif defined(_WIN32)
-#ifdef WIN32_QEMU_ALLOC_BUFFER
-static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
-{
-    TCGContext *tcg_ctx = uc->tcg_ctx;
-    size_t size = tcg_ctx->code_gen_buffer_size;
-    return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT,
-                        PAGE_EXECUTE_READWRITE);
-}
+#define COMMIT_COUNT (1024) // Commit 4MB per exception
+#define CLOSURE_SIZE (4096)
+
+#ifdef _WIN64
+static LONG code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct uc_struct *uc)
 #else
+/*
+The first two DWORD or smaller arguments that are found in the argument list
+from left to right are passed in ECX and EDX registers; all other arguments
+are passed on the stack from right to left.
+*/
+static LONG __fastcall code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct uc_struct* uc)
+#endif
+{
+    PEXCEPTION_RECORD record = ptr->ExceptionRecord;
+    if (record->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+        uint8_t* base = (uint8_t*)(record->ExceptionInformation[1]);
+        uint8_t* left = uc->tcg_ctx->initial_buffer;
+        uint8_t* right = left + uc->tcg_ctx->initial_buffer_size;
+        if (left && base >= left && base < right) {
+            // It's our region
+            uint8_t* base_end = base + COMMIT_COUNT * 4096;
+            uint32_t size = COMMIT_COUNT * 4096;
+            if (base_end >= right) {
+                size = base_end - base;
+                // whoops, we are almost run out of memory! Commit all instead
+            }
+            if (VirtualAlloc(base, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)) {
+                return EXCEPTION_CONTINUE_EXECUTION;
+            } else {
+                return EXCEPTION_CONTINUE_SEARCH;
+            }
+        }
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static inline void may_remove_handler(struct uc_struct *uc) {
+    if (uc->seh_closure) {
+        if (uc->seh_handle) {
+            RemoveVectoredContinueHandler(uc->seh_handle);
+        }
+        VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
+    }
+}
+
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
     size_t size = tcg_ctx->code_gen_buffer_size;
+    uint8_t *closure, *data;
+    void* handler = code_gen_buffer_handler;
 
-    void* ptr =  VirtualAlloc(NULL, size, MEM_RESERVE,
-                        PAGE_EXECUTE_READWRITE);
+    may_remove_handler(uc);    
 
-    // for prolog init
-    VirtualAlloc(ptr, 
-                 uc->qemu_real_host_page_size * UC_TCG_REGION_PAGES_COUNT,
-                 MEM_COMMIT, 
-                 PAGE_EXECUTE_READWRITE);
-    return ptr;
-}
+    // Naive trampoline implementation
+    closure = VirtualAlloc(NULL, CLOSURE_SIZE, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    if (!closure) {
+        return NULL;
+    }
+    uc->seh_closure = closure;
+    data = closure + CLOSURE_SIZE /2;
+    
+#ifdef _WIN64
+    closure[0] = 0x48; // REX.w
+    closure[1] = 0xb8; // mov rax
+    memcpy(closure + 2, &data, 8); // mov rax, &data
+    // ; rax = &data
+    // mov [rax], rdx ; save rdx
+    // mov rdx, [rax+0x8] ; move uc pointer to 2nd arg
+    // jmp [rax + 0x10] ; go to handler
+    // mov rdx, [rax] ; restore rdx
+    const char tramp[] = "\x48\x89\x10\x48\x8b\x50\x08\xff\x60\x10\x48\x8b\x10";
+    memcpy(closure + 2 + 8, (void*)tramp, sizeof(tramp));
+    memcpy(data + 0x8,  (void*)&uc, 8);
+    memcpy(data + 0x10, (void*)&handler, 8);
+#else
+    closure[0] = 0xb8; // mov eax
+    memcpy(closure + 1, &data, 4); // mov eax, &data
+    // ; eax = &data
+    // mov [eax], edx; save edx
+    // mov [eax+0x4], ecx; save ecx
+    // mov ecx, [esp+4]; get ptr to exception because of cdecl
+    // mov edx, [eax+0x8]; get ptr to uc
+    // jmp [eax + 0xC]; get ptr to our handler, it's fastcall so we don't clean stack
+    // mov edx, [eax] ; restore edx
+    // mov ecx, [eax+4] ; restore ecx
+    const char tramp[] = "\x89\x10\x89\x48\x04\x8b\x4c\x24\x04\x8b\x50\x08\xff\x60\x0c\x8b\x10\x8b\x48\x04";
+    memcpy(closure + 1 + 4, (void*)tramp, sizeof(tramp));
+    memcpy(data + 0x8,  (void*)&uc, 4);
+    memcpy(data + 0xC, (void*)&handler, 4);
 #endif
+
+    uc->seh_handle = AddVectoredExceptionHandler(0, (PVECTORED_EXCEPTION_HANDLER)closure);
+    if (!uc->seh_handle) {
+        VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
+        uc->seh_closure = NULL;
+        return NULL;
+    }
+
+    return VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+}
 void free_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
     if (tcg_ctx->initial_buffer) {
+        may_remove_handler(uc);
         VirtualFree(tcg_ctx->initial_buffer, 0, MEM_RELEASE);
     }
 }
