@@ -14,6 +14,6 @@
 
 struct uc_struct;
 
-void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size);
+void tcg_exec_init(struct uc_struct *uc, uint32_t tb_size);
 
 #endif

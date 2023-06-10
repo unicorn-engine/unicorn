@@ -10,7 +10,7 @@
 // codes for unicorns purposes.
 
 void vm_start(struct uc_struct*);
-void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size);
+void tcg_exec_init(struct uc_struct *uc, uint32_t tb_size);
 bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
                       MMUAccessType rw, int mmu_idx,
                       bool probe, uintptr_t retaddr);

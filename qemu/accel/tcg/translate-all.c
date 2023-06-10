@@ -1209,7 +1209,7 @@ static uc_err uc_gen_tb(struct uc_struct *uc, uint64_t addr, uc_tb *out_tb)
 /* Must be called before using the QEMU cpus. 'tb_size' is the size
    (in bytes) allocated to the translation buffer. Zero means default
    size. */
-void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
+void tcg_exec_init(struct uc_struct *uc, uint32_t tb_size)
 {
     /* remove tcg object. init here. */
     /* tcg class init: tcg-all.c:tcg_accel_class_init(), skip all. */
