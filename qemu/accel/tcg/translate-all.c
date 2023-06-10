@@ -909,7 +909,7 @@ static LONG __fastcall code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct u
 static inline void may_remove_handler(struct uc_struct *uc) {
     if (uc->seh_closure) {
         if (uc->seh_handle) {
-            RemoveVectoredContinueHandler(uc->seh_handle);
+            RemoveVectoredExceptionHandler(uc->seh_handle);
         }
         VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
     }
