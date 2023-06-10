@@ -920,6 +920,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     TCGContext *tcg_ctx = uc->tcg_ctx;
     size_t size = tcg_ctx->code_gen_buffer_size;
     uint8_t *closure, *data;
+    uint8_t *ptr;
     void* handler = code_gen_buffer_handler;
 
     may_remove_handler(uc);    
@@ -933,31 +934,62 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     data = closure + CLOSURE_SIZE /2;
     
 #ifdef _WIN64
-    closure[0] = 0x48; // REX.w
-    closure[1] = 0xb8; // mov rax
-    memcpy(closure + 2, &data, 8); // mov rax, &data
+    ptr = closure;
+    *ptr = 0x48; // REX.w
+    ptr += 1;
+    *ptr = 0xb8; // mov rax
+    ptr += 1;
+    memcpy(ptr, &data, 8); // mov rax, &data
+    ptr += 8;
     // ; rax = &data
     // mov [rax], rdx ; save rdx
     // mov rdx, [rax+0x8] ; move uc pointer to 2nd arg
-    // jmp [rax + 0x10] ; go to handler
-    // mov rdx, [rax] ; restore rdx
-    const char tramp[] = "\x48\x89\x10\x48\x8b\x50\x08\xff\x60\x10\x48\x8b\x10";
-    memcpy(closure + 2 + 8, (void*)tramp, sizeof(tramp));
+    // sub rsp, 0x10; reserve 2 slots as ms fastcall requires
+    // call [rax + 0x10] ; go to handler
+    const char tramp[] = "\x48\x89\x10\x48\x8b\x50\x08\x48\x83\xec\x10\xff\x50\x10";
+    memcpy(ptr, (void*)tramp, sizeof(tramp) - 1); // Note last zero!
+    ptr += sizeof(tramp) - 1;
+    *ptr = 0x48; // REX.w
+    ptr += 1;
+    *ptr = 0xba; // mov rdx
+    ptr += 1;
+    memcpy(ptr, &data, 8); // mov rdx, &data
+    ptr += 8;
+    // ; rdx = &data
+    // add rsp, 0x10 ; clean stack
+    // mov rdx, [rdx] ; restore rdx
+    // ret
+    const char tramp2[] = "\x48\x83\xc4\x10\x48\x8b\x12\xc3";
+    memcpy(ptr, (void*)tramp2, sizeof(tramp2) - 1);
+
     memcpy(data + 0x8,  (void*)&uc, 8);
     memcpy(data + 0x10, (void*)&handler, 8);
 #else
-    closure[0] = 0xb8; // mov eax
-    memcpy(closure + 1, &data, 4); // mov eax, &data
+    ptr = closure;
+    *ptr = 0xb8; // mov eax
+    ptr += 1;
+    memcpy(ptr, (void*)&data, 4); // mov eax, &data
+    ptr += 4;
     // ; eax = &data
     // mov [eax], edx; save edx
     // mov [eax+0x4], ecx; save ecx
     // mov ecx, [esp+4]; get ptr to exception because of cdecl
     // mov edx, [eax+0x8]; get ptr to uc
-    // jmp [eax + 0xC]; get ptr to our handler, it's fastcall so we don't clean stack
-    // mov edx, [eax] ; restore edx
-    // mov ecx, [eax+4] ; restore ecx
-    const char tramp[] = "\x89\x10\x89\x48\x04\x8b\x4c\x24\x04\x8b\x50\x08\xff\x60\x0c\x8b\x10\x8b\x48\x04";
-    memcpy(closure + 1 + 4, (void*)tramp, sizeof(tramp));
+    // call [eax + 0xC]; get ptr to our handler, it's fastcall so we don't clean stac
+    const char tramp[] = "\x89\x10\x89\x48\x04\x8b\x4c\x24\x04\x8b\x50\x08\xff\x50\x0c";
+    memcpy(ptr, (void*)tramp, sizeof(tramp) - 1);
+    ptr += sizeof(tramp) - 1;
+    *ptr = 0xb9; // mov ecx
+    ptr += 1;
+    memcpy(ptr, (void*)&data, 4); // mov ecx, &data
+    ptr += 4;
+
+    // mov edx, [ecx] ; restore edx
+    // mov ecx, [ecx+4] ; restore ecx
+    // ret
+    const char tramp2[] = "\x8b\x11\x8b\x49\x04\xc3";
+    memcpy(ptr, (void*)tramp2, sizeof(tramp2) - 1);
+
     memcpy(data + 0x8,  (void*)&uc, 4);
     memcpy(data + 0xC, (void*)&handler, 4);
 #endif
