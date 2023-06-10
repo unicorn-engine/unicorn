@@ -571,8 +571,12 @@ typedef enum uc_control_type {
     // Change the tlb implementation
     // see uc_tlb_type for current implemented types
     // Write: @args = (int)
-    UC_CTL_TLB_TYPE
-
+    UC_CTL_TLB_TYPE,
+    // Change the tcg translation buffer size, note that
+    // unicorn may adjust this value.
+    // Write: @args = (uint32_t)
+    // Read: @args = (uint32_t*)
+    UC_CTL_TCG_BUFFER_SIZE,
 } uc_control_type;
 
 /*

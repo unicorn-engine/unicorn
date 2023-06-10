@@ -90,7 +90,7 @@ typedef void (*uc_args_void_t)(void *);
 typedef void (*uc_args_uc_t)(struct uc_struct *);
 typedef void (*uc_args_int_uc_t)(struct uc_struct *);
 
-typedef void (*uc_args_uc_long_t)(struct uc_struct *, unsigned long);
+typedef void (*uc_args_uc_long_t)(struct uc_struct *, uint32_t);
 
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
@@ -400,6 +400,7 @@ struct uc_struct {
 
     FlatView *empty_view; // Static function variable moved from flatviews_init
 
+    uint32_t tcg_buffer_size; // The buffer size we are going to use
 #ifdef WIN32
     PVOID seh_handle;
     void* seh_closure;
