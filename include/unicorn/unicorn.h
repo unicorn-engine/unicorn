@@ -576,8 +576,12 @@ typedef enum uc_control_type {
     // Change the tlb implementation
     // see uc_tlb_type for current implemented types
     // Write: @args = (int)
-    UC_CTL_TLB_TYPE
-
+    UC_CTL_TLB_TYPE,
+    // Change the tcg translation buffer size, note that
+    // unicorn may adjust this value.
+    // Write: @args = (uint64_t)
+    // Read: @args = (uint64_t*)
+    UC_CTL_TCG_BUFFER_SIZE,
 } uc_control_type;
 
 /*
@@ -654,6 +658,11 @@ See sample_ctl.c for a detailed example.
 #define uc_ctl_flush_tb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_FLUSH, 0))
 #define uc_ctl_flush_tlb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TLB_FLUSH, 0))
 #define uc_ctl_tlb_mode(uc, mode) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TLB_TYPE, 1), (mode))
+#define uc_ctl_get_tcg_buffer_size(uc, size)                                   \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_TCG_BUFFER_SIZE, 1), (size))
+#define uc_ctl_set_tcg_buffer_size(uc, size)                                   \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TCG_BUFFER_SIZE, 1), (size))
+
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
 typedef struct uc_context uc_context;

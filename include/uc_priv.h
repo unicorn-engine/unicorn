@@ -400,6 +400,7 @@ struct uc_struct {
 
     FlatView *empty_view; // Static function variable moved from flatviews_init
 
+    uint64_t tcg_buffer_size; // The buffer size we are going to use
 #ifdef WIN32
     PVOID seh_handle;
     void* seh_closure;
