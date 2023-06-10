@@ -9,7 +9,7 @@
 #define SYSEMU_TCG_H
 
 #include <stdbool.h>
-
+#include <stdint.h>
 //#include "uc_priv.h"
 
 struct uc_struct;
