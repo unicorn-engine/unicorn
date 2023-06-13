@@ -80,3 +80,4 @@ Stuart Dootson (studoot): MSVC compatibility with PowerPC target support
 Ziqiao Kong (lazymio): uc_context_free() API and various bug fix & improvement.
 Sven Almgren (blindmatrix): bug fix
 Chenxu Wu (kabeor): Documentation
+Philipp Takacs: virtual tlb, memory snapshots
