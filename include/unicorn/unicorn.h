@@ -197,6 +197,7 @@ typedef enum uc_err {
     UC_ERR_HOOK_EXIST,      // hook for this event already existed
     UC_ERR_RESOURCE,        // Insufficient resource: uc_emu_start()
     UC_ERR_EXCEPTION,       // Unhandled CPU exception
+    UC_ERR_OVERFLOW,        // Provided buffer is not large enough: uc_reg_*2()
 } uc_err;
 
 /*
@@ -812,7 +813,7 @@ uc_err uc_reg_read(uc_engine *uc, int regid, void *value);
  @size:   size of value being written; on return, size of value written
 
  @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is
- invalid; UC_ERR_NOMEM if value is not large enough.
+ invalid; UC_ERR_OVERFLOW if value is not large enough for the register.
 */
 UNICORN_EXPORT
 uc_err uc_reg_write2(uc_engine *uc, int regid, const void *value, size_t *size);
@@ -826,7 +827,7 @@ uc_err uc_reg_write2(uc_engine *uc, int regid, const void *value, size_t *size);
  @size:   size of value buffer; on return, size of value read
 
  @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is
- invalid; UC_ERR_NOMEM if value is not large enough.
+ invalid; UC_ERR_OVERFLOW if value is not large enough to hold the register.
 */
 UNICORN_EXPORT
 uc_err uc_reg_read2(uc_engine *uc, int regid, void *value, size_t *size);
@@ -870,7 +871,8 @@ uc_err uc_reg_read_batch(uc_engine *uc, int *regs, void **vals, int count);
  @count: length of *regs, *vals and *sizes
 
  @return UC_ERR_OK on success; UC_ERR_ARG if some register number or value is
- invalid; UC_ERR_NOMEM if some value is not large enough.
+ invalid; UC_ERR_OVERFLOW if some value is not large enough for the
+ corresponding register.
 */
 UNICORN_EXPORT
 uc_err uc_reg_write_batch2(uc_engine *uc, int *regs, const void *const *vals,
@@ -887,7 +889,8 @@ uc_err uc_reg_write_batch2(uc_engine *uc, int *regs, const void *const *vals,
  @count: length of *regs, *vals and *sizes
 
  @return UC_ERR_OK on success; UC_ERR_ARG if some register number or value is
- invalid; UC_ERR_NOMEM if some value is not large enough.
+ invalid; UC_ERR_OVERFLOW if some value is not large enough to hold the
+ corresponding register.
 */
 UNICORN_EXPORT
 uc_err uc_reg_read_batch2(uc_engine *uc, int *regs, void *const *vals,
@@ -1223,7 +1226,7 @@ uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value);
  @size:   size of value being written; on return, size of value written
 
  @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is
- invalid; UC_ERR_NOMEM if value is not large enough.
+ invalid; UC_ERR_OVERFLOW if value is not large enough for the register.
 */
 UNICORN_EXPORT
 uc_err uc_context_reg_write2(uc_context *ctx, int regid, const void *value,
@@ -1238,7 +1241,7 @@ uc_err uc_context_reg_write2(uc_context *ctx, int regid, const void *value,
  @size:   size of value buffer; on return, size of value read
 
  @return UC_ERR_OK on success; UC_ERR_ARG if register number or value is
- invalid; UC_ERR_NOMEM if value is not large enough.
+ invalid; UC_ERR_OVERFLOW if value is not large enough to hold the register.
 */
 UNICORN_EXPORT
 uc_err uc_context_reg_read2(uc_context *ctx, int regid, void *value,
@@ -1284,7 +1287,8 @@ uc_err uc_context_reg_read_batch(uc_context *ctx, int *regs, void **vals,
  @count: length of *regs, *vals and *sizes
 
  @return UC_ERR_OK on success; UC_ERR_ARG if some register number or value is
- invalid; UC_ERR_NOMEM if some value is not large enough.
+ invalid; UC_ERR_OVERFLOW if some value is not large enough for the
+ corresponding register.
 */
 UNICORN_EXPORT
 uc_err uc_context_reg_write_batch2(uc_context *ctx, int *regs,
@@ -1302,7 +1306,8 @@ uc_err uc_context_reg_write_batch2(uc_context *ctx, int *regs,
  @count: length of *regs, *vals and *sizes
 
  @return UC_ERR_OK on success; UC_ERR_ARG if some register number or value is
- invalid; UC_ERR_NOMEM if some value is not large enough.
+ invalid; UC_ERR_OVERFLOW if some value is not large enough to hold the
+ corresponding register.
 */
 UNICORN_EXPORT
 uc_err uc_context_reg_read_batch2(uc_context *ctx, int *regs, void *const *vals,

@@ -149,6 +149,8 @@ const char *uc_strerror(uc_err code)
         return "Insufficient resource (UC_ERR_RESOURCE)";
     case UC_ERR_EXCEPTION:
         return "Unhandled CPU exception (UC_ERR_EXCEPTION)";
+    case UC_ERR_OVERFLOW:
+        return "Provided buffer is too small (UC_ERR_OVERFLOW)";
     }
 }
 
