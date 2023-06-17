@@ -217,6 +217,8 @@ public class Sample_arm64 implements UnicornConst, Arm64Const {
         System.out.format(">>> X2 = 0x%x\n", uc.reg_read(UC_ARM64_REG_X2));
     }
 
+    /* Test PAC support in the emulator. Code adapted from
+    https://github.com/unicorn-engine/unicorn/issues/1789#issuecomment-1536320351 */
     public static void test_arm64_pac() {
         long x1 = 0x0000aaaabbbbccccL;
 
