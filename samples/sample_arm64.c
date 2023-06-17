@@ -301,6 +301,9 @@ static void test_arm64_hook_mrs(void)
     }                       \
 } while(0)
 
+
+/* Test PAC support in the emulator. Code adapted from
+https://github.com/unicorn-engine/unicorn/issues/1789#issuecomment-1536320351 */
 static void test_arm64_pac(void)
 {
     uc_engine *uc;
