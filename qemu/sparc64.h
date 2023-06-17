@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _sparc64
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_sparc64
+#define reg_read reg_read_sparc64
+#define reg_write reg_write_sparc64
+#define uc_init uc_init_sparc64
 #define uc_add_inline_hook uc_add_inline_hook_sparc64
 #define uc_del_inline_hook uc_del_inline_hook_sparc64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_sparc64
@@ -1415,7 +1418,4 @@
 #define helper_wrpil helper_wrpil_sparc64
 #define helper_done helper_done_sparc64
 #define helper_retry helper_retry_sparc64
-#define sparc_reg_reset sparc_reg_reset_sparc64
-#define sparc_reg_read sparc_reg_read_sparc64
-#define sparc_reg_write sparc_reg_write_sparc64
 #endif

@@ -128,4 +128,13 @@ static inline void uc_common_init(struct uc_struct* uc)
     if (!uc->release)
         uc->release = release_common;
 }
+
+#define CHECK_REG_TYPE(type) do {             \
+    if (unlikely(*size < sizeof(type))) {     \
+        return UC_ERR_OVERFLOW;               \
+    }                                         \
+    *size = sizeof(type);                     \
+    ret = UC_ERR_OK;                          \
+} while(0)
+
 #endif

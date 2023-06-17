@@ -62,19 +62,14 @@ typedef struct _mmio_cbs {
 typedef uc_err (*query_t)(struct uc_struct *uc, uc_query_type type,
                           size_t *result);
 
-// return 0 on success, -1 on failure
-typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int *regs, void **vals,
-                          int count);
-typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int *regs,
-                           void *const *vals, int count);
+typedef uc_err (*reg_read_t)(void *env, int mode, unsigned int regid,
+                             void *value, size_t *size);
+typedef uc_err (*reg_write_t)(void *env, int mode, unsigned int regid,
+                              const void *value, size_t *size, int *setpc);
 
-typedef int (*context_reg_read_t)(struct uc_context *ctx, unsigned int *regs,
-                                  void **vals, int count);
-typedef int (*context_reg_write_t)(struct uc_context *ctx, unsigned int *regs,
-                                   void *const *vals, int count);
 typedef struct {
-    context_reg_read_t context_reg_read;
-    context_reg_write_t context_reg_write;
+    reg_read_t read;
+    reg_write_t write;
 } context_reg_rw_t;
 
 typedef void (*reg_reset_t)(struct uc_struct *uc);
@@ -403,7 +398,7 @@ struct uc_struct {
     uint32_t tcg_buffer_size; // The buffer size we are going to use
 #ifdef WIN32
     PVOID seh_handle;
-    void* seh_closure;
+    void *seh_closure;
 #endif
 };
 

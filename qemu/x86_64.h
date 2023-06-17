@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _x86_64
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_x86_64
+#define reg_read reg_read_x86_64
+#define reg_write reg_write_x86_64
+#define uc_init uc_init_x86_64
 #define uc_add_inline_hook uc_add_inline_hook_x86_64
 #define uc_del_inline_hook uc_del_inline_hook_x86_64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_x86_64
@@ -1879,7 +1882,4 @@
 #define x86_cpu_xrstor_all_areas x86_cpu_xrstor_all_areas_x86_64
 #define cpu_get_fp80 cpu_get_fp80_x86_64
 #define cpu_set_fp80 cpu_set_fp80_x86_64
-#define x86_reg_reset x86_reg_reset_x86_64
-#define x86_reg_read x86_reg_read_x86_64
-#define x86_reg_write x86_reg_write_x86_64
 #endif

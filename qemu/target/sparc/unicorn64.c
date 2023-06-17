@@ -70,7 +70,7 @@ static void sparc_release(void *ctx)
 #endif
 }
 
-void sparc_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env = uc->cpu->env_ptr;
 
@@ -83,103 +83,72 @@ void sparc_reg_reset(struct uc_struct *uc)
     env->regwptr = env->regbase;
 }
 
-static void reg_read(CPUSPARCState *env, unsigned int regid, void *value)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                       size_t *size)
 {
-    if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
-        *(int64_t *)value = env->gregs[regid - UC_SPARC_REG_G0];
-    else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7)
-        *(int64_t *)value = env->regwptr[regid - UC_SPARC_REG_O0];
-    else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7)
-        *(int64_t *)value = env->regwptr[8 + regid - UC_SPARC_REG_L0];
-    else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7)
-        *(int64_t *)value = env->regwptr[16 + regid - UC_SPARC_REG_I0];
-    else {
+    CPUSPARCState *env = _env;
+    uc_err ret = UC_ERR_ARG;
+
+    if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->gregs[regid - UC_SPARC_REG_G0];
+    } else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->regwptr[regid - UC_SPARC_REG_O0];
+    } else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->regwptr[8 + regid - UC_SPARC_REG_L0];
+    } else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->regwptr[16 + regid - UC_SPARC_REG_I0];
+    } else {
         switch(regid) {
-            default: break;
-            case UC_SPARC_REG_PC:
-                *(int64_t *)value = env->pc;
-                break;
+        default:
+            break;
+        case UC_SPARC_REG_PC:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->pc;
+            break;
         }
     }
+
+    return ret;
 }
 
-static void reg_write(CPUSPARCState *env, unsigned int regid, const void *value)
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                        size_t *size, int *setpc)
 {
-    if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
+    CPUSPARCState *env = _env;
+    uc_err ret = UC_ERR_ARG;
+
+    if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7) {
+        CHECK_REG_TYPE(uint64_t);
         env->gregs[regid - UC_SPARC_REG_G0] = *(uint64_t *)value;
-    else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7)
+    } else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7) {
+        CHECK_REG_TYPE(uint64_t);
         env->regwptr[regid - UC_SPARC_REG_O0] = *(uint64_t *)value;
-    else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7)
+    } else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7) {
+        CHECK_REG_TYPE(uint64_t);
         env->regwptr[8 + regid - UC_SPARC_REG_L0] = *(uint64_t *)value;
-    else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7)
+    } else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7) {
+        CHECK_REG_TYPE(uint64_t);
         env->regwptr[16 + regid - UC_SPARC_REG_I0] = *(uint64_t *)value;
-    else {
+    } else {
         switch(regid) {
-            default: break;
-            case UC_SPARC_REG_PC:
-                    env->pc = *(uint64_t *)value;
-                    env->npc = *(uint64_t *)value + 4;
-                    break;
+        default:
+            break;
+        case UC_SPARC_REG_PC:
+            CHECK_REG_TYPE(uint64_t);
+            env->pc = *(uint64_t *)value;
+            env->npc = *(uint64_t *)value + 4;
+            *setpc = 1;
+            break;
         }
     }
-}
 
-int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
-{
-    CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        reg_read(env, regid, value);
-    }
-
-    return 0;
-}
-
-int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, int count)
-{
-    CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        reg_write(env, regid, value);
-    }
-
-    return 0;
-}
-
-DEFAULT_VISIBILITY
-int sparc64_context_reg_read(struct uc_context *ctx, unsigned int *regs, void **vals, int count)
-{
-    CPUSPARCState *env = (CPUSPARCState *)ctx->data;
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        reg_read(env, regid, value);
-    }
-
-    return 0;
-}
-
-DEFAULT_VISIBILITY
-int sparc64_context_reg_write(struct uc_context *ctx, unsigned int *regs, void *const *vals, int count)
-{
-    CPUSPARCState *env = (CPUSPARCState *)ctx->data;
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        reg_write(env, regid, value);
-    }
-
-    return 0;
+    return ret;
 }
 
 static int sparc_cpus_init(struct uc_struct *uc, const char *cpu_model)
@@ -194,12 +163,12 @@ static int sparc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-void sparc64_uc_init(struct uc_struct* uc)
+void uc_init(struct uc_struct *uc)
 {
     uc->release = sparc_release;
-    uc->reg_read = sparc_reg_read;
-    uc->reg_write = sparc_reg_write;
-    uc->reg_reset = sparc_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->set_pc = sparc_set_pc;
     uc->get_pc = sparc_get_pc;
     uc->stop_interrupt = sparc_stop_interrupt;

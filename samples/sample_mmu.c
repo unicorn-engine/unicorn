@@ -18,25 +18,30 @@
  * mov rax, 60
  * syscall
  */
-char code[] = "\xB8\x39\x00\x00\x00\x0F\x05\x48\x85\xC0\x74\x0F\xB8\x3C\x00\x00\x00\x48\x89\x04\x25\x00\x40\x00\x00\x0F\x05\xB9\x2A\x00\x00\x00\x48\x89\x0C\x25\x00\x40\x00\x00\xB8\x3C\x00\x00\x00\x0F\x05";
+char code[] = "\xB8\x39\x00\x00\x00\x0F\x05\x48\x85\xC0\x74\x0F\xB8\x3C\x00\x00"
+              "\x00\x48\x89\x04\x25\x00\x40\x00\x00\x0F\x05\xB9\x2A\x00\x00\x00"
+              "\x48\x89\x0C\x25\x00\x40\x00\x00\xB8\x3C\x00\x00\x00\x0F\x05";
 
-static void mmu_write_callback(uc_engine *uc, uc_mem_type type, uint64_t address, int size, int64_t value, void *user_data)
+static void mmu_write_callback(uc_engine *uc, uc_mem_type type,
+                               uint64_t address, int size, int64_t value,
+                               void *user_data)
 {
     printf("write at 0x%lx: 0x%lx\n", address, value);
 }
 
-static void x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr, uint64_t tlb_base)
+static void x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr,
+                                uint64_t tlb_base)
 {
     uc_err err;
     uint64_t cr0;
     uint64_t cr4;
     uc_x86_msr msr = {.rid = 0xC0000080, .value = 0};
-    uint64_t pml4o = ((vaddr & 0x00ff8000000000) >> 39)*8;
-    uint64_t pdpo  = ((vaddr & 0x00007fc0000000) >> 30)*8;
-    uint64_t pdo   = ((vaddr & 0x0000003fe00000) >> 21)*8;
+    uint64_t pml4o = ((vaddr & 0x00ff8000000000) >> 39) * 8;
+    uint64_t pdpo = ((vaddr & 0x00007fc0000000) >> 30) * 8;
+    uint64_t pdo = ((vaddr & 0x0000003fe00000) >> 21) * 8;
     uint64_t pml4e = (tlb_base + 0x1000) | 1 | (1 << 2);
-    uint64_t pdpe  = (tlb_base + 0x2000) | 1 | (1 << 2);
-    uint64_t pde   = (tlb_base + 0x3000) | 1 | (1 << 2);
+    uint64_t pdpe = (tlb_base + 0x2000) | 1 | (1 << 2);
+    uint64_t pde = (tlb_base + 0x3000) | 1 | (1 << 2);
     err = uc_mem_write(uc, tlb_base + pml4o, &pml4e, sizeof(pml4o));
     if (err) {
         printf("failed to write pml4e\n");
@@ -73,10 +78,10 @@ static void x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr, uint64_t tlb_base
         exit(1);
     }
 
-    cr0 |= 1;                   //enable protected mode
-    cr0 |= 1l << 31;            //enable paging
-    cr4 |= 1l << 5;             //enable physical address extension
-    msr.value |= 1l << 8;       //enable long mode
+    cr0 |= 1;             // enable protected mode
+    cr0 |= 1l << 31;      // enable paging
+    cr4 |= 1l << 5;       // enable physical address extension
+    msr.value |= 1l << 8; // enable long mode
 
     err = uc_reg_write(uc, UC_X86_REG_CR0, &cr0);
     if (err) {
@@ -95,10 +100,11 @@ static void x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr, uint64_t tlb_base
     }
 }
 
-static void x86_mmu_pt_set(uc_engine *uc, uint64_t vaddr, uint64_t paddr, uint64_t tlb_base)
+static void x86_mmu_pt_set(uc_engine *uc, uint64_t vaddr, uint64_t paddr,
+                           uint64_t tlb_base)
 {
-    uint64_t pto   = ((vaddr & 0x000000001ff000) >> 12)*8;
-    uint32_t pte   = (paddr) | 1 | (1 << 2);
+    uint64_t pto = ((vaddr & 0x000000001ff000) >> 12) * 8;
+    uint32_t pte = (paddr) | 1 | (1 << 2);
     uc_mem_write(uc, tlb_base + 0x3000 + pto, &pte, sizeof(pte));
 }
 
@@ -162,20 +168,23 @@ void cpu_tlb(void)
         exit(1);
     }
 
-    err = uc_hook_add(uc, &h1, UC_HOOK_INSN, &x86_mmu_syscall_callback, &parrent_done, 1, 0, UC_X86_INS_SYSCALL);
+    err = uc_hook_add(uc, &h1, UC_HOOK_INSN, &x86_mmu_syscall_callback,
+                      &parrent_done, 1, 0, UC_X86_INS_SYSCALL);
     if (err) {
         printf("Failed on uc_hook_add() with error returned: %u\n", err);
         exit(1);
     }
 
-    // Memory hooks are called after the mmu translation, so hook the physicall addresses
-    err = uc_hook_add(uc, &h2, UC_HOOK_MEM_WRITE, &mmu_write_callback, NULL, 0x1000, 0x3000);
+    // Memory hooks are called after the mmu translation, so hook the physicall
+    // addresses
+    err = uc_hook_add(uc, &h2, UC_HOOK_MEM_WRITE, &mmu_write_callback, NULL,
+                      0x1000, 0x3000);
     if (err) {
         printf("Faled on uc_hook_add() with error returned: %u\n", err);
     }
 
     printf("map code\n");
-    err = uc_mem_map(uc, 0x0, 0x1000, UC_PROT_ALL); //Code
+    err = uc_mem_map(uc, 0x0, 0x1000, UC_PROT_ALL); // Code
     if (err) {
         printf("Failed on uc_mem_map() with error return: %u\n", err);
         exit(1);
@@ -186,24 +195,23 @@ void cpu_tlb(void)
         exit(1);
     }
     printf("map parrent memory\n");
-    err = uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL); //Parrent
+    err = uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL); // Parrent
     if (err) {
         printf("Failed on uc_mem_map() with error return: %u\n", err);
         exit(1);
     }
     printf("map child memory\n");
-    err = uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_ALL); //Child
+    err = uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_ALL); // Child
     if (err) {
         printf("failed to map child memory\n");
         exit(1);
     }
     printf("map tlb memory\n");
-    err = uc_mem_map(uc, tlb_base, 0x4000, UC_PROT_ALL); //TLB
+    err = uc_mem_map(uc, tlb_base, 0x4000, UC_PROT_ALL); // TLB
     if (err) {
         printf("failed to map memory for tlb\n");
         exit(1);
     }
-
 
     printf("set up the tlb\n");
     x86_mmu_prepare_tlb(uc, 0x0, tlb_base);
@@ -277,7 +285,8 @@ void cpu_tlb(void)
     uc_close(uc);
 }
 
-static bool virtual_tlb_callback(uc_engine *uc, uint64_t addr, uc_mem_type type, uc_tlb_entry *result, void *user_data)
+static bool virtual_tlb_callback(uc_engine *uc, uint64_t addr, uc_mem_type type,
+                                 uc_tlb_entry *result, void *user_data)
 {
     bool *parrent_done = user_data;
     printf("tlb lookup for address: 0x%lX\n", addr);
@@ -324,20 +333,23 @@ void virtual_tlb(void)
         exit(1);
     }
 
-    err = uc_hook_add(uc, &h1, UC_HOOK_INSN, &x86_mmu_syscall_callback, &parrent_done, 1, 0, UC_X86_INS_SYSCALL);
+    err = uc_hook_add(uc, &h1, UC_HOOK_INSN, &x86_mmu_syscall_callback,
+                      &parrent_done, 1, 0, UC_X86_INS_SYSCALL);
     if (err) {
         printf("Failed on uc_hook_add() with error returned: %u\n", err);
         exit(1);
     }
 
-    // Memory hooks are called after the mmu translation, so hook the physicall addresses
-    err = uc_hook_add(uc, &h2, UC_HOOK_MEM_WRITE, &mmu_write_callback, NULL, 0x1000, 0x3000);
+    // Memory hooks are called after the mmu translation, so hook the physicall
+    // addresses
+    err = uc_hook_add(uc, &h2, UC_HOOK_MEM_WRITE, &mmu_write_callback, NULL,
+                      0x1000, 0x3000);
     if (err) {
         printf("Faled on uc_hook_add() with error returned: %u\n", err);
     }
 
     printf("map code\n");
-    err = uc_mem_map(uc, 0x0, 0x1000, UC_PROT_ALL); //Code
+    err = uc_mem_map(uc, 0x0, 0x1000, UC_PROT_ALL); // Code
     if (err) {
         printf("Failed on uc_mem_map() with error return: %u\n", err);
         exit(1);
@@ -348,19 +360,20 @@ void virtual_tlb(void)
         exit(1);
     }
     printf("map parrent memory\n");
-    err = uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL); //Parrent
+    err = uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL); // Parrent
     if (err) {
         printf("Failed on uc_mem_map() with error return: %u\n", err);
         exit(1);
     }
     printf("map child memory\n");
-    err = uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_ALL); //Child
+    err = uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_ALL); // Child
     if (err) {
         printf("failed to map child memory\n");
         exit(1);
     }
 
-    err = uc_hook_add(uc, &h3, UC_HOOK_TLB_FILL, virtual_tlb_callback, &parrent_done, 1, 0);
+    err = uc_hook_add(uc, &h3, UC_HOOK_TLB_FILL, virtual_tlb_callback,
+                      &parrent_done, 1, 0);
 
     printf("run the parrent\n");
     err = uc_emu_start(uc, 0x2000, 0x0, 0, 0);
