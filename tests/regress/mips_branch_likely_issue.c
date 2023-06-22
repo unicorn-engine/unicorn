@@ -9,16 +9,12 @@
 #include <windows.h>
 #include <process.h>
 #define PRIx64 "llX"
-#ifdef DYNLOAD
-#include <unicorn_dynload.h>
-#else // DYNLOAD
 #include <unicorn/unicorn.h>
 #ifdef _WIN64
 #pragma comment(lib, "unicorn_staload64.lib")
 #else // _WIN64
 #pragma comment(lib, "unicorn_staload.lib")
 #endif // _WIN64
-#endif // DYNLOAD
 
 // posix specific
 #else // _MSC_VER
@@ -79,11 +75,6 @@ int main(int argc, char **argv, char **envp)
     uc_err err;
     uc_hook hhc;
     uint32_t val;
-
-    // dynamically load shared library
-#ifdef DYNLOAD
-    uc_dyn_load(NULL, 0);
-#endif
 
     // Initialize emulator in MIPS 32bit little endian mode
     printf("uc_open()\n");
@@ -183,12 +174,6 @@ int main(int argc, char **argv, char **envp)
         printf("TEST 2 PASSED!\n\n");
     else
         printf("TEST 2 FAILED!\n\n");
-
-
-    // dynamically free shared library
-#ifdef DYNLOAD
-    uc_dyn_free();
-#endif
 
     return 0;
 }
