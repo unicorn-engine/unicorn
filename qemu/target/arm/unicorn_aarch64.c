@@ -306,8 +306,12 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
         case UC_ARM64_REG_NZCV:
             cpsr_write(env, *(uint32_t *)value, CPSR_NZCV, CPSRWriteRaw);
             break;
+        case UC_ARM64_REG_CPSR:
+            cpsr_write(env, *(uint32_t *)value, ~0, CPSRWriteByUnicorn);
+            break;
         case UC_ARM64_REG_PSTATE:
             pstate_write(env, *(uint32_t *)value);
+            arm_rebuild_hflags(env);
             break;
         case UC_ARM64_REG_TTBR0_EL1:
             env->cp15.ttbr0_el[1] = *(uint64_t *)value;
