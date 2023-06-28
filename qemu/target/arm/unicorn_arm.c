@@ -548,6 +548,7 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_ARM_REG_CP_REG:
             CHECK_REG_TYPE(uc_arm_cp_reg);
             ret = write_cp_reg(env, (uc_arm_cp_reg *)value);
+            arm_rebuild_hflags_arm(env);
             break;
         }
     }
