@@ -76,7 +76,7 @@ template = {
             'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\npackage unicorn;\n\npublic interface %sConst {\n",
             'footer': "\n}\n",
             'line_format': '    public static final int UC_%s = %s;\n',
-            'out_file': './java/unicorn/%sConst.java',
+            'out_file': './java/src/main/java/unicorn/%sConst.java',
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
             'arm64.h': 'Arm64',
