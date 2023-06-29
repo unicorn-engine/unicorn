@@ -77,6 +77,7 @@ public interface UnicornConst {
     public static final int UC_ERR_HOOK_EXIST = 19;
     public static final int UC_ERR_RESOURCE = 20;
     public static final int UC_ERR_EXCEPTION = 21;
+    public static final int UC_ERR_OVERFLOW = 22;
     public static final int UC_MEM_READ = 16;
     public static final int UC_MEM_WRITE = 17;
     public static final int UC_MEM_FETCH = 18;
@@ -142,6 +143,7 @@ public interface UnicornConst {
     public static final int UC_CTL_TB_FLUSH = 10;
     public static final int UC_CTL_TLB_FLUSH = 11;
     public static final int UC_CTL_TLB_TYPE = 12;
+    public static final int UC_CTL_TCG_BUFFER_SIZE = 13;
 
     public static final int UC_PROT_NONE = 0;
     public static final int UC_PROT_READ = 1;

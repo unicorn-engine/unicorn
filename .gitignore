@@ -45,7 +45,6 @@ _*.txt
 _*.diff
 tmp/
 
-bindings/java/unicorn_Unicorn.h
 bindings/python/build/
 bindings/python/dist/
 bindings/python/src/
