@@ -473,22 +473,22 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn__1emu_1stop(JNIEnv *env,
 }
 
 static uc_err generic_reg_read(jlong ptr, jint isContext, jint regid,
-                               void *result)
+                               void *result, size_t *size)
 {
     if (isContext) {
-        return uc_context_reg_read((uc_context *)ptr, regid, result);
+        return uc_context_reg_read2((uc_context *)ptr, regid, result, size);
     } else {
-        return uc_reg_read((uc_engine *)ptr, regid, result);
+        return uc_reg_read2((uc_engine *)ptr, regid, result, size);
     }
 }
 
 static uc_err generic_reg_write(jlong ptr, jint isContext, jint regid,
-                                const void *value)
+                                const void *value, size_t *size)
 {
     if (isContext) {
-        return uc_context_reg_write((uc_context *)ptr, regid, value);
+        return uc_context_reg_write2((uc_context *)ptr, regid, value, size);
     } else {
-        return uc_reg_write((uc_engine *)ptr, regid, value);
+        return uc_reg_write2((uc_engine *)ptr, regid, value, size);
     }
 }
 
@@ -500,10 +500,11 @@ static uc_err generic_reg_write(jlong ptr, jint isContext, jint regid,
 JNIEXPORT jlong JNICALL Java_unicorn_Unicorn__1reg_1read_1long(
     JNIEnv *env, jclass clazz, jlong ptr, jint isContext, jint regid)
 {
-    /* XXX: This is just *wrong* on big-endian hosts, since a register
-    smaller than 8 bytes will be written into the MSBs. */
     uint64_t result = 0;
-    uc_err err = generic_reg_read(ptr, isContext, regid, &result);
+    size_t size = 8;
+    uc_err err = generic_reg_read(ptr, isContext, regid, &result, &size);
+    /* TODO: If the host is big-endian and size < 8 after the read,
+       the result must be transposed to the least-significant bytes. */
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
         return 0;
@@ -521,7 +522,8 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn__1reg_1read_1bytes(
     jbyteArray data)
 {
     jbyte *arr = (*env)->GetByteArrayElements(env, data, NULL);
-    uc_err err = generic_reg_read(ptr, isContext, regid, arr);
+    size_t size = (*env)->GetArrayLength(env, data);
+    uc_err err = generic_reg_read(ptr, isContext, regid, arr, &size);
     (*env)->ReleaseByteArrayElements(env, data, arr, 0);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
@@ -539,7 +541,10 @@ Java_unicorn_Unicorn__1reg_1write_1long(JNIEnv *env, jclass clazz, jlong ptr,
                                         jint isContext, jint regid, jlong value)
 {
     uint64_t cvalue = value;
-    uc_err err = generic_reg_write(ptr, isContext, regid, &cvalue);
+    size_t size = 8;
+    uc_err err = generic_reg_write(ptr, isContext, regid, &cvalue, &size);
+    /* TODO: If the host is big-endian and size < 8 after the write,
+       we need to redo the write with the pointer shifted appropriately */
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
         return;
@@ -556,7 +561,8 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn__1reg_1write_1bytes(
     jbyteArray data)
 {
     jbyte *arr = (*env)->GetByteArrayElements(env, data, NULL);
-    uc_err err = generic_reg_write(ptr, isContext, regid, arr);
+    size_t size = (*env)->GetArrayLength(env, data);
+    uc_err err = generic_reg_write(ptr, isContext, regid, arr, &size);
     (*env)->ReleaseByteArrayElements(env, data, arr, JNI_ABORT);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
@@ -573,7 +579,8 @@ JNIEXPORT jobject JNICALL Java_unicorn_Unicorn__1reg_1read_1x86_1mmr(
     JNIEnv *env, jclass clazz, jlong ptr, jint isContext, jint regid)
 {
     uc_x86_mmr reg = {0};
-    uc_err err = generic_reg_read(ptr, isContext, regid, &reg);
+    size_t size = sizeof(reg);
+    uc_err err = generic_reg_read(ptr, isContext, regid, &reg, &size);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
         return 0;
@@ -595,7 +602,8 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn__1reg_1write_1x86_1mmr(
     reg.base = base;
     reg.limit = limit;
     reg.flags = flags;
-    uc_err err = generic_reg_write(ptr, isContext, regid, &reg);
+    size_t size = sizeof(reg);
+    uc_err err = generic_reg_write(ptr, isContext, regid, &reg, &size);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
         return;
@@ -612,7 +620,8 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn__1reg_1read_1x86_1msr(
 {
     uc_x86_msr reg = {0};
     reg.rid = rid;
-    uc_err err = generic_reg_read(ptr, isContext, UC_X86_REG_MSR, &reg);
+    size_t size = sizeof(reg);
+    uc_err err = generic_reg_read(ptr, isContext, UC_X86_REG_MSR, &reg, &size);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
         return 0;
@@ -631,7 +640,8 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn__1reg_1write_1x86_1msr(
     uc_x86_msr reg = {0};
     reg.rid = rid;
     reg.value = value;
-    uc_err err = generic_reg_write(ptr, isContext, UC_X86_REG_MSR, &reg);
+    size_t size = sizeof(reg);
+    uc_err err = generic_reg_write(ptr, isContext, UC_X86_REG_MSR, &reg, &size);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
         return;
@@ -655,7 +665,8 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn__1reg_1read_1arm_1cp(
     reg.crm = crm;
     reg.opc1 = opc1;
     reg.opc2 = opc2;
-    uc_err err = generic_reg_read(ptr, isContext, UC_ARM_REG_CP_REG, &reg);
+    size_t size = sizeof(reg);
+    uc_err err = generic_reg_read(ptr, isContext, UC_ARM_REG_CP_REG, &reg, &size);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
         return 0;
@@ -681,7 +692,8 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn__1reg_1write_1arm_1cp(
     reg.opc1 = opc1;
     reg.opc2 = opc2;
     reg.val = value;
-    uc_err err = generic_reg_write(ptr, isContext, UC_ARM_REG_CP_REG, &reg);
+    size_t size = sizeof(reg);
+    uc_err err = generic_reg_write(ptr, isContext, UC_ARM_REG_CP_REG, &reg, &size);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
         return;
@@ -703,7 +715,8 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn__1reg_1read_1arm64_1cp(
     reg.op0 = op0;
     reg.op1 = op1;
     reg.op2 = op2;
-    uc_err err = generic_reg_read(ptr, isContext, UC_ARM64_REG_CP_REG, &reg);
+    size_t size = sizeof(reg);
+    uc_err err = generic_reg_read(ptr, isContext, UC_ARM64_REG_CP_REG, &reg, &size);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
         return 0;
@@ -727,7 +740,8 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn__1reg_1write_1arm64_1cp(
     reg.op1 = op1;
     reg.op2 = op2;
     reg.val = value;
-    uc_err err = generic_reg_write(ptr, isContext, UC_ARM64_REG_CP_REG, &reg);
+    size_t size = sizeof(reg);
+    uc_err err = generic_reg_write(ptr, isContext, UC_ARM64_REG_CP_REG, &reg, &size);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
         return;
