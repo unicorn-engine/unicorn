@@ -1438,6 +1438,36 @@ static void test_x86_segmentation()
     uc_assert_err(UC_ERR_EXCEPTION, uc_reg_write(uc, UC_X86_REG_FS, &fs));
 }
 
+static void test_x86_0xff_lcall_callback(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+{
+    // do nothing
+    return;
+}
+
+// This aborts prior to a7a5d187e77f7853755eff4768658daf8095c3b7
+static void test_x86_0xff_lcall()
+{
+    uc_engine* uc;
+    uc_hook hk;
+    const char code[] = "\xB8\x01\x00\x00\x00\xBB\x01\x00\x00\x00\xB9\x01\x00\x00\x00\xFF\xDD\xBA\x01\x00\x00\x00\xB8\x02\x00\x00\x00\xBB\x02\x00\x00\x00";
+    // Taken from #1842
+    // 0:  b8 01 00 00 00          mov    eax,0x1
+    // 5:  bb 01 00 00 00          mov    ebx,0x1
+    // a:  b9 01 00 00 00          mov    ecx,0x1
+    // f:  ff                      (bad)
+    // 10: dd ba 01 00 00 00       fnstsw WORD PTR [edx+0x1]
+    // 16: b8 02 00 00 00          mov    eax,0x2
+    // 1b: bb 02 00 00 00          mov    ebx,0x2
+    
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_x86_0xff_lcall_callback, NULL, 1, 0));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1484,4 +1514,5 @@ TEST_LIST = {
     {"test_x86_mmu", test_x86_mmu},
     {"test_x86_vtlb", test_x86_vtlb},
     {"test_x86_segmentation", test_x86_segmentation},
+    {"test_x86_0xff_lcall", test_x86_0xff_lcall},
     {NULL, NULL}};
