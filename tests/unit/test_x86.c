@@ -1463,7 +1463,7 @@ static void test_x86_0xff_lcall()
 
     OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_x86_0xff_lcall_callback, NULL, 1, 0));
 
-    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    uc_assert_err(UC_ERR_INSN_INVALID, uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     OK(uc_close(uc));
 }
