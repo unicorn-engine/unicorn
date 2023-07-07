@@ -159,8 +159,9 @@ def gen(lang):
     templ = template[lang]
     for target in include:
         prefix = templ[target]
-        outfile = open(templ['out_file'] %(prefix), 'wb')   # open as binary prevents windows newlines
-        outfile.write((templ['header'] % (prefix)).encode("utf-8"))
+        outfn = templ['out_file'] % prefix
+        outfile = open(outfn + ".tmp", 'wb')   # open as binary prevents windows newlines
+        outfile.write((templ['header'] % prefix).encode("utf-8"))
         if target == 'unicorn.h':
             prefix = ''
         with open(os.path.join(INCL_DIR, target)) as f:
@@ -277,6 +278,19 @@ def gen(lang):
 
         outfile.write((templ['footer']).encode("utf-8"))
         outfile.close()
+
+        if os.path.isfile(outfn):
+            with open(outfn, "rb") as infile:
+                cur_data = infile.read()
+            with open(outfn + ".tmp", "rb") as infile:
+                new_data = infile.read()
+            if cur_data == new_data:
+                os.unlink(outfn + ".tmp")
+            else:
+                os.unlink(outfn)
+                os.rename(outfn + ".tmp", outfn)
+        else:
+            os.rename(outfn + ".tmp", outfn)
 
 def main():
     lang = sys.argv[1]
