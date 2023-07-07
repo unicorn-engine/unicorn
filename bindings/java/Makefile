@@ -26,14 +26,11 @@ CFLAGS=-fPIC
 LDFLAGS=-shared -fPIC
 # May also use -lunicorn to dynamically link against the installed unicorn
 LIBS=../../build/libunicorn.a
-INCS=-I$(JAVA_INC) -I$(JAVA_PLATFORM_INC) -I$(UNICORN_INC)
+INCS=-I target/headers -I$(JAVA_INC) -I$(JAVA_PLATFORM_INC) -I$(UNICORN_INC)
 
 OBJS=unicorn_Unicorn.o
 
-unicorn_Unicorn.h: src/main/java/unicorn/Unicorn.java
-	javah -cp src/main/java -o $@ unicorn.Unicorn
-
-unicorn_Unicorn.o: unicorn_Unicorn.c unicorn_Unicorn.h
+unicorn_Unicorn.o: unicorn_Unicorn.c target/headers/unicorn_Unicorn.h
 	$(CC) -O2 -Wall -Wextra -Wno-unused-parameter -c $(CFLAGS) $(INCS) $< -o $@
 
 libunicorn_java$(LIB_EXT): $(OBJS)
@@ -41,7 +38,6 @@ libunicorn_java$(LIB_EXT): $(OBJS)
 
 clean:
 	rm -f libunicorn_java$(LIB_EXT)
-	rm -f unicorn_Unicorn.h
 	rm -f $(OBJS)
 
 .PHONY: all clean
