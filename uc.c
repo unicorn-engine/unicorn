@@ -31,6 +31,8 @@
 #include "qemu-common.h"
 
 static void clear_deleted_hooks(uc_engine *uc);
+static uc_err uc_snapshot(uc_engine *uc);
+static uc_err uc_restore_latest_snapshot(uc_engine *uc);
 
 static void *hook_insert(struct list *l, struct hook *h)
 {
@@ -255,6 +257,10 @@ static uc_err uc_init_engine(uc_engine *uc)
     if (uc->reg_reset) {
         uc->reg_reset(uc);
     }
+
+    uc->context_content = UC_CTL_CONTEXT_CPU;
+
+    uc->unmapped_regions = g_array_new(false, false, sizeof(MemoryRegion*));
 
     uc->init_done = true;
 
@@ -486,6 +492,12 @@ uc_err uc_close(uc_engine *uc)
     mr->destructor(mr);
     g_free(uc->system_memory);
     g_free(uc->system_io);
+    for (size_t i = 0; i < uc->unmapped_regions->len; i++) {
+        mr = g_array_index(uc->unmapped_regions, MemoryRegion *, i);
+        mr->destructor(mr);
+        g_free(mr);
+    }
+    g_array_free(uc->unmapped_regions, true);
 
     // Thread relateds.
     if (uc->qemu_thread_data) {
@@ -675,16 +687,27 @@ uc_err uc_reg_write2(uc_engine *uc, int regid, const void *value, size_t *size)
     return UC_ERR_OK;
 }
 
+static size_t memory_region_len(uc_engine *uc, MemoryRegion *mr, uint64_t address, size_t count)
+{
+    hwaddr end = mr->end;
+    while (mr->container != uc->system_memory) {
+        mr = mr->container;
+        end += mr->addr;
+    }
+    return (size_t)MIN(count, end - address);
+}
+
 // check if a memory area is mapped
 // this is complicated because an area can overlap adjacent blocks
 static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
 {
     size_t count = 0, len;
 
+
     while (count < size) {
-        MemoryRegion *mr = find_memory_region(uc, address);
+        MemoryRegion *mr = uc->memory_mapping(uc, address);
         if (mr) {
-            len = (size_t)MIN(size - count, mr->end - address);
+            len = memory_region_len(uc, mr, address, size - count);
             count += len;
             address += len;
         } else { // this address is not mapped in yet
@@ -713,9 +736,9 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
 
     // memory area can overlap adjacent memory blocks
     while (count < size) {
-        MemoryRegion *mr = find_memory_region(uc, address);
+        MemoryRegion *mr = uc->memory_mapping(uc, address);
         if (mr) {
-            len = (size_t)MIN(size - count, mr->end - address);
+            len = memory_region_len(uc, mr, address, size - count);
             if (uc->read_mem(&uc->address_space_memory, address, bytes, len) ==
                 false) {
                 break;
@@ -754,7 +777,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
 
     // memory area can overlap adjacent memory blocks
     while (count < size) {
-        MemoryRegion *mr = find_memory_region(uc, address);
+        MemoryRegion *mr = uc->memory_mapping(uc, address);
         if (mr) {
             uint32_t operms = mr->perms;
             if (!(operms & UC_PROT_WRITE)) { // write protected
@@ -763,7 +786,13 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
                 uc->readonly_mem(mr, false);
             }
 
-            len = (size_t)MIN(size - count, mr->end - address);
+            len = memory_region_len(uc, mr, address, size - count);
+            if (uc->snapshot_level && uc->snapshot_level > mr->priority) {
+                mr = uc->memory_cow(uc, mr, address, len);
+                if (!mr) {
+                    return UC_ERR_NOMEM;
+                }
+            }
             if (uc->write_mem(&uc->address_space_memory, address, bytes, len) ==
                 false) {
                 break;
@@ -1083,12 +1112,14 @@ static bool memory_overlap(struct uc_struct *uc, uint64_t begin, size_t size)
         return true;
 
     // not found
+
     return false;
 }
 
 // common setup/error checking shared between uc_mem_map and uc_mem_map_ptr
 static uc_err mem_map(uc_engine *uc, MemoryRegion *block)
 {
+
     MemoryRegion **regions;
     int pos;
 
@@ -1477,6 +1508,11 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
 
     UC_INIT(uc);
 
+    // snapshot and protection can't be mixed
+    if (uc->snapshot_level > 0) {
+        return UC_ERR_ARG;
+    }
+
     if (size == 0) {
         // trivial case, no change
         return UC_ERR_OK;
@@ -1498,6 +1534,8 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     }
 
     // check that user's entire requested block is mapped
+    //TODO check if protected is possible
+    //deny after cow
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_NOMEM;
     }
@@ -1507,14 +1545,14 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     addr = address;
     count = 0;
     while (count < size) {
-        mr = find_memory_region(uc, addr);
-        len = (size_t)MIN(size - count, mr->end - addr);
+        mr = uc->memory_mapping(uc, addr);
+        len = memory_region_len(uc, mr, addr, size - count);
         if (mr->ram) {
             if (!split_region(uc, mr, addr, len, false)) {
                 return UC_ERR_NOMEM;
             }
 
-            mr = find_memory_region(uc, addr);
+            mr = uc->memory_mapping(uc, addr);
             // will this remove EXEC permission?
             if (((mr->perms & UC_PROT_EXEC) != 0) &&
                 ((perms & UC_PROT_EXEC) == 0)) {
@@ -1528,7 +1566,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
                 return UC_ERR_NOMEM;
             }
 
-            mr = find_memory_region(uc, addr);
+            mr = uc->memory_mapping(uc, addr);
             mr->perms = perms;
         }
 
@@ -1545,6 +1583,29 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
             uc_emu_stop(uc);
         }
     }
+
+    return UC_ERR_OK;
+}
+
+static
+uc_err uc_mem_unmap_snapshot(struct uc_struct *uc, uint64_t address, size_t size, MemoryRegion **ret)
+{
+    MemoryRegion *mr;
+
+    mr = uc->memory_mapping(uc, address);
+    while (mr->container != uc->system_memory) {
+        mr = mr->container;
+    }
+
+    if (mr->addr != address || int128_get64(mr->size) != size) {
+        return UC_ERR_ARG;
+    }
+
+    if (ret) {
+        *ret = mr;
+    }
+
+    uc->memory_moveout(uc, mr);
 
     return UC_ERR_OK;
 }
@@ -1578,13 +1639,17 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
         return UC_ERR_NOMEM;
     }
 
+    if (uc->snapshot_level > 0) {
+        return uc_mem_unmap_snapshot(uc, address, size, NULL);
+    }
+
     // Now we know entire region is mapped, so do the unmap
     // We may need to split regions if this area spans adjacent regions
     addr = address;
     count = 0;
     while (count < size) {
-        mr = find_memory_region(uc, addr);
-        len = (size_t)MIN(size - count, mr->end - addr);
+        mr = uc->memory_mapping(uc, addr);
+        len = memory_region_len(uc, mr, addr, size - count);
         if (!mr->ram) {
             if (!split_mmio_region(uc, mr, addr, len, true)) {
                 return UC_ERR_NOMEM;
@@ -1597,7 +1662,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
 
         // if we can retrieve the mapping, then no splitting took place
         // so unmap here
-        mr = find_memory_region(uc, addr);
+        mr = uc->memory_mapping(uc, addr);
         if (mr != NULL) {
             uc->memory_unmap(uc, mr);
         }
@@ -1606,35 +1671,6 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
     }
 
     return UC_ERR_OK;
-}
-
-// find the memory region of this address
-MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address)
-{
-    unsigned int i;
-
-    if (uc->mapped_block_count == 0) {
-        return NULL;
-    }
-
-    // try with the cache index first
-    i = uc->mapped_block_cache_index;
-
-    if (i < uc->mapped_block_count && address >= uc->mapped_blocks[i]->addr &&
-        address <= uc->mapped_blocks[i]->end - 1) {
-        return uc->mapped_blocks[i];
-    }
-
-    i = bsearch_mapped_blocks(uc, address);
-
-    if (i < uc->mapped_block_count && address >= uc->mapped_blocks[i]->addr &&
-        address <= uc->mapped_blocks[i]->end - 1) {
-        uc->mapped_block_cache_index = i;
-        return uc->mapped_blocks[i];
-    }
-
-    // not found
-    return NULL;
 }
 
 UNICORN_EXPORT
@@ -1982,13 +2018,26 @@ UNICORN_EXPORT
 uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
     UC_INIT(uc);
+    uc_err ret = UC_ERR_OK;
 
-    if (!uc->context_save) {
-        memcpy(context->data, uc->cpu->env_ptr, context->context_size);
-        return UC_ERR_OK;
-    } else {
-        return uc->context_save(uc, context);
+    if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
+        ret = uc_snapshot(uc);
+        if (ret != UC_ERR_OK) {
+            return ret;
+        }
     }
+
+    context->snapshot_level = uc->snapshot_level;
+
+    if (uc->context_content & UC_CTL_CONTEXT_CPU) {
+        if (!uc->context_save) {
+            memcpy(context->data, uc->cpu->env_ptr, context->context_size);
+            return UC_ERR_OK;
+        } else {
+            return uc->context_save(uc, context);
+        }
+    }
+    return ret;
 }
 
 // Keep in mind that we don't a uc_engine when r/w the registers of a context.
@@ -2234,13 +2283,26 @@ UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
     UC_INIT(uc);
+    uc_err ret;
 
-    if (!uc->context_restore) {
-        memcpy(uc->cpu->env_ptr, context->data, context->context_size);
-        return UC_ERR_OK;
-    } else {
-        return uc->context_restore(uc, context);
+    if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
+        uc->snapshot_level = context->snapshot_level;
+        ret = uc_restore_latest_snapshot(uc);
+        if (ret != UC_ERR_OK) {
+            return ret;
+        }
+        uc_snapshot(uc);
     }
+
+    if (uc->context_content & UC_CTL_CONTEXT_CPU) {
+        if (!uc->context_restore) {
+            memcpy(uc->cpu->env_ptr, context->data, context->context_size);
+            return UC_ERR_OK;
+        } else {
+            return uc->context_restore(uc, context);
+        }
+    }
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
@@ -2585,6 +2647,19 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         break;
     }
 
+    case UC_CTL_CONTEXT_MODE:
+
+        UC_INIT(uc);
+
+        if (rw == UC_CTL_IO_WRITE) {
+            int mode = va_arg(args, int);
+            uc->context_content = mode;
+            err = UC_ERR_OK;
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+
     default:
         err = UC_ERR_ARG;
         break;
@@ -2593,6 +2668,56 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     va_end(args);
 
     return err;
+}
+
+static uc_err uc_snapshot(struct uc_struct *uc)
+{
+    if (uc->snapshot_level == INT32_MAX) {
+        return UC_ERR_RESOURCE;
+    }
+    uc->snapshot_level++;
+    return UC_ERR_OK;
+}
+
+static uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
+{
+    MemoryRegion *subregion, *subregion_next, *mr, *initial_mr;
+    int level;
+
+    QTAILQ_FOREACH_SAFE(subregion, &uc->system_memory->subregions, subregions_link, subregion_next) {
+        uc->memory_filter_subregions(subregion, uc->snapshot_level);
+        if (QTAILQ_EMPTY(&subregion->subregions)) {
+            uc->memory_unmap(uc, subregion);
+        }
+    }
+
+    for (size_t i = uc->unmapped_regions->len; i-- > 0;) {
+        mr = g_array_index(uc->unmapped_regions, MemoryRegion *, i);
+        // same dirty hack as in memory_moveout see qemu/softmmu/memory.c
+        initial_mr = QTAILQ_FIRST(&mr->subregions);
+        if (!initial_mr) {
+            initial_mr = mr;
+        }
+        /* same dirty hack as in memory_moveout see qemu/softmmu/memory.c */
+        level = (intptr_t)mr->container;
+        mr->container = NULL;
+
+        if (level < uc->snapshot_level) {
+            break;
+        }
+        if (memory_overlap(uc, mr->addr, int128_get64(mr->size))) {
+            return UC_ERR_MAP;
+        }
+        uc->memory_movein(uc, mr);
+        uc->memory_filter_subregions(mr, uc->snapshot_level);
+        if (initial_mr != mr && QTAILQ_EMPTY(&mr->subregions)) {
+            uc->memory_unmap(uc, subregion);
+        }
+        mem_map(uc, initial_mr);
+	g_array_remove_range(uc->unmapped_regions, i, 1);
+    }
+    uc->snapshot_level--;
+    return UC_ERR_OK;
 }
 
 #ifdef UNICORN_TRACER

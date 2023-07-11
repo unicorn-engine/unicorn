@@ -581,6 +581,9 @@ typedef enum uc_control_type {
     // Write: @args = (uint32_t)
     // Read: @args = (uint32_t*)
     UC_CTL_TCG_BUFFER_SIZE,
+    // controle if context_save/restore should work with snapshots
+    // Write: @args = (int)
+    UC_CTL_CONTEXT_MODE,
 } uc_control_type;
 
 /*
@@ -662,6 +665,7 @@ See sample_ctl.c for a detailed example.
     uc_ctl(uc, UC_CTL_READ(UC_CTL_TCG_BUFFER_SIZE, 1), (size))
 #define uc_ctl_set_tcg_buffer_size(uc, size)                                   \
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TCG_BUFFER_SIZE, 1), (size))
+#define uc_ctl_context_mode(uc, mode) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_CONTEXT_MODE, 1), (mode))
 
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
@@ -1014,6 +1018,11 @@ struct uc_tlb_entry {
     uint64_t paddr;
     uc_prot perms;
 };
+
+typedef enum uc_context_content {
+    UC_CTL_CONTEXT_CPU = 1,
+    UC_CTL_CONTEXT_MEMORY = 2,
+} uc_context_content;
 
 /*
  Map memory in for emulation.

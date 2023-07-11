@@ -123,7 +123,10 @@
 #define memory_map memory_map_ppc64
 #define memory_map_io memory_map_io_ppc64
 #define memory_map_ptr memory_map_ptr_ppc64
+#define memory_cow memory_cow_ppc64
 #define memory_unmap memory_unmap_ppc64
+#define memory_moveout memory_moveout_ppc64
+#define memory_movein memory_movein_ppc64
 #define memory_free memory_free_ppc64
 #define flatview_unref flatview_unref_ppc64
 #define address_space_get_flatview address_space_get_flatview_ppc64
@@ -142,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_ppc64
 #define memory_region_add_subregion memory_region_add_subregion_ppc64
 #define memory_region_del_subregion memory_region_del_subregion_ppc64
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_ppc64
 #define memory_region_find memory_region_find_ppc64
+#define memory_region_filter_subregions memory_region_filter_subregions_ppc64
 #define memory_listener_register memory_listener_register_ppc64
 #define memory_listener_unregister memory_listener_unregister_ppc64
 #define address_space_remove_listeners address_space_remove_listeners_ppc64
@@ -150,6 +155,7 @@
 #define address_space_destroy address_space_destroy_ppc64
 #define memory_region_init_ram memory_region_init_ram_ppc64
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_ppc64
+#define find_memory_mapping find_memory_mapping_ppc64
 #define exec_inline_op exec_inline_op_ppc64
 #define floatx80_default_nan floatx80_default_nan_ppc64
 #define float_raise float_raise_ppc64

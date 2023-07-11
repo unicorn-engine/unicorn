@@ -123,7 +123,10 @@
 #define memory_map memory_map_ppc
 #define memory_map_io memory_map_io_ppc
 #define memory_map_ptr memory_map_ptr_ppc
+#define memory_cow memory_cow_ppc
 #define memory_unmap memory_unmap_ppc
+#define memory_moveout memory_moveout_ppc
+#define memory_movein memory_movein_ppc
 #define memory_free memory_free_ppc
 #define flatview_unref flatview_unref_ppc
 #define address_space_get_flatview address_space_get_flatview_ppc
@@ -142,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_ppc
 #define memory_region_add_subregion memory_region_add_subregion_ppc
 #define memory_region_del_subregion memory_region_del_subregion_ppc
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_ppc
 #define memory_region_find memory_region_find_ppc
+#define memory_region_filter_subregions memory_region_filter_subregions_ppc
 #define memory_listener_register memory_listener_register_ppc
 #define memory_listener_unregister memory_listener_unregister_ppc
 #define address_space_remove_listeners address_space_remove_listeners_ppc
@@ -150,6 +155,7 @@
 #define address_space_destroy address_space_destroy_ppc
 #define memory_region_init_ram memory_region_init_ram_ppc
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_ppc
+#define find_memory_mapping find_memory_mapping_ppc
 #define exec_inline_op exec_inline_op_ppc
 #define floatx80_default_nan floatx80_default_nan_ppc
 #define float_raise float_raise_ppc

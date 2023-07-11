@@ -123,7 +123,10 @@
 #define memory_map memory_map_sparc
 #define memory_map_io memory_map_io_sparc
 #define memory_map_ptr memory_map_ptr_sparc
+#define memory_cow memory_cow_sparc
 #define memory_unmap memory_unmap_sparc
+#define memory_moveout memory_moveout_sparc
+#define memory_movein memory_movein_sparc
 #define memory_free memory_free_sparc
 #define flatview_unref flatview_unref_sparc
 #define address_space_get_flatview address_space_get_flatview_sparc
@@ -142,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_sparc
 #define memory_region_add_subregion memory_region_add_subregion_sparc
 #define memory_region_del_subregion memory_region_del_subregion_sparc
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_sparc
 #define memory_region_find memory_region_find_sparc
+#define memory_region_filter_subregions memory_region_filter_subregions_sparc
 #define memory_listener_register memory_listener_register_sparc
 #define memory_listener_unregister memory_listener_unregister_sparc
 #define address_space_remove_listeners address_space_remove_listeners_sparc
@@ -150,6 +155,7 @@
 #define address_space_destroy address_space_destroy_sparc
 #define memory_region_init_ram memory_region_init_ram_sparc
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_sparc
+#define find_memory_mapping find_memory_mapping_sparc
 #define exec_inline_op exec_inline_op_sparc
 #define floatx80_default_nan floatx80_default_nan_sparc
 #define float_raise float_raise_sparc

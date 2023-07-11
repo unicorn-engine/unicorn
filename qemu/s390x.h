@@ -123,7 +123,10 @@
 #define memory_map memory_map_s390x
 #define memory_map_io memory_map_io_s390x
 #define memory_map_ptr memory_map_ptr_s390x
+#define memory_cow memory_cow_s390x
 #define memory_unmap memory_unmap_s390x
+#define memory_moveout memory_moveout_s390x
+#define memory_movein memory_movein_s390x
 #define memory_free memory_free_s390x
 #define flatview_unref flatview_unref_s390x
 #define address_space_get_flatview address_space_get_flatview_s390x
@@ -142,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_s390x
 #define memory_region_add_subregion memory_region_add_subregion_s390x
 #define memory_region_del_subregion memory_region_del_subregion_s390x
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_s390x
 #define memory_region_find memory_region_find_s390x
+#define memory_region_filter_subregions memory_region_filter_subregions_s390x
 #define memory_listener_register memory_listener_register_s390x
 #define memory_listener_unregister memory_listener_unregister_s390x
 #define address_space_remove_listeners address_space_remove_listeners_s390x
@@ -150,6 +155,7 @@
 #define address_space_destroy address_space_destroy_s390x
 #define memory_region_init_ram memory_region_init_ram_s390x
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_s390x
+#define find_memory_mapping find_memory_mapping_s390x
 #define exec_inline_op exec_inline_op_s390x
 #define floatx80_default_nan floatx80_default_nan_s390x
 #define float_raise float_raise_s390x

@@ -123,7 +123,10 @@
 #define memory_map memory_map_m68k
 #define memory_map_io memory_map_io_m68k
 #define memory_map_ptr memory_map_ptr_m68k
+#define memory_cow memory_cow_m68k
 #define memory_unmap memory_unmap_m68k
+#define memory_moveout memory_moveout_m68k
+#define memory_movein memory_movein_m68k
 #define memory_free memory_free_m68k
 #define flatview_unref flatview_unref_m68k
 #define address_space_get_flatview address_space_get_flatview_m68k
@@ -142,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_m68k
 #define memory_region_add_subregion memory_region_add_subregion_m68k
 #define memory_region_del_subregion memory_region_del_subregion_m68k
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_m68k
 #define memory_region_find memory_region_find_m68k
+#define memory_region_filter_subregions memory_region_filter_subregions_m68k
 #define memory_listener_register memory_listener_register_m68k
 #define memory_listener_unregister memory_listener_unregister_m68k
 #define address_space_remove_listeners address_space_remove_listeners_m68k
@@ -150,6 +155,7 @@
 #define address_space_destroy address_space_destroy_m68k
 #define memory_region_init_ram memory_region_init_ram_m68k
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_m68k
+#define find_memory_mapping find_memory_mapping_m68k
 #define exec_inline_op exec_inline_op_m68k
 #define floatx80_default_nan floatx80_default_nan_m68k
 #define float_raise float_raise_m68k

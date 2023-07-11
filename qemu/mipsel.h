@@ -123,7 +123,10 @@
 #define memory_map memory_map_mipsel
 #define memory_map_io memory_map_io_mipsel
 #define memory_map_ptr memory_map_ptr_mipsel
+#define memory_cow memory_cow_mipsel
 #define memory_unmap memory_unmap_mipsel
+#define memory_moveout memory_moveout_mipsel
+#define memory_movein memory_movein_mipsel
 #define memory_free memory_free_mipsel
 #define flatview_unref flatview_unref_mipsel
 #define address_space_get_flatview address_space_get_flatview_mipsel
@@ -142,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_mipsel
 #define memory_region_add_subregion memory_region_add_subregion_mipsel
 #define memory_region_del_subregion memory_region_del_subregion_mipsel
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_mipsel
 #define memory_region_find memory_region_find_mipsel
+#define memory_region_filter_subregions memory_region_filter_subregions_mipsel
 #define memory_listener_register memory_listener_register_mipsel
 #define memory_listener_unregister memory_listener_unregister_mipsel
 #define address_space_remove_listeners address_space_remove_listeners_mipsel
@@ -150,6 +155,7 @@
 #define address_space_destroy address_space_destroy_mipsel
 #define memory_region_init_ram memory_region_init_ram_mipsel
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_mipsel
+#define find_memory_mapping find_memory_mapping_mipsel
 #define exec_inline_op exec_inline_op_mipsel
 #define floatx80_default_nan floatx80_default_nan_mipsel
 #define float_raise float_raise_mipsel

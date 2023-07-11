@@ -123,7 +123,10 @@
 #define memory_map memory_map_riscv64
 #define memory_map_io memory_map_io_riscv64
 #define memory_map_ptr memory_map_ptr_riscv64
+#define memory_cow memory_cow_riscv64
 #define memory_unmap memory_unmap_riscv64
+#define memory_moveout memory_moveout_riscv64
+#define memory_movein memory_movein_riscv64
 #define memory_free memory_free_riscv64
 #define flatview_unref flatview_unref_riscv64
 #define address_space_get_flatview address_space_get_flatview_riscv64
@@ -142,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_riscv64
 #define memory_region_add_subregion memory_region_add_subregion_riscv64
 #define memory_region_del_subregion memory_region_del_subregion_riscv64
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_riscv64
 #define memory_region_find memory_region_find_riscv64
+#define memory_region_filter_subregions memory_region_filter_subregions_riscv64
 #define memory_listener_register memory_listener_register_riscv64
 #define memory_listener_unregister memory_listener_unregister_riscv64
 #define address_space_remove_listeners address_space_remove_listeners_riscv64
@@ -150,6 +155,7 @@
 #define address_space_destroy address_space_destroy_riscv64
 #define memory_region_init_ram memory_region_init_ram_riscv64
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_riscv64
+#define find_memory_mapping find_memory_mapping_riscv64
 #define exec_inline_op exec_inline_op_riscv64
 #define floatx80_default_nan floatx80_default_nan_riscv64
 #define float_raise float_raise_riscv64
