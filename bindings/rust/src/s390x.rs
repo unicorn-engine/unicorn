@@ -1,7 +1,8 @@
+#![allow(non_camel_case_types)]
+
 // S390X registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
-#[allow(non_camel_case_types)]
 pub enum RegisterS390X {
     INVALID = 0,
 
@@ -82,5 +83,59 @@ pub enum RegisterS390X {
 impl From<RegisterS390X> for i32 {
     fn from(r: RegisterS390X) -> Self {
         r as i32
+    }
+}
+
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum S390xCpuModel {
+    UC_CPU_S390X_Z900 = 0,
+    UC_CPU_S390X_Z900_2,
+    UC_CPU_S390X_Z900_3,
+    UC_CPU_S390X_Z800,
+    UC_CPU_S390X_Z990,
+    UC_CPU_S390X_Z990_2,
+    UC_CPU_S390X_Z990_3,
+    UC_CPU_S390X_Z890,
+    UC_CPU_S390X_Z990_4,
+    UC_CPU_S390X_Z890_2,
+    UC_CPU_S390X_Z990_5,
+    UC_CPU_S390X_Z890_3,
+    UC_CPU_S390X_Z9EC,
+    UC_CPU_S390X_Z9EC_2,
+    UC_CPU_S390X_Z9BC,
+    UC_CPU_S390X_Z9EC_3,
+    UC_CPU_S390X_Z9BC_2,
+    UC_CPU_S390X_Z10EC,
+    UC_CPU_S390X_Z10EC_2,
+    UC_CPU_S390X_Z10BC,
+    UC_CPU_S390X_Z10EC_3,
+    UC_CPU_S390X_Z10BC_2,
+    UC_CPU_S390X_Z196,
+    UC_CPU_S390X_Z196_2,
+    UC_CPU_S390X_Z114,
+    UC_CPU_S390X_ZEC12,
+    UC_CPU_S390X_ZEC12_2,
+    UC_CPU_S390X_ZBC12,
+    UC_CPU_S390X_Z13,
+    UC_CPU_S390X_Z13_2,
+    UC_CPU_S390X_Z13S,
+    UC_CPU_S390X_Z14,
+    UC_CPU_S390X_Z14_2,
+    UC_CPU_S390X_Z14ZR1,
+    UC_CPU_S390X_GEN15A,
+    UC_CPU_S390X_GEN15B,
+    UC_CPU_S390X_QEMU,
+}
+
+impl From<S390xCpuModel> for i32 {
+    fn from(value: S390xCpuModel) -> Self {
+        value as i32
+    }
+}
+
+impl From<&S390xCpuModel> for i32 {
+    fn from(value: &S390xCpuModel) -> Self {
+        (*value) as i32
     }
 }
