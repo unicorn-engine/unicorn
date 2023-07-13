@@ -8,7 +8,7 @@
 
 // code to be emulated
 #define SPARC_CODE "\x86\x00\x40\x02" // add %g1, %g2, %g3;
-//#define SPARC_CODE "\xbb\x70\x00\x00" // illegal code
+// #define SPARC_CODE "\xbb\x70\x00\x00" // illegal code
 
 // memory address where emulation starts
 #define ADDRESS 0x10000

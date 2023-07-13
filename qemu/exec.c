@@ -955,6 +955,21 @@ void flatview_add_to_dispatch(struct uc_struct *uc, FlatView *fv, MemoryRegionSe
     register_subpage(uc, fv, &remain);
 }
 
+static ram_addr_t find_ram_offset_last(struct uc_struct *uc, ram_addr_t size)
+{
+    RAMBlock *block;
+    ram_addr_t result = 0;
+
+    RAMBLOCK_FOREACH(block) {
+        result = MAX(block->offset + block->max_length, result);
+    }
+
+    if (result + size > RAM_ADDR_MAX) {
+        abort();
+    }
+    return result;
+}
+
 /* Allocate space within the ram_addr_t space that governs the
  * dirty bitmaps.
  * Called with the ramlist lock held.
@@ -968,6 +983,10 @@ static ram_addr_t find_ram_offset(struct uc_struct *uc, ram_addr_t size)
 
     if (QLIST_EMPTY_RCU(&uc->ram_list.blocks)) {
         return 0;
+    }
+
+    if (!uc->ram_list.freed) {
+        return find_ram_offset_last(uc, size);
     }
 
     RAMBLOCK_FOREACH(block) {
@@ -1145,6 +1164,7 @@ void qemu_ram_free(struct uc_struct *uc, RAMBlock *block)
 
     QLIST_REMOVE_RCU(block, next);
     uc->ram_list.mru_block = NULL;
+    uc->ram_list.freed = true;
     /* Write list before version */
     //smp_wmb();
     // call_rcu(block, reclaim_ramblock, rcu);

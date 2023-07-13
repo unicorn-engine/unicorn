@@ -53,6 +53,13 @@ pub enum MemType {
     READ_AFTER = 25,
 }
 
+#[repr(C)]
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum TlbType {
+    CPU = 0,
+    VIRTUAL = 1,
+}
+
 bitflags! {
     #[repr(C)]
     pub struct HookType: i32 {
@@ -86,6 +93,8 @@ bitflags! {
         const MEM_INVALID = Self::MEM_READ_INVALID.bits | Self::MEM_WRITE_INVALID.bits | Self::MEM_FETCH_INVALID.bits;
 
         const MEM_ALL = Self::MEM_VALID.bits | Self::MEM_INVALID.bits;
+
+        const TLB = (1 << 17);
     }
 }
 
@@ -186,4 +195,56 @@ bitflags! {
         const RISCV32 = Self::MIPS32.bits;
         const RISCV64 = Self::MIPS64.bits;
     }
+}
+
+// Represent a TranslationBlock.
+#[repr(C)]
+pub struct TranslationBlock {
+    pub pc: u64,
+    pub icount: u16,
+    pub size: u16
+}
+
+macro_rules! UC_CTL_READ {
+    ($expr:expr) => {
+        $expr as u32 | ControlType::UC_CTL_IO_READ as u32
+    };
+}
+
+macro_rules! UC_CTL_WRITE {
+    ($expr:expr) => {
+        $expr as u32 | ControlType::UC_CTL_IO_WRITE as u32
+    };
+}
+
+macro_rules! UC_CTL_READ_WRITE {
+    ($expr:expr) => {
+        $expr as u32 | ControlType::UC_CTL_IO_WRITE as u32 | ControlType::UC_CTL_IO_READ as u32
+    };
+}
+
+#[allow(clippy::upper_case_acronyms)]
+pub enum ControlType {
+    UC_CTL_UC_MODE = 0,
+    UC_CTL_UC_PAGE_SIZE = 1,
+    UC_CTL_UC_ARCH = 2,
+    UC_CTL_UC_TIMEOUT = 3,
+    UC_CTL_UC_USE_EXITS = 4,
+    UC_CTL_UC_EXITS_CNT = 5,
+    UC_CTL_UC_EXITS = 6,
+    UC_CTL_CPU_MODEL = 7,
+    UC_CTL_TB_REQUEST_CACHE = 8,
+    UC_CTL_TB_REMOVE_CACHE = 9,
+    UC_CTL_TB_FLUSH = 10,
+    UC_CTL_TLB_FLUSH = 11,
+    UC_CTL_TLB_TYPE = 12,
+    UC_CTL_IO_READ = 1<<31,
+    UC_CTL_IO_WRITE = 1<<30,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct TlbEntry {
+    pub paddr: u64,
+    pub perms: Permission,
 }

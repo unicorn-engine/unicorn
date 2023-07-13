@@ -62,19 +62,14 @@ typedef struct _mmio_cbs {
 typedef uc_err (*query_t)(struct uc_struct *uc, uc_query_type type,
                           size_t *result);
 
-// return 0 on success, -1 on failure
-typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int *regs, void **vals,
-                          int count);
-typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int *regs,
-                           void *const *vals, int count);
+typedef uc_err (*reg_read_t)(void *env, int mode, unsigned int regid,
+                             void *value, size_t *size);
+typedef uc_err (*reg_write_t)(void *env, int mode, unsigned int regid,
+                              const void *value, size_t *size, int *setpc);
 
-typedef int (*context_reg_read_t)(struct uc_context *ctx, unsigned int *regs,
-                                  void **vals, int count);
-typedef int (*context_reg_write_t)(struct uc_context *ctx, unsigned int *regs,
-                                   void *const *vals, int count);
 typedef struct {
-    context_reg_read_t context_reg_read;
-    context_reg_write_t context_reg_write;
+    reg_read_t read;
+    reg_write_t write;
 } context_reg_rw_t;
 
 typedef void (*reg_reset_t)(struct uc_struct *uc);
@@ -85,12 +80,16 @@ typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr,
 typedef bool (*uc_read_mem_t)(AddressSpace *as, hwaddr addr, uint8_t *buf,
                               int len);
 
+typedef MemoryRegion* (*uc_mem_cow_t)(struct uc_struct *uc,
+                                      MemoryRegion *current, hwaddr begin,
+                                      size_t size);
+
 typedef void (*uc_args_void_t)(void *);
 
 typedef void (*uc_args_uc_t)(struct uc_struct *);
 typedef void (*uc_args_int_uc_t)(struct uc_struct *);
 
-typedef void (*uc_args_uc_long_t)(struct uc_struct *, unsigned long);
+typedef void (*uc_args_uc_long_t)(struct uc_struct *, uint32_t);
 
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
@@ -104,6 +103,10 @@ typedef MemoryRegion *(*uc_args_uc_ram_size_ptr_t)(struct uc_struct *,
                                                    uint32_t perms, void *ptr);
 
 typedef void (*uc_mem_unmap_t)(struct uc_struct *, MemoryRegion *mr);
+
+typedef MemoryRegion *(*uc_memory_mapping_t)(struct uc_struct *, hwaddr addr);
+
+typedef void (*uc_memory_filter_t)(MemoryRegion *, int32_t);
 
 typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
@@ -270,6 +273,7 @@ struct uc_struct {
 
     uc_write_mem_t write_mem;
     uc_read_mem_t read_mem;
+    uc_mem_cow_t memory_cow;
     uc_args_void_t release;  // release resource when uc_close()
     uc_args_uc_u64_t set_pc; // set PC for tracecode
     uc_get_pc_t get_pc;
@@ -282,7 +286,11 @@ struct uc_struct {
     uc_args_uc_long_t tcg_exec_init;
     uc_args_uc_ram_size_t memory_map;
     uc_args_uc_ram_size_ptr_t memory_map_ptr;
+    uc_memory_mapping_t memory_mapping;
+    uc_memory_filter_t memory_filter_subregions;
     uc_mem_unmap_t memory_unmap;
+    uc_mem_unmap_t memory_moveout;
+    uc_mem_unmap_t memory_movein;
     uc_readonly_mem_t readonly_mem;
     uc_cpus_init cpus_init;
     uc_target_page_init target_page;
@@ -383,6 +391,7 @@ struct uc_struct {
     uint64_t qemu_real_host_page_size;
     int qemu_icache_linesize;
     /* ARCH_REGS_STORAGE_SIZE */
+    uc_context_content context_content;
     int cpu_context_size;
     uint64_t next_pc; // save next PC for some special cases
     bool hook_insert; // insert new hook at begin of the hook list (append by
@@ -399,6 +408,14 @@ struct uc_struct {
     struct TranslationBlock *last_tb; // The real last tb we executed.
 
     FlatView *empty_view; // Static function variable moved from flatviews_init
+
+    uint32_t tcg_buffer_size; // The buffer size we are going to use
+#ifdef WIN32
+    PVOID seh_handle;
+    void *seh_closure;
+#endif
+    GArray *unmapped_regions;
+    int32_t snapshot_level;
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
@@ -406,11 +423,9 @@ struct uc_context {
     size_t context_size; // size of the real internal context structure
     uc_mode mode;        // the mode of this context
     uc_arch arch;        // the arch of this context
+    int snapshot_level;  // the memory snapshot level to restore
     char data[0];        // context
 };
-
-// check if this address is mapped in (via uc_mem_map())
-MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address);
 
 // We have to support 32bit system so we can't hold uint64_t on void*
 static inline void uc_add_exit(uc_engine *uc, uint64_t addr)

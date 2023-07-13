@@ -5,6 +5,9 @@
 #define UNICORN_ARCH_POSTFIX _mips
 #endif
 #define unicorn_fill_tlb unicorn_fill_tlb_mips
+#define reg_read reg_read_mips
+#define reg_write reg_write_mips
+#define uc_init uc_init_mips
 #define uc_add_inline_hook uc_add_inline_hook_mips
 #define uc_del_inline_hook uc_del_inline_hook_mips
 #define tb_invalidate_phys_range tb_invalidate_phys_range_mips
@@ -120,7 +123,10 @@
 #define memory_map memory_map_mips
 #define memory_map_io memory_map_io_mips
 #define memory_map_ptr memory_map_ptr_mips
+#define memory_cow memory_cow_mips
 #define memory_unmap memory_unmap_mips
+#define memory_moveout memory_moveout_mips
+#define memory_movein memory_movein_mips
 #define memory_free memory_free_mips
 #define flatview_unref flatview_unref_mips
 #define address_space_get_flatview address_space_get_flatview_mips
@@ -139,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_mips
 #define memory_region_add_subregion memory_region_add_subregion_mips
 #define memory_region_del_subregion memory_region_del_subregion_mips
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_mips
 #define memory_region_find memory_region_find_mips
+#define memory_region_filter_subregions memory_region_filter_subregions_mips
 #define memory_listener_register memory_listener_register_mips
 #define memory_listener_unregister memory_listener_unregister_mips
 #define address_space_remove_listeners address_space_remove_listeners_mips
@@ -147,6 +155,7 @@
 #define address_space_destroy address_space_destroy_mips
 #define memory_region_init_ram memory_region_init_ram_mips
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_mips
+#define find_memory_mapping find_memory_mapping_mips
 #define exec_inline_op exec_inline_op_mips
 #define floatx80_default_nan floatx80_default_nan_mips
 #define float_raise float_raise_mips
@@ -2385,9 +2394,6 @@
 #define cpu_mips_realize_env cpu_mips_realize_env_mips
 #define cpu_state_reset cpu_state_reset_mips
 #define restore_state_to_opc restore_state_to_opc_mips
-#define mips_reg_reset mips_reg_reset_mips
-#define mips_reg_read mips_reg_read_mips
-#define mips_reg_write mips_reg_write_mips
 #define ieee_rm ieee_rm_mips
 #define mips_defs mips_defs_mips
 #define mips_defs_number mips_defs_number_mips

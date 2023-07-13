@@ -1460,7 +1460,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
     }
 
     paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-    mr = find_memory_region(uc, paddr);
+    mr = uc->memory_mapping(uc, paddr);
 
     // memory might be still unmapped while reading or fetching
     if (mr == NULL) {
@@ -1517,24 +1517,28 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 tlb_addr &= ~TLB_INVALID_MASK;
             }
             paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-            mr = find_memory_region(uc, paddr);
+            mr = uc->memory_mapping(uc, paddr);
             if (mr == NULL) {
                 uc->invalid_error = UC_ERR_MAP;
-                cpu_exit(uc->cpu);
-                // XXX(@lazymio): We have to exit early so that the target register won't be overwritten
-                //                because qemu might generate tcg code like:
-                //                       qemu_ld_i64 x0,x1,leq,8  sync: 0  dead: 0 1
-                //                where we don't have a change to recover x0 value
-                cpu_loop_exit(uc->cpu);
+                if (uc->nested_level > 0 && !uc->cpu->stopped) {
+                    cpu_exit(uc->cpu);
+                    // XXX(@lazymio): We have to exit early so that the target register won't be overwritten
+                    //                because qemu might generate tcg code like:
+                    //                       qemu_ld_i64 x0,x1,leq,8  sync: 0  dead: 0 1
+                    //                where we don't have a change to recover x0 value
+                    cpu_loop_exit(uc->cpu);
+                }
                 return 0;
             }
         } else {
             uc->invalid_addr = paddr;
             uc->invalid_error = error_code;
             // printf("***** Invalid fetch (unmapped memory) at " TARGET_FMT_lx "\n", addr);
-            cpu_exit(uc->cpu);
-            // See comments above
-            cpu_loop_exit(uc->cpu);
+            if (uc->nested_level > 0 && !uc->cpu->stopped) {
+                cpu_exit(uc->cpu);
+                // See comments above
+                cpu_loop_exit(uc->cpu);
+            }
             return 0;
         }
     }
@@ -1588,9 +1592,11 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 uc->invalid_addr = paddr;
                 uc->invalid_error = UC_ERR_READ_PROT;
                 // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
-                cpu_exit(uc->cpu);
-                // See comments above
-                cpu_loop_exit(uc->cpu);
+                if (uc->nested_level > 0 && !uc->cpu->stopped) {
+                    cpu_exit(uc->cpu);
+                    // See comments above
+                    cpu_loop_exit(uc->cpu);
+                }
                 return 0;
             }
         }
@@ -1618,9 +1624,11 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 uc->invalid_addr = paddr;
                 uc->invalid_error = UC_ERR_FETCH_PROT;
                 // printf("***** Invalid fetch (non-executable) at " TARGET_FMT_lx "\n", addr);
-                cpu_exit(uc->cpu);
-                // See comments above
-                cpu_loop_exit(uc->cpu);
+                if (uc->nested_level > 0 && !uc->cpu->stopped) {
+                    cpu_exit(uc->cpu);
+                    // See comments above
+                    cpu_loop_exit(uc->cpu);
+                }
                 return 0;
             }
         }
@@ -2045,7 +2053,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
 
     // Load the latest memory mapping.
     paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-    mr = find_memory_region(uc, paddr);
+    mr = uc->memory_mapping(uc, paddr);
 
     if (!uc->size_recur_mem) { // disabling write callback if in recursive call
         // Unicorn: callback on memory write
@@ -2099,7 +2107,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 tlb_addr = tlb_addr_write(entry) & ~TLB_INVALID_MASK;
             }
             paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-            mr = find_memory_region(uc, paddr);
+            mr = uc->memory_mapping(uc, paddr);
             if (mr == NULL) {
                 uc->invalid_error = UC_ERR_MAP;
                 cpu_exit(uc->cpu);
@@ -2117,7 +2125,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 continue;
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
-            if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, addr, size, val, hook->user_data)))
+            if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, paddr, size, val, hook->user_data)))
                 break;
 
             // the last callback may already asked to stop emulation
@@ -2139,12 +2147,28 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             }
             uc->invalid_error = UC_ERR_OK;
         } else {
-            uc->invalid_addr = addr;
+            uc->invalid_addr = paddr;
             uc->invalid_error = UC_ERR_WRITE_PROT;
             // printf("***** Invalid memory write (ro) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->cpu);
             return;
         }
+    }
+
+    if (uc->snapshot_level && mr->ram && mr->priority < uc->snapshot_level) {
+        mr = memory_cow(uc, mr, addr & TARGET_PAGE_MASK, TARGET_PAGE_SIZE);
+        if (!mr) {
+            uc->invalid_addr = paddr;
+            uc->invalid_error = UC_ERR_NOMEM;
+            cpu_exit(uc->cpu);
+            return;
+        }
+        /* refill tlb after CoW */
+        tlb_fill(env_cpu(env), paddr, size, MMU_DATA_STORE,
+                 mmu_idx, retaddr);
+        index = tlb_index(env, mmu_idx, addr);
+        entry = tlb_entry(env, mmu_idx, addr);
+        tlb_addr = tlb_addr_write(entry);
     }
 
     /* Handle anything that isn't just a straight memory access.  */

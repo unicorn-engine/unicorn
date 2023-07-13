@@ -28,6 +28,7 @@
 
 #include <winsock2.h>
 #include <windows.h>
+#include <winnt.h> // For vectorized handler
 #include <ws2tcpip.h>
 
 #if defined(_WIN64)

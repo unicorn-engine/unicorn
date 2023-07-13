@@ -10,18 +10,10 @@
 #define UC_QEMU_TARGET_TRICORE_H
 
 // functions to read & write registers
-int tricore_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                     int count);
-int tricore_reg_write(struct uc_struct *uc, unsigned int *regs,
-                      void *const *vals, int count);
+uc_err reg_read_tricore(void *env, int mode, unsigned int regid, void *value,
+                        size_t *size);
+uc_err reg_write_tricore(void *env, int mode, unsigned int regid,
+                         const void *value, size_t *size, int *setpc);
 
-int tricore_context_reg_read(struct uc_context *uc, unsigned int *regs,
-                             void **vals, int count);
-int tricore_context_reg_write(struct uc_context *uc, unsigned int *regs,
-                              void *const *vals, int count);
-
-void tricore_reg_reset(struct uc_struct *uc);
-
-void tricore_uc_init(struct uc_struct *uc);
-
+void uc_init_tricore(struct uc_struct *uc);
 #endif

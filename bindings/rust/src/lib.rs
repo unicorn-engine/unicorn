@@ -30,7 +30,9 @@
 
 #[macro_use]
 extern crate alloc;
+extern crate std;
 
+#[macro_use]
 pub mod unicorn_const;
 
 mod arm;
@@ -883,6 +885,33 @@ impl<'a, D> Unicorn<'a, D> {
         }
     }
 
+    pub fn add_tlb_hook<F>(&mut self, begin: u64, end: u64, callback: F) -> Result<ffi::uc_hook, uc_error>
+    where
+        F: FnMut(&mut crate::Unicorn<D>, u64, MemType) -> Option<TlbEntry> + 'a,
+    {
+        let mut hook_ptr = core::ptr::null_mut();
+        let mut user_data = Box::new(ffi::UcHook {
+            callback,
+            uc: Rc::downgrade(&self.inner),
+        });
+        let err = unsafe {
+            ffi::uc_hook_add(self.get_handle(),
+                &mut hook_ptr,
+                HookType::TLB,
+                ffi::tlb_lookup_hook_proxy::<D, F> as _,
+                user_data.as_mut() as *mut _ as _,
+                begin,
+                end,
+            )
+        };
+        if err == uc_error::OK {
+            self.inner_mut().hooks.push((hook_ptr, user_data));
+            Ok(hook_ptr)
+        } else {
+            Err(err)
+        }
+    }
+
     /// Remove a hook.
     ///
     /// `hook` is the value returned by `add_*_hook` functions.
@@ -1050,5 +1079,167 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::MAX => panic!("Illegal Arch specified"),
         };
         self.reg_write(reg, value)
+    }
+
+    pub fn ctl_get_mode(&self) -> Result<Mode, uc_error> {
+        let mut result: i32 = Default::default();
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_MODE), &mut result) };
+        if err == uc_error::OK {
+            Ok(Mode::from_bits_truncate(result))
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_get_page_size(&self) -> Result<u32, uc_error> {
+        let mut result: u32 = Default::default();
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_PAGE_SIZE), &mut result) };
+        if err == uc_error::OK {
+            Ok(result)
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_set_page_size(&self, page_size: u32) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_UC_PAGE_SIZE), page_size) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_get_arch(&self) -> Result<Arch, uc_error> {
+        let mut result: i32 = Default::default();
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_ARCH), &mut result) };
+        if err == uc_error::OK {
+            Arch::try_from(result as usize)
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_get_timeout(&self) -> Result<u64, uc_error> {
+        let mut result: u64 = Default::default();
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_TIMEOUT), &mut result) };
+        if err == uc_error::OK {
+            Ok(result)
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_exits_enable(&self) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_UC_USE_EXITS), 1) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_exits_disable(&self) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_UC_USE_EXITS), 0) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_get_exits_count(&self) -> Result<usize, uc_error> {
+        let mut result: libc::size_t = Default::default();
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_EXITS_CNT), &mut result) };
+        if err == uc_error::OK {
+            Ok(result)
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_get_exits(&self) -> Result<Vec<u64>, uc_error> {
+        let exits_count: libc::size_t = self.ctl_get_exits_count()?;
+        let mut exits: Vec<u64> = Vec::with_capacity(exits_count);
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_EXITS), exits.as_mut_ptr(), exits_count) };
+        if err == uc_error::OK {
+            unsafe { exits.set_len(exits_count); }
+            Ok(exits)
+        } else {
+            Err(err)
+        }
+    }
+
+   pub fn ctl_set_exits(&self, exits: &[u64]) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_UC_EXITS), exits.as_ptr(), exits.len() as libc::size_t) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_get_cpu_model(&self) -> Result<i32, uc_error> {
+        let mut result: i32 = Default::default();
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_CPU_MODEL), &mut result) };
+        if err == uc_error::OK {
+            Ok(result)
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_set_cpu_model(&self, cpu_model: i32) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_CPU_MODEL), cpu_model) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_remove_cache(&self, address: u64, end: u64) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TB_REMOVE_CACHE), address, end) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_request_cache(&self, address: u64, tb: &mut TranslationBlock) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ_WRITE!(ControlType::UC_CTL_TB_REQUEST_CACHE), address, tb) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_flush_tb(&self) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TB_FLUSH)) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_flush_tlb(&self) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TLB_FLUSH)) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    pub fn ctl_tlb_type(&self, t: TlbType) -> Result<(), uc_error> {
+        let err = unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TLB_TYPE), t as i32) };
+        if err == uc_error::OK {
+            Ok(())
+        } else {
+            Err(err)
+        }
     }
 }

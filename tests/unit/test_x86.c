@@ -1125,8 +1125,8 @@ static void test_x86_invalid_vex_l(void)
     OK(uc_close(uc));
 }
 
-// AARCH64 inline the read while s390x won't split the access. Though not tested on other hosts
-// but we restrict a bit more.
+// AARCH64 inline the read while s390x won't split the access. Though not tested
+// on other hosts but we restrict a bit more.
 #if !defined(TARGET_READ_INLINED) && defined(BOOST_LITTLE_ENDIAN)
 
 struct writelog_t {
@@ -1230,7 +1230,8 @@ static void test_x86_lazy_mapping(void)
     OK(uc_close(uc));
 }
 
-static void test_x86_16_incorrect_ip_cb(uc_engine *uc, uint64_t address, uint32_t size, void* data)
+static void test_x86_16_incorrect_ip_cb(uc_engine *uc, uint64_t address,
+                                        uint32_t size, void *data)
 {
     uint16_t cs, ip;
 
@@ -1250,27 +1251,30 @@ static void test_x86_16_incorrect_ip(void)
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_16, code, sizeof(code) - 1);
 
-    OK(uc_hook_add(uc, &hk1, UC_HOOK_BLOCK, test_x86_16_incorrect_ip_cb, NULL, 1, 0));
-    OK(uc_hook_add(uc, &hk2, UC_HOOK_CODE, test_x86_16_incorrect_ip_cb, NULL, 1, 0));
-    
+    OK(uc_hook_add(uc, &hk1, UC_HOOK_BLOCK, test_x86_16_incorrect_ip_cb, NULL,
+                   1, 0));
+    OK(uc_hook_add(uc, &hk2, UC_HOOK_CODE, test_x86_16_incorrect_ip_cb, NULL, 1,
+                   0));
+
     OK(uc_reg_write(uc, UC_X86_REG_CS, &cs));
-    
+
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     OK(uc_close(uc));
 }
 
-static void test_x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr, uint64_t tlb_base)
+static void test_x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr,
+                                     uint64_t tlb_base)
 {
     uint64_t cr0;
     uint64_t cr4;
     uc_x86_msr msr = {.rid = 0x0c0000080, .value = 0};
-    uint64_t pml4o = ((vaddr & 0x00ff8000000000) >> 39)*8;
-    uint64_t pdpo  = ((vaddr & 0x00007fc0000000) >> 30)*8;
-    uint64_t pdo   = ((vaddr & 0x0000003fe00000) >> 21)*8;
+    uint64_t pml4o = ((vaddr & 0x00ff8000000000) >> 39) * 8;
+    uint64_t pdpo = ((vaddr & 0x00007fc0000000) >> 30) * 8;
+    uint64_t pdo = ((vaddr & 0x0000003fe00000) >> 21) * 8;
     uint64_t pml4e = (tlb_base + 0x1000) | 1 | (1 << 2);
-    uint64_t pdpe  = (tlb_base + 0x2000) | 1 | (1 << 2);
-    uint64_t pde   = (tlb_base + 0x3000) | 1 | (1 << 2);
+    uint64_t pdpe = (tlb_base + 0x2000) | 1 | (1 << 2);
+    uint64_t pde = (tlb_base + 0x3000) | 1 | (1 << 2);
     OK(uc_mem_write(uc, tlb_base + pml4o, &pml4e, sizeof(pml4o)));
     OK(uc_mem_write(uc, tlb_base + 0x1000 + pdpo, &pdpe, sizeof(pdpe)));
     OK(uc_mem_write(uc, tlb_base + 0x2000 + pdo, &pde, sizeof(pde)));
@@ -1287,10 +1291,11 @@ static void test_x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr, uint64_t tlb
     OK(uc_reg_write(uc, UC_X86_REG_MSR, &msr));
 }
 
-static void test_x86_mmu_pt_set(uc_engine *uc, uint64_t vaddr, uint64_t paddr, uint64_t tlb_base)
+static void test_x86_mmu_pt_set(uc_engine *uc, uint64_t vaddr, uint64_t paddr,
+                                uint64_t tlb_base)
 {
-    uint64_t pto   = ((vaddr & 0x000000001ff000) >> 12)*8;
-    uint32_t pte   = (paddr) | 1 | (1 << 2);
+    uint64_t pto = ((vaddr & 0x000000001ff000) >> 12) * 8;
+    uint32_t pte = (paddr) | 1 | (1 << 2);
     uc_mem_write(uc, tlb_base + 0x3000 + pto, &pte, sizeof(pte));
 }
 
@@ -1346,18 +1351,22 @@ static void test_x86_mmu(void)
      * mov rax, 60
      * syscall
      */
-    char code[] = "\xB8\x39\x00\x00\x00\x0F\x05\x48\x85\xC0\x74\x0F\xB8\x3C\x00\x00\x00\x48\x89\x04\x25\x00\x40\x00\x00\x0F\x05\xB9\x2A\x00\x00\x00\x48\x89\x0C\x25\x00\x40\x00\x00\xB8\x3C\x00\x00\x00\x0F\x05";
+    char code[] =
+        "\xB8\x39\x00\x00\x00\x0F\x05\x48\x85\xC0\x74\x0F\xB8\x3C\x00\x00\x00"
+        "\x48\x89\x04\x25\x00\x40\x00\x00\x0F\x05\xB9\x2A\x00\x00\x00\x48\x89"
+        "\x0C\x25\x00\x40\x00\x00\xB8\x3C\x00\x00\x00\x0F\x05";
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
     OK(uc_ctl_tlb_mode(uc, UC_TLB_CPU));
-    OK(uc_hook_add(uc, &h1, UC_HOOK_INSN, &test_x86_mmu_callback, &parrent_done, 1, 0, UC_X86_INS_SYSCALL));
+    OK(uc_hook_add(uc, &h1, UC_HOOK_INSN, &test_x86_mmu_callback, &parrent_done,
+                   1, 0, UC_X86_INS_SYSCALL));
     OK(uc_context_alloc(uc, &context));
 
-    OK(uc_mem_map(uc, 0x0, 0x1000, UC_PROT_ALL)); //Code
+    OK(uc_mem_map(uc, 0x0, 0x1000, UC_PROT_ALL)); // Code
     OK(uc_mem_write(uc, 0x0, code, sizeof(code) - 1));
-    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL)); //Parrent
-    OK(uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_ALL)); //Child
-    OK(uc_mem_map(uc, tlb_base, 0x4000, UC_PROT_ALL)); //TLB
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));   // Parrent
+    OK(uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_ALL));   // Child
+    OK(uc_mem_map(uc, tlb_base, 0x4000, UC_PROT_ALL)); // TLB
 
     test_x86_mmu_prepare_tlb(uc, 0x0, tlb_base);
     test_x86_mmu_pt_set(uc, 0x2000, 0x0, tlb_base);
@@ -1386,7 +1395,9 @@ static void test_x86_mmu(void)
     TEST_CHECK(child == 42);
 }
 
-static bool test_x86_vtlb_callback(uc_engine *uc, uint64_t addr, uc_mem_type type, uc_tlb_entry *result, void *user_data)
+static bool test_x86_vtlb_callback(uc_engine *uc, uint64_t addr,
+                                   uc_mem_type type, uc_tlb_entry *result,
+                                   void *user_data)
 {
     result->paddr = addr;
     result->perms = UC_PROT_ALL;
@@ -1404,7 +1415,8 @@ static void test_x86_vtlb(void)
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
     OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
-    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_x86_vtlb_callback, NULL, 1, 0));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_x86_vtlb_callback, NULL, 1,
+                   0));
 
     OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
 
@@ -1415,6 +1427,46 @@ static void test_x86_vtlb(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_segmentation()
+{
+    uc_engine *uc;
+    uint64_t fs = 0x53;
+    uc_x86_mmr gdtr = {0, 0xfffff8076d962000, 0x57, 0};
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_reg_write(uc, UC_X86_REG_GDTR, &gdtr));
+    uc_assert_err(UC_ERR_EXCEPTION, uc_reg_write(uc, UC_X86_REG_FS, &fs));
+}
+
+static void test_x86_0xff_lcall_callback(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+{
+    // do nothing
+    return;
+}
+
+// This aborts prior to a7a5d187e77f7853755eff4768658daf8095c3b7
+static void test_x86_0xff_lcall()
+{
+    uc_engine* uc;
+    uc_hook hk;
+    const char code[] = "\xB8\x01\x00\x00\x00\xBB\x01\x00\x00\x00\xB9\x01\x00\x00\x00\xFF\xDD\xBA\x01\x00\x00\x00\xB8\x02\x00\x00\x00\xBB\x02\x00\x00\x00";
+    // Taken from #1842
+    // 0:  b8 01 00 00 00          mov    eax,0x1
+    // 5:  bb 01 00 00 00          mov    ebx,0x1
+    // a:  b9 01 00 00 00          mov    ecx,0x1
+    // f:  ff                      (bad)
+    // 10: dd ba 01 00 00 00       fnstsw WORD PTR [edx+0x1]
+    // 16: b8 02 00 00 00          mov    eax,0x2
+    // 1b: bb 02 00 00 00          mov    ebx,0x2
+    
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_x86_0xff_lcall_callback, NULL, 1, 0));
+
+    uc_assert_err(UC_ERR_INSN_INVALID, uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
 
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
@@ -1461,4 +1513,6 @@ TEST_LIST = {
     {"test_x86_16_incorrect_ip", test_x86_16_incorrect_ip},
     {"test_x86_mmu", test_x86_mmu},
     {"test_x86_vtlb", test_x86_vtlb},
+    {"test_x86_segmentation", test_x86_segmentation},
+    {"test_x86_0xff_lcall", test_x86_0xff_lcall},
     {NULL, NULL}};

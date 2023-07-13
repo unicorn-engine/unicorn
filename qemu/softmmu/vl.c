@@ -50,7 +50,7 @@ int machine_initialize(struct uc_struct *uc)
     uc->target_page(uc);
 
     /* Init tcg. use DEFAULT_CODE_GEN_BUFFER_SIZE. */
-    uc->tcg_exec_init(uc, 0);
+    uc->tcg_exec_init(uc, uc->tcg_buffer_size);
 
     /* Init cpu. use default cpu_model. */
     return uc->cpus_init(uc, NULL);
