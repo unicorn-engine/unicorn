@@ -187,7 +187,7 @@ HOOK_MEM_INVALID_CFUNC  = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_in
 HOOK_MEM_ACCESS_CFUNC   = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_int, ctypes.c_uint64, ctypes.c_int, ctypes.c_int64, ctypes.c_void_p)
 HOOK_INSN_INVALID_CFUNC = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_void_p)
 HOOK_EDGE_GEN_CFUNC     = ctypes.CFUNCTYPE(None, uc_engine, ctypes.POINTER(uc_tb), ctypes.POINTER(uc_tb), ctypes.c_void_p)
-HOOK_TCG_OPCODE_CFUNC   = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_void_p)
+HOOK_TCG_OPCODE_CFUNC   = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_void_p)
 
 # mmio callback signatures
 MMIO_READ_CFUNC  = ctypes.CFUNCTYPE(ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.c_void_p)
@@ -852,11 +852,11 @@ class Uc(RegStateManager):
 
         def __hook_tcg_opcode():
             @uccallback(HOOK_TCG_OPCODE_CFUNC)
-            def __hook_tcg_op_cb(handle: int, address: int, arg1: int, arg2: int, key: int):
-                callback(self, address, arg1, arg2, user_data)
+            def __hook_tcg_op_cb(handle: int, address: int, arg1: int, arg2: int, size: int, key: int):
+                callback(self, address, arg1, arg2, size, user_data)
 
-            opcode = ctypes.c_int(aux1)
-            flags = ctypes.c_int(aux2)
+            opcode = ctypes.c_uint64(aux1)
+            flags = ctypes.c_uint64(aux2)
 
             return __hook_tcg_op_cb, opcode, flags
 
