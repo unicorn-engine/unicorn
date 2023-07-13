@@ -1,7 +1,9 @@
+#![allow(non_camel_case_types)]
+
 // X86 registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
-#[allow(clippy::upper_case_acronyms, non_camel_case_types)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum RegisterX86 {
     INVALID = 0,
     AH = 1,
@@ -277,4 +279,59 @@ pub struct X86Mmr {
     pub base: u64,
     pub limit: u32,
     pub flags: u32,
+}
+
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum X86CpuModel {
+    UC_CPU_X86_QEMU64 = 0,
+    UC_CPU_X86_PHENOM,
+    UC_CPU_X86_CORE2DUO,
+    UC_CPU_X86_KVM64,
+    UC_CPU_X86_QEMU32,
+    UC_CPU_X86_KVM32,
+    UC_CPU_X86_COREDUO,
+    UC_CPU_X86_486,
+    UC_CPU_X86_PENTIUM,
+    UC_CPU_X86_PENTIUM2,
+    UC_CPU_X86_PENTIUM3,
+    UC_CPU_X86_ATHLON,
+    UC_CPU_X86_N270,
+    UC_CPU_X86_CONROE,
+    UC_CPU_X86_PENRYN,
+    UC_CPU_X86_NEHALEM,
+    UC_CPU_X86_WESTMERE,
+    UC_CPU_X86_SANDYBRIDGE,
+    UC_CPU_X86_IVYBRIDGE,
+    UC_CPU_X86_HASWELL,
+    UC_CPU_X86_BROADWELL,
+    UC_CPU_X86_SKYLAKE_CLIENT,
+    UC_CPU_X86_SKYLAKE_SERVER,
+    UC_CPU_X86_CASCADELAKE_SERVER,
+    UC_CPU_X86_COOPERLAKE,
+    UC_CPU_X86_ICELAKE_CLIENT,
+    UC_CPU_X86_ICELAKE_SERVER,
+    UC_CPU_X86_DENVERTON,
+    UC_CPU_X86_SNOWRIDGE,
+    UC_CPU_X86_KNIGHTSMILL,
+    UC_CPU_X86_OPTERON_G1,
+    UC_CPU_X86_OPTERON_G2,
+    UC_CPU_X86_OPTERON_G3,
+    UC_CPU_X86_OPTERON_G4,
+    UC_CPU_X86_OPTERON_G5,
+    UC_CPU_X86_EPYC,
+    UC_CPU_X86_DHYANA,
+    UC_CPU_X86_EPYC_ROME,
+}
+
+impl From<X86CpuModel> for i32 {
+    fn from(value: X86CpuModel) -> Self {
+        value as i32
+    }
+}
+
+impl From<&X86CpuModel> for i32 {
+    fn from(value: &X86CpuModel) -> Self {
+        (*value) as i32
+    }
 }

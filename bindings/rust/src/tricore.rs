@@ -1,7 +1,8 @@
+#![allow(non_camel_case_types)]
+
 // TRICORE registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
-#[allow(non_camel_case_types)]
 pub enum RegisterTRICORE {
     INVALID = 0,
     A0 = 1,
@@ -133,5 +134,25 @@ impl RegisterTRICORE {
 impl From<RegisterTRICORE> for i32 {
     fn from(r: RegisterTRICORE) -> Self {
         r as i32
+    }
+}
+
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum TricoreCpuModel {
+    UC_CPU_TRICORE_TC1796,
+    UC_CPU_TRICORE_TC1797,
+    UC_CPU_TRICORE_TC27X,
+}
+
+impl From<TricoreCpuModel> for i32 {
+    fn from(value: TricoreCpuModel) -> Self {
+        value as i32
+    }
+}
+
+impl From<&TricoreCpuModel> for i32 {
+    fn from(value: &TricoreCpuModel) -> Self {
+        (*value) as i32
     }
 }
