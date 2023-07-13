@@ -439,7 +439,7 @@ class Uc(RegStateManager):
 
         return (uc_maj, uc_min) == (bnd_maj, bnd_min)
 
-    def __new__(cls, arch: int, mode: int):
+    def __new__(cls, arch: int, mode: int, cpu: Optional[int] = None):
         # verify version compatibility with the core before doing anything
         if not Uc.__is_compliant():
             raise UcError(uc.UC_ERR_VERSION)
@@ -479,12 +479,13 @@ class Uc(RegStateManager):
         # return the appropriate unicorn subclass type
         return super(Uc, cls).__new__(subclass)
 
-    def __init__(self, arch: int, mode: int) -> None:
+    def __init__(self, arch: int, mode: int, cpu: Optional[int] = None) -> None:
         """Initialize a Unicorn engine instance.
 
         Args:
             arch: emulated architecture identifier (see UC_ARCH_* constants)
             mode: emulated processor mode (see UC_MODE_* constants)
+            cpu: emulated cpu model (see UC_CPU_* constants) [optional]
         """
 
         self._arch = arch
@@ -497,6 +498,9 @@ class Uc(RegStateManager):
         if status != uc.UC_ERR_OK:
             self._uch = None
             raise UcError(status)
+
+        if cpu is not None:
+            self.ctl_set_cpu_model(cpu)
 
         # we have to keep a reference to the callbacks so they do not get gc-ed
         # see: https://docs.python.org/3/library/ctypes.html#callback-functions
