@@ -190,8 +190,8 @@ HOOK_EDGE_GEN_CFUNC     = ctypes.CFUNCTYPE(None, uc_engine, ctypes.POINTER(uc_tb
 HOOK_TCG_OPCODE_CFUNC   = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_void_p)
 
 # mmio callback signatures
-MMIO_READ_CFUNC  = ctypes.CFUNCTYPE(ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.c_void_p)
-MMIO_WRITE_CFUNC = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.c_uint64, ctypes.c_void_p)
+MMIO_READ_CFUNC  = ctypes.CFUNCTYPE(ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_uint, ctypes.c_void_p)
+MMIO_WRITE_CFUNC = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_uint, ctypes.c_uint64, ctypes.c_void_p)
 
 
 class UcError(Exception):
