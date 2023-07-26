@@ -167,6 +167,7 @@ impl TryFrom<usize> for Arch {
 }
 
 bitflags! {
+    #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct Mode: i32 {
         const LITTLE_ENDIAN = 0;
