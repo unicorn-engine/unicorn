@@ -383,6 +383,23 @@ static void test_tlb_clear(void)
     OK(uc_close(uc));
 }
 
+static void test_noexec(void)
+{
+    uc_engine *uc;
+    /* mov al, byte ptr[rip]
+     * nop
+     */
+    char code[] = "\x8a\x05\x00\x00\x00\x00\x90";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_mem_protect(uc, code_start, code_start + 0x1000, UC_PROT_EXEC));
+
+    uc_assert_err(UC_ERR_READ_PROT, uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_page_size", test_uc_ctl_page_size},
              {"test_uc_ctl_arch", test_uc_ctl_arch},
@@ -396,4 +413,5 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
              {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
              {"test_tlb_clear", test_tlb_clear},
+             {"test_noexec", test_noexec},
              {NULL, NULL}};
