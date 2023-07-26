@@ -167,6 +167,7 @@ impl<'a> Unicorn<'a, ()> {
 impl<'a> TryFrom<uc_handle> for Unicorn<'a, ()> {
     type Error = uc_error;
 
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     fn try_from(handle: uc_handle) -> Result<Unicorn<'a, ()>, uc_error> {
         if handle.is_null() {
             return Err(uc_error::HANDLE);
@@ -914,6 +915,7 @@ impl<'a, D> Unicorn<'a, D> {
     /// Remove a hook.
     ///
     /// `hook` is the value returned by `add_*_hook` functions.
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     pub fn remove_hook(&mut self, hook: ffi::uc_hook) -> Result<(), uc_error> {
         // drop the hook
         let inner = self.inner_mut();
