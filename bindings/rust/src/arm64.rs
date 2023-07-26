@@ -1,7 +1,8 @@
+#![allow(non_camel_case_types)]
+
 // ARM64 registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
-#[allow(non_camel_case_types)]
 pub enum RegisterARM64 {
     INVALID = 0,
     X29 = 1,
@@ -322,5 +323,26 @@ impl RegisterARM64 {
 impl From<RegisterARM64> for i32 {
     fn from(r: RegisterARM64) -> Self {
         r as i32
+    }
+}
+
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Arm64CpuModel {
+    UC_CPU_ARM64_A57 = 0,
+    UC_CPU_ARM64_A53 = 1,
+    UC_CPU_ARM64_A72 = 2,
+    UC_CPU_ARM64_MAX = 3,
+}
+
+impl From<Arm64CpuModel> for i32 {
+    fn from(value: Arm64CpuModel) -> Self {
+        value as i32
+    }
+}
+
+impl From<&Arm64CpuModel> for i32 {
+    fn from(value: &Arm64CpuModel) -> Self {
+        (*value) as i32
     }
 }

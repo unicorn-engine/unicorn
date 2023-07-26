@@ -1,3 +1,5 @@
+#![allow(non_camel_case_types)]
+
 // SPARC registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -106,5 +108,69 @@ impl RegisterSPARC {
 impl From<RegisterSPARC> for i32 {
     fn from(r: RegisterSPARC) -> Self {
         r as i32
+    }
+}
+
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Sparc32CpuModel {
+    UC_CPU_SPARC32_FUJITSU_MB86904 = 0,
+    UC_CPU_SPARC32_FUJITSU_MB86907,
+    UC_CPU_SPARC32_TI_MICROSPARC_I,
+    UC_CPU_SPARC32_TI_MICROSPARC_II,
+    UC_CPU_SPARC32_TI_MICROSPARC_IIEP,
+    UC_CPU_SPARC32_TI_SUPERSPARC_40,
+    UC_CPU_SPARC32_TI_SUPERSPARC_50,
+    UC_CPU_SPARC32_TI_SUPERSPARC_51,
+    UC_CPU_SPARC32_TI_SUPERSPARC_60,
+    UC_CPU_SPARC32_TI_SUPERSPARC_61,
+    UC_CPU_SPARC32_TI_SUPERSPARC_II,
+    UC_CPU_SPARC32_LEON2,
+    UC_CPU_SPARC32_LEON3,
+}
+
+impl From<Sparc32CpuModel> for i32 {
+    fn from(value: Sparc32CpuModel) -> Self {
+        value as i32
+    }
+}
+
+impl From<&Sparc32CpuModel> for i32 {
+    fn from(value: &Sparc32CpuModel) -> Self {
+        (*value) as i32
+    }
+}
+
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Sparc64CpuModel {
+    UC_CPU_SPARC64_FUJITSU = 0,
+    UC_CPU_SPARC64_FUJITSU_III,
+    UC_CPU_SPARC64_FUJITSU_IV,
+    UC_CPU_SPARC64_FUJITSU_V,
+    UC_CPU_SPARC64_TI_ULTRASPARC_I,
+    UC_CPU_SPARC64_TI_ULTRASPARC_II,
+    UC_CPU_SPARC64_TI_ULTRASPARC_III,
+    UC_CPU_SPARC64_TI_ULTRASPARC_IIE,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_III,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_III_CU,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_IIII,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_IV,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_IV_PLUS,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_IIII_PLUS,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_T1,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_T2,
+    UC_CPU_SPARC64_NEC_ULTRASPARC_I,
+}
+
+impl From<Sparc64CpuModel> for i32 {
+    fn from(value: Sparc64CpuModel) -> Self {
+        value as i32
+    }
+}
+
+impl From<&Sparc64CpuModel> for i32 {
+    fn from(value: &Sparc64CpuModel) -> Self {
+        (*value) as i32
     }
 }

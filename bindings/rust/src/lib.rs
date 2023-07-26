@@ -34,10 +34,10 @@ extern crate std;
 
 #[macro_use]
 pub mod unicorn_const;
+pub mod ffi; // lets consumers call ffi if desired
 
 mod arm;
 mod arm64;
-mod ffi;
 mod m68k;
 mod mips;
 mod ppc;
