@@ -1555,7 +1555,10 @@ int uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel)
         return 0;
     } else {
         selector = sel & 0xffff;
-        cpl = env->hflags & HF_CPL_MASK;
+        //cpl = env->hflags & HF_CPL_MASK;
+        cpl = ( env->segs[ R_CS ].flags & DESC_P_MASK ) ? 
+              ( env->segs[ R_CS ].flags >> DESC_DPL_SHIFT ) & 3 : 
+                env->hflags & HF_CPL_MASK;
         if ((selector & 0xfffc) == 0) {
             /* null selector case */
             if (seg_reg == R_SS
@@ -1629,7 +1632,10 @@ void helper_load_seg(CPUX86State *env, int seg_reg, int selector)
     target_ulong ptr;
 
     selector &= 0xffff;
-    cpl = env->hflags & HF_CPL_MASK;
+  //  cpl = env->hflags & HF_CPL_MASK;
+    cpl = ( env->segs[ R_CS ].flags & DESC_P_MASK ) ?
+        ( env->segs[ R_CS ].flags >> DESC_DPL_SHIFT ) & 3 :
+        env->hflags & HF_CPL_MASK;
     if ((selector & 0xfffc) == 0) {
         /* null selector case */
         if (seg_reg == R_SS
