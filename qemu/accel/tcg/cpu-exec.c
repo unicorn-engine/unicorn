@@ -58,7 +58,10 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
     UC_TRACE_START(UC_TRACE_TB_EXEC);
     tb_exec_lock(cpu->uc->tcg_ctx);
     ret = tcg_qemu_tb_exec(env, tb_ptr);
-    tb_exec_unlock(cpu->uc->tcg_ctx);
+    if (cpu->uc->nested_level == 1) {
+        // Only unlock (allow writing to JIT area) if we are the outmost uc_emu_start
+        tb_exec_unlock(cpu->uc->tcg_ctx);
+    }
     UC_TRACE_END(UC_TRACE_TB_EXEC, "[uc] exec tb 0x%" PRIx64 ": ", itb->pc);
 
     cpu->can_do_io = 1;
