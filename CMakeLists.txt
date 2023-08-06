@@ -17,6 +17,11 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
     cmake_policy(SET CMP0092 NEW)
 endif()
 
+option(ZIG_BUILD "Enable zig build" OFF)
+if(ZIG_BUILD)
+    include(cmake/zig.cmake)
+endif()
+
 # Workaround to fix wrong compiler on macos.
 if(APPLE AND NOT CMAKE_C_COMPILER)
     set(CMAKE_C_COMPILER "/usr/bin/cc")
@@ -47,7 +52,7 @@ set(UNICORN_VERSION_MAJOR 2)
 set(UNICORN_VERSION_MINOR 0)
 set(UNICORN_VERSION_PATCH 2)
 
-include(bundle_static.cmake)
+include(cmake/bundle_static.cmake)
 
 # Even though we generate shared lib and static archive at the same time, we still support
 # using unicorn as a subdirectory so we have to respect BUILD_SHARED_LIBS.
