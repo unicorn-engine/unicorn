@@ -260,7 +260,7 @@ static uc_err uc_init_engine(uc_engine *uc)
 
     uc->context_content = UC_CTL_CONTEXT_CPU;
 
-    uc->unmapped_regions = g_array_new(false, false, sizeof(MemoryRegion*));
+    uc->unmapped_regions = g_array_new(false, false, sizeof(MemoryRegion *));
 
     uc->init_done = true;
 
@@ -687,7 +687,8 @@ uc_err uc_reg_write2(uc_engine *uc, int regid, const void *value, size_t *size)
     return UC_ERR_OK;
 }
 
-static size_t memory_region_len(uc_engine *uc, MemoryRegion *mr, uint64_t address, size_t count)
+static size_t memory_region_len(uc_engine *uc, MemoryRegion *mr,
+                                uint64_t address, size_t count)
 {
     hwaddr end = mr->end;
     while (mr->container != uc->system_memory) {
@@ -702,7 +703,6 @@ static size_t memory_region_len(uc_engine *uc, MemoryRegion *mr, uint64_t addres
 static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
 {
     size_t count = 0, len;
-
 
     while (count < size) {
         MemoryRegion *mr = uc->memory_mapping(uc, address);
@@ -1534,8 +1534,8 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     }
 
     // check that user's entire requested block is mapped
-    //TODO check if protected is possible
-    //deny after cow
+    // TODO check if protected is possible
+    // deny after cow
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_NOMEM;
     }
@@ -1587,8 +1587,8 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     return UC_ERR_OK;
 }
 
-static
-uc_err uc_mem_unmap_snapshot(struct uc_struct *uc, uint64_t address, size_t size, MemoryRegion **ret)
+static uc_err uc_mem_unmap_snapshot(struct uc_struct *uc, uint64_t address,
+                                    size_t size, MemoryRegion **ret)
 {
     MemoryRegion *mr;
 
@@ -2684,7 +2684,9 @@ static uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
     MemoryRegion *subregion, *subregion_next, *mr, *initial_mr;
     int level;
 
-    QTAILQ_FOREACH_SAFE(subregion, &uc->system_memory->subregions, subregions_link, subregion_next) {
+    QTAILQ_FOREACH_SAFE(subregion, &uc->system_memory->subregions,
+                        subregions_link, subregion_next)
+    {
         uc->memory_filter_subregions(subregion, uc->snapshot_level);
         if (QTAILQ_EMPTY(&subregion->subregions)) {
             uc->memory_unmap(uc, subregion);
@@ -2714,7 +2716,7 @@ static uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
             uc->memory_unmap(uc, subregion);
         }
         mem_map(uc, initial_mr);
-	g_array_remove_range(uc->unmapped_regions, i, 1);
+        g_array_remove_range(uc->unmapped_regions, i, 1);
     }
     uc->snapshot_level--;
     return UC_ERR_OK;

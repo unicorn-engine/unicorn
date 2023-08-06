@@ -65,7 +65,7 @@ typedef size_t uc_hook;
 #define UNICORN_DEPRECATED __declspec(deprecated)
 #else
 #pragma message(                                                               \
-    "WARNING: You need to implement UNICORN_DEPRECATED for this compiler")
+        "WARNING: You need to implement UNICORN_DEPRECATED for this compiler")
 #define UNICORN_DEPRECATED
 #endif
 
@@ -665,7 +665,8 @@ See sample_ctl.c for a detailed example.
     uc_ctl(uc, UC_CTL_READ(UC_CTL_TCG_BUFFER_SIZE, 1), (size))
 #define uc_ctl_set_tcg_buffer_size(uc, size)                                   \
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TCG_BUFFER_SIZE, 1), (size))
-#define uc_ctl_context_mode(uc, mode) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_CONTEXT_MODE, 1), (mode))
+#define uc_ctl_context_mode(uc, mode)                                          \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_CONTEXT_MODE, 1), (mode))
 
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
