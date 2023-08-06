@@ -80,7 +80,7 @@ typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr,
 typedef bool (*uc_read_mem_t)(AddressSpace *as, hwaddr addr, uint8_t *buf,
                               int len);
 
-typedef MemoryRegion* (*uc_mem_cow_t)(struct uc_struct *uc,
+typedef MemoryRegion *(*uc_mem_cow_t)(struct uc_struct *uc,
                                       MemoryRegion *current, hwaddr begin,
                                       size_t size);
 

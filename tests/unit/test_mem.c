@@ -302,13 +302,13 @@ static void test_snapshot(void)
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
     TEST_CHECK(mem == 2);
     OK(uc_context_restore(uc, c1));
-    //TODO check mem
+    // TODO check mem
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
     TEST_CHECK(mem == 1);
     OK(uc_context_restore(uc, c0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
     TEST_CHECK(mem == 0);
-    //TODO check mem
+    // TODO check mem
 
     OK(uc_context_free(c0));
     OK(uc_context_free(c1));
@@ -322,7 +322,7 @@ static void test_context_snapshot(void)
     uint64_t tmp = 1;
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
-    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY|UC_CTL_CONTEXT_CPU));
+    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY | UC_CTL_CONTEXT_CPU));
     OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
     OK(uc_context_alloc(uc, &ctx));
     OK(uc_context_save(uc, ctx));
@@ -353,7 +353,7 @@ static void test_snapshot_unmap(void)
     uint64_t tmp;
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
-    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY|UC_CTL_CONTEXT_CPU));
+    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY | UC_CTL_CONTEXT_CPU));
     OK(uc_mem_map(uc, 0x1000, 0x2000, UC_PROT_ALL));
 
     tmp = 1;
@@ -366,8 +366,10 @@ static void test_snapshot_unmap(void)
 
     uc_assert_err(UC_ERR_ARG, uc_mem_unmap(uc, 0x1000, 0x1000));
     OK(uc_mem_unmap(uc, 0x1000, 0x2000));
-    uc_assert_err(UC_ERR_READ_UNMAPPED, uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
-    uc_assert_err(UC_ERR_READ_UNMAPPED, uc_mem_read(uc, 0x2000, &tmp, sizeof(tmp)));
+    uc_assert_err(UC_ERR_READ_UNMAPPED,
+                  uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    uc_assert_err(UC_ERR_READ_UNMAPPED,
+                  uc_mem_read(uc, 0x2000, &tmp, sizeof(tmp)));
 
     OK(uc_context_restore(uc, ctx));
     OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
