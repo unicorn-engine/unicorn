@@ -1468,6 +1468,43 @@ static void test_x86_0xff_lcall()
     OK(uc_close(uc));
 }
 
+
+static bool
+test_x86_64_not_overwriting_tmp0_for_pc_update_cb(uc_engine *uc, uc_mem_type type,
+                                              uint64_t address, int size,
+                                              uint64_t value, void *user_data)
+{
+    return true;
+}
+
+// https://github.com/unicorn-engine/unicorn/issues/1717
+// https://github.com/unicorn-engine/unicorn/issues/1862
+static void test_x86_64_not_overwriting_tmp0_for_pc_update()
+{
+    uc_engine* uc;
+    uc_hook hk;
+    const char code[] = "\x48\xb9\xff\xff\xff\xff\xff\xff\xff\xff\x48\x89\x0c\x24\x48\xd3\x24\x24\x73\x0a";
+    uint64_t rsp, pc, eflags;
+
+    // 0x1000: movabs  rcx, 0xffffffffffffffff
+    // 0x100a: mov     qword ptr [rsp], rcx
+    // 0x100e: shl     qword ptr [rsp], cl ; (Shift to CF=1)
+    // 0x1012: jae     0xd ; this jump should not be taken! (CF=1 but jae expects CF=0)
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE, test_x86_64_not_overwriting_tmp0_for_pc_update_cb, NULL, 1, 0));
+
+    rsp = 0x2000;
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, (void*)&rsp));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 4));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &pc));
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &eflags));
+
+    TEST_CHECK(pc == 0x1014);
+    TEST_CHECK((eflags & 0x1) == 1);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1515,4 +1552,5 @@ TEST_LIST = {
     {"test_x86_vtlb", test_x86_vtlb},
     {"test_x86_segmentation", test_x86_segmentation},
     {"test_x86_0xff_lcall", test_x86_0xff_lcall},
+    {"test_x86_64_not_overwriting_tmp0_for_pc_update", test_x86_64_not_overwriting_tmp0_for_pc_update},
     {NULL, NULL}};
