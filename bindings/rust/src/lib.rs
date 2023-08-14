@@ -54,7 +54,6 @@ pub use crate::{
 
 use alloc::{boxed::Box, rc::Rc, vec::Vec};
 use core::{cell::UnsafeCell, ptr};
-use bitflags::Flags;
 use ffi::uc_handle;
 use libc::c_void;
 
@@ -166,13 +165,14 @@ impl<'a> Unicorn<'a, ()> {
     pub fn new(arch: Arch, mode: Mode) -> Result<Unicorn<'a, ()>, uc_error> {
         Self::new_with_data(arch, mode, ())
     }
-}
 
-impl<'a> TryFrom<uc_handle> for Unicorn<'a, ()> {
-    type Error = uc_error;
-
-    #[allow(clippy::not_unsafe_ptr_arg_deref)]
-    fn try_from(handle: uc_handle) -> Result<Unicorn<'a, ()>, uc_error> {
+    /// # Safety
+    /// The function has to be called with a valid uc_handle pointer
+    /// that was previously allocated by a call to uc_open.
+    /// Calling the function with a non null pointer value that
+    /// does not point to a unicorn instance will cause undefined
+    /// behavior.
+    pub unsafe fn from_handle(handle: uc_handle) -> Result<Unicorn<'a, ()>, uc_error> {
         if handle.is_null() {
             return Err(uc_error::HANDLE);
         }
