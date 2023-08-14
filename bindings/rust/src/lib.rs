@@ -54,6 +54,7 @@ pub use crate::{
 
 use alloc::{boxed::Box, rc::Rc, vec::Vec};
 use core::{cell::UnsafeCell, ptr};
+use bitflags::Flags;
 use ffi::uc_handle;
 use libc::c_void;
 
@@ -130,12 +131,15 @@ impl<'a> MmioCallbackScope<'a> {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct UcHookId(ffi::uc_hook);
+
 pub struct UnicornInner<'a, D> {
     pub handle: uc_handle,
     pub ffi: bool,
     pub arch: Arch,
     /// to keep ownership over the hook for this uc instance's lifetime
-    pub hooks: Vec<(ffi::uc_hook, Box<dyn ffi::IsUcHook<'a> + 'a>)>,
+    pub hooks: Vec<(UcHookId, Box<dyn ffi::IsUcHook<'a> + 'a>)>,
     /// To keep ownership over the mmio callbacks for this uc instance's lifetime
     pub mmio_callbacks: Vec<MmioCallbackScope<'a>>,
     pub data: D,
@@ -620,11 +624,11 @@ impl<'a, D> Unicorn<'a, D> {
         begin: u64,
         end: u64,
         callback: F,
-    ) -> Result<ffi::uc_hook, uc_error>
+    ) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut crate::Unicorn<D>, u64, u32) + 'a,
     {
-        let mut hook_ptr = core::ptr::null_mut();
+        let mut hook_id = ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
             uc: Rc::downgrade(&self.inner),
@@ -633,7 +637,7 @@ impl<'a, D> Unicorn<'a, D> {
         let err = unsafe {
             ffi::uc_hook_add(
                 self.get_handle(),
-                &mut hook_ptr,
+                &mut hook_id,
                 HookType::CODE,
                 ffi::code_hook_proxy::<D, F> as _,
                 user_data.as_mut() as *mut _ as _,
@@ -641,20 +645,21 @@ impl<'a, D> Unicorn<'a, D> {
                 end,
             )
         };
+        let hook_id = UcHookId(hook_id);
         if err == uc_error::OK {
-            self.inner_mut().hooks.push((hook_ptr, user_data));
-            Ok(hook_ptr)
+            self.inner_mut().hooks.push((hook_id, user_data));
+            Ok(hook_id)
         } else {
             Err(err)
         }
     }
 
     /// Add a block hook.
-    pub fn add_block_hook<F: 'a>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
+    pub fn add_block_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>, u64, u32),
     {
-        let mut hook_ptr = core::ptr::null_mut();
+        let mut hook_id = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
             uc: Rc::downgrade(&self.inner),
@@ -663,7 +668,7 @@ impl<'a, D> Unicorn<'a, D> {
         let err = unsafe {
             ffi::uc_hook_add(
                 self.get_handle(),
-                &mut hook_ptr,
+                &mut hook_id,
                 HookType::BLOCK,
                 ffi::block_hook_proxy::<D, F> as _,
                 user_data.as_mut() as *mut _ as _,
@@ -671,10 +676,11 @@ impl<'a, D> Unicorn<'a, D> {
                 0,
             )
         };
+        let hook_id = UcHookId(hook_id);
         if err == uc_error::OK {
-            self.inner_mut().hooks.push((hook_ptr, user_data));
+            self.inner_mut().hooks.push((hook_id, user_data));
 
-            Ok(hook_ptr)
+            Ok(hook_id)
         } else {
             Err(err)
         }
@@ -687,7 +693,7 @@ impl<'a, D> Unicorn<'a, D> {
         begin: u64,
         end: u64,
         callback: F,
-    ) -> Result<ffi::uc_hook, uc_error>
+    ) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>, MemType, u64, usize, i64) -> bool,
     {
@@ -695,7 +701,7 @@ impl<'a, D> Unicorn<'a, D> {
             return Err(uc_error::ARG);
         }
 
-        let mut hook_ptr = core::ptr::null_mut();
+        let mut hook_id = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
             uc: Rc::downgrade(&self.inner),
@@ -704,7 +710,7 @@ impl<'a, D> Unicorn<'a, D> {
         let err = unsafe {
             ffi::uc_hook_add(
                 self.get_handle(),
-                &mut hook_ptr,
+                &mut hook_id,
                 hook_type,
                 ffi::mem_hook_proxy::<D, F> as _,
                 user_data.as_mut() as *mut _ as _,
@@ -712,21 +718,22 @@ impl<'a, D> Unicorn<'a, D> {
                 end,
             )
         };
+        let hook_id = UcHookId(hook_id);
         if err == uc_error::OK {
-            self.inner_mut().hooks.push((hook_ptr, user_data));
+            self.inner_mut().hooks.push((hook_id, user_data));
 
-            Ok(hook_ptr)
+            Ok(hook_id)
         } else {
             Err(err)
         }
     }
 
     /// Add an interrupt hook.
-    pub fn add_intr_hook<F: 'a>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
+    pub fn add_intr_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>, u32),
     {
-        let mut hook_ptr = core::ptr::null_mut();
+        let mut hook_id = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
             uc: Rc::downgrade(&self.inner),
@@ -735,7 +742,7 @@ impl<'a, D> Unicorn<'a, D> {
         let err = unsafe {
             ffi::uc_hook_add(
                 self.get_handle(),
-                &mut hook_ptr,
+                &mut hook_id,
                 HookType::INTR,
                 ffi::intr_hook_proxy::<D, F> as _,
                 user_data.as_mut() as *mut _ as _,
@@ -743,21 +750,22 @@ impl<'a, D> Unicorn<'a, D> {
                 0,
             )
         };
+        let hook_id = UcHookId(hook_id);
         if err == uc_error::OK {
-            self.inner_mut().hooks.push((hook_ptr, user_data));
+            self.inner_mut().hooks.push((hook_id, user_data));
 
-            Ok(hook_ptr)
+            Ok(hook_id)
         } else {
             Err(err)
         }
     }
 
     /// Add hook for invalid instructions
-    pub fn add_insn_invalid_hook<F: 'a>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
+    pub fn add_insn_invalid_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>) -> bool,
     {
-        let mut hook_ptr = core::ptr::null_mut();
+        let mut hook_id = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
             uc: Rc::downgrade(&self.inner),
@@ -766,7 +774,7 @@ impl<'a, D> Unicorn<'a, D> {
         let err = unsafe {
             ffi::uc_hook_add(
                 self.get_handle(),
-                &mut hook_ptr,
+                &mut hook_id,
                 HookType::INSN_INVALID,
                 ffi::insn_invalid_hook_proxy::<D, F> as _,
                 user_data.as_mut() as *mut _ as _,
@@ -774,21 +782,22 @@ impl<'a, D> Unicorn<'a, D> {
                 0,
             )
         };
+        let hook_id = UcHookId(hook_id);
         if err == uc_error::OK {
-            self.inner_mut().hooks.push((hook_ptr, user_data));
+            self.inner_mut().hooks.push((hook_id, user_data));
 
-            Ok(hook_ptr)
+            Ok(hook_id)
         } else {
             Err(err)
         }
     }
 
     /// Add hook for x86 IN instruction.
-    pub fn add_insn_in_hook<F: 'a>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
+    pub fn add_insn_in_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>, u32, usize) -> u32,
     {
-        let mut hook_ptr = core::ptr::null_mut();
+        let mut hook_id = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
             uc: Rc::downgrade(&self.inner),
@@ -797,7 +806,7 @@ impl<'a, D> Unicorn<'a, D> {
         let err = unsafe {
             ffi::uc_hook_add(
                 self.get_handle(),
-                &mut hook_ptr,
+                &mut hook_id,
                 HookType::INSN,
                 ffi::insn_in_hook_proxy::<D, F> as _,
                 user_data.as_mut() as *mut _ as _,
@@ -806,21 +815,22 @@ impl<'a, D> Unicorn<'a, D> {
                 x86::InsnX86::IN,
             )
         };
+        let hook_id = UcHookId(hook_id);
         if err == uc_error::OK {
-            self.inner_mut().hooks.push((hook_ptr, user_data));
+            self.inner_mut().hooks.push((hook_id, user_data));
 
-            Ok(hook_ptr)
+            Ok(hook_id)
         } else {
             Err(err)
         }
     }
 
     /// Add hook for x86 OUT instruction.
-    pub fn add_insn_out_hook<F: 'a>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
+    pub fn add_insn_out_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>, u32, usize, u32),
     {
-        let mut hook_ptr = core::ptr::null_mut();
+        let mut hook_id = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
             uc: Rc::downgrade(&self.inner),
@@ -829,7 +839,7 @@ impl<'a, D> Unicorn<'a, D> {
         let err = unsafe {
             ffi::uc_hook_add(
                 self.get_handle(),
-                &mut hook_ptr,
+                &mut hook_id,
                 HookType::INSN,
                 ffi::insn_out_hook_proxy::<D, F> as _,
                 user_data.as_mut() as *mut _ as _,
@@ -838,10 +848,11 @@ impl<'a, D> Unicorn<'a, D> {
                 x86::InsnX86::OUT,
             )
         };
+        let hook_id = UcHookId(hook_id);
         if err == uc_error::OK {
-            self.inner_mut().hooks.push((hook_ptr, user_data));
+            self.inner_mut().hooks.push((hook_id, user_data));
 
-            Ok(hook_ptr)
+            Ok(hook_id)
         } else {
             Err(err)
         }
@@ -854,11 +865,11 @@ impl<'a, D> Unicorn<'a, D> {
         begin: u64,
         end: u64,
         callback: F,
-    ) -> Result<ffi::uc_hook, uc_error>
+    ) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>) + 'a,
     {
-        let mut hook_ptr = core::ptr::null_mut();
+        let mut hook_id = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
             uc: Rc::downgrade(&self.inner),
@@ -867,7 +878,7 @@ impl<'a, D> Unicorn<'a, D> {
         let err = unsafe {
             ffi::uc_hook_add(
                 self.get_handle(),
-                &mut hook_ptr,
+                &mut hook_id,
                 HookType::INSN,
                 ffi::insn_sys_hook_proxy::<D, F> as _,
                 user_data.as_mut() as *mut _ as _,
@@ -876,37 +887,39 @@ impl<'a, D> Unicorn<'a, D> {
                 insn_type,
             )
         };
+        let hook_id = UcHookId(hook_id);
         if err == uc_error::OK {
-            self.inner_mut().hooks.push((hook_ptr, user_data));
+            self.inner_mut().hooks.push((hook_id, user_data));
 
-            Ok(hook_ptr)
+            Ok(hook_id)
         } else {
             Err(err)
         }
     }
 
-    pub fn add_tlb_hook<F>(&mut self, begin: u64, end: u64, callback: F) -> Result<ffi::uc_hook, uc_error>
+    pub fn add_tlb_hook<F>(&mut self, begin: u64, end: u64, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut crate::Unicorn<D>, u64, MemType) -> Option<TlbEntry> + 'a,
     {
-        let mut hook_ptr = core::ptr::null_mut();
+        let mut hook_id = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
             callback,
             uc: Rc::downgrade(&self.inner),
         });
         let err = unsafe {
             ffi::uc_hook_add(self.get_handle(),
-                &mut hook_ptr,
-                HookType::TLB,
-                ffi::tlb_lookup_hook_proxy::<D, F> as _,
-                user_data.as_mut() as *mut _ as _,
-                begin,
-                end,
+                             &mut hook_id,
+                             HookType::TLB,
+                             ffi::tlb_lookup_hook_proxy::<D, F> as _,
+                             user_data.as_mut() as *mut _ as _,
+                             begin,
+                             end,
             )
         };
+        let hook_id = UcHookId(hook_id);
         if err == uc_error::OK {
-            self.inner_mut().hooks.push((hook_ptr, user_data));
-            Ok(hook_ptr)
+            self.inner_mut().hooks.push((hook_id, user_data));
+            Ok(hook_id)
         } else {
             Err(err)
         }
@@ -914,16 +927,15 @@ impl<'a, D> Unicorn<'a, D> {
 
     /// Remove a hook.
     ///
-    /// `hook` is the value returned by `add_*_hook` functions.
-    #[allow(clippy::not_unsafe_ptr_arg_deref)]
-    pub fn remove_hook(&mut self, hook: ffi::uc_hook) -> Result<(), uc_error> {
+    /// `hook_id` is the value returned by `add_*_hook` functions.
+    pub fn remove_hook(&mut self, hook_id: UcHookId) -> Result<(), uc_error> {
         // drop the hook
         let inner = self.inner_mut();
         inner
             .hooks
-            .retain(|(hook_ptr, _hook_impl)| hook_ptr != &hook);
+            .retain(|(id, _)| id != &hook_id);
 
-        let err: uc_error = unsafe { ffi::uc_hook_del(inner.handle, hook) };
+        let err: uc_error = unsafe { ffi::uc_hook_del(inner.handle, hook_id.0) };
 
         if err == uc_error::OK {
             Ok(())

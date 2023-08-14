@@ -10,6 +10,7 @@ use core::ffi::c_void;
 use libc::{c_char, c_int};
 
 pub type uc_handle = *mut c_void;
+// TODO: Use c_size_t as soon as it is stable. The c api exposes uc_hook as size_t
 pub type uc_hook = *mut c_void;
 pub type uc_context = *mut c_void;
 
