@@ -1139,6 +1139,13 @@ impl<'a, D> Unicorn<'a, D> {
         unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TLB_FLUSH)) }.into()
     }
 
+    pub fn ctl_context_mode(
+        &self,
+        mode: ContextMode,
+    ) -> Result<(), uc_error> {
+        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_CONTEXT_MODE), mode) }.into()
+    }
+
     pub fn ctl_tlb_type(
         &self,
         t: TlbType,
