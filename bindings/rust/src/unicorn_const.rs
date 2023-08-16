@@ -281,8 +281,19 @@ pub enum ControlType {
     UC_CTL_TB_FLUSH     = 10,
     UC_CTL_TLB_FLUSH    = 11,
     UC_CTL_TLB_TYPE     = 12,
+    UC_CTL_TCG_BUFFER_SIZE = 13,
+    UC_CTL_CONTEXT_MODE = 14,
     UC_CTL_IO_READ      = 1 << 31,
     UC_CTL_IO_WRITE     = 1 << 30,
+}
+
+bitflags! {
+    #[derive(Debug, Copy, Clone)]
+    #[repr(C)]
+    pub struct ContextMode : u32 {
+        const CPU    = 1;
+        const Memory = 2;
+    }
 }
 
 #[repr(C)]
