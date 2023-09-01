@@ -35,7 +35,6 @@ extern crate std;
 use alloc::boxed::Box;
 use alloc::rc::Rc;
 use alloc::vec::Vec;
-use bitflags::Flags;
 use core::cell::UnsafeCell;
 use core::ptr;
 
