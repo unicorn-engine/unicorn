@@ -20,7 +20,7 @@ typedef uint64_t puint;
 #define PRIX3264 PRIX64
 #endif
 
-uint32_t realEflags()
+uint32_t realEflags(void)
 {
     puint val = 0;
 
@@ -55,7 +55,7 @@ uint32_t realEflags()
     return (uint32_t)val & 0xFFFFFFFF;
 }
 
-static void VM_exec()
+static void VM_exec(void)
 {
 #if defined(__i386__) || defined(__x86_64__)
     uc_engine *uc;

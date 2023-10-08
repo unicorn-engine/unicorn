@@ -7,7 +7,7 @@
 #define X86_CODE32 "\x00" // add byte ptr ds:[eax],al
 #define ADDRESS 0x1000000
 
-static void VM_exec()
+static void VM_exec(void)
 {
     uc_engine *uc;
     uc_err err;

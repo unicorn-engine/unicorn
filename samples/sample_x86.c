@@ -1240,7 +1240,7 @@ static void test_i386_invalid_mem_read_in_tb(void)
     uc_close(uc);
 }
 
-static void test_i386_smc_xor()
+static void test_i386_smc_xor(void)
 {
     uc_engine *uc;
     uc_err err;
@@ -1319,7 +1319,7 @@ static void mmio_write_callback(uc_engine *uc, uint64_t offset, unsigned size,
     return;
 }
 
-static void test_i386_mmio()
+static void test_i386_mmio(void)
 {
     uc_engine *uc;
     int r_ecx = 0xdeadbeef;
@@ -1392,7 +1392,7 @@ static bool test_i386_hook_mem_invalid_cb(uc_engine *uc, uc_mem_type type,
     return true;
 }
 
-static void test_i386_hook_mem_invalid()
+static void test_i386_hook_mem_invalid(void)
 {
     uc_engine *uc;
     uc_hook hook;

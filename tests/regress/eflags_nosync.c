@@ -64,7 +64,7 @@ static bool hook_invalid_mem(uc_engine *uc, uc_mem_type type, uint64_t address, 
     }
 }
 
-static void VM_exec()
+static void VM_exec(void)
 {
     uc_engine *uc;
     uc_err err;

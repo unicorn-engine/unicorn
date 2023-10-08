@@ -49,7 +49,7 @@ void hook_code(uc_engine *uc, uint64_t addr, uint32_t size, void *user_data)
     printf("HOOK_CODE: 0x%" PRIx64 ", 0x%x\n", addr, size);
 }
 
-int main()
+int main(void)
 {
     int i;
     uc_hook sys_hook;

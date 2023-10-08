@@ -6,7 +6,7 @@
 #define ADDRESS 0x1000
 #define ARM_VMOV "\xC0\xEF\x10\x00" // VMOV.I32 D16, #0 ; Vector Move
 
-int main()
+int main(void)
 {
     uc_engine *uc;
     uc_err err;
