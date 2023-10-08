@@ -20,7 +20,7 @@
 
 #define MIPS_CODE_EL "\x56\x34\x21\x34" // ori $at, $at, 0x3456;
 
-int main() 
+int main(void)
 {
 
     uc_engine *uc;

@@ -16,7 +16,7 @@ void _interrupt(uc_engine *uc, uint32_t intno, void *user_data)
     }
 }
 
-int main()
+int main(void)
 {
     int size;
     uint8_t *buf;

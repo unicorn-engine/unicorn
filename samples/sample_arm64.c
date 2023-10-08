@@ -197,7 +197,7 @@ static void test_arm64eb(void)
     uc_close(uc);
 }
 
-static void test_arm64_sctlr()
+static void test_arm64_sctlr(void)
 {
     uc_engine *uc;
     uc_err err;
@@ -248,7 +248,7 @@ static uint32_t hook_mrs(uc_engine *uc, uc_arm64_reg reg,
     return 1;
 }
 
-static void test_arm64_hook_mrs()
+static void test_arm64_hook_mrs(void)
 {
     uc_engine *uc;
     uc_err err;

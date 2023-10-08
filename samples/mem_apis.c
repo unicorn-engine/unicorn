@@ -193,7 +193,7 @@ static void do_nx_demo(bool cause_fault)
     uc_close(uc);
 }
 
-static void nx_test()
+static void nx_test(void)
 {
     printf("NX demo - step 1: show that code runs to completion\n");
     do_nx_demo(false);
@@ -276,7 +276,7 @@ static void do_perms_demo(bool change_perms)
     uc_close(uc);
 }
 
-static void perms_test()
+static void perms_test(void)
 {
     printf("Permissions demo - step 1: show that area is writeable\n");
     do_perms_demo(false);
@@ -355,7 +355,7 @@ static void do_unmap_demo(bool do_unmap)
     uc_close(uc);
 }
 
-static void unmap_test()
+static void unmap_test(void)
 {
     printf("Unmap demo - step 1: show that area is writeable\n");
     do_unmap_demo(false);

@@ -38,7 +38,7 @@ bool cb_hookunmapped(uc_engine *uc, uc_mem_type type, uint64_t address, uint32_t
              "\x56" \
              "\xFF\x15\x20\x20\x00\x10"
 
-int main() {
+int main(void) {
    uc_engine *uc;
 
    uc_err err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
