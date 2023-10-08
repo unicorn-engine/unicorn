@@ -1415,7 +1415,7 @@ load_memop(const void *haddr, MemOp op)
     }
 }
 
-static uint64_t inline
+static inline uint64_t
 load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             uintptr_t retaddr, MemOp op, bool code_read,
             FullLoadHelper *full_load)
@@ -1983,7 +1983,7 @@ uint64_t cpu_ldq_data(CPUArchState *env, target_ulong ptr)
  * Store Helpers
  */
 
-static void inline
+static inline void
 store_memop(void *haddr, uint64_t val, MemOp op)
 {
     switch (op) {
@@ -2014,7 +2014,7 @@ store_memop(void *haddr, uint64_t val, MemOp op)
     }
 }
 
-static void inline
+static inline void
 store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
              TCGMemOpIdx oi, uintptr_t retaddr, MemOp op)
 {
@@ -2343,7 +2343,7 @@ void helper_be_stq_mmu(CPUArchState *env, target_ulong addr, uint64_t val,
  * Store Helpers for cpu_ldst.h
  */
 
-static void inline
+static inline void
 cpu_store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                  int mmu_idx, uintptr_t retaddr, MemOp op) // qq
 {
