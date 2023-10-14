@@ -1,0 +1,158 @@
+name: Build UC2
+'on':
+  push:
+    paths-ignore:
+      - .gitignore
+      - docs/**
+      - README
+      - CREDITS.TXT
+      - COPYING_GLIB
+      - COPYING.LGPL2
+      - AUTHORS.TXT
+      - CHANGELOG
+      - COPYING
+  pull_request: null
+env:
+  CI: true
+jobs:
+  Linux:
+    runs-on: '${{ matrix.config.os }}'
+    name: '${{ matrix.config.name }} - ${{ matrix.compiler }}'
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - os: ubuntu-latest
+            arch: x64
+            python-arch: x64
+            python-ver: '3.8'
+            name: ubuntu-x64 cmake shared
+            shared: 'yes'
+            artifact: ubuntu-cmake-shared-x64.7z
+            build_type: Debug
+            archiver: 7z a
+            generators: Ninja
+          - os: ubuntu-latest
+            arch: x86
+            python-arch: x86
+            python-ver: '3.8'
+            name: ubuntu-x86 cmake shared
+            shared: 'yes'
+            artifact: ubuntu-cmake-shared-x86.7z
+            build_type: Debug
+            archiver: 7z a
+            generators: Ninja
+          - os: ubuntu-latest
+            arch: x64
+            python-arch: x64
+            python-ver: '3.8'
+            name: ubuntu-x64 cmake static
+            shared: 'no'
+            artifact: ubuntu-cmake-static-x64.7z
+            build_type: Debug
+            archiver: 7z a
+            generators: Ninja
+          - os: ubuntu-latest
+            arch: x86
+            python-arch: x86
+            python-ver: '3.8'
+            name: ubuntu-x86 cmake static
+            shared: 'no'
+            artifact: ubuntu-cmake-static-x86.7z
+            build_type: Debug
+            archiver: 7z a
+            generators: Ninja
+          - os: ubuntu-latest
+            arch: aarch64
+            python-arch: aarch64
+            python-ver: '3.8'
+            name: ubuntu-aarch64 cmake
+            artifact: ubuntu-cmake-aarch64.7z
+            build_type: Debug
+            archiver: 7z a
+            generators: Ninja
+            distro: ubuntu20.04
+          - os: ubuntu-latest
+            arch: ppc64le
+            python-arch: ppc
+            python-ver: '3.8'
+            name: ubuntu-ppc64le cmake
+            artifact: ubuntu-cmake-ppc64le.7z
+            build_type: Debug
+            archiver: 7z a
+            generators: Ninja
+            distro: ubuntu20.04
+        compiler:
+          - gcc
+    steps:
+      - uses: actions/checkout@v2
+      - name: "\U0001F6A7 Linux x64/x86 build"
+        if: >-
+          contains(matrix.config.arch, 'x64') || contains(matrix.config.arch,
+          'x86')
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          if [ ${{ matrix.config.arch }} == 'x64' ]; then
+                sudo apt install -q -y libcmocka-dev ninja-build 
+          else
+                export CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386" 
+                sudo dpkg --add-architecture i386
+                sudo apt install -q -y lib32ncurses-dev lib32z1-dev lib32gcc-9-dev libc6-dev-i386 gcc-multilib \
+                  libcmocka-dev:i386 libcmocka0:i386 libc6:i386 libgcc-s1:i386 ninja-build
+          fi
+          mkdir build
+          mkdir instdir
+          cmake \
+            -S . \
+            -B . \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+            -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
+          cmake --build . --config ${{ matrix.config.build_type }}
+          cmake --install . --strip
+          ctest -VV -C ${{ matrix.config.build_type }}
+      - name: "\U0001F6A7 Linux ppc64le/aarch64 build"
+        if: >-
+          contains(matrix.config.arch, 'ppc64le') ||
+          contains(matrix.config.arch, 'aarch64')
+        uses: uraimo/run-on-arch-action@v2.0.5
+        with:
+          arch: '${{ matrix.config.arch }}'
+          distro: '${{ matrix.config.distro }}'
+          setup: |
+            mkdir -p "${PWD}/instdir"
+          dockerRunArgs: |
+            --volume "${PWD}/instdir:/instdir"
+          shell: /bin/sh
+          install: >
+            apt-get update -q -y
+
+            apt-get install -q -y git cmake build-essential automake
+            libcmocka-dev pkg-config ${{ matrix.compiler }} ninja-build
+          run: |
+            mkdir build
+            cmake \
+              -S . \
+              -B . \
+              -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+              -G "${{ matrix.config.generators }}" \
+              -DCMAKE_INSTALL_PREFIX:PATH=/instdir
+            cmake --build . --config ${{ matrix.config.build_type }}
+            cmake --install . --strip
+            ctest -VV -C ${{ matrix.config.build_type }}
+      - name: "\U0001F4E6 Pack artifact"
+        if: always()
+        shell: bash
+        working-directory: instdir
+        run: >
+          ls -laR
+
+          ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
+          ../test*
+      - name: "\U0001F4E4 Upload artifact"
+        if: always()
+        uses: actions/upload-artifact@v1
+        with:
+          path: './${{ matrix.config.artifact }}'
+          name: '${{ matrix.config.artifact }}'
