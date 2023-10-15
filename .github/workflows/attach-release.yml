@@ -1,0 +1,27 @@
+name: Attach Release Artifacts
+
+on: 
+  release:
+    types:
+      - released
+    
+
+jobs:
+  download-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/download-artifact@v3
+        with:
+          name: my-artifact
+          path: artifacts
+          
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: artifacts
+    
+    
+        
+    
+      
