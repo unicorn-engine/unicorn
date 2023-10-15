@@ -6,7 +6,7 @@
 #define SIZE 1024*64
 #define OVERFLOW 1
 
-int main()
+int main(void)
 {
     uc_engine *uc = NULL;
     uint8_t *buf = NULL, *buf2 = NULL;

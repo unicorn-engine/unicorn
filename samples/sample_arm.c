@@ -366,7 +366,7 @@ static void test_thumb_ite_internal(bool step, uint32_t *r2_out,
     *r3_out = r3;
 }
 
-static void test_thumb_ite()
+static void test_thumb_ite(void)
 {
     uint32_t r2, r3;
     uint32_t step_r2, step_r3;
@@ -390,7 +390,7 @@ static void test_thumb_ite()
     }
 }
 
-static void test_read_sctlr()
+static void test_read_sctlr(void)
 {
     uc_engine *uc;
     uc_err err;

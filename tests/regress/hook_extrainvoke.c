@@ -14,7 +14,7 @@ void hook_ins(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
     printf("hook called\n");
 }
 
-static void VM_exec()
+static void VM_exec(void)
 {
     uc_engine *uc;
     uc_err err;

@@ -79,7 +79,7 @@ static void trace_new_edge(uc_engine *uc, uc_tb *cur, uc_tb *prev, void *data)
            prev->pc + prev->size - 1, cur->pc);
 }
 
-void test_uc_ctl_exits()
+void test_uc_ctl_exits(void)
 {
     uc_engine *uc;
     uc_err err;
@@ -193,7 +193,7 @@ double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
     return (t2 - t1) * 1000.0 / CLOCKS_PER_SEC;
 }
 
-static void test_uc_ctl_tb_cache()
+static void test_uc_ctl_tb_cache(void)
 {
     uc_engine *uc;
     uc_err err;

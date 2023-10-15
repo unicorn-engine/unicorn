@@ -6,7 +6,7 @@
 #define UC_BUG_WRITE_SIZE 128
 #define UC_BUG_WRITE_ADDR 0x2000
 
-int main()
+int main(void)
 {
     int size;
     uc_engine *uc;

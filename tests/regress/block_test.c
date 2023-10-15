@@ -24,7 +24,7 @@ void cb_hookblock(uc_engine *uc, uint64_t address, uint32_t size, void *user_dat
    fprintf(stderr, "ok %d - basic block size is correct\n", count++);
 }
 
-int main() {
+int main(void) {
    uc_engine *uc;
 
    fprintf(stderr, "# basic block callback test\n");
