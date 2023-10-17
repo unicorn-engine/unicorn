@@ -17,9 +17,10 @@ jobs:
         working-directory: ./
 
       - uses: dawidd6/action-download-artifact@v2
+        id: download-artifact
         with:
           workflow: build-uc2.yml
-          workflow_conclusion: 
+          workflow_conclusion: success
           path: artifact
 
       - name: Display structure of downloaded files
