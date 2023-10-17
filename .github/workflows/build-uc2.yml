@@ -242,30 +242,6 @@ jobs:
         ls -laR
         ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} . ../test*
 
-    - name: create sample file
-      run: touch artifacts
-      working-directory: ./
-
-    - name: 'Upload sample'
-      if: always()
-      uses: actions/upload-artifact@v1
-      with:
-        path: ./artifacts
-        name: artifacts
-    
-    - name: create artifact directory
-      run: mkdir artifact
-      working-directory: ./
-
-    - name: 'download artifact'
-      uses: actions/download-artifact@v3
-      with:
-        path: artifact
-
-    - name: Display structure of downloaded files
-      run: ls -R
-      working-directory: artifact
-
     - name: '📤 Upload artifact'
       if: always()
       uses: actions/upload-artifact@v1
@@ -569,3 +545,21 @@ jobs:
       with:
         path: ./${{ matrix.config.artifact }}
         name: ${{ matrix.config.artifact }}
+
+  Download-artifact:
+    runs-on: ubuntu-latest
+    name: download artifact
+    steps:
+    
+    - name: create artifact directory
+      run: mkdir artifact
+      working-directory: ./
+
+    - name: 'download artifact'
+      uses: actions/download-artifact@v3
+      with:
+        path: artifact
+
+    - name: Display structure of downloaded files
+      run: ls -R
+      working-directory: artifact
