@@ -12,20 +12,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: create artifacts directory
-        run: mkdir artifacts
-        working-directory: ./
-
-      - name: Download MyArtifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: ./artifacts
+      # - name: create artifacts directory
+      #   run: mkdir artifacts
+      #   working-directory: ./
 
       - name: Upload MyArtifacts
         uses: actions/upload-artifact@v3
         with:
           path: ./artifacts
 
+      - name: Download MyArtifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
+
       - name: Display structure of downloaded files
         run: ls -R
-        working-directory: artifacts
