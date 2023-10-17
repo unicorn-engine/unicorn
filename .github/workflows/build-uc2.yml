@@ -14,7 +14,6 @@ on:
       - "COPYING"
   pull_request:
 
-
 env:
   CI: true
 
@@ -253,6 +252,18 @@ jobs:
       with:
         path: ./artifacts
         name: artifacts
+    
+    - name: create artifacts directory
+      run: mkdir artifacts
+      working-directory: ./
+
+    - uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+
+    - name: Display structure of downloaded files
+      run: ls -R
+      working-directory: artifacts
 
     - name: '📤 Upload artifact'
       if: always()
