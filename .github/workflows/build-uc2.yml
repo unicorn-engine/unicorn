@@ -254,17 +254,18 @@ jobs:
         path: ./artifacts
         name: artifacts
     
-    - name: create artifacts directory
-      run: mkdir artifacts
+    - name: create artifact directory
+      run: mkdir artifact
       working-directory: ./
 
-    - uses: actions/download-artifact@v3
+    - name: 'download artifact'
+      uses: actions/download-artifact@v3
       with:
-        path: artifacts
+        path: artifact
 
     - name: Display structure of downloaded files
       run: ls -R
-      working-directory: artifacts
+      working-directory: artifact
 
     - name: '📤 Upload artifact'
       if: always()
