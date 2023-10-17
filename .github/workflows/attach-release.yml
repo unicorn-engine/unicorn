@@ -16,9 +16,9 @@ jobs:
       #   run: mkdir artifacts
       #   working-directory: ./
 
-      - name: Upload MyArtifacts
-        uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v3
         with:
+          name: my-artifact
           path: ./artifacts
 
       - name: Download MyArtifacts
