@@ -23,6 +23,8 @@ jobs:
       
       - name: Download MyArtifacts
         uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
 
       - name: Display structure of downloaded files
         run: ls -R
