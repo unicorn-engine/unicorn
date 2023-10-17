@@ -1,39 +1,25 @@
 name: Attach Release Artifacts
 
-on:
+on: 
   release:
     types:
       - released
   workflow_dispatch:
 
 jobs:
-  upload-artifacts:
+  download-artifacts:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-
-      - name: Create artifacts directory
+      - uses: actions/checkout@v3
+      
+      - name: create artifacts directory
         run: mkdir artifacts
         working-directory: ./
 
-      - name: Upload all artifacts
-        uses: actions/upload-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
-          name: all-artifacts
           path: artifacts
-
-  download-artifacts:
-    needs: upload-artifacts
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: all-artifacts
 
       - name: Display structure of downloaded files
         run: ls -R
+        working-directory: artifacts
