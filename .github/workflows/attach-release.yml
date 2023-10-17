@@ -16,13 +16,13 @@ jobs:
         run: mkdir artifacts
         working-directory: ./
 
-      - name: Upload MyArtifacts
-        uses: actions/upload-artifact@v3
-        with:
-          path: ./artifacts
-      
       - name: Download MyArtifacts
         uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
+
+      - name: Upload MyArtifacts
+        uses: actions/upload-artifact@v3
         with:
           path: ./artifacts
 
