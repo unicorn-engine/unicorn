@@ -23,6 +23,6 @@ jobs:
           workflow_conclusion: success
           path: artifact
 
-      - name: Display structure of downloaded files
+      - name: Display structure of all downloaded files
         run: ls -R
         working-directory: artifact
