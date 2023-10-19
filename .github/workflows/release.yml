@@ -1,7 +1,7 @@
 on:
   push:
     tags:
-    - 'v*'
+    - 'rc*'
   workflow_dispatch:
     
 name: Upload Release Assets
