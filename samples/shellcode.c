@@ -28,11 +28,12 @@ static void hook_code(uc_engine *uc, uint64_t address, uint32_t size,
 {
     int r_eip;
     uint8_t tmp[16];
+    uint32_t reg_size = sizeof(r_eip);
 
     printf("Tracing instruction at 0x%" PRIx64 ", instruction size = 0x%x\n",
            address, size);
 
-    uc_reg_read(uc, UC_X86_REG_EIP, &r_eip);
+    uc_reg_read(uc, UC_X86_REG_EIP, &r_eip, &reg_size);
     printf("*** EIP = %x ***: ", r_eip);
 
     size = MIN(sizeof(tmp), size);
@@ -51,14 +52,15 @@ static void hook_intr(uc_engine *uc, uint32_t intno, void *user_data)
 {
     int32_t r_eax, r_ecx, r_eip;
     uint32_t r_edx, size;
+    uint32_t reg_size = sizeof(r_eax);
     unsigned char buffer[256];
 
     // only handle Linux syscall
     if (intno != 0x80)
         return;
 
-    uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
-    uc_reg_read(uc, UC_X86_REG_EIP, &r_eip);
+    uc_reg_read(uc, UC_X86_REG_EAX, &r_eax, &reg_size);
+    uc_reg_read(uc, UC_X86_REG_EIP, &r_eip, &reg_size);
 
     switch (r_eax) {
     default:
@@ -70,10 +72,10 @@ static void hook_intr(uc_engine *uc, uint32_t intno, void *user_data)
         break;
     case 4: // sys_write
         // ECX = buffer address
-        uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx);
+        uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx, &reg_size);
 
         // EDX = buffer size
-        uc_reg_read(uc, UC_X86_REG_EDX, &r_edx);
+        uc_reg_read(uc, UC_X86_REG_EDX, &r_edx, &reg_size);
 
         // read the buffer in
         size = MIN(sizeof(buffer) - 1, r_edx);
@@ -99,6 +101,7 @@ static void test_i386(void)
     uc_hook trace1, trace2;
 
     int r_esp = ADDRESS + 0x200000; // ESP register
+    uint32_t reg_size = sizeof(r_esp);
 
     printf("Emulate i386 code\n");
 
@@ -120,7 +123,7 @@ static void test_i386(void)
     }
 
     // initialize machine registers
-    uc_reg_write(uc, UC_X86_REG_ESP, &r_esp);
+    uc_reg_write(uc, UC_X86_REG_ESP, &r_esp, &reg_size);
 
     // tracing all instructions by having @begin > @end
     uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code, NULL, 1, 0);

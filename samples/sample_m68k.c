@@ -53,6 +53,7 @@ static void test_m68k(void)
 
     int pc = 0x0000; // program counter
     int sr = 0x0000; // status register
+    uint32_t reg_size = sizeof(pc);
 
     printf("Emulate M68K code\n");
 
@@ -71,26 +72,26 @@ static void test_m68k(void)
     uc_mem_write(uc, ADDRESS, M68K_CODE, sizeof(M68K_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_M68K_REG_D0, &d0);
-    uc_reg_write(uc, UC_M68K_REG_D1, &d1);
-    uc_reg_write(uc, UC_M68K_REG_D2, &d2);
-    uc_reg_write(uc, UC_M68K_REG_D3, &d3);
-    uc_reg_write(uc, UC_M68K_REG_D4, &d4);
-    uc_reg_write(uc, UC_M68K_REG_D5, &d5);
-    uc_reg_write(uc, UC_M68K_REG_D6, &d6);
-    uc_reg_write(uc, UC_M68K_REG_D7, &d7);
+    uc_reg_write(uc, UC_M68K_REG_D0, &d0, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_D1, &d1, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_D2, &d2, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_D3, &d3, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_D4, &d4, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_D5, &d5, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_D6, &d6, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_D7, &d7, &reg_size);
 
-    uc_reg_write(uc, UC_M68K_REG_A0, &a0);
-    uc_reg_write(uc, UC_M68K_REG_A1, &a1);
-    uc_reg_write(uc, UC_M68K_REG_A2, &a2);
-    uc_reg_write(uc, UC_M68K_REG_A3, &a3);
-    uc_reg_write(uc, UC_M68K_REG_A4, &a4);
-    uc_reg_write(uc, UC_M68K_REG_A5, &a5);
-    uc_reg_write(uc, UC_M68K_REG_A6, &a6);
-    uc_reg_write(uc, UC_M68K_REG_A7, &a7);
+    uc_reg_write(uc, UC_M68K_REG_A0, &a0, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_A1, &a1, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_A2, &a2, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_A3, &a3, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_A4, &a4, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_A5, &a5, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_A6, &a6, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_A7, &a7, &reg_size);
 
-    uc_reg_write(uc, UC_M68K_REG_PC, &pc);
-    uc_reg_write(uc, UC_M68K_REG_SR, &sr);
+    uc_reg_write(uc, UC_M68K_REG_PC, &pc, &reg_size);
+    uc_reg_write(uc, UC_M68K_REG_SR, &sr, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -108,26 +109,26 @@ static void test_m68k(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_M68K_REG_D0, &d0);
-    uc_reg_read(uc, UC_M68K_REG_D1, &d1);
-    uc_reg_read(uc, UC_M68K_REG_D2, &d2);
-    uc_reg_read(uc, UC_M68K_REG_D3, &d3);
-    uc_reg_read(uc, UC_M68K_REG_D4, &d4);
-    uc_reg_read(uc, UC_M68K_REG_D5, &d5);
-    uc_reg_read(uc, UC_M68K_REG_D6, &d6);
-    uc_reg_read(uc, UC_M68K_REG_D7, &d7);
+    uc_reg_read(uc, UC_M68K_REG_D0, &d0, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_D1, &d1, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_D2, &d2, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_D3, &d3, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_D4, &d4, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_D5, &d5, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_D6, &d6, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_D7, &d7, &reg_size);
 
-    uc_reg_read(uc, UC_M68K_REG_A0, &a0);
-    uc_reg_read(uc, UC_M68K_REG_A1, &a1);
-    uc_reg_read(uc, UC_M68K_REG_A2, &a2);
-    uc_reg_read(uc, UC_M68K_REG_A3, &a3);
-    uc_reg_read(uc, UC_M68K_REG_A4, &a4);
-    uc_reg_read(uc, UC_M68K_REG_A5, &a5);
-    uc_reg_read(uc, UC_M68K_REG_A6, &a6);
-    uc_reg_read(uc, UC_M68K_REG_A7, &a7);
+    uc_reg_read(uc, UC_M68K_REG_A0, &a0, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_A1, &a1, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_A2, &a2, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_A3, &a3, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_A4, &a4, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_A5, &a5, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_A6, &a6, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_A7, &a7, &reg_size);
 
-    uc_reg_read(uc, UC_M68K_REG_PC, &pc);
-    uc_reg_read(uc, UC_M68K_REG_SR, &sr);
+    uc_reg_read(uc, UC_M68K_REG_PC, &pc, &reg_size);
+    uc_reg_read(uc, UC_M68K_REG_SR, &sr, &reg_size);
 
     printf(">>> A0 = 0x%x\t\t>>> D0 = 0x%x\n", a0, d0);
     printf(">>> A1 = 0x%x\t\t>>> D1 = 0x%x\n", a1, d1);

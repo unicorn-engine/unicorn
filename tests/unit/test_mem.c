@@ -41,12 +41,13 @@ static void test_mem_protect(void)
     int r_eax = 0x2000;
     int r_esi = 0xdeadbeef;
     uint32_t mem;
+    uint32_t reg_size = sizeof(r_eax);
     // add [eax + 4], esi
     char code[] = {0x01, 0x70, 0x04};
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &qc));
-    OK(uc_reg_write(qc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_write(qc, UC_X86_REG_ESI, &r_esi));
+    OK(uc_reg_write(qc, UC_X86_REG_EAX, &r_eax, &reg_size));
+    OK(uc_reg_write(qc, UC_X86_REG_ESI, &r_esi, &reg_size));
     OK(uc_mem_map(qc, 0x1000, 0x1000, UC_PROT_READ | UC_PROT_EXEC));
     OK(uc_mem_map(qc, 0x2000, 0x1000, UC_PROT_READ));
     OK(uc_mem_protect(qc, 0x2000, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
@@ -93,6 +94,7 @@ static void test_splitting_mmio_unmap(void)
     char code[] = "\x8b\x0d\x04\x30\x00\x00\x8b\x1d\x04\x40\x00\x00";
     int r_ecx, r_ebx;
     int bytes = LEINT32(0xdeadbeef);
+    uint32_t reg_size = sizeof(r_ecx);
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
 
@@ -109,8 +111,8 @@ static void test_splitting_mmio_unmap(void)
 
     OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx, &reg_size));
 
     TEST_CHECK(r_ecx == 0xdeadbeef);
     TEST_CHECK(r_ebx == 0x19260817);
@@ -255,6 +257,7 @@ static void test_mem_protect_mmio(void)
                   "\x00\x00\x00";
     uint64_t called = 0;
     uint64_t r_eax;
+    uint32_t reg_size = sizeof(r_eax);
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
     OK(uc_mem_map(uc, 0x8000, 0x1000, UC_PROT_ALL));
@@ -267,7 +270,7 @@ static void test_mem_protect_mmio(void)
 
     uc_assert_err(UC_ERR_WRITE_PROT,
                   uc_emu_start(uc, 0x8000, 0x8000 + sizeof(code) - 1, 0, 0));
-    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_eax));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_eax, &reg_size));
 
     TEST_CHECK(called == 1);
     TEST_CHECK(r_eax == 0x114514);

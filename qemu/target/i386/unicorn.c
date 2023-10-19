@@ -223,7 +223,7 @@ static int x86_msr_write(CPUX86State *env, uc_x86_msr *msr)
 }
 
 static void reg_read(CPUX86State *env, unsigned int regid, void *value,
-                     uc_mode mode)
+                     uc_mode mode, uint32_t *reg_size)
 {
     switch (regid) {
     default:
@@ -848,7 +848,7 @@ static void reg_read(CPUX86State *env, unsigned int regid, void *value,
 }
 
 static int reg_write(CPUX86State *env, unsigned int regid, const void *value,
-                     uc_mode mode)
+                     uc_mode mode, uint32_t *reg_size)
 {
     int ret;
 
@@ -1493,7 +1493,7 @@ static int reg_write(CPUX86State *env, unsigned int regid, const void *value,
 }
 
 int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                 int count)
+                 int count, uint32_t *reg_size)
 {
     CPUX86State *env = &(X86_CPU(uc->cpu)->env);
     int i;
@@ -1501,14 +1501,14 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value, uc->mode);
+        reg_read(env, regid, value, uc->mode, reg_size);
     }
 
     return 0;
 }
 
 int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                  int count)
+                  int count, uint32_t *reg_size)
 {
     CPUX86State *env = &(X86_CPU(uc->cpu)->env);
     int i;
@@ -1517,7 +1517,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        ret = reg_write(env, regid, value, uc->mode);
+        ret = reg_write(env, regid, value, uc->mode, reg_size);
         if (ret) {
             return ret;
         }
@@ -1558,7 +1558,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 
 DEFAULT_VISIBILITY
 int x86_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                         void **vals, int count)
+                         void **vals, int count, uint32_t *reg_size)
 {
     CPUX86State *env = (CPUX86State *)ctx->data;
     int i;
@@ -1566,7 +1566,7 @@ int x86_context_reg_read(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value, ctx->mode);
+        reg_read(env, regid, value, ctx->mode, reg_size);
     }
 
     return 0;
@@ -1574,7 +1574,7 @@ int x86_context_reg_read(struct uc_context *ctx, unsigned int *regs,
 
 DEFAULT_VISIBILITY
 int x86_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                          void *const *vals, int count)
+                          void *const *vals, int count, uint32_t *reg_size)
 {
     CPUX86State *env = (CPUX86State *)ctx->data;
     int i;
@@ -1583,7 +1583,7 @@ int x86_context_reg_write(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        ret = reg_write(env, regid, value, ctx->mode);
+        ret = reg_write(env, regid, value, ctx->mode, reg_size);
         if (ret) {
             return ret;
         }

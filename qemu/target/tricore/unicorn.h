@@ -11,14 +11,14 @@
 
 // functions to read & write registers
 int tricore_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                     int count);
+                     int count, uint32_t *reg_size);
 int tricore_reg_write(struct uc_struct *uc, unsigned int *regs,
-                      void *const *vals, int count);
+                      void *const *vals, int count, uint32_t *reg_size);
 
 int tricore_context_reg_read(struct uc_context *uc, unsigned int *regs,
-                             void **vals, int count);
+                             void **vals, int count, uint32_t *reg_size);
 int tricore_context_reg_write(struct uc_context *uc, unsigned int *regs,
-                              void *const *vals, int count);
+                              void *const *vals, int count, uint32_t *reg_size);
 
 void tricore_reg_reset(struct uc_struct *uc);
 

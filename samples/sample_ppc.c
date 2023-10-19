@@ -36,6 +36,7 @@ static void test_ppc(void)
     int r3 = 0x1234;  // R3 register
     int r6 = 0x6789;  // R6 register
     int r26 = 0x8877; // R26 register	(result)
+    uint32_t reg_size = sizeof(r26);
 
     printf("Emulate PPC code\n");
 
@@ -54,9 +55,9 @@ static void test_ppc(void)
     uc_mem_write(uc, ADDRESS, PPC_CODE, sizeof(PPC_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_PPC_REG_3, &r3);
-    uc_reg_write(uc, UC_PPC_REG_6, &r6);
-    uc_reg_write(uc, UC_PPC_REG_26, &r26);
+    uc_reg_write(uc, UC_PPC_REG_3, &r3, &reg_size);
+    uc_reg_write(uc, UC_PPC_REG_6, &r6, &reg_size);
+    uc_reg_write(uc, UC_PPC_REG_26, &r26, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -75,7 +76,7 @@ static void test_ppc(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_PPC_REG_26, &r26);
+    uc_reg_read(uc, UC_PPC_REG_26, &r26, &reg_size);
     printf(">>> r26 = 0x%x\n", r26);
 
     // close engine when done

@@ -36,6 +36,7 @@ static void test_tricore(void)
     uc_hook trace1, trace2;
 
     uint32_t d0 = 0x0; // d0 register
+    uint32_t reg_size = sizeof(d0);
 
     printf("Emulate TriCore code\n");
 
@@ -70,7 +71,7 @@ static void test_tricore(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_TRICORE_REG_D0, &d0);
+    uc_reg_read(uc, UC_TRICORE_REG_D0, &d0, &reg_size);
     printf(">>> d0 = 0x%x\n", d0);
 
     uc_close(uc);

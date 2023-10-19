@@ -49,6 +49,7 @@ static void test_arm(void)
     int r2 = 0x6789; // R1 register
     int r3 = 0x3333; // R2 register
     int r1;          // R1 register
+    uint32_t reg_size = sizeof(r0);
 
     printf("Emulate ARM code\n");
 
@@ -67,9 +68,9 @@ static void test_arm(void)
     uc_mem_write(uc, ADDRESS, ARM_CODE, sizeof(ARM_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_ARM_REG_R0, &r0);
-    uc_reg_write(uc, UC_ARM_REG_R2, &r2);
-    uc_reg_write(uc, UC_ARM_REG_R3, &r3);
+    uc_reg_write(uc, UC_ARM_REG_R0, &r0, &reg_size);
+    uc_reg_write(uc, UC_ARM_REG_R2, &r2, &reg_size);
+    uc_reg_write(uc, UC_ARM_REG_R3, &r3, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -87,8 +88,8 @@ static void test_arm(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_ARM_REG_R0, &r0);
-    uc_reg_read(uc, UC_ARM_REG_R1, &r1);
+    uc_reg_read(uc, UC_ARM_REG_R0, &r0, &reg_size);
+    uc_reg_read(uc, UC_ARM_REG_R1, &r1, &reg_size);
     printf(">>> R0 = 0x%x\n", r0);
     printf(">>> R1 = 0x%x\n", r1);
 
@@ -102,6 +103,7 @@ static void test_thumb(void)
     uc_hook trace1, trace2;
 
     int sp = 0x1234; // R0 register
+    uint32_t reg_size = sizeof(sp);
 
     printf("Emulate THUMB code\n");
 
@@ -120,7 +122,7 @@ static void test_thumb(void)
     uc_mem_write(uc, ADDRESS, THUMB_CODE, sizeof(THUMB_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_ARM_REG_SP, &sp);
+    uc_reg_write(uc, UC_ARM_REG_SP, &sp, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -139,7 +141,7 @@ static void test_thumb(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_ARM_REG_SP, &sp);
+    uc_reg_read(uc, UC_ARM_REG_SP, &sp, &reg_size);
     printf(">>> SP = 0x%x\n", sp);
 
     uc_close(uc);
@@ -155,6 +157,7 @@ static void test_armeb(void)
     int r2 = 0x6789; // R1 register
     int r3 = 0x3333; // R2 register
     int r1;          // R1 register
+    uint32_t reg_size = sizeof(r0);
 
     printf("Emulate ARM Big-Endian code\n");
 
@@ -173,9 +176,9 @@ static void test_armeb(void)
     uc_mem_write(uc, ADDRESS, ARM_CODE_EB, sizeof(ARM_CODE_EB) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_ARM_REG_R0, &r0);
-    uc_reg_write(uc, UC_ARM_REG_R2, &r2);
-    uc_reg_write(uc, UC_ARM_REG_R3, &r3);
+    uc_reg_write(uc, UC_ARM_REG_R0, &r0, &reg_size);
+    uc_reg_write(uc, UC_ARM_REG_R2, &r2, &reg_size);
+    uc_reg_write(uc, UC_ARM_REG_R3, &r3, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -193,8 +196,8 @@ static void test_armeb(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_ARM_REG_R0, &r0);
-    uc_reg_read(uc, UC_ARM_REG_R1, &r1);
+    uc_reg_read(uc, UC_ARM_REG_R0, &r0, &reg_size);
+    uc_reg_read(uc, UC_ARM_REG_R1, &r1, &reg_size);
     printf(">>> R0 = 0x%x\n", r0);
     printf(">>> R1 = 0x%x\n", r1);
 
@@ -208,6 +211,7 @@ static void test_thumbeb(void)
     uc_hook trace1, trace2;
 
     int sp = 0x1234; // R0 register
+    uint32_t reg_size = sizeof(sp);
 
     printf("Emulate THUMB Big-Endian code\n");
 
@@ -226,7 +230,7 @@ static void test_thumbeb(void)
     uc_mem_write(uc, ADDRESS, THUMB_CODE_EB, sizeof(THUMB_CODE_EB) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_ARM_REG_SP, &sp);
+    uc_reg_write(uc, UC_ARM_REG_SP, &sp, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -246,7 +250,7 @@ static void test_thumbeb(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_ARM_REG_SP, &sp);
+    uc_reg_read(uc, UC_ARM_REG_SP, &sp, &reg_size);
     printf(">>> SP = 0x%x\n", sp);
 
     uc_close(uc);
@@ -259,6 +263,7 @@ static void test_thumb_mrs(void)
     uc_hook trace1, trace2;
 
     int pc;
+    uint32_t reg_size = sizeof(pc);
 
     printf("Emulate THUMB MRS instruction\n");
     // 0xf3ef8014 - mrs r0, control
@@ -303,7 +308,7 @@ static void test_thumb_mrs(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_ARM_REG_PC, &pc);
+    uc_reg_read(uc, UC_ARM_REG_PC, &pc, &reg_size);
     printf(">>> PC = 0x%x\n", pc);
     if (pc != ADDRESS + 4) {
         printf("Error, PC was 0x%x, expected was 0x%x.\n", pc, ADDRESS + 4);
@@ -320,6 +325,7 @@ static void test_thumb_ite_internal(bool step, uint32_t *r2_out,
 
     uint32_t sp = 0x1234;
     uint32_t r2 = 0, r3 = 1;
+    uint32_t reg_size = sizeof(sp);
 
     err = uc_open(UC_ARCH_ARM, UC_MODE_THUMB, &uc);
     if (err) {
@@ -333,10 +339,10 @@ static void test_thumb_ite_internal(bool step, uint32_t *r2_out,
     uc_mem_write(uc, ADDRESS, ARM_THUM_COND_CODE,
                  sizeof(ARM_THUM_COND_CODE) - 1);
 
-    uc_reg_write(uc, UC_ARM_REG_SP, &sp);
+    uc_reg_write(uc, UC_ARM_REG_SP, &sp, &reg_size);
 
-    uc_reg_write(uc, UC_ARM_REG_R2, &r2);
-    uc_reg_write(uc, UC_ARM_REG_R3, &r3);
+    uc_reg_write(uc, UC_ARM_REG_R2, &r2, &reg_size);
+    uc_reg_write(uc, UC_ARM_REG_R3, &r3, &reg_size);
 
     if (!step) {
         err = uc_emu_start(uc, ADDRESS | 1,
@@ -346,6 +352,8 @@ static void test_thumb_ite_internal(bool step, uint32_t *r2_out,
         }
     } else {
         int i, addr = ADDRESS;
+        reg_size = sizeof(addr);
+
         for (i = 0; i < sizeof(ARM_THUM_COND_CODE) / 2; i++) {
             err = uc_emu_start(uc, addr | 1,
                                ADDRESS + sizeof(ARM_THUM_COND_CODE) - 1, 0, 1);
@@ -353,12 +361,12 @@ static void test_thumb_ite_internal(bool step, uint32_t *r2_out,
                 printf("Failed on uc_emu_start() with error returned: %u\n",
                        err);
             }
-            uc_reg_read(uc, UC_ARM_REG_PC, &addr);
+            uc_reg_read(uc, UC_ARM_REG_PC, &addr, &reg_size);
         }
     }
 
-    uc_reg_read(uc, UC_ARM_REG_R2, &r2);
-    uc_reg_read(uc, UC_ARM_REG_R3, &r3);
+    uc_reg_read(uc, UC_ARM_REG_R2, &r2, &reg_size);
+    uc_reg_read(uc, UC_ARM_REG_R3, &r3, &reg_size);
 
     uc_close(uc);
 
@@ -395,6 +403,7 @@ static void test_read_sctlr()
     uc_engine *uc;
     uc_err err;
     uc_arm_cp_reg reg;
+    uint32_t reg_size = sizeof(reg);
 
     printf("Read the SCTLR register.\n");
 
@@ -412,7 +421,7 @@ static void test_read_sctlr()
     reg.opc1 = 0;
     reg.opc2 = 0;
 
-    err = uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg);
+    err = uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg, &reg_size);
     if (err != UC_ERR_OK) {
         printf("Failed on uc_reg_read() with error returned: %u\n", err);
     }

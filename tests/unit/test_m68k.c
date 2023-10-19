@@ -19,14 +19,15 @@ static void test_move_to_sr(void)
     uc_engine *uc;
     char code[] = "\x46\xfc\x27\x00"; // move    #$2700,sr
     int r_sr;
+    uint32_t reg_size = sizeof(r_sr);
 
     uc_common_setup(&uc, UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, code,
                     sizeof(code) - 1, UC_CPU_M68K_M68000);
-    OK(uc_reg_read(uc, UC_M68K_REG_SR, &r_sr));
+    OK(uc_reg_read(uc, UC_M68K_REG_SR, &r_sr, &reg_size));
 
     r_sr = r_sr | 0x2000;
 
-    OK(uc_reg_write(uc, UC_M68K_REG_SR, &r_sr));
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, &r_sr, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 

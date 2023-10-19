@@ -78,7 +78,8 @@ static void riscv_release(void *ctx)
 
 void riscv_reg_reset(struct uc_struct *uc) {}
 
-static void reg_read(CPURISCVState *env, unsigned int regid, void *value)
+static void reg_read(CPURISCVState *env, unsigned int regid, void *value,
+                     uint32_t *reg_size)
 {
     switch (regid) {
     case UC_RISCV_REG_X0:
@@ -307,7 +308,8 @@ static void reg_read(CPURISCVState *env, unsigned int regid, void *value)
     return;
 }
 
-static void reg_write(CPURISCVState *env, unsigned int regid, const void *value)
+static void reg_write(CPURISCVState *env, unsigned int regid, const void *value,
+                      uint32_t *reg_size)
 {
     switch (regid) {
     case UC_RISCV_REG_X0:
@@ -533,7 +535,7 @@ static void reg_write(CPURISCVState *env, unsigned int regid, const void *value)
 }
 
 int riscv_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                   int count)
+                   int count, uint32_t *reg_size)
 {
     CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
     int i;
@@ -541,14 +543,14 @@ int riscv_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        reg_read(env, regid, value, reg_size);
     }
 
     return 0;
 }
 
 int riscv_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                    int count)
+                    int count, uint32_t *reg_size)
 {
     CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
     int i;
@@ -556,7 +558,7 @@ int riscv_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        reg_write(env, regid, value, reg_size);
         if (regid == UC_RISCV_REG_PC) {
             // force to quit execution and flush TB
             uc->quit_request = true;
@@ -570,11 +572,11 @@ int riscv_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 DEFAULT_VISIBILITY
 #ifdef TARGET_RISCV32
 int riscv32_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                             void **vals, int count)
+                             void **vals, int count, uint32_t *reg_size)
 #else
 /* TARGET_RISCV64 */
 int riscv64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                             void **vals, int count)
+                             void **vals, int count, uint32_t *reg_size)
 #endif
 {
     CPURISCVState *env = (CPURISCVState *)ctx->data;
@@ -583,7 +585,7 @@ int riscv64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        reg_read(env, regid, value, reg_size);
     }
 
     return 0;
@@ -592,11 +594,11 @@ int riscv64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
 DEFAULT_VISIBILITY
 #ifdef TARGET_RISCV32
 int riscv32_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                              void *const *vals, int count)
+                              void *const *vals, int count, uint32_t *reg_size)
 #else
 /* TARGET_RISCV64 */
 int riscv64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                              void *const *vals, int count)
+                              void *const *vals, int count, uint32_t *reg_size)
 #endif
 {
     CPURISCVState *env = (CPURISCVState *)ctx->data;
@@ -605,7 +607,7 @@ int riscv64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        reg_write(env, regid, value, reg_size);
     }
 
     return 0;

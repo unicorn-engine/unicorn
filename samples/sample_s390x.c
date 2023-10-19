@@ -34,6 +34,7 @@ static void test_s390x(void)
     uc_err err;
 
     uint64_t r2 = 2, r3 = 3;
+    uint32_t reg_size = sizeof(r2);
 
     printf("Emulate S390X code\n");
 
@@ -52,8 +53,8 @@ static void test_s390x(void)
     uc_mem_write(uc, ADDRESS, S390X_CODE, sizeof(S390X_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_S390X_REG_R2, &r2);
-    uc_reg_write(uc, UC_S390X_REG_R3, &r3);
+    uc_reg_write(uc, UC_S390X_REG_R2, &r2, &reg_size);
+    uc_reg_write(uc, UC_S390X_REG_R3, &r3, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -72,8 +73,8 @@ static void test_s390x(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_S390X_REG_R2, &r2);
-    uc_reg_read(uc, UC_S390X_REG_R3, &r3);
+    uc_reg_read(uc, UC_S390X_REG_R2, &r2, &reg_size);
+    uc_reg_read(uc, UC_S390X_REG_R3, &r3, &reg_size);
 
     printf(">>> R2 = 0x%" PRIx64 "\t\t>>> R3 = 0x%" PRIx64 "\n", r2, r3);
 

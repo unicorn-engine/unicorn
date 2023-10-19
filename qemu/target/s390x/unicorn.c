@@ -53,7 +53,8 @@ void s390_reg_reset(struct uc_struct *uc)
     env->psw.addr = 0;
 }
 
-static void reg_read(CPUS390XState *env, unsigned int regid, void *value)
+static void reg_read(CPUS390XState *env, unsigned int regid, void *value,
+                     uint32_t *reg_size)
 {
     if (regid >= UC_S390X_REG_R0 && regid <= UC_S390X_REG_R15) {
         *(uint64_t *)value = env->regs[regid - UC_S390X_REG_R0];
@@ -77,7 +78,8 @@ static void reg_read(CPUS390XState *env, unsigned int regid, void *value)
     }
 }
 
-static void reg_write(CPUS390XState *env, unsigned int regid, const void *value)
+static void reg_write(CPUS390XState *env, unsigned int regid, const void *value,
+                      uint32_t *reg_size)
 {
     if (regid >= UC_S390X_REG_R0 && regid <= UC_S390X_REG_R15) {
         env->regs[regid - UC_S390X_REG_R0] = *(uint64_t *)value;
@@ -103,7 +105,7 @@ static void reg_write(CPUS390XState *env, unsigned int regid, const void *value)
 }
 
 static int s390_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                         int count)
+                         int count, uint32_t *reg_size)
 {
     CPUS390XState *env = &(S390_CPU(uc->cpu)->env);
     int i;
@@ -111,14 +113,14 @@ static int s390_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        reg_read(env, regid, value, reg_size);
     }
 
     return 0;
 }
 
 static int s390_reg_write(struct uc_struct *uc, unsigned int *regs,
-                          void *const *vals, int count)
+                          void *const *vals, int count, uint32_t *reg_size)
 {
     CPUS390XState *env = &(S390_CPU(uc->cpu)->env);
     int i;
@@ -126,7 +128,7 @@ static int s390_reg_write(struct uc_struct *uc, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        reg_write(env, regid, value, reg_size);
         if (regid == UC_S390X_REG_PC) {
             // force to quit execution and flush TB
             uc->quit_request = true;
@@ -139,7 +141,7 @@ static int s390_reg_write(struct uc_struct *uc, unsigned int *regs,
 
 DEFAULT_VISIBILITY
 int s390_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void **vals, int count)
+                          void **vals, int count, uint32_t *reg_size)
 {
     CPUS390XState *env = (CPUS390XState *)ctx->data;
     int i;
@@ -147,7 +149,7 @@ int s390_context_reg_read(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        reg_read(env, regid, value, reg_size);
     }
 
     return 0;
@@ -155,7 +157,7 @@ int s390_context_reg_read(struct uc_context *ctx, unsigned int *regs,
 
 DEFAULT_VISIBILITY
 int s390_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, int count)
+                           void *const *vals, int count, uint32_t *reg_size)
 {
     CPUS390XState *env = (CPUS390XState *)ctx->data;
     int i;
@@ -163,7 +165,7 @@ int s390_context_reg_write(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        reg_write(env, regid, value, reg_size);
     }
 
     return 0;

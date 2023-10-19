@@ -6,18 +6,18 @@
 
 // functions to read & write registers
 int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                   int count);
+                   int count, uint32_t *reg_size);
 int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                    int count);
+                    int count, uint32_t *reg_size);
 
 int sparc_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                           void **vals, int count);
+                           void **vals, int count, uint32_t *reg_size);
 int sparc_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                            void *const *vals, int count);
+                            void *const *vals, int count, uint32_t *reg_size);
 int sparc64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                             void **vals, int count);
+                             void **vals, int count, uint32_t *reg_size);
 int sparc64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                              void *const *vals, int count);
+                              void *const *vals, int count, uint32_t *reg_size);
 
 void sparc_reg_reset(struct uc_struct *uc);
 

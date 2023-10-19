@@ -16,16 +16,17 @@ static void test_s390x_lr(void)
     char code[] = "\x18\x23"; // lr %r2, %r3
     uint64_t r_pc, r_r2, r_r3 = 0x114514;
     uc_engine *uc;
+    uint32_t reg_size = sizeof(r_pc);
 
     uc_common_setup(&uc, UC_ARCH_S390X, UC_MODE_BIG_ENDIAN, code,
                     sizeof(code) - 1);
 
-    OK(uc_reg_write(uc, UC_S390X_REG_R3, &r_r3));
+    OK(uc_reg_write(uc, UC_S390X_REG_R3, &r_r3, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_S390X_REG_R2, &r_r2));
-    OK(uc_reg_read(uc, UC_S390X_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_S390X_REG_R2, &r_r2, &reg_size));
+    OK(uc_reg_read(uc, UC_S390X_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_r2 == 0x114514);
     TEST_CHECK(r_pc == code_start + sizeof(code) - 1);

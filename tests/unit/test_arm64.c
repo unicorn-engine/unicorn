@@ -31,22 +31,23 @@ static void test_arm64_until(void)
     uint64_t r_x17 = 0x78907890;
     uint64_t r_pc = 0x00000000;
     uint64_t r_x28 = 0x12341234;
+    uint32_t reg_size = sizeof(r_x16);
 
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
                     UC_CPU_ARM64_A72);
 
     // initialize machine registers
-    OK(uc_reg_write(uc, UC_ARM64_REG_X16, &r_x16));
-    OK(uc_reg_write(uc, UC_ARM64_REG_X17, &r_x17));
-    OK(uc_reg_write(uc, UC_ARM64_REG_X28, &r_x28));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X16, &r_x16, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X17, &r_x17, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X28, &r_x28, &reg_size));
 
     // emulate the three instructions
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 3));
 
-    OK(uc_reg_read(uc, UC_ARM64_REG_X16, &r_x16));
-    OK(uc_reg_read(uc, UC_ARM64_REG_X17, &r_x17));
-    OK(uc_reg_read(uc, UC_ARM64_REG_X28, &r_x28));
-    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X16, &r_x16, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X17, &r_x17, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X28, &r_x28, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_x16 == 0x1);
     TEST_CHECK(r_x17 == 0x20);
@@ -64,21 +65,22 @@ static void test_arm64_code_patching(void)
                     UC_CPU_ARM64_A72);
     // zero out x0
     uint64_t r_x0 = 0x0;
-    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
+    uint32_t reg_size = sizeof(r_x0);
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
     // emulate the instruction
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
     // check value
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
     TEST_CHECK(r_x0 == 0x1);
     // patch instruction
     char patch_code[] = "\x00\xfc\x1f\x11"; // add w0, w0, 0x7FF
     OK(uc_mem_write(uc, code_start, patch_code, sizeof(patch_code) - 1));
     // zero out x0
     r_x0 = 0x0;
-    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(patch_code) - 1, 0, 0));
     // check value
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
     TEST_CHECK(r_x0 != 0x1);
     TEST_CHECK(r_x0 == 0x7ff);
 
@@ -94,11 +96,12 @@ static void test_arm64_code_patching_count(void)
                     UC_CPU_ARM64_A72);
     // zero out x0
     uint64_t r_x0 = 0x0;
-    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
+    uint32_t reg_size = sizeof(r_x0);
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
     // emulate the instruction
     OK(uc_emu_start(uc, code_start, -1, 0, 1));
     // check value
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
     TEST_CHECK(r_x0 == 0x1);
     // patch instruction
     char patch_code[] = "\x00\xfc\x1f\x11"; // add w0, w0, 0x7FF
@@ -107,10 +110,10 @@ static void test_arm64_code_patching_count(void)
                            code_start + sizeof(patch_code) - 1));
     // zero out x0
     r_x0 = 0x0;
-    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
     OK(uc_emu_start(uc, code_start, -1, 0, 1));
     // check value
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
     TEST_CHECK(r_x0 != 0x1);
     TEST_CHECK(r_x0 == 0x7ff);
 
@@ -122,6 +125,7 @@ static void test_arm64_v8_pac(void)
     uc_engine *uc;
     char code[] = "\x28\xfd\xea\xc8"; // casal x10, x8, [x9]
     uint64_t r_x9, r_x8, mem;
+    uint32_t reg_size = sizeof(r_x9);
 
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
                     UC_CPU_ARM64_MAX);
@@ -129,9 +133,9 @@ static void test_arm64_v8_pac(void)
     OK(uc_mem_map(uc, 0x40000, 0x1000, UC_PROT_ALL));
     OK(uc_mem_write(uc, 0x40000, "\x00\x00\x00\x00\x00\x00\x00\x00", 8));
     r_x9 = 0x40000;
-    OK(uc_reg_write(uc, UC_ARM64_REG_X9, &r_x9));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X9, &r_x9, &reg_size));
     r_x8 = 0xdeadbeafdeadbeaf;
-    OK(uc_reg_write(uc, UC_ARM64_REG_X8, &r_x8));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X8, &r_x8, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
@@ -146,6 +150,7 @@ static void test_arm64_read_sctlr(void)
 {
     uc_engine *uc;
     uc_arm64_cp_reg reg;
+    uint32_t reg_size = sizeof(reg);
 
     OK(uc_open(UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN | UC_MODE_ARM, &uc));
 
@@ -156,7 +161,7 @@ static void test_arm64_read_sctlr(void)
     reg.op1 = 0;
     reg.op2 = 0;
 
-    OK(uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg));
+    OK(uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg, &reg_size));
 
     TEST_CHECK((reg.val >> 58) == 0);
 
@@ -167,8 +172,9 @@ static uint32_t test_arm64_mrs_hook_cb(uc_engine *uc, uc_arm64_reg reg,
                                        const uc_arm64_cp_reg *cp_reg)
 {
     uint64_t r_x2 = 0x114514;
+    uint32_t reg_size = sizeof(r_x2);
 
-    OK(uc_reg_write(uc, reg, &r_x2));
+    OK(uc_reg_write(uc, reg, &r_x2, &reg_size));
 
     // Skip
     return 1;
@@ -179,6 +185,7 @@ static void test_arm64_mrs_hook(void)
     uc_engine *uc;
     uc_hook hk;
     uint64_t r_x2;
+    uint32_t reg_size = sizeof(r_x2);
     // mrs        x2, tpidrro_el0
     char code[] = "\x62\xd0\x3b\xd5";
 
@@ -190,7 +197,7 @@ static void test_arm64_mrs_hook(void)
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM64_REG_X2, &r_x2));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X2, &r_x2, &reg_size));
 
     TEST_CHECK(r_x2 == 0x114514);
 
@@ -206,8 +213,9 @@ static bool test_arm64_correct_address_in_small_jump_hook_callback(
     // Check registers
     uint64_t r_x0 = 0x0;
     uint64_t r_pc = 0x0;
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
-    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
+    uint32_t reg_size = sizeof(r_pc);
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc, &reg_size));
     TEST_CHECK(r_x0 == 0x7F00);
     TEST_CHECK(r_pc == 0x7F00);
 
@@ -227,6 +235,7 @@ static void test_arm64_correct_address_in_small_jump_hook(void)
 
     uint64_t r_x0 = 0x0;
     uint64_t r_pc = 0x0;
+    uint32_t reg_size = sizeof(r_pc);
     uc_hook hook;
 
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
@@ -239,8 +248,8 @@ static void test_arm64_correct_address_in_small_jump_hook(void)
         UC_ERR_FETCH_UNMAPPED,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
-    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc, &reg_size));
     TEST_CHECK(r_x0 == 0x7F00);
     TEST_CHECK(r_pc == 0x7F00);
 
@@ -254,8 +263,10 @@ static bool test_arm64_correct_address_in_long_jump_hook_callback(
     // Check registers
     uint64_t r_x0 = 0x0;
     uint64_t r_pc = 0x0;
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
-    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
+    uint32_t reg_size = sizeof(r_pc);
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc, &reg_size));
     TEST_CHECK(r_x0 == 0x7FFFFFFFFFFFFF00);
     TEST_CHECK(r_pc == 0x7FFFFFFFFFFFFF00);
 
@@ -276,6 +287,7 @@ static void test_arm64_correct_address_in_long_jump_hook(void)
     uint64_t r_x0 = 0x0;
     uint64_t r_pc = 0x0;
     uc_hook hook;
+    uint32_t reg_size = sizeof(r_x0);
 
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
                     UC_CPU_ARM64_A72);
@@ -287,8 +299,8 @@ static void test_arm64_correct_address_in_long_jump_hook(void)
         UC_ERR_FETCH_UNMAPPED,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
-    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc, &reg_size));
     TEST_CHECK(r_x0 == 0x7FFFFFFFFFFFFF00);
     TEST_CHECK(r_pc == 0x7FFFFFFFFFFFFF00);
 
@@ -300,8 +312,10 @@ static void test_arm64_block_sync_pc_cb(uc_engine *uc, uint64_t addr,
 {
     uint64_t val = code_start;
     bool first = *(bool *)data;
+    uint32_t reg_size = sizeof(val);
+
     if (first) {
-        OK(uc_reg_write(uc, UC_ARM64_REG_PC, (void *)&val));
+        OK(uc_reg_write(uc, UC_ARM64_REG_PC, (void *)&val, &reg_size));
         *(bool *)data = false;
     }
 }
@@ -314,6 +328,7 @@ static void test_arm64_block_sync_pc(void)
     uc_hook hk;
     uint64_t x0;
     bool data = true;
+    uint32_t reg_size = sizeof(x0);
 
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
                     UC_CPU_ARM64_A72);
@@ -321,10 +336,10 @@ static void test_arm64_block_sync_pc(void)
                    (void *)&data, code_start + 8, code_start + 12));
 
     x0 = 0;
-    OK(uc_reg_write(uc, UC_ARM64_REG_X0, (void *)&x0));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, (void *)&x0, &reg_size));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, (void *)&x0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, (void *)&x0, &reg_size));
 
     TEST_CHECK(x0 == (1234 * 2));
 
@@ -349,6 +364,7 @@ static void test_arm64_block_invalid_mem_read_write_sync(void)
     const char code[] = "\x20\x00\x80\xd2\x41\x00\x80\xd2\x20\x00\x40\xf9";
     uint64_t r_pc, r_x0, r_x1;
     uc_hook hk;
+    uint32_t reg_size = sizeof(r_pc);
 
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
                     UC_CPU_ARM64_A72);
@@ -361,9 +377,9 @@ static void test_arm64_block_invalid_mem_read_write_sync(void)
         UC_ERR_READ_UNMAPPED,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
-    OK(uc_reg_read(uc, UC_ARM64_REG_X1, &r_x1));
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X1, &r_x1, &reg_size));
 
     TEST_CHECK(r_pc == code_start + 8);
     TEST_CHECK(r_x0 == 1);

@@ -199,9 +199,11 @@ static void gdt_demo()
     int r_ds = 0x7b;
     int r_es = 0x7b;
     int r_fs = 0x83;
+    uint32_t reg_size = sizeof(r_esp);
 
     gdtr.base = gdt_address;
     gdtr.limit = 31 * sizeof(struct SegmentDescriptor) - 1;
+    uint32_t reg_size_gdtr = sizeof(gdtr);
 
     init_descriptor(&gdt[14], 0, 0xfffff000, 1); // code segment
     init_descriptor(&gdt[15], 0, 0xfffff000, 0); // data segment
@@ -239,7 +241,7 @@ static void gdt_demo()
     uc_assert_success(err);
 
     // set up a GDT BEFORE you manipulate any segment registers
-    err = uc_reg_write(uc, UC_X86_REG_GDTR, &gdtr);
+    err = uc_reg_write(uc, UC_X86_REG_GDTR, &gdtr, &reg_size_gdtr);
     uc_assert_success(err);
 
     // write gdt to be emulated to memory
@@ -256,22 +258,22 @@ static void gdt_demo()
     uc_assert_success(err);
 
     // initialize machine registers
-    err = uc_reg_write(uc, UC_X86_REG_ESP, &r_esp);
+    err = uc_reg_write(uc, UC_X86_REG_ESP, &r_esp, &reg_size);
     uc_assert_success(err);
 
     // when setting SS, need rpl == cpl && dpl == cpl
     // emulator starts with cpl == 0, so we need a dpl 0 descriptor and rpl 0
     // selector
-    err = uc_reg_write(uc, UC_X86_REG_SS, &r_ss);
+    err = uc_reg_write(uc, UC_X86_REG_SS, &r_ss, &reg_size);
     uc_assert_success(err);
 
-    err = uc_reg_write(uc, UC_X86_REG_CS, &r_cs);
+    err = uc_reg_write(uc, UC_X86_REG_CS, &r_cs, &reg_size);
     uc_assert_success(err);
-    err = uc_reg_write(uc, UC_X86_REG_DS, &r_ds);
+    err = uc_reg_write(uc, UC_X86_REG_DS, &r_ds, &reg_size);
     uc_assert_success(err);
-    err = uc_reg_write(uc, UC_X86_REG_ES, &r_es);
+    err = uc_reg_write(uc, UC_X86_REG_ES, &r_es, &reg_size);
     uc_assert_success(err);
-    err = uc_reg_write(uc, UC_X86_REG_FS, &r_fs);
+    err = uc_reg_write(uc, UC_X86_REG_FS, &r_fs, &reg_size);
     uc_assert_success(err);
 
     // emulate machine code in infinite time

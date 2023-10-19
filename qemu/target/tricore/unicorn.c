@@ -39,7 +39,8 @@ void tricore_reg_reset(struct uc_struct *uc)
     env->PC = 0;
 }
 
-static void reg_read(CPUTriCoreState *env, unsigned int regid, void *value)
+static void reg_read(CPUTriCoreState *env, unsigned int regid, void *value,
+                     uint32_t *reg_size)
 {
     if (regid >= UC_TRICORE_REG_A0 && regid <= UC_TRICORE_REG_A9)
         *(int32_t *)value = env->gpr_a[regid - UC_TRICORE_REG_A0];
@@ -113,7 +114,7 @@ static void reg_read(CPUTriCoreState *env, unsigned int regid, void *value)
 }
 
 int tricore_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                     int count)
+                     int count, uint32_t *reg_size)
 {
     CPUTriCoreState *env = &(TRICORE_CPU(uc->cpu)->env);
     int i;
@@ -121,14 +122,14 @@ int tricore_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        reg_read(env, regid, value, reg_size);
     }
 
     return 0;
 }
 
 int tricore_context_reg_read(struct uc_context *uc, unsigned int *regs,
-                             void **vals, int count)
+                             void **vals, int count, uint32_t *reg_size)
 {
     CPUTriCoreState *env = (CPUTriCoreState *)uc->data;
     int i;
@@ -136,14 +137,14 @@ int tricore_context_reg_read(struct uc_context *uc, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        reg_read(env, regid, value, reg_size);
     }
 
     return 0;
 }
 
 static void reg_write(CPUTriCoreState *env, unsigned int regid,
-                      const void *value)
+                      const void *value, uint32_t *reg_size)
 {
     if (regid >= UC_TRICORE_REG_A0 && regid <= UC_TRICORE_REG_A9)
         env->gpr_a[regid - UC_TRICORE_REG_A0] = *(int32_t *)value;
@@ -217,7 +218,7 @@ static void reg_write(CPUTriCoreState *env, unsigned int regid,
 }
 
 int tricore_reg_write(struct uc_struct *uc, unsigned int *regs,
-                      void *const *vals, int count)
+                      void *const *vals, int count, uint32_t *reg_size)
 {
     CPUTriCoreState *env = &(TRICORE_CPU(uc->cpu)->env);
     int i;
@@ -225,7 +226,7 @@ int tricore_reg_write(struct uc_struct *uc, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_write(env, regid, value);
+        reg_write(env, regid, value, reg_size);
         if (regid == UC_TRICORE_REG_PC) {
             // force to quit execution and flush TB
             uc->quit_request = true;
@@ -237,7 +238,7 @@ int tricore_reg_write(struct uc_struct *uc, unsigned int *regs,
 }
 
 int tricore_context_reg_write(struct uc_context *uc, unsigned int *regs,
-                              void *const *vals, int count)
+                              void *const *vals, int count, uint32_t *reg_size)
 {
     CPUTriCoreState *env = (CPUTriCoreState *)uc->data;
     int i;
@@ -245,7 +246,7 @@ int tricore_context_reg_write(struct uc_context *uc, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        reg_write(env, regid, value, reg_size);
     }
 
     return 0;

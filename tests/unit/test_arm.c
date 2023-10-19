@@ -18,16 +18,17 @@ static void test_arm_nop(void)
     char code[] = "\x00\xf0\x20\xe3"; // nop
     int r_r0 = 0x1234;
     int r_r2 = 0x6789;
+    uint32_t reg_size = sizeof(r_r0);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_A15);
-    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
-    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
-    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2));
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
     TEST_CHECK(r_r0 == 0x1234);
     TEST_CHECK(r_r2 == 0x6789);
 
@@ -39,14 +40,15 @@ static void test_arm_thumb_sub(void)
     uc_engine *uc;
     char code[] = "\x83\xb0"; // sub    sp, #0xc
     int r_sp = 0x1234;
+    uint32_t reg_size = sizeof(r_sp);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_A15);
-    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
     TEST_CHECK(r_sp == 0x1228);
 
     OK(uc_close(uc));
@@ -61,19 +63,20 @@ static void test_armeb_sub(void)
     int r_r2 = 0x6789;
     int r_r3 = 0x3333;
     int r_r1;
+    uint32_t reg_size = sizeof(r_r1);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_BIG_ENDIAN, code,
                     sizeof(code) - 1, UC_CPU_ARM_1176);
-    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
-    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
-    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
-    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r_r1));
-    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2));
-    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r_r3));
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r_r1, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r_r3, &reg_size));
 
     TEST_CHECK(r_r0 == 0x37);
     TEST_CHECK(r_r2 == 0x6789);
@@ -92,19 +95,20 @@ static void test_armeb_be8_sub(void)
     int r_r2 = 0x6789;
     int r_r3 = 0x3333;
     int r_r1;
+    uint32_t reg_size = sizeof(r_r0);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_ARMBE8, code,
                     sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
-    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
-    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
-    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
-    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r_r1));
-    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2));
-    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r_r3));
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r_r1, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r_r3, &reg_size));
 
     TEST_CHECK(r_r0 == 0x37);
     TEST_CHECK(r_r2 == 0x6789);
@@ -119,14 +123,15 @@ static void test_arm_thumbeb_sub(void)
     uc_engine *uc;
     char code[] = "\xb0\x83"; // sub    sp, #0xc
     int r_sp = 0x1234;
+    uint32_t reg_size = sizeof(r_sp);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_BIG_ENDIAN, code,
                     sizeof(code) - 1, UC_CPU_ARM_1176);
-    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
     TEST_CHECK(r_sp == 0x1228);
 
     OK(uc_close(uc));
@@ -155,13 +160,14 @@ static void test_arm_thumb_ite(void)
     int r_r2 = 0;
     int r_r3 = 1;
     int r_pc = 0;
+    uint32_t reg_size = sizeof(r_sp);
     uint64_t count = 0;
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_A15);
-    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
-    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
-    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3, &reg_size));
 
     OK(uc_mem_map(uc, r_sp, 0x1000, UC_PROT_ALL));
     r_r2 = LEINT32(0x68);
@@ -175,23 +181,23 @@ static void test_arm_thumb_ite(void)
     // Execute four instructions at a time.
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2));
-    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r_r3));
+    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r_r3, &reg_size));
     TEST_CHECK(r_r2 == 0x68);
     TEST_CHECK(count == 4);
 
     r_pc = code_start;
     r_r2 = 0;
     count = 0;
-    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
-    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
+    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3, &reg_size));
     for (int i = 0; i < 6 && r_pc < code_start + sizeof(code) - 1; i++) {
         // Execute one instruction at a time.
         OK(uc_emu_start(uc, r_pc | 1, code_start + sizeof(code) - 1, 0, 1));
 
-        OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc));
+        OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc, &reg_size));
     }
-    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2));
+    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
 
     TEST_CHECK(r_r2 == 0x68);
     TEST_CHECK(r_r3 == 0x78);
@@ -208,16 +214,17 @@ static void test_arm_m_thumb_mrs(void)
     uint32_t r_control = 0b10;
     uint32_t r_apsr = (0b10101 << 27);
     uint32_t r_r0, r_r1;
+    uint32_t reg_size = sizeof(r_r0);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, code,
                     sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
 
-    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
-    OK(uc_reg_write(uc, UC_ARM_REG_APSR_NZCVQ, &r_apsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_APSR_NZCVQ, &r_apsr, &reg_size));
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
-    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r_r1));
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r_r1, &reg_size));
 
     TEST_CHECK(r_r0 == 0b10);
     TEST_CHECK(r_r1 == (0b10101 << 27));
@@ -229,28 +236,29 @@ static void test_arm_m_control(void)
 {
     uc_engine *uc;
     int r_control, r_msp, r_psp;
+    uint32_t reg_size = sizeof(r_psp);
 
     OK(uc_open(UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, &uc));
 
     r_control = 0; // Make sure we are using MSP.
-    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control, &reg_size));
 
     r_msp = 0x1000;
-    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_msp));
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_msp, &reg_size));
 
     r_control = 0b10; // Make the switch.
-    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control, &reg_size));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_psp));
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_psp, &reg_size));
     TEST_CHECK(r_psp != r_msp);
 
     r_psp = 0x2000;
-    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_psp));
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_psp, &reg_size));
 
     r_control = 0; // Switch again
-    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control, &reg_size));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_msp));
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_msp, &reg_size));
     TEST_CHECK(r_psp != r_msp);
     TEST_CHECK(r_msp == 0x1000);
 
@@ -267,8 +275,9 @@ static void test_arm_m_exc_return_hook_interrupt(uc_engine *uc, int intno,
                                                  void *data)
 {
     int r_pc;
+    uint32_t reg_size = sizeof(r_pc);
 
-    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc, &reg_size));
     TEST_CHECK(intno == 8); // EXCP_EXCEPTION_EXIT: Return from v7M exception.
     TEST_CHECK((r_pc | 1) == 0xFFFFFFFD);
     OK(uc_emu_stop(uc));
@@ -281,6 +290,7 @@ static void test_arm_m_exc_return(void)
     int r_ipsr;
     int r_sp = 0x8000;
     uc_hook hook;
+    uint32_t reg_size = sizeof(r_sp);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, code,
                     sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
@@ -289,10 +299,10 @@ static void test_arm_m_exc_return(void)
                    test_arm_m_exc_return_hook_interrupt, NULL, 0, 0));
 
     r_sp -= 0x1c;
-    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
 
     r_ipsr = 16; // We are in whatever exception.
-    OK(uc_reg_write(uc, UC_ARM_REG_IPSR, &r_ipsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_IPSR, &r_ipsr, &reg_size));
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0,
                     2)); // Just execute 2 instructions.
@@ -312,6 +322,7 @@ static void test_arm_und32_to_svc32(void)
     char code[] =
         "\x00\x00\xe0\xe3\x0e\xf0\xb0\xe1\x00\x00\xe0\xe3\x00\x00\xe0\xe3";
     int r_cpsr, r_sp, r_spsr, r_lr;
+    uint32_t reg_size = sizeof(r_sp);
 
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
     OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_A9));
@@ -321,22 +332,22 @@ static void test_arm_und32_to_svc32(void)
 
     // https://www.keil.com/pack/doc/CMSIS/Core_A/html/group__CMSIS__CPSR__M.html
     r_cpsr = 0x40000093; // SVC32
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_sp = 0x12345678;
-    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
 
     r_cpsr = 0x4000009b; // UND32
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_spsr = 0x40000093; // Save previous CPSR
-    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr, &reg_size));
     r_sp = 0xDEAD0000;
-    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
     r_lr = code_start + 8;
-    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr));
+    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 3));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
 
     TEST_CHECK(r_sp == 0x12345678);
 
@@ -347,45 +358,46 @@ static void test_arm_usr32_to_svc32(void)
 {
     uc_engine *uc;
     int r_cpsr, r_sp, r_spsr, r_lr;
+    uint32_t reg_size = sizeof(r_sp);
 
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
     OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_A9));
 
     // https://www.keil.com/pack/doc/CMSIS/Core_A/html/group__CMSIS__CPSR__M.html
     r_cpsr = 0x40000093; // SVC32
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_sp = 0x12345678;
-    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
     r_lr = 0x00102220;
-    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr));
+    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr, &reg_size));
 
     r_cpsr = 0x4000009b; // UND32
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_spsr = 0x40000093; // Save previous CPSR
-    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr, &reg_size));
     r_sp = 0xDEAD0000;
-    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
     r_lr = 0x00509998;
-    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr));
+    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr, &reg_size));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     TEST_CHECK((r_cpsr & ((1 << 4) - 1)) == 0xb); // We are in UND32
 
     r_cpsr = 0x40000090; // USR32
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_sp = 0x0010000;
-    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_sp));
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_sp, &reg_size));
     r_lr = 0x0001234;
-    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr));
+    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr, &reg_size));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     TEST_CHECK((r_cpsr & ((1 << 4) - 1)) == 0); // We are in USR32
 
     r_cpsr = 0x40000093; // SVC32
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
-    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
     TEST_CHECK((r_cpsr & ((1 << 4) - 1)) == 3); // We are in SVC32
     TEST_CHECK(r_sp == 0x12345678);
 
@@ -398,6 +410,7 @@ static void test_arm_v8(void)
     uc_engine *uc;
     uint32_t r_r1 = LEINT32(0xdeadbeef);
     uint32_t r_r0;
+    uint32_t reg_size = sizeof(r_r0);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_M33);
@@ -405,11 +418,11 @@ static void test_arm_v8(void)
     r_r0 = 0x8000;
     OK(uc_mem_map(uc, r_r0, 0x1000, UC_PROT_ALL));
     OK(uc_mem_write(uc, r_r0, (void *)&r_r1, 4));
-    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r_r1));
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r_r1, &reg_size));
 
     TEST_CHECK(r_r1 == 0xdeadbeef);
 
@@ -421,6 +434,7 @@ static void test_arm_thumb_smlabb(void)
     char code[] = "\x13\xfb\x01\x23";
     uint32_t r_r1, r_r2, r_r3;
     uc_engine *uc;
+    uint32_t reg_size = sizeof(r_r1);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_M7);
@@ -428,13 +442,13 @@ static void test_arm_thumb_smlabb(void)
     r_r3 = 5;
     r_r1 = 7;
     r_r2 = 9;
-    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
-    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r_r1));
-    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
+    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r_r1, &reg_size));
+    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2, &reg_size));
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r_r3));
+    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r_r3, &reg_size));
 
     TEST_CHECK(r_r3 == 5 * 7 + 9);
 
@@ -445,6 +459,7 @@ static void test_arm_not_allow_privilege_escalation(void)
 {
     uc_engine *uc;
     int r_cpsr, r_sp, r_spsr, r_lr;
+    uint32_t reg_size = sizeof(r_sp);
     // E3C6601F : BIC     r6, r6, #&1F
     // E3866013 : ORR     r6, r6, #&13
     // E121F006 : MSR     cpsr_c, r6 ; switch to SVC32 (should be ineffective
@@ -458,28 +473,28 @@ static void test_arm_not_allow_privilege_escalation(void)
 
     // https://www.keil.com/pack/doc/CMSIS/Core_A/html/group__CMSIS__CPSR.html
     r_cpsr = 0x40000013; // SVC32
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_spsr = 0x40000013;
-    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr, &reg_size));
     r_sp = 0x12345678;
-    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
     r_lr = 0x00102220;
-    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr));
+    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr, &reg_size));
 
     r_cpsr = 0x40000010; // USR32
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_sp = 0x0010000;
-    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
     r_lr = 0x0001234;
-    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr));
+    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr, &reg_size));
 
     uc_assert_err(
         UC_ERR_EXCEPTION,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp));
-    OK(uc_reg_read(uc, UC_ARM_REG_LR, &r_lr));
-    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_LR, &r_lr, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
 
     TEST_CHECK((r_cpsr & ((1 << 4) - 1)) == 0); // Stay in USR32
     TEST_CHECK(r_lr == 0x1234);
@@ -514,44 +529,45 @@ static void test_arm_hflags_rebuilt(void)
                   "\xe1\x16\x00\x02\xef\x06\xf0\x21\xe1";
     uc_engine *uc;
     uint32_t r_cpsr, r_spsr, r_r13, r_r14, r_pc;
+    uint32_t reg_size = sizeof(r_pc);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_A9);
 
     r_cpsr = 0x40000013; // SVC32
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_spsr = 0x40000013;
-    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr, &reg_size));
     r_r13 = 0x12345678; // SP
-    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_r13));
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_r13, &reg_size));
     r_r14 = 0x00102220; // LR
-    OK(uc_reg_write(uc, UC_ARM_REG_R14, &r_r14));
+    OK(uc_reg_write(uc, UC_ARM_REG_R14, &r_r14, &reg_size));
 
     r_cpsr = 0x40000010; // USR32
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_r13 = 0x0010000; // SP
-    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_r13));
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_r13, &reg_size));
     r_r14 = 0x0001234; // LR
-    OK(uc_reg_write(uc, UC_ARM_REG_R14, &r_r14));
+    OK(uc_reg_write(uc, UC_ARM_REG_R14, &r_r14, &reg_size));
 
     uc_assert_err(
         UC_ERR_EXCEPTION,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     r_cpsr = 0x60000013;
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_cpsr = 0x60000010;
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_cpsr = 0x60000013;
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc, &reg_size));
 
     OK(uc_emu_start(uc, r_pc, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
-    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_r13));
-    OK(uc_reg_read(uc, UC_ARM_REG_R14, &r_r14));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_r13, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_R14, &r_r14, &reg_size));
 
     TEST_CHECK(r_cpsr == 0x60000010);
     TEST_CHECK(r_r13 == 0x00010000);
@@ -564,14 +580,14 @@ static bool test_arm_mem_access_abort_hook_mem(uc_engine *uc, uc_mem_type type,
                                                uint64_t addr, int size,
                                                int64_t val, void *data)
 {
-    OK(uc_reg_read(uc, UC_ARM_REG_PC, data));
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, data, NULL));
     return false;
 }
 
 static bool test_arm_mem_access_abort_hook_insn_invalid(uc_engine *uc,
                                                         void *data)
 {
-    OK(uc_reg_read(uc, UC_ARM_REG_PC, data));
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, data, NULL));
     return false;
 }
 
@@ -583,12 +599,13 @@ static void test_arm_mem_access_abort(void)
     uc_engine *uc;
     uint32_t r_pc, r_r0, r_pc_in_hook;
     uc_hook hk, hkk;
+    uint32_t reg_size = sizeof(r_pc);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_A9);
 
     r_r0 = 0x990000;
-    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
 
     OK(uc_hook_add(uc, &hk,
                    UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED |
@@ -602,21 +619,21 @@ static void test_arm_mem_access_abort(void)
     uc_assert_err(UC_ERR_READ_UNMAPPED,
                   uc_emu_start(uc, code_start, code_start + 4, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_pc == r_pc_in_hook);
 
     uc_assert_err(UC_ERR_INSN_INVALID,
                   uc_emu_start(uc, code_start + 4, code_start + 8, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_pc == r_pc_in_hook);
 
     uc_assert_err(UC_ERR_FETCH_UNMAPPED,
                   uc_emu_start(uc, 0x900000, 0x900000 + 8, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_pc == r_pc_in_hook);
 
@@ -627,6 +644,7 @@ static void test_arm_read_sctlr(void)
 {
     uc_engine *uc;
     uc_arm_cp_reg reg;
+    uint32_t reg_size = sizeof(reg);
 
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
 
@@ -639,7 +657,7 @@ static void test_arm_read_sctlr(void)
     reg.opc1 = 0;
     reg.opc2 = 0;
 
-    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg));
+    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg, &reg_size));
 
     TEST_CHECK((uint32_t)((reg.val >> 31) & 1) == 0);
 
@@ -651,6 +669,8 @@ static void test_arm_be_cpsr_sctlr(void)
     uc_engine *uc;
     uc_arm_cp_reg reg;
     uint32_t cpsr;
+    uint32_t reg_size = sizeof(reg);
+    uint32_t reg_size_cpsr = sizeof(cpsr);
 
     OK(uc_open(UC_ARCH_ARM, UC_MODE_BIG_ENDIAN, &uc));
     OK(uc_ctl_set_cpu_model(
@@ -665,8 +685,8 @@ static void test_arm_be_cpsr_sctlr(void)
     reg.opc1 = 0;
     reg.opc2 = 0;
 
-    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg));
-    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &cpsr));
+    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &cpsr, &reg_size_cpsr));
 
     TEST_CHECK((reg.val & (1 << 7)) != 0);
     TEST_CHECK((cpsr & (1 << 9)) != 0);
@@ -685,8 +705,8 @@ static void test_arm_be_cpsr_sctlr(void)
     reg.opc1 = 0;
     reg.opc2 = 0;
 
-    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg));
-    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &cpsr));
+    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg, &reg_size));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &cpsr, &reg_size_cpsr));
 
     // SCTLR.B == 0
     TEST_CHECK((reg.val & (1 << 7)) == 0);
@@ -701,25 +721,26 @@ static void test_arm_switch_endian(void)
     char code[] = "\x00\x00\x91\xe5"; // ldr r0, [r1]
     uint32_t r_r1 = (uint32_t)code_start;
     uint32_t r_r0, r_cpsr;
+    uint32_t reg_size = sizeof(r_r0);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_A15);
-    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r_r1));
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r_r1, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
 
     // Little endian
     TEST_CHECK(r_r0 == 0xe5910000);
 
-    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
     r_cpsr |= (1 << 9);
-    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
 
     // Big endian
     TEST_CHECK(r_r0 == 0x000091e5);
@@ -734,17 +755,18 @@ static void test_armeb_ldrb(void)
     uint64_t data_address = 0x800000;
     int r1 = 0x1234;
     int r2 = data_address;
+    uint32_t reg_size = sizeof(r1);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_BIG_ENDIAN,
                     test_code, sizeof(test_code) - 1, UC_CPU_ARM_1176);
 
     OK(uc_mem_map(uc, data_address, 1024 * 1024, UC_PROT_ALL));
     OK(uc_mem_write(uc, data_address, "\x66\x67\x68\x69", 4));
-    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r2));
+    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r2, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(test_code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r1));
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r1, &reg_size));
 
     TEST_CHECK(r1 == 0x66);
 
@@ -782,13 +804,14 @@ static void test_arm_thumb2(void)
     // AND.W R0, R0, #4
     char code[] = "\x24\x20\x00\xF0\x04\x00";
     uint32_t r_r0;
+    uint32_t reg_size = sizeof(r_r0);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_LITTLE_ENDIAN,
                     code, sizeof(code) - 1, UC_CPU_ARM_CORTEX_R5);
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
 
     TEST_CHECK(r_r0 == 0x4);
 
@@ -802,13 +825,14 @@ static void test_armeb_be32_thumb2(void)
     // AND.W R0, R0, #4
     char code[] = "\x20\x24\xF0\x00\x00\x04";
     uint32_t r_r0;
+    uint32_t reg_size = sizeof(r_r0);
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_BIG_ENDIAN, code,
                     sizeof(code) - 1, UC_CPU_ARM_CORTEX_R5);
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0, &reg_size));
 
     TEST_CHECK(r_r0 == 0x4);
 

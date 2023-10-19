@@ -85,6 +85,7 @@ void test_uc_ctl_exits()
     uc_err err;
     uc_hook h;
     int r_eax, r_ebx;
+    uint32_t reg_size = sizeof(r_eax);
     uint64_t exits[] = {ADDRESS + 6, ADDRESS + 8};
 
     printf("Using multiple exits by uc_ctl.\n");
@@ -138,12 +139,12 @@ void test_uc_ctl_exits()
         return;
     }
 
-    err = uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
+    err = uc_reg_read(uc, UC_X86_REG_EAX, &r_eax, &reg_size);
     if (err) {
         printf("Failed on uc_reg_read() with error returned: %u\n", err);
         return;
     }
-    err = uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx);
+    err = uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx, &reg_size);
     if (err) {
         printf("Failed on uc_reg_read() with error returned: %u\n", err);
         return;
@@ -159,12 +160,12 @@ void test_uc_ctl_exits()
         return;
     }
 
-    err = uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
+    err = uc_reg_read(uc, UC_X86_REG_EAX, &r_eax, &reg_size);
     if (err) {
         printf("Failed on uc_reg_read() with error returned: %u\n", err);
         return;
     }
-    err = uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx);
+    err = uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx, &reg_size);
     if (err) {
         printf("Failed on uc_reg_read() with error returned: %u\n", err);
         return;

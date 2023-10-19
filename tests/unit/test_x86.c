@@ -155,20 +155,22 @@ static void test_x86_inc_dec_pxor(void)
         "\x41\x4a\x66\x0f\xef\xc1"; // INC ecx; DEC edx; PXOR xmm0, xmm1
     int r_ecx = 0x1234;
     int r_edx = 0x7890;
+    uint32_t reg_size_ecx = sizeof(r_ecx);
     uint64_t r_xmm0[2] = {0x08090a0b0c0d0e0f, 0x0001020304050607};
     uint64_t r_xmm1[2] = {0x8090a0b0c0d0e0f0, 0x0010203040506070};
+    uint32_t reg_size_xmm = sizeof(r_xmm0[0]);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
-    OK(uc_reg_write(uc, UC_X86_REG_XMM0, &r_xmm0));
-    OK(uc_reg_write(uc, UC_X86_REG_XMM1, &r_xmm1));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx, &reg_size_ecx));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx, &reg_size_ecx));
+    OK(uc_reg_write(uc, UC_X86_REG_XMM0, &r_xmm0, &reg_size_xmm));
+    OK(uc_reg_write(uc, UC_X86_REG_XMM1, &r_xmm1, &reg_size_xmm));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
-    OK(uc_reg_read(uc, UC_X86_REG_XMM0, &r_xmm0));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx, &reg_size_ecx));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx, &reg_size_ecx));
+    OK(uc_reg_read(uc, UC_X86_REG_XMM0, &r_xmm0, &reg_size_xmm));
 
     TEST_CHECK(r_ecx == 0x1235);
     TEST_CHECK(r_edx == 0x788f);
@@ -184,12 +186,13 @@ static void test_x86_relative_jump(void)
     char code[] = "\xeb\x02\x90\x90\x90\x90\x90\x90"; // jmp 4; nop; nop; nop;
                                                       // nop; nop; nop
     int r_eip;
+    uint32_t reg_size = sizeof(r_eip);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
     OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_eip));
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_eip, &reg_size));
 
     TEST_CHECK(r_eip == code_start + 4);
 
@@ -202,16 +205,17 @@ static void test_x86_loop(void)
     char code[] = "\x41\x4a\xeb\xfe"; // inc ecx; dec edx; jmp $;
     int r_ecx = 0x1234;
     int r_edx = 0x7890;
+    uint32_t reg_size = sizeof(r_ecx);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 1 * 1000000,
                     0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     TEST_CHECK(r_ecx == 0x1235);
     TEST_CHECK(r_edx == 0x788f);
@@ -264,8 +268,9 @@ static void test_x86_invalid_jump(void)
 static void test_x86_64_syscall_callback(uc_engine *uc, void *user_data)
 {
     uint64_t rax;
+    uint32_t reg_size = sizeof(rax);
 
-    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax, &reg_size));
 
     TEST_CHECK(rax == 0x100);
 }
@@ -276,9 +281,10 @@ static void test_x86_64_syscall(void)
     uc_hook hook;
     char code[] = "\x0f\x05"; // syscall
     uint64_t r_rax = 0x100;
+    uint32_t reg_size = sizeof(r_rax);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_X86_REG_RAX, &r_rax));
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &r_rax, &reg_size));
     OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_x86_64_syscall_callback, NULL,
                    1, 0, UC_X86_INS_SYSCALL));
 
@@ -296,12 +302,13 @@ static void test_x86_16_add(void)
     uint16_t r_bx = 5;
     uint16_t r_si = 6;
     uint8_t result;
+    uint32_t reg_size = sizeof(r_ax);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_16, code, sizeof(code) - 1);
     OK(uc_mem_map(uc, 0, 0x1000, UC_PROT_ALL));
-    OK(uc_reg_write(uc, UC_X86_REG_AX, &r_ax));
-    OK(uc_reg_write(uc, UC_X86_REG_BX, &r_bx));
-    OK(uc_reg_write(uc, UC_X86_REG_SI, &r_si));
+    OK(uc_reg_write(uc, UC_X86_REG_AX, &r_ax, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_BX, &r_bx, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_SI, &r_si, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
@@ -316,20 +323,21 @@ static void test_x86_reg_save(void)
     uc_context *ctx;
     char code[] = "\x40"; // inc eax
     int r_eax = 1;
+    uint32_t reg_size = sizeof(r_eax);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax, &reg_size));
 
     OK(uc_context_alloc(uc, &ctx));
     OK(uc_context_save(uc, ctx));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax, &reg_size));
     TEST_CHECK(r_eax == 2);
 
     OK(uc_context_restore(uc, ctx));
 
-    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax, &reg_size));
     TEST_CHECK(r_eax == 1);
 
     OK(uc_context_free(ctx));
@@ -358,21 +366,22 @@ static void test_x86_invalid_mem_read_stop_in_cb(void)
     int r_eax = 0x1234;
     int r_edx = 0x5678;
     int r_eip = 0;
+    uint32_t reg_size = sizeof(r_eax);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
     OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ,
                    test_x86_invalid_mem_read_stop_in_cb_callback, NULL, 1, 0));
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     uc_assert_err(
         UC_ERR_READ_UNMAPPED,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     // The state of Unicorn should be correct at this time.
-    OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_eip));
-    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_eip, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     TEST_CHECK(r_eip == code_start + 1);
     TEST_CHECK(r_eax == 0x1235);
@@ -387,13 +396,14 @@ static void test_x86_x87_fnstenv_callback(uc_engine *uc, uint64_t address,
     uint32_t r_eip;
     uint32_t r_eax;
     uint32_t fnstenv[7];
+    uint32_t reg_size = sizeof(r_eax);
 
     if (address == code_start + 4) { // The first fnstenv executed
         // Save the address of the fld.
-        OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_eip));
+        OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_eip, &reg_size));
         *((uint32_t *)user_data) = r_eip;
 
-        OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+        OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax, &reg_size));
         OK(uc_mem_read(uc, r_eax, fnstenv, sizeof(fnstenv)));
         // Don't update FCS:FIP for fnop.
         TEST_CHECK(fnstenv[3] == 0);
@@ -410,10 +420,11 @@ static void test_x86_x87_fnstenv(void)
     uint32_t base = code_start + 3 * code_len;
     uint32_t last_eip;
     uint32_t fnstenv[7];
+    uint32_t reg_size = sizeof(base);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
     OK(uc_mem_map(uc, base, code_len, UC_PROT_ALL));
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &base));
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &base, &reg_size));
 
     OK(uc_hook_add(uc, &hook, UC_HOOK_CODE, test_x86_x87_fnstenv_callback,
                    &last_eip, 1, 0));
@@ -451,19 +462,20 @@ static void test_x86_mmio(void)
 {
     uc_engine *uc;
     int r_ecx = 0xdeadbeef;
+    uint32_t reg_size = sizeof(r_ecx);
     char code[] =
         "\x89\x0d\x04\x00\x02\x00\x8b\x0d\x04\x00\x02\x00"; // mov [0x20004],
                                                             // ecx; mov ecx,
                                                             // [0x20004]
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
     OK(uc_mmio_map(uc, 0x20000, 0x1000, test_x86_mmio_read_callback, NULL,
                    test_x86_mmio_write_callback, NULL));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
 
     TEST_CHECK(r_ecx == 0x19260817);
 
@@ -491,18 +503,19 @@ static void test_x86_missing_code(void)
     uc_hook hook;
     int r_ecx = 0x1234;
     int r_edx = 0x7890;
+    uint32_t reg_size = sizeof(r_ecx);
 
     // Don't write any code by design.
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
-    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
     OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED,
                    test_x86_missing_code_callback, NULL, 1, 0));
 
     OK(uc_emu_start(uc, code_start, code_start + 2, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     TEST_CHECK(r_ecx == 0x1235);
     TEST_CHECK(r_edx == 0x788f);
@@ -520,11 +533,12 @@ static void test_x86_smc_xor(void)
     char code[] = "\x31\x47\x03\x13\x8b\xa9\x3e";
     int r_edi = code_start;
     int r_eax = 0xbc4177e6;
+    uint32_t reg_size = sizeof(r_eax);
     uint32_t result;
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
-    uc_reg_write(uc, UC_X86_REG_EDI, &r_edi);
-    uc_reg_write(uc, UC_X86_REG_EAX, &r_eax);
+    uc_reg_write(uc, UC_X86_REG_EDI, &r_edi, &reg_size);
+    uc_reg_write(uc, UC_X86_REG_EAX, &r_eax, &reg_size);
 
     OK(uc_emu_start(uc, code_start, code_start + 3, 0, 0));
 
@@ -604,8 +618,9 @@ static void test_x86_sysenter(void)
 static int test_x86_hook_cpuid_callback(uc_engine *uc, void *data)
 {
     int reg = 7;
+    uint32_t reg_size = sizeof(reg);
 
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &reg));
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &reg, &reg_size));
 
     // Overwrite the cpuid instruction.
     return 1;
@@ -617,6 +632,7 @@ static void test_x86_hook_cpuid(void)
     char code[] = "\x40\x0F\xA2"; // INC EAX; CPUID
     uc_hook h;
     int reg;
+    uint32_t reg_size = sizeof(reg);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
@@ -625,7 +641,7 @@ static void test_x86_hook_cpuid(void)
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_EAX, &reg));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &reg, &reg_size));
 
     TEST_CHECK(reg == 7);
 
@@ -637,6 +653,7 @@ static void test_x86_486_cpuid(void)
     uc_engine *uc;
     uint32_t eax;
     uint32_t ebx;
+    uint32_t reg_size = sizeof(eax);
 
     char code[] = {0x31, 0xC0, 0x0F, 0xA2}; // XOR EAX EAX; CPUID
 
@@ -647,8 +664,8 @@ static void test_x86_486_cpuid(void)
     OK(uc_emu_start(uc, 0, sizeof(code) / sizeof(code[0]), 0, 0));
 
     /* Read eax after emulation */
-    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
-    OK(uc_reg_read(uc, UC_X86_REG_EBX, &ebx));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &ebx, &reg_size));
 
     TEST_CHECK(eax != 0);
     TEST_CHECK(ebx == 0x756e6547); // magic string "Genu" for intel cpu
@@ -663,14 +680,15 @@ static void test_x86_clear_tb_cache(void)
     char code[] = "\x83\xc1\x01\x4a"; // ADD ecx, 1; DEC edx;
     int r_ecx = 0x1234;
     int r_edx = 0x7890;
+    uint32_t reg_size = sizeof(r_ecx);
     uint64_t code_start = 0x1240; // Choose this address by design
     uint64_t code_len = 0x1000;
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
     OK(uc_mem_map(uc, code_start & (1 << 12), code_len, UC_PROT_ALL));
     OK(uc_mem_write(uc, code_start, code, sizeof(code)));
-    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     // This emulation should take no effect at all.
     OK(uc_emu_start(uc, code_start, code_start, 0, 0));
@@ -681,8 +699,8 @@ static void test_x86_clear_tb_cache(void)
     // If tb cache is not cleared, edx would be still 0x7890
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     TEST_CHECK(r_ecx == 0x1236);
     TEST_CHECK(r_edx == 0x788f);
@@ -702,16 +720,17 @@ static void test_x86_clear_count_cache(void)
                                                 // ADD ebx, 1
     int r_ecx = 0x1234;
     int r_edx = 0x7890;
+    uint32_t reg_size = sizeof(r_ecx);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 2));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     TEST_CHECK(r_ecx == 0x1236);
     TEST_CHECK(r_edx == 0x788e);
@@ -730,13 +749,14 @@ static void test_x86_clear_empty_tb(void)
     //    dec edx;
     char code[] = "\x83\xc1\x01\x83\xf9\x00\x74\xf8\x4a";
     int r_edx = 0x7890;
+    uint32_t reg_size = sizeof(r_edx);
     uint64_t code_start = 0x1240; // Choose this address by design
     uint64_t code_len = 0x1000;
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
     OK(uc_mem_map(uc, code_start & (1 << 12), code_len, UC_PROT_ALL));
     OK(uc_mem_write(uc, code_start, code, sizeof(code)));
-    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     // Make sure we generate an empty tb at the exit address by stopping at dec
     // edx.
@@ -745,7 +765,7 @@ static void test_x86_clear_empty_tb(void)
     // If tb cache is not cleared, edx would be still 0x7890
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     TEST_CHECK(r_edx == 0x788f);
 
@@ -791,10 +811,11 @@ static void test_x86_hook_tcg_op(void)
                   "\xd3\x3b\x35\x00\x10\x00\x00";
     int r_eax = 0x1234;
     int r_ebx = 2;
+    uint32_t reg_size = sizeof(r_eax);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_ebx));
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_ebx, &reg_size));
 
     memset(&results, 0, sizeof(HOOK_TCG_OP_RESULTS));
     flag = 0;
@@ -845,6 +866,7 @@ static void test_x86_cmpxchg(void)
     char code[] = "\x0F\xC7\x0D\xE0\xBE\xAD\xDE"; // cmpxchg8b [0xdeadbee0]
     int r_zero = 0;
     int r_aaaa = 0x41414141;
+    uint32_t reg_size = sizeof(r_zero);
     uint64_t mem;
     uc_hook h;
     int result = 0;
@@ -854,10 +876,10 @@ static void test_x86_cmpxchg(void)
     OK(uc_hook_add(uc, &h, UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE,
                    test_x86_cmpxchg_mem_hook, &result, 1, 0));
 
-    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_zero));
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_zero));
-    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_aaaa));
-    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_aaaa));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_zero, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_zero, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_aaaa, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_aaaa, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
@@ -883,11 +905,12 @@ static void test_x86_nested_emu_start(void)
     char code[] = "\x41\x4a"; // INC ecx; DEC edx;
     int r_ecx = 0x1234;
     int r_edx = 0x7890;
+    uint32_t reg_size = sizeof(r_ecx);
     uc_hook h;
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
     // Emulate DEC in the nested hook.
     OK(uc_hook_add(uc, &h, UC_HOOK_CODE, test_x86_nested_emu_start_cb, NULL,
                    code_start, code_start));
@@ -895,8 +918,8 @@ static void test_x86_nested_emu_start(void)
     // Emulate INC
     OK(uc_emu_start(uc, code_start, code_start + 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     TEST_CHECK(r_ecx == 0x1235);
     TEST_CHECK(r_edx == 0x788f);
@@ -919,19 +942,20 @@ static void test_x86_nested_emu_stop(void)
     char code[] = "\x41\x4a\x4a";
     int r_ecx = 0x1234;
     int r_edx = 0x7890;
+    uint32_t reg_size = sizeof(r_ecx);
     uc_hook h;
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
     // Emulate DEC in the nested hook.
     OK(uc_hook_add(uc, &h, UC_HOOK_CODE, test_x86_nested_emu_stop_cb, NULL,
                    code_start, code_start));
 
     OK(uc_emu_start(uc, code_start, code_start + 3, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
-    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx, &reg_size));
 
     TEST_CHECK(r_ecx == 0x1234);
     TEST_CHECK(r_edx == 0x788f);
@@ -967,16 +991,17 @@ static void test_x86_eflags_reserved_bit(void)
 {
     uc_engine *uc;
     uint32_t r_eflags;
+    uint32_t reg_size = sizeof(r_eflags);
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
 
-    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &r_eflags));
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &r_eflags, &reg_size));
 
     TEST_CHECK((r_eflags & 2) != 0);
 
-    OK(uc_reg_write(uc, UC_X86_REG_EFLAGS, &r_eflags));
+    OK(uc_reg_write(uc, UC_X86_REG_EFLAGS, &r_eflags, &reg_size));
 
-    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &r_eflags));
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &r_eflags, &reg_size));
 
     TEST_CHECK((r_eflags & 2) != 0);
 
@@ -999,13 +1024,14 @@ static void test_x86_nested_uc_emu_start_exits(void)
     char code[] = "\x83\xf8\x00\x75\x01\x90\xc7\x00\x00\x00\x00\x00";
     uc_hook hk;
     uint32_t r_pc;
+    uint32_t reg_size = sizeof(r_pc);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
     OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_x86_nested_uc_emu_start_exits_cb,
                    NULL, code_start, code_start));
     OK(uc_emu_start(uc, code_start, code_start + 5, 0, 0));
-    OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_pc));
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_pc, &reg_size));
 
     TEST_CHECK(r_pc == code_start + 5);
 
@@ -1019,8 +1045,10 @@ static bool test_x86_correct_address_in_small_jump_hook_callback(
     // Check registers
     uint64_t r_rax = 0x0;
     uint64_t r_rip = 0x0;
-    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax));
-    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip));
+    uint32_t reg_size = sizeof(r_rax);
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip, &reg_size));
     TEST_CHECK(r_rax == 0x7F00);
     TEST_CHECK(r_rip == 0x7F00);
 
@@ -1040,6 +1068,7 @@ static void test_x86_correct_address_in_small_jump_hook(void)
 
     uint64_t r_rax = 0x0;
     uint64_t r_rip = 0x0;
+    uint32_t reg_size = sizeof(r_rax);
     uc_hook hook;
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
@@ -1051,8 +1080,8 @@ static void test_x86_correct_address_in_small_jump_hook(void)
         UC_ERR_FETCH_UNMAPPED,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax));
-    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip, &reg_size));
     TEST_CHECK(r_rax == 0x7F00);
     TEST_CHECK(r_rip == 0x7F00);
 
@@ -1066,8 +1095,10 @@ static bool test_x86_correct_address_in_long_jump_hook_callback(
     // Check registers
     uint64_t r_rax = 0x0;
     uint64_t r_rip = 0x0;
-    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax));
-    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip));
+    uint32_t reg_size = sizeof(r_rax);
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip, &reg_size));
     TEST_CHECK(r_rax == 0x7FFFFFFFFFFFFF00);
     TEST_CHECK(r_rip == 0x7FFFFFFFFFFFFF00);
 
@@ -1087,6 +1118,7 @@ static void test_x86_correct_address_in_long_jump_hook(void)
 
     uint64_t r_rax = 0x0;
     uint64_t r_rip = 0x0;
+    uint32_t reg_size = sizeof(r_rax);
     uc_hook hook;
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
@@ -1098,8 +1130,8 @@ static void test_x86_correct_address_in_long_jump_hook(void)
         UC_ERR_FETCH_UNMAPPED,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax));
-    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip, &reg_size));
     TEST_CHECK(r_rax == 0x7FFFFFFFFFFFFF00);
     TEST_CHECK(r_rip == 0x7FFFFFFFFFFFFF00);
 
@@ -1124,8 +1156,8 @@ static void test_x86_invalid_vex_l(void)
     OK(uc_close(uc));
 }
 
-// AARCH64 inline the read while s390x won't split the access. Though not tested on other hosts
-// but we restrict a bit more.
+// AARCH64 inline the read while s390x won't split the access. Though not tested
+// on other hosts but we restrict a bit more.
 #if !defined(TARGET_READ_INLINED) && defined(BOOST_LITTLE_ENDIAN)
 
 struct writelog_t {
@@ -1156,6 +1188,7 @@ static void test_x86_unaligned_access(void)
     // mov dword ptr [0x200001], eax; mov eax, dword ptr [0x200001]
     char code[] = "\xa3\x01\x00\x20\x00\xa1\x01\x00\x20\x00";
     uint32_t r_eax = LEINT32(0x41424344);
+    uint32_t reg_size = sizeof(r_eax);
     struct writelog_t write_log[10];
     struct writelog_t read_log[10];
     memset(write_log, 0, sizeof(write_log));
@@ -1168,7 +1201,7 @@ static void test_x86_unaligned_access(void)
     OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ,
                    test_x86_unaligned_access_callback, read_log, 1, 0));
 
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax, &reg_size));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     TEST_CHECK(write_log[0].addr == 0x200001);

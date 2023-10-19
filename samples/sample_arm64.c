@@ -63,7 +63,8 @@ static void test_arm64_mem_fetch(void)
     uc_mem_map(uc, 0x400000, 0x1000, UC_PROT_ALL);
 
     sp = data_address;
-    uc_reg_write(uc, UC_ARM64_REG_SP, &sp);
+    uint32_t reg_size = sizeof(sp);
+    uc_reg_write(uc, UC_ARM64_REG_SP, &sp, &reg_size);
     uc_mem_write(uc, data_address, "\xc8\xc8\xc8\xc8\xc8\xc8\xc8\xc8", 8);
     uc_mem_write(uc, shellcode_address, shellcode0, 4);
     uc_mem_write(uc, shellcode_address + 4, shellcode, 4);
@@ -74,7 +75,7 @@ static void test_arm64_mem_fetch(void)
     }
 
     x0 = 0;
-    uc_reg_read(uc, UC_ARM64_REG_X0, &x0);
+    uc_reg_read(uc, UC_ARM64_REG_X0, &x0, &reg_size);
     printf(">>> x0(Exception Level)=%" PRIx64 "\n", x0 >> 2);
 
     err = uc_emu_start(uc, shellcode_address + 4, shellcode_address + 8, 0, 0);
@@ -82,7 +83,7 @@ static void test_arm64_mem_fetch(void)
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
 
-    uc_reg_read(uc, UC_ARM64_REG_X1, &x1);
+    uc_reg_read(uc, UC_ARM64_REG_X1, &x1, &reg_size);
 
     printf(">>> X1 = 0x%" PRIx64 "\n", x1);
 
@@ -98,6 +99,7 @@ static void test_arm64(void)
     int64_t x11 = 0x12345678;    // X11 register
     int64_t x13 = 0x10000 + 0x8; // X13 register
     int64_t x15 = 0x33;          // X15 register
+    uint32_t reg_size = sizeof(x11);
 
     printf("Emulate ARM64 code\n");
 
@@ -116,9 +118,9 @@ static void test_arm64(void)
     uc_mem_write(uc, ADDRESS, ARM64_CODE, sizeof(ARM64_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_ARM64_REG_X11, &x11);
-    uc_reg_write(uc, UC_ARM64_REG_X13, &x13);
-    uc_reg_write(uc, UC_ARM64_REG_X15, &x15);
+    uc_reg_write(uc, UC_ARM64_REG_X11, &x11, &reg_size);
+    uc_reg_write(uc, UC_ARM64_REG_X13, &x13, &reg_size);
+    uc_reg_write(uc, UC_ARM64_REG_X15, &x15, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -137,7 +139,7 @@ static void test_arm64(void)
     printf(">>> Emulation done. Below is the CPU context\n");
     printf(">>> As little endian, X15 should be 0x78:\n");
 
-    uc_reg_read(uc, UC_ARM64_REG_X15, &x15);
+    uc_reg_read(uc, UC_ARM64_REG_X15, &x15, &reg_size);
     printf(">>> X15 = 0x%" PRIx64 "\n", x15);
 
     uc_close(uc);
@@ -152,6 +154,7 @@ static void test_arm64eb(void)
     int64_t x11 = 0x12345678;    // X11 register
     int64_t x13 = 0x10000 + 0x8; // X13 register
     int64_t x15 = 0x33;          // X15 register
+    uint32_t reg_size = sizeof(x11);
 
     printf("Emulate ARM64 Big-Endian code\n");
 
@@ -170,9 +173,9 @@ static void test_arm64eb(void)
     uc_mem_write(uc, ADDRESS, ARM64_CODE_EB, sizeof(ARM64_CODE_EB) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_ARM64_REG_X11, &x11);
-    uc_reg_write(uc, UC_ARM64_REG_X13, &x13);
-    uc_reg_write(uc, UC_ARM64_REG_X15, &x15);
+    uc_reg_write(uc, UC_ARM64_REG_X11, &x11, &reg_size);
+    uc_reg_write(uc, UC_ARM64_REG_X13, &x13, &reg_size);
+    uc_reg_write(uc, UC_ARM64_REG_X15, &x15, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -191,7 +194,7 @@ static void test_arm64eb(void)
     printf(">>> Emulation done. Below is the CPU context\n");
     printf(">>> As big endian, X15 should be 0x78:\n");
 
-    uc_reg_read(uc, UC_ARM64_REG_X15, &x15);
+    uc_reg_read(uc, UC_ARM64_REG_X15, &x15, &reg_size);
     printf(">>> X15 = 0x%" PRIx64 "\n", x15);
 
     uc_close(uc);
@@ -202,6 +205,7 @@ static void test_arm64_sctlr()
     uc_engine *uc;
     uc_err err;
     uc_arm64_cp_reg reg;
+    uint32_t reg_size = sizeof(reg);
 
     printf("Read the SCTLR register.\n");
 
@@ -217,7 +221,7 @@ static void test_arm64_sctlr()
     reg.op1 = 0;
     reg.op2 = 0;
 
-    err = uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg);
+    err = uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg, &reg_size);
     if (err != UC_ERR_OK) {
         printf("Failed on uc_reg_read() with error returned: %u\n", err);
     }
@@ -225,7 +229,7 @@ static void test_arm64_sctlr()
     printf(">>> SCTLR_EL1 = 0x%" PRIx64 "\n", reg.val);
 
     reg.op1 = 0b100;
-    err = uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg);
+    err = uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg, &reg_size);
     if (err != UC_ERR_OK) {
         printf("Failed on uc_reg_read() with error returned: %u\n", err);
     }
@@ -239,10 +243,11 @@ static uint32_t hook_mrs(uc_engine *uc, uc_arm64_reg reg,
                          const uc_arm64_cp_reg *cp_reg, void *user_data)
 {
     uint64_t r_x2 = 0x114514;
+    uint32_t reg_size = sizeof(r_x2);
 
     printf(">>> Hook MSR instruction. Write 0x114514 to X2.\n");
 
-    uc_reg_write(uc, reg, &r_x2);
+    uc_reg_write(uc, reg, &r_x2, &reg_size);
 
     // Skip
     return 1;
@@ -254,6 +259,7 @@ static void test_arm64_hook_mrs()
     uc_err err;
     uint64_t r_x2;
     uc_hook hk;
+    uint32_t reg_size = sizeof(r_x2);
 
     printf("Hook MRS instruction.\n");
 
@@ -283,7 +289,7 @@ static void test_arm64_hook_mrs()
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
 
-    err = uc_reg_read(uc, UC_ARM64_REG_X2, &r_x2);
+    err = uc_reg_read(uc, UC_ARM64_REG_X2, &r_x2, &reg_size);
     if (err != UC_ERR_OK) {
         printf("Failed on uc_reg_read() with error returned: %u\n", err);
     }

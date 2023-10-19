@@ -138,7 +138,8 @@ static uc_err write_cp_reg(CPUARMState *env, uc_arm64_cp_reg *cp)
     return UC_ERR_OK;
 }
 
-static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
+static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value,
+                       uint32_t *reg_size)
 {
     uc_err ret = UC_ERR_OK;
 
@@ -237,7 +238,8 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
     return ret;
 }
 
-static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
+static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
+                        uint32_t *reg_size)
 {
     uc_err ret = UC_ERR_OK;
 
@@ -337,7 +339,7 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
 }
 
 int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                   int count)
+                   int count, uint32_t *reg_size)
 {
     CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
@@ -346,7 +348,7 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value);
+        err = reg_read(env, regid, value, reg_size);
         if (err) {
             return err;
         }
@@ -356,7 +358,7 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
 }
 
 int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                    int count)
+                    int count, uint32_t *reg_size)
 {
     CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
@@ -365,7 +367,7 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value);
+        err = reg_write(env, regid, value, reg_size);
         if (err) {
             return err;
         }
@@ -382,10 +384,10 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 DEFAULT_VISIBILITY
 #ifdef TARGET_WORDS_BIGENDIAN
 int arm64eb_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                             void **vals, int count)
+                             void **vals, int count, uint32_t *reg_size)
 #else
 int arm64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                           void **vals, int count)
+                           void **vals, int count, uint32_t *reg_size)
 #endif
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
@@ -395,7 +397,7 @@ int arm64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value);
+        err = reg_read(env, regid, value, reg_size);
         if (err) {
             return err;
         }
@@ -407,10 +409,10 @@ int arm64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
 DEFAULT_VISIBILITY
 #ifdef TARGET_WORDS_BIGENDIAN
 int arm64eb_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                              void *const *vals, int count)
+                              void *const *vals, int count, uint32_t *reg_size)
 #else
 int arm64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                            void *const *vals, int count)
+                            void *const *vals, int count, uint32_t *reg_size)
 #endif
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
@@ -420,7 +422,7 @@ int arm64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value);
+        err = reg_write(env, regid, value, reg_size);
         if (err) {
             return err;
         }

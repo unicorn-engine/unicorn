@@ -17,16 +17,17 @@ static void test_riscv32_nop(void)
     char code[] = "\x13\x00\x00\x00"; // nop
     uint32_t r_t0 = 0x1234;
     uint32_t r_t1 = 0x5678;
+    uint32_t reg_size = sizeof(r_t0);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
                     sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
     TEST_CHECK(r_t0 == 0x1234);
     TEST_CHECK(r_t1 == 0x5678);
 
@@ -39,16 +40,17 @@ static void test_riscv64_nop(void)
     char code[] = "\x13\x00\x00\x00"; // nop
     uint64_t r_t0 = 0x1234;
     uint64_t r_t1 = 0x5678;
+    uint32_t reg_size = sizeof(r_t0);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
-    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
     TEST_CHECK(r_t0 == 0x1234);
     TEST_CHECK(r_t1 == 0x5678);
 
@@ -70,22 +72,23 @@ static void test_riscv32_until_pc_update(void)
     uint32_t r_t1 = 0x7890;
     uint32_t r_pc = 0x0000;
     uint32_t r_sp = 0x1234;
+    uint32_t reg_size = sizeof(r_t0);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
                     sizeof(code) - 1);
 
     // initialize machine registers
-    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1));
-    OK(uc_reg_write(uc, UC_RISCV_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_SP, &r_sp, &reg_size));
 
     // emulate the three instructions
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1));
-    OK(uc_reg_read(uc, UC_RISCV_REG_SP, &r_sp));
-    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_SP, &r_sp, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_t0 == 0x1);
     TEST_CHECK(r_t1 == 0x20);
@@ -111,22 +114,23 @@ static void test_riscv64_until_pc_update(void)
     uint64_t r_t1 = 0x7890;
     uint64_t r_pc = 0x0000;
     uint64_t r_sp = 0x1234;
+    uint32_t reg_size = sizeof(r_t0);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
 
     // initialize machine registers
-    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1));
-    OK(uc_reg_write(uc, UC_RISCV_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_SP, &r_sp, &reg_size));
 
     // emulate the three instructions
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1));
-    OK(uc_reg_read(uc, UC_RISCV_REG_SP, &r_sp));
-    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_SP, &r_sp, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_t0 == 0x1);
     TEST_CHECK(r_t1 == 0x20);
@@ -151,22 +155,23 @@ static void test_riscv32_3steps_pc_update(void)
     uint32_t r_t1 = 0x7890;
     uint32_t r_pc = 0x0000;
     uint32_t r_sp = 0x1234;
+    uint32_t reg_size = sizeof(r_t0);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
                     sizeof(code) - 1);
 
     // initialize machine registers
-    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1));
-    OK(uc_reg_write(uc, UC_RISCV_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_SP, &r_sp, &reg_size));
 
     // emulate the three instructions
     OK(uc_emu_start(uc, code_start, -1, 0, 3));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1));
-    OK(uc_reg_read(uc, UC_RISCV_REG_SP, &r_sp));
-    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_SP, &r_sp, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_t0 == 0x1);
     TEST_CHECK(r_t1 == 0x20);
@@ -192,22 +197,23 @@ static void test_riscv64_3steps_pc_update(void)
     uint64_t r_t1 = 0x7890;
     uint64_t r_pc = 0x0000;
     uint64_t r_sp = 0x1234;
+    uint32_t reg_size = sizeof(r_t0);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
 
     // initialize machine registers
-    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1));
-    OK(uc_reg_write(uc, UC_RISCV_REG_SP, &r_sp));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_SP, &r_sp, &reg_size));
 
     // emulate the three instructions
     OK(uc_emu_start(uc, code_start, -1, 0, 3));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1));
-    OK(uc_reg_read(uc, UC_RISCV_REG_SP, &r_sp));
-    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T1, &r_t1, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_SP, &r_sp, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_t0 == 0x1);
     TEST_CHECK(r_t1 == 0x20);
@@ -224,19 +230,20 @@ static void test_riscv32_fp_move(void)
 
     uint32_t r_f1 = 0x1234;
     uint32_t r_f3 = 0x5678;
+    uint32_t reg_size = sizeof(r_f1);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
                     sizeof(code) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_RISCV_REG_F1, &r_f1);
-    uc_reg_write(uc, UC_RISCV_REG_F3, &r_f3);
+    uc_reg_write(uc, UC_RISCV_REG_F1, &r_f1, &reg_size);
+    uc_reg_write(uc, UC_RISCV_REG_F3, &r_f3, &reg_size);
 
     // emulate the instruction
     OK(uc_emu_start(uc, code_start, -1, 0, 1));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_F1, &r_f1));
-    OK(uc_reg_read(uc, UC_RISCV_REG_F3, &r_f3));
+    OK(uc_reg_read(uc, UC_RISCV_REG_F1, &r_f1, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_F3, &r_f3, &reg_size));
 
     TEST_CHECK(r_f1 == 0x1234);
     TEST_CHECK(r_f3 == 0x1234);
@@ -251,19 +258,20 @@ static void test_riscv64_fp_move(void)
 
     uint64_t r_f1 = 0x12341234;
     uint64_t r_f3 = 0x56785678;
+    uint32_t reg_size = sizeof(r_f1);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
 
     // initialize machine registers
-    OK(uc_reg_write(uc, UC_RISCV_REG_F1, &r_f1));
-    OK(uc_reg_write(uc, UC_RISCV_REG_F3, &r_f3));
+    OK(uc_reg_write(uc, UC_RISCV_REG_F1, &r_f1, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_F3, &r_f3, &reg_size));
 
     // emulate the instruction
     OK(uc_emu_start(uc, code_start, -1, 0, 1));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_F1, &r_f1));
-    OK(uc_reg_read(uc, UC_RISCV_REG_F3, &r_f3));
+    OK(uc_reg_read(uc, UC_RISCV_REG_F1, &r_f1, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_F3, &r_f3, &reg_size));
 
     TEST_CHECK(r_f1 == 0x12341234);
     TEST_CHECK(r_f3 == 0x12341234);
@@ -283,22 +291,23 @@ static void test_riscv64_fp_move_from_int(void)
     uint64_t r_ft0 = 0x12341234;
     uint64_t r_s6 = 0x56785678;
     uint64_t r_x3 = 0x6000;
+    uint32_t reg_size = sizeof(r_ft0);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
 
     // initialize machine registers
-    OK(uc_reg_write(uc, UC_RISCV_REG_FT0, &r_ft0));
-    OK(uc_reg_write(uc, UC_RISCV_REG_S6, &r_s6));
+    OK(uc_reg_write(uc, UC_RISCV_REG_FT0, &r_ft0, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_S6, &r_s6, &reg_size));
 
     // mstatus.fs
-    OK(uc_reg_write(uc, UC_RISCV_REG_X3, &r_x3));
+    OK(uc_reg_write(uc, UC_RISCV_REG_X3, &r_x3, &reg_size));
 
     // emulate the instruction
     OK(uc_emu_start(uc, code_start, -1, 0, 2));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_FT0, &r_ft0));
-    OK(uc_reg_read(uc, UC_RISCV_REG_S6, &r_s6));
+    OK(uc_reg_read(uc, UC_RISCV_REG_FT0, &r_ft0, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_S6, &r_s6, &reg_size));
 
     TEST_CHECK(r_ft0 == 0x56785678);
     TEST_CHECK(r_s6 == 0x56785678);
@@ -314,22 +323,23 @@ static void test_riscv64_fp_move_from_int_reg_write(void)
     uint64_t r_ft0 = 0x12341234;
     uint64_t r_s6 = 0x56785678;
     uint64_t r_mstatus = 0x6000;
+    uint32_t reg_size = sizeof(r_ft0);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
 
     // initialize machine registers
-    OK(uc_reg_write(uc, UC_RISCV_REG_FT0, &r_ft0));
-    OK(uc_reg_write(uc, UC_RISCV_REG_S6, &r_s6));
+    OK(uc_reg_write(uc, UC_RISCV_REG_FT0, &r_ft0, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_S6, &r_s6, &reg_size));
 
     // mstatus.fs
-    OK(uc_reg_write(uc, UC_RISCV_REG_MSTATUS, &r_mstatus));
+    OK(uc_reg_write(uc, UC_RISCV_REG_MSTATUS, &r_mstatus, &reg_size));
 
     // emulate the instruction
     OK(uc_emu_start(uc, code_start, -1, 0, 1));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_FT0, &r_ft0));
-    OK(uc_reg_read(uc, UC_RISCV_REG_S6, &r_s6));
+    OK(uc_reg_read(uc, UC_RISCV_REG_FT0, &r_ft0, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_S6, &r_s6, &reg_size));
 
     TEST_CHECK(r_ft0 == 0x56785678);
     TEST_CHECK(r_s6 == 0x56785678);
@@ -349,22 +359,23 @@ static void test_riscv64_fp_move_to_int(void)
     uint64_t r_ft0 = 0x12341234;
     uint64_t r_s6 = 0x56785678;
     uint64_t r_x3 = 0x6000;
+    uint32_t reg_size = sizeof(r_ft0);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
 
     // initialize machine registers
-    OK(uc_reg_write(uc, UC_RISCV_REG_FT0, &r_ft0));
-    OK(uc_reg_write(uc, UC_RISCV_REG_S6, &r_s6));
+    OK(uc_reg_write(uc, UC_RISCV_REG_FT0, &r_ft0, &reg_size));
+    OK(uc_reg_write(uc, UC_RISCV_REG_S6, &r_s6, &reg_size));
 
     // mstatus.fs
-    OK(uc_reg_write(uc, UC_RISCV_REG_X3, &r_x3));
+    OK(uc_reg_write(uc, UC_RISCV_REG_X3, &r_x3, &reg_size));
 
     // emulate the instruction
     OK(uc_emu_start(uc, code_start, -1, 0, 2));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_FT0, &r_ft0));
-    OK(uc_reg_read(uc, UC_RISCV_REG_S6, &r_s6));
+    OK(uc_reg_read(uc, UC_RISCV_REG_FT0, &r_ft0, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_S6, &r_s6, &reg_size));
 
     TEST_CHECK(r_ft0 == 0x12341234);
     TEST_CHECK(r_s6 == 0x12341234);
@@ -380,21 +391,22 @@ static void test_riscv64_code_patching(void)
                     sizeof(code) - 1);
     // Zero out t0 and t1
     uint64_t r_t0 = 0x0;
-    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
+    uint32_t reg_size = sizeof(r_t0);
+    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
     // emulate the instruction
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
     // check value
-    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
     TEST_CHECK(r_t0 == 0x1);
     // patch instruction
     char patch_code[] = "\x93\x82\xf2\x7f"; // addi t0, t0, 0x7FF
     OK(uc_mem_write(uc, code_start, patch_code, sizeof(patch_code) - 1));
     // zero out t0
     r_t0 = 0x0;
-    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(patch_code) - 1, 0, 0));
     // check value
-    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
     TEST_CHECK(r_t0 != 0x1);
     TEST_CHECK(r_t0 == 0x7ff);
 
@@ -410,11 +422,12 @@ static void test_riscv64_code_patching_count(void)
                     sizeof(code) - 1);
     // Zero out t0 and t1
     uint64_t r_t0 = 0x0;
-    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
+    uint32_t reg_size = sizeof(r_t0);
+    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
     // emulate the instruction
     OK(uc_emu_start(uc, code_start, -1, 0, 1));
     // check value
-    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
     TEST_CHECK(r_t0 == 0x1);
     // patch instruction
     char patch_code[] = "\x93\x82\xf2\x7f"; // addi t0, t0, 0x7FF
@@ -423,10 +436,10 @@ static void test_riscv64_code_patching_count(void)
                            code_start + sizeof(patch_code) - 1));
     // zero out t0
     r_t0 = 0x0;
-    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
+    OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
     OK(uc_emu_start(uc, code_start, -1, 0, 1));
     // check value
-    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
+    OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0, &reg_size));
     TEST_CHECK(r_t0 != 0x1);
     TEST_CHECK(r_t0 == 0x7ff);
 
@@ -445,6 +458,7 @@ static void test_riscv64_ecall(void)
     char code[] = "\x73\x00\x00\x00"; // ecall
     uint64_t r_pc;
     uc_hook h;
+    uint32_t reg_size = sizeof(r_pc);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
@@ -452,7 +466,7 @@ static void test_riscv64_ecall(void)
     OK(uc_hook_add(uc, &h, UC_HOOK_INTR, test_riscv64_ecall_cb, NULL, 1, 0));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_pc == code_start + 4);
 
@@ -463,7 +477,8 @@ static uint64_t test_riscv32_mmio_map_read_cb(uc_engine *uc, uint64_t offset,
                                               unsigned size, void *data)
 {
     int r_a4;
-    OK(uc_reg_read(uc, UC_RISCV_REG_A4, &r_a4));
+    uint32_t reg_size = sizeof(r_a4);
+    OK(uc_reg_read(uc, UC_RISCV_REG_A4, &r_a4, &reg_size));
     TEST_CHECK(r_a4 == 0x40021 << 12);
     TEST_CHECK(offset == 0x21018);
     return 0;
@@ -495,6 +510,7 @@ static void test_riscv32_map(void)
     //
     char code[] = "\x37\x17\x02\x40\x1c\x4f";
     uint64_t val = 0xdeadbeef;
+    uint32_t reg_size = sizeof(val);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
                     sizeof(code) - 1);
@@ -503,7 +519,7 @@ static void test_riscv32_map(void)
     OK(uc_mem_write(uc, 0x40000000 + 0x21018, &val, 8));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_A5, &val));
+    OK(uc_reg_read(uc, UC_RISCV_REG_A5, &val, &reg_size));
 
     TEST_CHECK(val == 0xdeadbeef);
     OK(uc_close(uc));
@@ -513,7 +529,8 @@ static uint64_t test_riscv64_mmio_map_read_cb(uc_engine *uc, uint64_t offset,
                                               unsigned size, void *data)
 {
     uint64_t r_a4;
-    OK(uc_reg_read(uc, UC_RISCV_REG_A4, &r_a4));
+    uint32_t reg_size = sizeof(r_a4);
+    OK(uc_reg_read(uc, UC_RISCV_REG_A4, &r_a4, &reg_size));
     TEST_CHECK(r_a4 == 0x40021 << 12);
     TEST_CHECK(offset == 0x21018);
     return 0;
@@ -544,8 +561,10 @@ static bool test_riscv_correct_address_in_small_jump_hook_callback(
     // Check registers
     uint64_t r_x5 = 0x0;
     uint64_t r_pc = 0x0;
-    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5));
-    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    uint32_t reg_size = sizeof(r_pc);
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc, &reg_size));
     TEST_CHECK(r_x5 == 0x7F00);
     TEST_CHECK(r_pc == 0x7F00);
 
@@ -566,6 +585,7 @@ static void test_riscv_correct_address_in_small_jump_hook(void)
     uint64_t r_x5 = 0x0;
     uint64_t r_pc = 0x0;
     uc_hook hook;
+    uint32_t reg_size = sizeof(r_pc);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
@@ -577,8 +597,8 @@ static void test_riscv_correct_address_in_small_jump_hook(void)
         UC_ERR_FETCH_UNMAPPED,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5));
-    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc, &reg_size));
     TEST_CHECK(r_x5 == 0x7F00);
     TEST_CHECK(r_pc == 0x7F00);
 
@@ -592,8 +612,10 @@ static bool test_riscv_correct_address_in_long_jump_hook_callback(
     // Check registers
     uint64_t r_x5 = 0x0;
     uint64_t r_pc = 0x0;
-    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5));
-    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    uint32_t reg_size = sizeof(r_pc);
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc, &reg_size));
     TEST_CHECK(r_x5 == 0x7FFFFFFFFFFFFF00);
     TEST_CHECK(r_pc == 0x7FFFFFFFFFFFFF00);
 
@@ -615,6 +637,7 @@ static void test_riscv_correct_address_in_long_jump_hook(void)
     uint64_t r_x5 = 0x0;
     uint64_t r_pc = 0x0;
     uc_hook hook;
+    uint32_t reg_size = sizeof(r_pc);
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
@@ -626,8 +649,8 @@ static void test_riscv_correct_address_in_long_jump_hook(void)
         UC_ERR_FETCH_UNMAPPED,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5));
-    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5, &reg_size));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc, &reg_size));
     TEST_CHECK(r_x5 == 0x7FFFFFFFFFFFFF00);
     TEST_CHECK(r_pc == 0x7FFFFFFFFFFFFF00);
 

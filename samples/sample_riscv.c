@@ -52,6 +52,7 @@ static void test_riscv(void)
 
     uint32_t a0 = 0x1234;
     uint32_t a1 = 0x7890;
+    uint32_t reg_size = sizeof(a0);
 
     printf("Emulate RISCV code\n");
 
@@ -70,8 +71,8 @@ static void test_riscv(void)
     uc_mem_write(uc, ADDRESS, RISCV_CODE, sizeof(RISCV_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_write(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_write(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_write(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -89,8 +90,8 @@ static void test_riscv(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_read(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_read(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_read(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     printf(">>> A0 = 0x%x\n", a0);
     printf(">>> A1 = 0x%x\n", a1);
@@ -106,6 +107,7 @@ static void test_riscv2(void)
 
     uint32_t a0 = 0x1234;
     uint32_t a1 = 0x7890;
+    uint32_t reg_size = sizeof(a0);
 
     printf("Emulate RISCV code: split emulation\n");
 
@@ -124,8 +126,8 @@ static void test_riscv2(void)
     uc_mem_write(uc, ADDRESS, RISCV_CODE, sizeof(RISCV_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_write(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_write(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_write(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -139,8 +141,8 @@ static void test_riscv2(void)
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
 
-    uc_reg_read(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_read(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_read(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_read(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     printf(">>> A0 = 0x%x\n", a0);
     printf(">>> A1 = 0x%x\n", a1);
@@ -154,8 +156,8 @@ static void test_riscv2(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_read(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_read(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_read(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     printf(">>> A0 = 0x%x\n", a0);
     printf(">>> A1 = 0x%x\n", a1);
@@ -171,6 +173,7 @@ static void test_riscv3(void)
 
     uint32_t a0 = 0x1234;
     uint32_t a1 = 0x7890;
+    uint32_t reg_size = sizeof(a0);
 
     printf("Emulate RISCV code: early stop\n");
 
@@ -189,8 +192,8 @@ static void test_riscv3(void)
     uc_mem_write(uc, ADDRESS, RISCV_CODE, sizeof(RISCV_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_write(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_write(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_write(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -208,8 +211,8 @@ static void test_riscv3(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_read(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_read(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_read(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     printf(">>> A0 = 0x%x\n", a0);
     printf(">>> A1 = 0x%x\n", a1);
@@ -226,6 +229,7 @@ static void test_riscv_step(void)
     uint32_t a0 = 0x1234;
     uint32_t a1 = 0x7890;
     uint32_t pc = 0x0000;
+    uint32_t reg_size = sizeof(a0);
 
     printf("Emulate RISCV code: step\n");
 
@@ -244,8 +248,8 @@ static void test_riscv_step(void)
     uc_mem_write(uc, ADDRESS, RISCV_CODE, sizeof(RISCV_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_write(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_write(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_write(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -259,9 +263,9 @@ static void test_riscv_step(void)
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
 
-    uc_reg_read(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_read(uc, UC_RISCV_REG_A1, &a1);
-    uc_reg_read(uc, UC_RISCV_REG_PC, &pc);
+    uc_reg_read(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_read(uc, UC_RISCV_REG_A1, &a1, &reg_size);
+    uc_reg_read(uc, UC_RISCV_REG_PC, &pc, &reg_size);
 
     printf(">>> A0 = 0x%x\n", a0);
     printf(">>> A1 = 0x%x\n", a1);
@@ -279,8 +283,8 @@ static void test_riscv_step(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_read(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_read(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_read(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     printf(">>> A0 = 0x%x\n", a0);
     printf(">>> A1 = 0x%x\n", a1);
@@ -297,6 +301,7 @@ static void test_riscv_timeout(void)
     uint32_t a0 = 0x1234;
     uint32_t a1 = 0x7890;
     uint32_t pc = 0x0000;
+    uint32_t reg_size = sizeof(a0);
 
     printf("Emulate RISCV code: timeout\n");
 
@@ -315,8 +320,8 @@ static void test_riscv_timeout(void)
     uc_mem_write(uc, ADDRESS, "\x00\x00\x00\x00\x00\x00\x00\x00", 8);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_write(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_write(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_write(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -329,7 +334,7 @@ static void test_riscv_timeout(void)
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
-    uc_reg_read(uc, UC_RISCV_REG_PC, &pc);
+    uc_reg_read(uc, UC_RISCV_REG_PC, &pc, &reg_size);
 
     if (pc != 0x10000) {
         printf("Error after step: PC is: 0x%x, expected was 0x10004\n", pc);
@@ -340,7 +345,7 @@ static void test_riscv_timeout(void)
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
-    uc_reg_read(uc, UC_RISCV_REG_PC, &pc);
+    uc_reg_read(uc, UC_RISCV_REG_PC, &pc, &reg_size);
 
     if (pc != 0x10000) {
         printf("Error after step: PC is: 0x%x, expected was 0x10004\n", pc);
@@ -359,6 +364,7 @@ static void test_riscv_sd64(void)
     uc_err err;
 
     uint64_t reg;
+    uint32_t reg_size = sizeof(reg);
 
     /*
        00813823    sd  s0,16(sp)
@@ -389,10 +395,10 @@ static void test_riscv_sd64(void)
     uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0);
 
     reg = ADDRESS + 0x100;
-    uc_reg_write(uc, UC_RISCV_REG_SP, &reg);
+    uc_reg_write(uc, UC_RISCV_REG_SP, &reg, &reg_size);
 
     reg = 0x11223344;
-    uc_reg_write(uc, UC_RISCV_REG_S0, &reg);
+    uc_reg_write(uc, UC_RISCV_REG_S0, &reg, &reg_size);
 
     // execute instruction
     err = uc_emu_start(uc, 0x10000, -1, 0, 1);
@@ -429,6 +435,7 @@ static void test_recover_from_illegal(void)
     uc_err err;
     uint64_t a0 = 0x1234;
     uint64_t a1 = 0x7890;
+    uint32_t reg_size = sizeof(a0);
 
     printf("Emulate RISCV code: recover_from_illegal\n");
 
@@ -439,8 +446,8 @@ static void test_recover_from_illegal(void)
         return;
     }
 
-    uc_reg_write(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_write(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_write(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_write(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     // map 2MB memory for this emulation
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
@@ -474,8 +481,8 @@ static void test_recover_from_illegal(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_RISCV_REG_A0, &a0);
-    uc_reg_read(uc, UC_RISCV_REG_A1, &a1);
+    uc_reg_read(uc, UC_RISCV_REG_A0, &a0, &reg_size);
+    uc_reg_read(uc, UC_RISCV_REG_A1, &a1, &reg_size);
 
     printf(">>> A0 = 0x%" PRIx64 "\n", a0);
     printf(">>> A1 = 0x%" PRIx64 "\n", a1);
@@ -490,6 +497,7 @@ static void test_riscv_func_return(void)
     uc_err err;
 
     uint64_t pc = 0, ra = 0;
+    uint32_t reg_size = sizeof(pc);
 
     // 10000: 00008067     ret
     // 10004: 8082         c.ret
@@ -525,7 +533,7 @@ static void test_riscv_func_return(void)
     // RET instruction will return to address in RA
     // so after RET, PC == RA
     ra = 0x10006;
-    uc_reg_write(uc, UC_RISCV_REG_RA, &ra);
+    uc_reg_write(uc, UC_RISCV_REG_RA, &ra, &reg_size);
 
     // execute ret instruction
     err = uc_emu_start(uc, 0x10000, -1, 0, 1);
@@ -533,7 +541,7 @@ static void test_riscv_func_return(void)
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
 
-    uc_reg_read(uc, UC_RISCV_REG_PC, &pc);
+    uc_reg_read(uc, UC_RISCV_REG_PC, &pc, &reg_size);
     if (pc != ra) {
         printf("Error after execution: PC is: 0x%" PRIx64
                ", expected was 0x%" PRIx64 "\n",
@@ -550,7 +558,7 @@ static void test_riscv_func_return(void)
     // C.RET instruction will return to address in RA
     // so after C.RET, PC == RA
     ra = 0x10006;
-    uc_reg_write(uc, UC_RISCV_REG_RA, &ra);
+    uc_reg_write(uc, UC_RISCV_REG_RA, &ra, &reg_size);
 
     printf("========\n");
     // execute c.ret instruction
@@ -559,7 +567,7 @@ static void test_riscv_func_return(void)
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
 
-    uc_reg_read(uc, UC_RISCV_REG_PC, &pc);
+    uc_reg_read(uc, UC_RISCV_REG_PC, &pc, &reg_size);
     if (pc != ra) {
         printf("Error after execution: PC is: 0x%" PRIx64
                ", expected was 0x%" PRIx64 "\n",

@@ -49,8 +49,11 @@ void m68k_reg_reset(struct uc_struct *uc)
     env->pc = 0;
 }
 
-static void reg_read(CPUM68KState *env, unsigned int regid, void *value)
+static void reg_read(CPUM68KState *env, unsigned int regid, void *value,
+                     uint32_t *reg_size)
 {
+    CHECK_REG_SIZE(sizeof(uint32_t), reg_size, );
+
     if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
         *(int32_t *)value = env->aregs[regid - UC_M68K_REG_A0];
     else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
@@ -69,8 +72,11 @@ static void reg_read(CPUM68KState *env, unsigned int regid, void *value)
     }
 }
 
-static void reg_write(CPUM68KState *env, unsigned int regid, const void *value)
+static void reg_write(CPUM68KState *env, unsigned int regid, const void *value,
+                      uint32_t *reg_size)
 {
+    CHECK_REG_SIZE(sizeof(uint32_t), reg_size, );
+
     if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
         env->aregs[regid - UC_M68K_REG_A0] = *(uint32_t *)value;
     else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
@@ -90,7 +96,7 @@ static void reg_write(CPUM68KState *env, unsigned int regid, const void *value)
 }
 
 int m68k_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                  int count)
+                  int count, uint32_t *reg_size)
 {
     CPUM68KState *env = &(M68K_CPU(uc->cpu)->env);
     int i;
@@ -98,14 +104,14 @@ int m68k_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        reg_read(env, regid, value, reg_size);
     }
 
     return 0;
 }
 
 int m68k_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                   int count)
+                   int count, uint32_t *reg_size)
 {
     CPUM68KState *env = &(M68K_CPU(uc->cpu)->env);
     int i;
@@ -113,7 +119,7 @@ int m68k_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        reg_write(env, regid, value, reg_size);
         if (regid == UC_M68K_REG_PC) {
             // force to quit execution and flush TB
             uc->quit_request = true;
@@ -126,7 +132,7 @@ int m68k_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 
 DEFAULT_VISIBILITY
 int m68k_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void **vals, int count)
+                          void **vals, int count, uint32_t *reg_size)
 {
     CPUM68KState *env = (CPUM68KState *)ctx->data;
     int i;
@@ -134,7 +140,7 @@ int m68k_context_reg_read(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        reg_read(env, regid, value, reg_size);
     }
 
     return 0;
@@ -142,7 +148,7 @@ int m68k_context_reg_read(struct uc_context *ctx, unsigned int *regs,
 
 DEFAULT_VISIBILITY
 int m68k_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, int count)
+                           void *const *vals, int count, uint32_t *reg_size)
 {
     CPUM68KState *env = (CPUM68KState *)ctx->data;
     int i;
@@ -150,7 +156,7 @@ int m68k_context_reg_write(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        reg_write(env, regid, value, reg_size);
     }
 
     return 0;

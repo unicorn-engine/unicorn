@@ -48,6 +48,22 @@
 #define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | ((b & 0xff) << 8))
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
+#ifndef NDEBUG
+#define CHECK_REG_SIZE(expected_minimum_reg_size, reg_size, value)             \
+    if ((reg_size != NULL) && (*reg_size < expected_minimum_reg_size)) {       \
+        assert((*reg_size >= expected_minimum_reg_size) &&                     \
+               "Register overflow");                                           \
+        *reg_size = expected_minimum_reg_size;                                 \
+        return value;                                                          \
+    }
+#else
+#define CHECK_REG_SIZE(expected_minimum_reg_size, reg_size, value)             \
+    if ((reg_size != NULL) && (*reg_size < expected_minimum_reg_size)) {       \
+        *reg_size = expected_minimum_reg_size;                                 \
+        return value;                                                          \
+    }
+#endif // NDEBUG
+
 struct TranslationBlock;
 
 // Place the struct here since we need it in uc.c
@@ -64,14 +80,15 @@ typedef uc_err (*query_t)(struct uc_struct *uc, uc_query_type type,
 
 // return 0 on success, -1 on failure
 typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int *regs, void **vals,
-                          int count);
+                          int count, uint32_t *reg_size);
 typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int *regs,
-                           void *const *vals, int count);
+                           void *const *vals, int count, uint32_t *reg_size);
 
 typedef int (*context_reg_read_t)(struct uc_context *ctx, unsigned int *regs,
-                                  void **vals, int count);
+                                  void **vals, int count, uint32_t *reg_size);
 typedef int (*context_reg_write_t)(struct uc_context *ctx, unsigned int *regs,
-                                   void *const *vals, int count);
+                                   void *const *vals, int count,
+                                   uint32_t *reg_size);
 typedef struct {
     context_reg_read_t context_reg_read;
     context_reg_write_t context_reg_write;

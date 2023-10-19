@@ -102,6 +102,7 @@ static void test_uc_ctl_exits(void)
     char code[] = "\x83\xf8\x00\x7f\x02\x40\x90\x43\x90";
     int r_eax;
     int r_ebx;
+    uint32_t reg_size = sizeof(r_eax);
     uint64_t exits[] = {code_start + 6, code_start + 8};
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
@@ -109,15 +110,15 @@ static void test_uc_ctl_exits(void)
     OK(uc_ctl_set_exits(uc, exits, 2));
     r_eax = 0;
     r_ebx = 0;
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_ebx));
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax, &reg_size));
+    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_ebx, &reg_size));
 
     // Run two times.
     OK(uc_emu_start(uc, code_start, 0, 0, 0));
     OK(uc_emu_start(uc, code_start, 0, 0, 0));
 
-    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax, &reg_size));
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx, &reg_size));
 
     TEST_CHECK(r_eax == 1);
     TEST_CHECK(r_ebx == 1);
@@ -202,30 +203,31 @@ static void test_uc_ctl_arm_cpu(void)
 {
     uc_engine *uc;
     int r_control, r_msp, r_psp;
+    uint32_t reg_size = sizeof(r_psp);
 
     OK(uc_open(UC_ARCH_ARM, UC_MODE_THUMB, &uc));
 
     OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_M7));
 
     r_control = 0; // Make sure we are using MSP.
-    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control, &reg_size));
 
     r_msp = 0x1000;
-    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_msp));
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_msp, &reg_size));
 
     r_control = 0b10; // Make the switch.
-    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control, &reg_size));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_psp));
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_psp, &reg_size));
     TEST_CHECK(r_psp != r_msp);
 
     r_psp = 0x2000;
-    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_psp));
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_psp, &reg_size));
 
     r_control = 0; // Switch again
-    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control, &reg_size));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_msp));
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_msp, &reg_size));
     TEST_CHECK(r_psp != r_msp);
     TEST_CHECK(r_msp == 0x1000);
 

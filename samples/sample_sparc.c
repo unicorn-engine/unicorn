@@ -37,6 +37,7 @@ static void test_sparc(void)
     int g1 = 0x1230; // G1 register
     int g2 = 0x6789; // G2 register
     int g3 = 0x5555; // G3 register
+    uint32_t reg_size = sizeof(g1);
 
     printf("Emulate SPARC code\n");
 
@@ -55,9 +56,9 @@ static void test_sparc(void)
     uc_mem_write(uc, ADDRESS, SPARC_CODE, sizeof(SPARC_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_SPARC_REG_G1, &g1);
-    uc_reg_write(uc, UC_SPARC_REG_G2, &g2);
-    uc_reg_write(uc, UC_SPARC_REG_G3, &g3);
+    uc_reg_write(uc, UC_SPARC_REG_G1, &g1, &reg_size);
+    uc_reg_write(uc, UC_SPARC_REG_G2, &g2, &reg_size);
+    uc_reg_write(uc, UC_SPARC_REG_G3, &g3, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -76,7 +77,7 @@ static void test_sparc(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_SPARC_REG_G3, &g3);
+    uc_reg_read(uc, UC_SPARC_REG_G3, &g3, &reg_size);
     printf(">>> G3 = 0x%x\n", g3);
 
     uc_close(uc);

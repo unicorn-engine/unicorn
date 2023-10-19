@@ -500,14 +500,15 @@ uc_err uc_close(uc_engine *uc)
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
+uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count,
+                         uint32_t *reg_size)
 {
     int ret = UC_ERR_OK;
 
     UC_INIT(uc);
 
     if (uc->reg_read) {
-        ret = uc->reg_read(uc, (unsigned int *)ids, vals, count);
+        ret = uc->reg_read(uc, (unsigned int *)ids, vals, count, reg_size);
     } else {
         return UC_ERR_HANDLE;
     }
@@ -516,14 +517,15 @@ uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
+uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count,
+                          uint32_t *reg_size)
 {
     int ret = UC_ERR_OK;
 
     UC_INIT(uc);
 
     if (uc->reg_write) {
-        ret = uc->reg_write(uc, (unsigned int *)ids, vals, count);
+        ret = uc->reg_write(uc, (unsigned int *)ids, vals, count, reg_size);
     } else {
         return UC_ERR_HANDLE;
     }
@@ -532,17 +534,18 @@ uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
+uc_err uc_reg_read(uc_engine *uc, int regid, void *value, uint32_t *reg_size)
 {
     UC_INIT(uc);
-    return uc_reg_read_batch(uc, &regid, &value, 1);
+    return uc_reg_read_batch(uc, &regid, &value, 1, reg_size);
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
+uc_err uc_reg_write(uc_engine *uc, int regid, const void *value,
+                    uint32_t *reg_size)
 {
     UC_INIT(uc);
-    return uc_reg_write_batch(uc, &regid, (void *const *)&value, 1);
+    return uc_reg_write_batch(uc, &regid, (void *const *)&value, 1, reg_size);
 }
 
 // check if a memory area is mapped
@@ -755,12 +758,14 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     uc->nested_level++;
 
     uint32_t begin_pc32 = READ_DWORD(begin);
+    uint32_t reg_size = sizeof(begin_pc32);
+
     switch (uc->arch) {
     default:
         break;
 #ifdef UNICORN_HAS_M68K
     case UC_ARCH_M68K:
-        uc_reg_write(uc, UC_M68K_REG_PC, &begin_pc32);
+        uc_reg_write(uc, UC_M68K_REG_PC, &begin_pc32, &reg_size);
         break;
 #endif
 #ifdef UNICORN_HAS_X86
@@ -771,70 +776,77 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         case UC_MODE_16: {
             uint16_t ip;
             uint16_t cs;
+            reg_size = sizeof(ip);
 
-            uc_reg_read(uc, UC_X86_REG_CS, &cs);
+            uc_reg_read(uc, UC_X86_REG_CS, &cs, &reg_size);
             // compensate for later adding up IP & CS
             ip = begin - cs * 16;
-            uc_reg_write(uc, UC_X86_REG_IP, &ip);
+            uc_reg_write(uc, UC_X86_REG_IP, &ip, &reg_size);
             break;
         }
         case UC_MODE_32:
-            uc_reg_write(uc, UC_X86_REG_EIP, &begin_pc32);
+            uc_reg_write(uc, UC_X86_REG_EIP, &begin_pc32, &reg_size);
             break;
         case UC_MODE_64:
-            uc_reg_write(uc, UC_X86_REG_RIP, &begin);
+            reg_size = sizeof(begin);
+            uc_reg_write(uc, UC_X86_REG_RIP, &begin, &reg_size);
             break;
         }
         break;
 #endif
 #ifdef UNICORN_HAS_ARM
     case UC_ARCH_ARM:
-        uc_reg_write(uc, UC_ARM_REG_R15, &begin_pc32);
+        uc_reg_write(uc, UC_ARM_REG_R15, &begin_pc32, &reg_size);
         break;
 #endif
 #ifdef UNICORN_HAS_ARM64
     case UC_ARCH_ARM64:
-        uc_reg_write(uc, UC_ARM64_REG_PC, &begin);
+        reg_size = sizeof(begin);
+        uc_reg_write(uc, UC_ARM64_REG_PC, &begin, &reg_size);
         break;
 #endif
 #ifdef UNICORN_HAS_MIPS
     case UC_ARCH_MIPS:
         // TODO: MIPS32/MIPS64/BIGENDIAN etc
-        uc_reg_write(uc, UC_MIPS_REG_PC, &begin_pc32);
+        uc_reg_write(uc, UC_MIPS_REG_PC, &begin_pc32, &reg_size);
         break;
 #endif
 #ifdef UNICORN_HAS_SPARC
     case UC_ARCH_SPARC:
         // TODO: Sparc/Sparc64
-        uc_reg_write(uc, UC_SPARC_REG_PC, &begin);
+        reg_size = sizeof(begin);
+        uc_reg_write(uc, UC_SPARC_REG_PC, &begin, &reg_size);
         break;
 #endif
 #ifdef UNICORN_HAS_PPC
     case UC_ARCH_PPC:
         if (uc->mode & UC_MODE_PPC64) {
-            uc_reg_write(uc, UC_PPC_REG_PC, &begin);
+            reg_size = sizeof(begin);
+            uc_reg_write(uc, UC_PPC_REG_PC, &begin, &reg_size);
         } else {
-            uc_reg_write(uc, UC_PPC_REG_PC, &begin_pc32);
+            uc_reg_write(uc, UC_PPC_REG_PC, &begin_pc32, &reg_size);
         }
         break;
 #endif
 #ifdef UNICORN_HAS_RISCV
     case UC_ARCH_RISCV:
         if (uc->mode & UC_MODE_RISCV64) {
-            uc_reg_write(uc, UC_RISCV_REG_PC, &begin);
+            reg_size = sizeof(begin);
+            uc_reg_write(uc, UC_RISCV_REG_PC, &begin, &reg_size);
         } else {
-            uc_reg_write(uc, UC_RISCV_REG_PC, &begin_pc32);
+            uc_reg_write(uc, UC_RISCV_REG_PC, &begin_pc32, &reg_size);
         }
         break;
 #endif
 #ifdef UNICORN_HAS_S390X
     case UC_ARCH_S390X:
-        uc_reg_write(uc, UC_S390X_REG_PC, &begin);
+        reg_size = sizeof(begin);
+        uc_reg_write(uc, UC_S390X_REG_PC, &begin, &reg_size);
         break;
 #endif
 #ifdef UNICORN_HAS_TRICORE
     case UC_ARCH_TRICORE:
-        uc_reg_write(uc, UC_TRICORE_REG_PC, &begin_pc32);
+        uc_reg_write(uc, UC_TRICORE_REG_PC, &begin_pc32, &reg_size);
         break;
 #endif
     }
@@ -1914,15 +1926,18 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
 }
 
 UNICORN_EXPORT
-uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value)
+uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value,
+                            uint32_t *reg_size)
 {
-    return uc_context_reg_write_batch(ctx, &regid, (void *const *)&value, 1);
+    return uc_context_reg_write_batch(ctx, &regid, (void *const *)&value, 1,
+                                      reg_size);
 }
 
 UNICORN_EXPORT
-uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value)
+uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value,
+                           uint32_t *reg_size)
 {
-    return uc_context_reg_read_batch(ctx, &regid, &value, 1);
+    return uc_context_reg_read_batch(ctx, &regid, &value, 1, reg_size);
 }
 
 // Keep in mind that we don't a uc_engine when r/w the registers of a context.
@@ -2045,14 +2060,15 @@ static void find_context_reg_rw_function(uc_arch arch, uc_mode mode,
 
 UNICORN_EXPORT
 uc_err uc_context_reg_write_batch(uc_context *ctx, int *ids, void *const *vals,
-                                  int count)
+                                  int count, uint32_t *reg_size)
 {
     int ret = UC_ERR_OK;
     context_reg_rw_t rw;
 
     find_context_reg_rw_function(ctx->arch, ctx->mode, &rw);
     if (rw.context_reg_write) {
-        ret = rw.context_reg_write(ctx, (unsigned int *)ids, vals, count);
+        ret = rw.context_reg_write(ctx, (unsigned int *)ids, vals, count,
+                                   reg_size);
     } else {
         return UC_ERR_HANDLE;
     }
@@ -2062,14 +2078,15 @@ uc_err uc_context_reg_write_batch(uc_context *ctx, int *ids, void *const *vals,
 
 UNICORN_EXPORT
 uc_err uc_context_reg_read_batch(uc_context *ctx, int *ids, void **vals,
-                                 int count)
+                                 int count, uint32_t *reg_size)
 {
     int ret = UC_ERR_OK;
     context_reg_rw_t rw;
 
     find_context_reg_rw_function(ctx->arch, ctx->mode, &rw);
     if (rw.context_reg_read) {
-        ret = rw.context_reg_read(ctx, (unsigned int *)ids, vals, count);
+        ret = rw.context_reg_read(ctx, (unsigned int *)ids, vals, count,
+                                  reg_size);
     } else {
         return UC_ERR_HANDLE;
     }

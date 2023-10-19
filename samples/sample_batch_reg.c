@@ -7,6 +7,9 @@ int syscall_abi[] = {UC_X86_REG_RAX, UC_X86_REG_RDI, UC_X86_REG_RSI,
                      UC_X86_REG_R9};
 
 uint64_t vals[7] = {200, 10, 11, 12, 13, 14, 15};
+uint32_t reg_size[7] = {sizeof(uint64_t), sizeof(uint64_t), sizeof(uint64_t),
+                        sizeof(uint64_t), sizeof(uint64_t), sizeof(uint64_t),
+                        sizeof(uint64_t)};
 
 // This part of the API is less... clean... because Unicorn supports arbitrary
 // register types. So the least intrusive solution is passing individual
@@ -31,7 +34,7 @@ void hook_syscall(uc_engine *uc, void *user_data)
 {
     int i;
 
-    uc_reg_read_batch(uc, syscall_abi, ptrs, 7);
+    uc_reg_read_batch(uc, syscall_abi, ptrs, 7, &reg_size[0]);
 
     printf("syscall: {");
 
@@ -68,14 +71,14 @@ int main()
 
     // reg_write_batch
     printf("reg_write_batch({200, 10, 11, 12, 13, 14, 15})\n");
-    if ((err = uc_reg_write_batch(uc, syscall_abi, ptrs, 7))) {
+    if ((err = uc_reg_write_batch(uc, syscall_abi, ptrs, 7, &reg_size[0]))) {
         uc_perror("uc_reg_write_batch", err);
         return 1;
     }
 
     // reg_read_batch
     memset(vals, 0, sizeof(vals));
-    if ((err = uc_reg_read_batch(uc, syscall_abi, ptrs, 7))) {
+    if ((err = uc_reg_read_batch(uc, syscall_abi, ptrs, 7, &reg_size[0]))) {
         uc_perror("uc_reg_read_batch", err);
         return 1;
     }

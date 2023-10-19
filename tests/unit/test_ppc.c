@@ -16,18 +16,19 @@ static void test_ppc32_add(void)
     uc_engine *uc;
     char code[] = "\x7f\x46\x1a\x14"; // ADD 26, 6, 3
     int reg;
+    uint32_t reg_size = sizeof(reg);
 
     uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
                     sizeof(code) - 1);
 
     reg = 42;
-    OK(uc_reg_write(uc, UC_PPC_REG_3, &reg));
+    OK(uc_reg_write(uc, UC_PPC_REG_3, &reg, &reg_size));
     reg = 1337;
-    OK(uc_reg_write(uc, UC_PPC_REG_6, &reg));
+    OK(uc_reg_write(uc, UC_PPC_REG_6, &reg, &reg_size));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_PPC_REG_26, &reg));
+    OK(uc_reg_read(uc, UC_PPC_REG_26, &reg, &reg_size));
 
     TEST_CHECK(reg == 1379);
 
@@ -40,23 +41,25 @@ static void test_ppc32_fadd(void)
     uc_engine *uc;
     char code[] = "\xfc\xc4\x28\x2a"; // fadd 6, 4, 5
     uint32_t r_msr;
+    uint32_t reg_size_msr = sizeof(r_msr);
     uint64_t r_fpr4, r_fpr5, r_fpr6;
+    uint32_t reg_size_fpr = sizeof(r_fpr4);
 
     uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
                     sizeof(code) - 1);
 
-    OK(uc_reg_read(uc, UC_PPC_REG_MSR, &r_msr));
-    r_msr |= (1 << 13);                           // Big endian
-    OK(uc_reg_write(uc, UC_PPC_REG_MSR, &r_msr)); // enable FP
+    OK(uc_reg_read(uc, UC_PPC_REG_MSR, &r_msr, &reg_size_msr));
+    r_msr |= (1 << 13);                                          // Big endian
+    OK(uc_reg_write(uc, UC_PPC_REG_MSR, &r_msr, &reg_size_msr)); // enable FP
 
     r_fpr4 = 0xC053400000000000ul;
     r_fpr5 = 0x400C000000000000ul;
-    OK(uc_reg_write(uc, UC_PPC_REG_FPR4, &r_fpr4));
-    OK(uc_reg_write(uc, UC_PPC_REG_FPR5, &r_fpr5));
+    OK(uc_reg_write(uc, UC_PPC_REG_FPR4, &r_fpr4, &reg_size_fpr));
+    OK(uc_reg_write(uc, UC_PPC_REG_FPR5, &r_fpr5, &reg_size_fpr));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_PPC_REG_FPR6, &r_fpr6));
+    OK(uc_reg_read(uc, UC_PPC_REG_FPR6, &r_fpr6, &reg_size_fpr));
 
     TEST_CHECK(r_fpr6 == 0xC052600000000000ul);
 
@@ -75,6 +78,7 @@ static void test_ppc32_sc(void)
     char code[] = "\x44\x00\x00\x02"; // sc
     uint32_t r_pc;
     uc_hook h;
+    uint32_t reg_size = sizeof(r_pc);
 
     uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
                     sizeof(code) - 1);
@@ -82,7 +86,7 @@ static void test_ppc32_sc(void)
     OK(uc_hook_add(uc, &h, UC_HOOK_INTR, test_ppc32_sc_cb, NULL, 1, 0));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_PPC_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_PPC_REG_PC, &r_pc, &reg_size));
 
     TEST_CHECK(r_pc == code_start + 4);
 
@@ -93,12 +97,13 @@ static void test_ppc32_cr(void)
 {
     uc_engine *uc;
     uint32_t r_cr = 0x12345678;
+    uint32_t reg_size = sizeof(r_cr);
 
     uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, NULL, 0);
 
-    OK(uc_reg_write(uc, UC_PPC_REG_CR, &r_cr));
+    OK(uc_reg_write(uc, UC_PPC_REG_CR, &r_cr, &reg_size));
     r_cr = 0;
-    OK(uc_reg_read(uc, UC_PPC_REG_CR, &r_cr));
+    OK(uc_reg_read(uc, UC_PPC_REG_CR, &r_cr, &reg_size));
 
     TEST_CHECK(r_cr == 0x12345678);
 

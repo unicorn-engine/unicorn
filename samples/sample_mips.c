@@ -35,6 +35,7 @@ static void test_mips_eb(void)
     uc_hook trace1, trace2;
 
     int r1 = 0x6789; // R1 register
+    uint32_t reg_size = sizeof(r1);
 
     printf("Emulate MIPS code (big-endian)\n");
 
@@ -53,7 +54,7 @@ static void test_mips_eb(void)
     uc_mem_write(uc, ADDRESS, MIPS_CODE_EB, sizeof(MIPS_CODE_EB) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_MIPS_REG_1, &r1);
+    uc_reg_write(uc, UC_MIPS_REG_1, &r1, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -72,7 +73,7 @@ static void test_mips_eb(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_MIPS_REG_1, &r1);
+    uc_reg_read(uc, UC_MIPS_REG_1, &r1, &reg_size);
     printf(">>> R1 = 0x%x\n", r1);
 
     uc_close(uc);
@@ -85,6 +86,7 @@ static void test_mips_el(void)
     uc_hook trace1, trace2;
 
     int r1 = 0x6789; // R1 register
+    uint32_t reg_size = sizeof(r1);
 
     printf("===========================\n");
     printf("Emulate MIPS code (little-endian)\n");
@@ -104,7 +106,7 @@ static void test_mips_el(void)
     uc_mem_write(uc, ADDRESS, MIPS_CODE_EL, sizeof(MIPS_CODE_EL) - 1);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_MIPS_REG_1, &r1);
+    uc_reg_write(uc, UC_MIPS_REG_1, &r1, &reg_size);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -123,7 +125,7 @@ static void test_mips_el(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_MIPS_REG_1, &r1);
+    uc_reg_read(uc, UC_MIPS_REG_1, &r1, &reg_size);
     printf(">>> R1 = 0x%x\n", r1);
 
     uc_close(uc);

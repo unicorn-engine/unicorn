@@ -206,9 +206,29 @@ static uc_err write_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
     return UC_ERR_OK;
 }
 
-static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
+static uc_err check_reg(unsigned int reg_id, uint32_t *reg_size)
 {
-    uc_err ret = UC_ERR_OK;
+    CHECK_REG_SIZE(sizeof(uint32_t), reg_size, UC_ERR_ARG);
+
+    if ((reg_id >= UC_ARM_REG_Q0) && (reg_id <= UC_ARM_REG_Q15)) {
+        CHECK_REG_SIZE(sizeof(uint64_t), reg_size, UC_ERR_ARG);
+    }
+
+    if (reg_id == UC_ARM_REG_CP_REG) {
+        CHECK_REG_SIZE(sizeof(uc_arm_cp_reg), reg_size, UC_ERR_ARG);
+    }
+
+    return UC_ERR_OK;
+}
+
+static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value,
+                       uint32_t *reg_size)
+{
+    uc_err ret = check_reg(regid, reg_size);
+
+    if (ret != UC_ERR_OK) {
+        return ret;
+    }
 
     if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
         *(uint32_t *)value = env->regs[regid - UC_ARM_REG_R0];
@@ -322,9 +342,14 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
     return ret;
 }
 
-static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
+static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value,
+                        uint32_t *reg_size)
 {
-    uc_err ret = UC_ERR_OK;
+    uc_err ret = check_reg(regid, reg_size);
+
+    if (ret != UC_ERR_OK) {
+        return ret;
+    }
 
     if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
         env->regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
@@ -480,7 +505,7 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
 }
 
 int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                 int count)
+                 int count, uint32_t *reg_size)
 {
     CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
@@ -489,7 +514,7 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value);
+        err = reg_read(env, regid, value, reg_size);
         if (err) {
             return err;
         }
@@ -499,7 +524,7 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
 }
 
 int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                  int count)
+                  int count, uint32_t *reg_size)
 {
     CPUArchState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
@@ -508,7 +533,7 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value);
+        err = reg_write(env, regid, value, reg_size);
         if (err) {
             return err;
         }
@@ -524,7 +549,7 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 
 DEFAULT_VISIBILITY
 int arm_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                         void **vals, int count)
+                         void **vals, int count, uint32_t *reg_size)
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
     int i;
@@ -533,7 +558,7 @@ int arm_context_reg_read(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        err = reg_read(env, regid, value);
+        err = reg_read(env, regid, value, reg_size);
         if (err) {
             return err;
         }
@@ -544,7 +569,7 @@ int arm_context_reg_read(struct uc_context *ctx, unsigned int *regs,
 
 DEFAULT_VISIBILITY
 int arm_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                          void *const *vals, int count)
+                          void *const *vals, int count, uint32_t *reg_size)
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
     int i;
@@ -553,7 +578,7 @@ int arm_context_reg_write(struct uc_context *ctx, unsigned int *regs,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        err = reg_write(env, regid, value);
+        err = reg_write(env, regid, value, reg_size);
         if (err) {
             return err;
         }

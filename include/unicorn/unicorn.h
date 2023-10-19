@@ -730,12 +730,14 @@ const char *uc_strerror(uc_err code);
  @uc: handle returned by uc_open()
  @regid:  register ID that is to be modified.
  @value:  pointer to the value that will set to register @regid
+ @reg_size: A pointer to the register size
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_reg_write(uc_engine *uc, int regid, const void *value);
+uc_err uc_reg_write(uc_engine *uc, int regid, const void *value,
+                    uint32_t *reg_size);
 
 /*
  Read register value.
@@ -743,12 +745,13 @@ uc_err uc_reg_write(uc_engine *uc, int regid, const void *value);
  @uc: handle returned by uc_open()
  @regid:  register ID that is to be retrieved.
  @value:  pointer to a variable storing the register value.
+ @reg_size: A pointer to the register size
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_reg_read(uc_engine *uc, int regid, void *value);
+uc_err uc_reg_read(uc_engine *uc, int regid, void *value, uint32_t *reg_size);
 
 /*
  Write multiple register values.
@@ -756,14 +759,15 @@ uc_err uc_reg_read(uc_engine *uc, int regid, void *value);
  @uc: handle returned by uc_open()
  @rges:  array of register IDs to store
  @value: pointer to array of register values
- @count: length of both *regs and *vals
+ @count: length of *regs and *vals and *reg_size
+ @reg_size: A pointer to the register size
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
 uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals,
-                          int count);
+                          int count, uint32_t *reg_size);
 
 /*
  Read multiple register values.
@@ -771,13 +775,15 @@ uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals,
  @uc: handle returned by uc_open()
  @rges:  array of register IDs to retrieve
  @value: pointer to array of values to hold registers
- @count: length of both *regs and *vals
+ @count: length of *regs and *vals and *reg_size
+ @reg_size: A pointer to the register size
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_reg_read_batch(uc_engine *uc, int *regs, void **vals, int count);
+uc_err uc_reg_read_batch(uc_engine *uc, int *regs, void **vals, int count,
+                         uint32_t *reg_size);
 
 /*
  Write to a range of bytes in memory.
@@ -1077,12 +1083,14 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context);
  @ctx: handle returned by uc_context_alloc()
  @regid:  register ID that is to be modified.
  @value:  pointer to the value that will set to register @regid
+ @reg_size: A pointer to the register size
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value);
+uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value,
+                            uint32_t *reg_size);
 
 /*
  Read register value from a context.
@@ -1090,12 +1098,14 @@ uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value);
  @ctx: handle returned by uc_context_alloc()
  @regid:  register ID that is to be retrieved.
  @value:  pointer to a variable storing the register value.
+ @reg_size: A pointer to the register size
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value);
+uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value,
+                           uint32_t *reg_size);
 
 /*
  Write multiple register values to registers of a context.
@@ -1103,14 +1113,15 @@ uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value);
  @ctx: handle returned by uc_context_alloc()
  @regs:  array of register IDs to store
  @value: pointer to array of register values
- @count: length of both *regs and *vals
+ @count: length of *regs and *vals and *reg_size
+ @reg_size: A pointer to the register size
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
 uc_err uc_context_reg_write_batch(uc_context *ctx, int *regs, void *const *vals,
-                                  int count);
+                                  int count, uint32_t *reg_size);
 
 /*
  Read multiple register values from a context.
@@ -1118,14 +1129,15 @@ uc_err uc_context_reg_write_batch(uc_context *ctx, int *regs, void *const *vals,
  @ctx: handle returned by uc_context_alloc()
  @regs:  array of register IDs to retrieve
  @value: pointer to array of values to hold registers
- @count: length of both *regs and *vals
+ @count: length of *regs and *vals and *reg_size
+ @reg_size: A pointer to the register size
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
 uc_err uc_context_reg_read_batch(uc_context *ctx, int *regs, void **vals,
-                                 int count);
+                                 int count, uint32_t *reg_size);
 
 /*
  Restore the current CPU context from a saved copy.
