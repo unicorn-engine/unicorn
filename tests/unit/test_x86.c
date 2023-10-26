@@ -1513,6 +1513,83 @@ static void test_x86_64_not_overwriting_tmp0_for_pc_update()
     OK(uc_close(uc));
 }
 
+#define MEM_BASE 0x40000000
+#define MEM_SIZE 1024*1024
+#define MEM_STACK MEM_BASE + (MEM_SIZE / 2)
+#define MEM_TEXT MEM_STACK + 4096
+
+static void test_fxsave_fpip_x86(void) {
+    // note: fxsave was introduced in Pentium II
+    uint8_t code_x86[] = {
+        // help testing through NOP offset      [disassembly in at&t syntax]
+	0x90, 0x90, 0x90, 0x90, 		// nop nop nop nop
+	// run a floating point instruction
+	0xdb, 0xc9,				// fcmovne %st(1), %st
+	// fxsave needs 512 bytes of storage space
+	0x81, 0xec, 0x00, 0x02, 0x00, 0x00, 	// subl $512, %esp
+	// fxsave needs a 16-byte aligned address for storage
+	0x83, 0xe4, 0xf0,			// andl $0xfffffff0, %esp
+	// store fxsave data on the stack
+	0x0f, 0xae, 0x04, 0x24,			// fxsave (%esp)
+	// fxsave stores FPIP at an 8-byte offset, move FPIP to eax register
+	0x8b, 0x44, 0x24, 0x08			// movl 0x8(%esp), %eax
+    };
+    uc_err err;
+    uint32_t X86_NOP_OFFSET = 4;
+    uint32_t stack_top = (uint32_t) MEM_STACK;
+    uint32_t value;
+    uc_engine *uc;
+
+    // initialize emulator in X86-32bit mode
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+	
+    // map 1MB of memory for this emulation
+    OK(uc_mem_map(uc, MEM_BASE, MEM_SIZE, UC_PROT_ALL));
+    OK(uc_mem_write(uc, MEM_TEXT, code_x86, sizeof(code_x86)));
+    OK(uc_reg_write(uc, UC_X86_REG_ESP, &stack_top));
+    OK(uc_emu_start(uc, MEM_TEXT, MEM_TEXT + sizeof(code_x86), 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &value));
+    TEST_CHECK(value == ((uint32_t) MEM_TEXT + X86_NOP_OFFSET));
+    OK(uc_mem_unmap(uc, MEM_BASE, MEM_SIZE));
+    OK(uc_close(uc));
+}
+
+static void test_fxsave_fpip_x64(void) {
+    uint8_t code_x64[] = {
+        // help testing through NOP offset     [disassembly in at&t]
+	0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, // nops
+	// run a floating point instruction
+	0xdb, 0xc9,			       // fcmovne %st(1), %st
+	// fxsave64 needs 512 bytes of storage space
+	0x48, 0x81, 0xec, 0x00, 0x02, 0x00, 0x00, // subq $512, %rsp
+	// fxsave needs a 16-byte aligned address for storage
+	0x48, 0x83, 0xe4, 0xf0,	               // andq 0xfffffffffffffff0, %rsp
+	// store fxsave64 data on the stack
+	0x48, 0x0f, 0xae, 0x04, 0x24,          // fxsave64 (%rsp)
+	// fxsave64 stores FPIP at an 8-byte offset, move FPIP to rax register
+	0x48, 0x8b, 0x44, 0x24, 0x08,	       // movq 0x8(%rsp), %rax
+    };
+
+    uc_err err;
+    uint64_t stack_top = (uint64_t) MEM_STACK;
+    uint64_t X64_NOP_OFFSET = 8;
+    uint64_t value;
+    uc_engine *uc;
+
+    // initialize emulator in X86-32bit mode
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+
+    // map 1MB of memory for this emulation
+    OK(uc_mem_map(uc, MEM_BASE, MEM_SIZE, UC_PROT_ALL));
+    OK(uc_mem_write(uc, MEM_TEXT, code_x64, sizeof(code_x64)));
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &stack_top));
+    OK(uc_emu_start(uc, MEM_TEXT, MEM_TEXT + sizeof(code_x64), 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &value));
+    TEST_CHECK(value == ((uint64_t) MEM_TEXT + X64_NOP_OFFSET));
+    OK(uc_mem_unmap(uc, MEM_BASE, MEM_SIZE));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1562,4 +1639,6 @@ TEST_LIST = {
     {"test_x86_0xff_lcall", test_x86_0xff_lcall},
     {"test_x86_64_not_overwriting_tmp0_for_pc_update",
      test_x86_64_not_overwriting_tmp0_for_pc_update},
+    {"test_fxsave_fpip_x86", test_fxsave_fpip_x86},
+    {"test_fxsave_fpip_x64", test_fxsave_fpip_x64},
     {NULL, NULL}};
