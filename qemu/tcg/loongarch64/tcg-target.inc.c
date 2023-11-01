@@ -1897,38 +1897,38 @@ static bool tcg_out_dupm_vec(TCGContext *s, TCGType type, unsigned vece,
     return true;
 }
 
-static void tcg_out_dupi_vec(TCGContext *s, TCGType type, unsigned vece,
-                             TCGReg rd, int64_t v64)
-{
-    /* Try vldi if imm can fit */
-    int64_t value = sextract64(v64, 0, 8 << vece);
-    if (-0x200 <= value && value <= 0x1FF) {
-        uint32_t imm = (vece << 10) | ((uint32_t)v64 & 0x3FF);
-        tcg_out_opc_vldi(s, rd, imm);
-        return;
-    }
+// static void tcg_out_dupi_vec(TCGContext *s, TCGType type, unsigned vece,
+//                              TCGReg rd, int64_t v64)
+// {
+//     /* Try vldi if imm can fit */
+//     int64_t value = sextract64(v64, 0, 8 << vece);
+//     if (-0x200 <= value && value <= 0x1FF) {
+//         uint32_t imm = (vece << 10) | ((uint32_t)v64 & 0x3FF);
+//         tcg_out_opc_vldi(s, rd, imm);
+//         return;
+//     }
 
-    /* TODO: vldi patterns when imm 12 is set */
+//     /* TODO: vldi patterns when imm 12 is set */
 
-    /* Fallback to vreplgr2vr */
-    tcg_out_movi(s, TCG_TYPE_I64, TCG_REG_TMP0, value);
-    switch (vece) {
-    case MO_8:
-        tcg_out_opc_vreplgr2vr_b(s, rd, TCG_REG_TMP0);
-        break;
-    case MO_16:
-        tcg_out_opc_vreplgr2vr_h(s, rd, TCG_REG_TMP0);
-        break;
-    case MO_32:
-        tcg_out_opc_vreplgr2vr_w(s, rd, TCG_REG_TMP0);
-        break;
-    case MO_64:
-        tcg_out_opc_vreplgr2vr_d(s, rd, TCG_REG_TMP0);
-        break;
-    default:
-        g_assert_not_reached();
-    }
-}
+//     /* Fallback to vreplgr2vr */
+//     tcg_out_movi(s, TCG_TYPE_I64, TCG_REG_TMP0, value);
+//     switch (vece) {
+//     case MO_8:
+//         tcg_out_opc_vreplgr2vr_b(s, rd, TCG_REG_TMP0);
+//         break;
+//     case MO_16:
+//         tcg_out_opc_vreplgr2vr_h(s, rd, TCG_REG_TMP0);
+//         break;
+//     case MO_32:
+//         tcg_out_opc_vreplgr2vr_w(s, rd, TCG_REG_TMP0);
+//         break;
+//     case MO_64:
+//         tcg_out_opc_vreplgr2vr_d(s, rd, TCG_REG_TMP0);
+//         break;
+//     default:
+//         g_assert_not_reached();
+//     }
+// }
 
 static void tcg_out_addsub_vec(TCGContext *s, unsigned vece, const TCGArg a0,
                                const TCGArg a1, const TCGArg a2,
@@ -2128,7 +2128,35 @@ static void tcg_out_vec_op(TCGContext *s, TCGOpcode opc,
                  * dupi_vec temp, a2
                  * cmp_vec a0, a1, temp, cond
                  */
-                tcg_out_dupi_vec(s, type, vece, temp_vec, a2);
+                // tcg_out_dupi_vec(s, type, vece, temp_vec, a2);
+                /* Try vldi if imm can fit */
+                if (-0x200 <= value && value <= 0x1FF) {
+                    uint32_t imm = (vece << 10) | ((uint32_t)a2 & 0x3FF);
+                    tcg_out_opc_vldi(s, temp_vec, imm);
+                    goto enddupi;
+                }
+
+                /* TODO: vldi patterns when imm 12 is set */
+
+                /* Fallback to vreplgr2vr */
+                tcg_out_movi(s, TCG_TYPE_I64, TCG_REG_TMP0, value);
+                switch (vece) {
+                case MO_8:
+                    tcg_out_opc_vreplgr2vr_b(s, temp_vec, TCG_REG_TMP0);
+                    break;
+                case MO_16:
+                    tcg_out_opc_vreplgr2vr_h(s, temp_vec, TCG_REG_TMP0);
+                    break;
+                case MO_32:
+                    tcg_out_opc_vreplgr2vr_w(s, temp_vec, TCG_REG_TMP0);
+                    break;
+                case MO_64:
+                    tcg_out_opc_vreplgr2vr_d(s, temp_vec, TCG_REG_TMP0);
+                    break;
+                default:
+                    g_assert_not_reached();
+                }
+                enddupi:
                 a2 = temp_vec;
             }
 
