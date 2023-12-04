@@ -1,5 +1,6 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015-2021 */
+/* Modified for Unicorn Engine by Damien Cauquil<dcauquil@quarkslab.com>, 2020 */
 
 #include "sysemu/cpus.h"
 #include "cpu.h"

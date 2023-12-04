@@ -2,6 +2,7 @@
  * QEMU RH850 CPU
  *
  * Copyright (c) 2018-2019 iSYSTEM Labs d.o.o.
+ * Copyright (c) 2023 Quarkslab
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -216,84 +217,6 @@ const char * const rh850_intr_names[] = {
     "host"
 };
 
-/*
-static void set_misa(CPURH850State *env, target_ulong misa)
-{
-    env->misa = misa;
-}
-
-static void set_versions(CPURH850State *env, int user_ver, int priv_ver)
-{
-    env->user_ver = user_ver;
-    env->priv_ver = priv_ver;
-}
-*/
-
-/*
-static void set_feature(CPURH850State *env, int feature)
-{
-    env->features |= (1ULL << feature);
-} */
-
-/*
-#if defined(TARGET_RH850)
-
-static void rv32gcsu_priv1_09_1_cpu_init(Object *obj)
-{
-    CPURH850State *env = &RH850_CPU(obj)->env;
-    set_misa(env, RV32 | RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
-    set_versions(env, USER_VERSION_2_02_0, PRIV_VERSION_1_09_1);
-    set_resetvec(env, DEFAULT_RSTVEC);
-    set_feature(env, RH850_FEATURE_MMU);
-}
-
-static void rv32gcsu_priv1_10_0_cpu_init(Object *obj)
-{
-    CPURH850State *env = &RH850_CPU(obj)->env;
-    set_misa(env, RV32 | RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
-    set_versions(env, USER_VERSION_2_02_0, PRIV_VERSION_1_10_0);
-    set_resetvec(env, DEFAULT_RSTVEC);
-    set_feature(env, RH850_FEATURE_MMU);
-}
-
-static void rv32imacu_nommu_cpu_init(Object *obj)
-{
-    CPURH850State *env = &RH850_CPU(obj)->env;
-    set_misa(env, RV32 | RVI | RVM | RVA | RVC | RVU);
-    set_versions(env, USER_VERSION_2_02_0, PRIV_VERSION_1_10_0);
-    set_resetvec(env, DEFAULT_RSTVEC);
-}
-
-#elif defined(TARGET_RH85064)
-
-static void rv64gcsu_priv1_09_1_cpu_init(Object *obj)
-{
-    CPURH850State *env = &RH850_CPU(obj)->env;
-    set_misa(env, RV64 | RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
-    set_versions(env, USER_VERSION_2_02_0, PRIV_VERSION_1_09_1);
-    set_resetvec(env, DEFAULT_RSTVEC);
-    set_feature(env, RH850_FEATURE_MMU);
-}
-
-static void rv64gcsu_priv1_10_0_cpu_init(Object *obj)
-{
-    CPURH850State *env = &RH850_CPU(obj)->env;
-    set_misa(env, RV64 | RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
-    set_versions(env, USER_VERSION_2_02_0, PRIV_VERSION_1_10_0);
-    set_resetvec(env, DEFAULT_RSTVEC);
-    set_feature(env, RH850_FEATURE_MMU);
-}
-
-static void rv64imacu_nommu_cpu_init(Object *obj)
-{
-    CPURH850State *env = &RH850_CPU(obj)->env;
-    set_misa(env, RV64 | RVI | RVM | RVA | RVC | RVU);
-    set_versions(env, USER_VERSION_2_02_0, PRIV_VERSION_1_10_0);
-    set_resetvec(env, DEFAULT_RSTVEC);
-}
-
-#endif
-*/
 
 void rh850_cpu_set_pc(CPUState *cs, vaddr value)
 {
@@ -354,34 +277,12 @@ void restore_state_to_opc(CPURH850State *env, TranslationBlock *tb,
 }
 
 
-/* not yet adapted for rh850 from ARM
-int rh850_gen_dynamic_xml(CPUState *cs)
-{
-    RH850CPU *cpu = RH850_CPU(cs);
-    GString *s = g_string_new(NULL);
-    RegisterSysregXmlParam param = {cs, s};
-
-    cpu->dyn_xml.num_cpregs = 0;
-    cpu->dyn_xml.cpregs_keys = g_new(uint32_t, g_hash_table_size(cpu->cp_regs));
-    g_string_printf(s, "<?xml version=\"1.0\"?>");
-    g_string_append_printf(s, "<!DOCTYPE target SYSTEM \"gdb-target.dtd\">");
-    g_string_append_printf(s, "<feature name=\"org.qemu.gdb.arm.sys.regs\">");
-    g_hash_table_foreach(cpu->cp_regs, arm_register_sysreg_for_xml, &param);
-    g_string_append_printf(s, "</feature>");
-    cpu->dyn_xml.desc = g_string_free(s, false);
-    return cpu->dyn_xml.num_cpregs;
-} */
-
-
-
 static void rh850_raise_exception(CPURH850State *env, uint32_t excp,
                            uint32_t syndrome, uint32_t target_el)
 {
     CPUState *cs = CPU(rh850_env_get_cpu(env));
 
     cs->exception_index = excp;
-    // env->exception.syndrome = syndrome;
-    // env->exception.target_el = target_el;
     cpu_loop_exit(cs);
 }
 
@@ -425,73 +326,8 @@ static void rh850_debug_excp_handler(CPUState *cs)
 
 static bool check_watchpoints(RH850CPU *cpu)
 {
-    // CPURH850State *env = &cpu->env;
-
-    /* If watchpoints are disabled globally or we can't take debug
-     * exceptions here then watchpoint firings are ignored.
-     */
-//    if (extract32(env->cp15.mdscr_el1, 15, 1) == 0
-//        || !arm_generate_debug_exceptions(env)) {
-//        return false;
-//    }
-
-//    for (int n = 0; n < ARRAY_SIZE(env->cpu_watchpoint); n++) {
-//        if (bp_wp_matches(cpu, n, true)) {
-//            return true;
-//        }
-//    }
-//    return false;
     return true;
 }
-
-
-//static bool bp_wp_matches(RH850CPU *cpu, int n, bool is_wp)
-//{
-//     CPURH850State *env = &cpu->env;
-
-//    if (is_wp) {
-//        CPUWatchpoint *wp = env->cpu_watchpoint[n];
-//
-//        if (!wp || !(wp->flags & BP_WATCHPOINT_HIT)) {
-//            return false;
-//        }
-//    } else {
-//        uint64_t pc = is_a64(env) ? env->pc : env->regs[15];
-//
-//        if (!env->cpu_breakpoint[n] || env->cpu_breakpoint[n]->pc != pc) {
-//            return false;
-//        }
-//    }
-    /* The WATCHPOINT_HIT flag guarantees us that the watchpoint is
-     * enabled and that the address and access type match; for breakpoints
-     * we know the address matched; check the remaining fields, including
-     * linked breakpoints. We rely on WCR and BCR having the same layout
-     * for the LBN, SSC, HMC, PAC/PMC and is-linked fields.
-     * Note that some combinations of {PAC, HMC, SSC} are reserved and
-     * must act either like some valid combination or as if the watchpoint
-     * were disabled. We choose the former, and use this together with
-     * the fact that EL3 must always be Secure and EL2 must always be
-     * Non-Secure to simplify the code slightly compared to the full
-     * table in the ARM ARM.
-     */
-
-//    return true;
-//}
-
-
-//static bool check_breakpoints(RH850CPU *cpu)
-//{
-//    CPURH850State *env = &cpu->env;
-//    int n;
-//
-//    for (n = 0; n < ARRAY_SIZE(env->cpu_breakpoint); n++) {
-//        if (bp_wp_matches(cpu, n, false)) {
-//            return true;
-//        }
-//    }
-//    return false;
-//	return true;
-//}
 
 
 static bool rh850_debug_check_watchpoint(CPUState *cs, CPUWatchpoint *wp)
