@@ -165,15 +165,5 @@ int rh850_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
     	}
     }
 
-    /* arm example
-    if (n == 0) {
-       ...
-    } else if (n < 65) {
-        env->fpr[n - 33] = ldq_p(mem_buf); // always 64-bit
-        return sizeof(uint64_t);
-    } else if (n < 4096 + 65) {
-        csr_write_helper(env, ldtul_p(mem_buf), n - 65);
-    }
-*/
     return sizeof(target_ulong);
 }
