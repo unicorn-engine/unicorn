@@ -171,6 +171,7 @@ static void spr_write_ureg(DisasContext *ctx, int sprn, int gprn)
 
 /* SPR common to all non-embedded PowerPC */
 /* DECR */
+#if 0
 static void spr_read_decr(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -182,7 +183,11 @@ static void spr_read_decr(DisasContext *ctx, int gprn, int sprn)
         gen_stop_exception(ctx);
     }
 }
+#else
+#define spr_read_decr spr_read_generic
+#endif
 
+#if 0
 static void spr_write_decr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -194,9 +199,13 @@ static void spr_write_decr(DisasContext *ctx, int sprn, int gprn)
         gen_stop_exception(ctx);
     }
 }
+#else
+#define spr_write_decr spr_write_generic
+#endif
 
 /* SPR common to all non-embedded PowerPC, except 601 */
 /* Time base */
+#if 0
 static void spr_read_tbl(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -209,7 +218,11 @@ static void spr_read_tbl(DisasContext *ctx, int gprn, int sprn)
         gen_stop_exception(ctx);
     }
 }
+#else
+#define spr_read_tbl spr_read_generic
+#endif
 
+#if 0
 static void spr_read_tbu(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -222,6 +235,9 @@ static void spr_read_tbu(DisasContext *ctx, int gprn, int sprn)
         gen_stop_exception(ctx);
     }
 }
+#else
+#define spr_read_tbu spr_read_generic
+#endif
 
 #if 0
 // ATTRIBUTE_UNUSED
@@ -239,6 +255,7 @@ static void spr_read_atbu(DisasContext *ctx, int gprn, int sprn)
 }
 #endif
 
+#if 0
 static void spr_write_tbl(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -251,7 +268,12 @@ static void spr_write_tbl(DisasContext *ctx, int sprn, int gprn)
         gen_stop_exception(ctx);
     }
 }
+#else
+#define spr_write_tbl spr_write_generic
+#endif
 
+
+#if 0
 static void spr_write_tbu(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -264,6 +286,9 @@ static void spr_write_tbu(DisasContext *ctx, int sprn, int gprn)
         gen_stop_exception(ctx);
     }
 }
+#else
+#define spr_write_tbu spr_write_generic
+#endif
 
 #if 0
 // ATTRIBUTE_UNUSED

@@ -105,8 +105,23 @@ static void test_ppc32_cr(void)
     OK(uc_close(uc));
 }
 
+static void test_ppc32_spr_time(void)
+{
+    char code[] = ("\x7c\x76\x02\xa6" // mfspr r3, DEC
+                   "\x7c\x6d\x42\xa6" // mfspr r3, TBUr
+    );
+
+    uc_engine *uc;
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_ppc32_add", test_ppc32_add},
              {"test_ppc32_fadd", test_ppc32_fadd},
              {"test_ppc32_sc", test_ppc32_sc},
              {"test_ppc32_cr", test_ppc32_cr},
+             {"test_ppc32_spr_time", test_ppc32_spr_time},
              {NULL, NULL}};
