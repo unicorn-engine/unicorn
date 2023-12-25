@@ -1,0 +1,51 @@
+on:
+  push:
+    tags:
+    - 'v*'
+  workflow_dispatch:
+    
+name: Upload Release Assets
+
+jobs:
+  build:
+    name: Upload Release Assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: true
+          prerelease: false
+                
+      - name: create artifacts directory
+        run: mkdir artifact
+        working-directory: ./
+
+      - uses: dawidd6/action-download-artifact@v2
+        id: download-artifact
+        with:
+          workflow: build-uc2.yml
+          workflow_conclusion: success
+          path: artifact
+
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: artifact
+
+
+      - name: Upload Release Assets
+        id: upload-release-assets
+        uses: dwenegar/upload-release-assets@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ steps.create_release.outputs.id }}
+          assets_path: artifact
