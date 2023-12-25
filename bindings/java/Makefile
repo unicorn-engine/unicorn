@@ -1,29 +1,43 @@
-.PHONY: gen_const clean jar all lib samples install
+# Makefile for the native JNI library. Automatically called by Maven.
 
-all: gen_const
-	$(MAKE) -f Makefile.build all
+JAVA_HOME ?= $(shell java -XshowSettings:properties -version 2>&1 | sed -n 's/ *java.home = //p')
 
-lib:
-	$(MAKE) -f Makefile.build lib
+ifeq ($(JAVA_HOME),)
+  $(error JAVA_HOME could not be determined; please set it manually (make JAVA_HOME=...))
+endif
 
-samples:
-	$(MAKE) -f  Makefile.build samples
+JAVA_INC := $(JAVA_HOME)/include
+JAVA_PLATFORM_INC := $(shell dirname `find $(JAVA_INC) -name jni_md.h`)
+UNICORN_INC := ../../include
 
-jar:
-	$(MAKE) -f Makefile.build jar
+OS := $(shell uname)
+ifeq ($(OS),Darwin)
+   LIB_EXT=.dylib
+else ifeq ($(OS),Linux)
+   LIB_EXT=.so
+else
+   LIB_EXT=.dll
+endif
 
-install: lib jar
-	$(MAKE) -f Makefile.build install
+all: libunicorn_java$(LIB_EXT)
 
-uninstall:
-	$(MAKE) -f Makefile.build uninstall
+CC=gcc
+CFLAGS=-fPIC
+LDFLAGS=-shared -fPIC
+# May also use -lunicorn to dynamically link against the installed unicorn
+LIBS=../../build/libunicorn.a
+INCS=-I target/headers -I$(JAVA_INC) -I$(JAVA_PLATFORM_INC) -I$(UNICORN_INC)
 
-gen_const:
-	cd .. && python3 const_generator.py java
+OBJS=unicorn_Unicorn.o
+
+unicorn_Unicorn.o: unicorn_Unicorn.c target/headers/unicorn_Unicorn.h
+	$(CC) -O2 -Wall -Wextra -Wno-unused-parameter -c $(CFLAGS) $(INCS) $< -o $@
+
+libunicorn_java$(LIB_EXT): $(OBJS)
+	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
 
 clean:
-	rm -f unicorn/*.class
-	rm -f samples/*.class
-	rm -f *.so
-	rm -f *.dylib
-	rm -f *.dll
+	rm -f libunicorn_java$(LIB_EXT)
+	rm -f $(OBJS)
+
+.PHONY: all clean

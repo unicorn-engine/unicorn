@@ -86,7 +86,7 @@ typedef size_t uc_hook;
   Macro to create combined version which can be compared to
   result of uc_version() API.
 */
-#define UC_MAKE_VERSION(major, minor) ((major << 8) + minor)
+#define UC_MAKE_VERSION(major, minor) (((major) << 24) + ((minor) << 16))
 
 // Scales to calculate timeout on microsecond unit
 // 1 second = 1000,000 microseconds
@@ -678,13 +678,11 @@ typedef struct uc_context uc_context;
  @major: major number of API version
  @minor: minor number of API version
 
- @return hexical number as (major << 8 | minor), which encodes both
-     major & minor versions.
+ @return hexadecimal number as (major << 24 | minor << 16 | patch << 8 | extra).
      NOTE: This returned value can be compared with version number made
      with macro UC_MAKE_VERSION
 
- For example, second API version would return 1 in @major, and 1 in @minor
- The return value would be 0x0101
+ For example, Unicorn version 2.0.1 final would be 0x020001ff.
 
  NOTE: if you only care about returned value, but not major and minor values,
  set both @major & @minor arguments to NULL.

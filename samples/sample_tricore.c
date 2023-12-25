@@ -9,7 +9,7 @@
 #include <string.h>
 
 // code to be emulated
-#define CODE "\x82\x11\xbb\x00\x00\x08" // mov d0, #0x1; mov.u d0, #0x8000
+#define CODE "\x82\x11\xbb\x00\x00\x08" // mov d1, #0x1; mov.u d0, #0x8000
 
 // memory address where emulation starts
 #define ADDRESS 0x10000
@@ -36,6 +36,7 @@ static void test_tricore(void)
     uc_hook trace1, trace2;
 
     uint32_t d0 = 0x0; // d0 register
+    uint32_t d1 = 0x0; // d1 register
 
     printf("Emulate TriCore code\n");
 
@@ -72,6 +73,9 @@ static void test_tricore(void)
 
     uc_reg_read(uc, UC_TRICORE_REG_D0, &d0);
     printf(">>> d0 = 0x%x\n", d0);
+
+    uc_reg_read(uc, UC_TRICORE_REG_D1, &d1);
+    printf(">>> d1 = 0x%x\n", d1);
 
     uc_close(uc);
 }
