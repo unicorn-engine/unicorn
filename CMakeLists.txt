@@ -1430,6 +1430,13 @@ else()
     )
 endif()
 
+if(ATOMIC_LINKAGE_FIX)
+    set(SAMPLES_LIB
+        ${SAMPLES_LIB}
+        atomic
+    )
+endif()
+
 target_include_directories(unicorn PUBLIC
     include
 )
