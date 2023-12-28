@@ -1315,7 +1315,7 @@ if(MINGW)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} pthread)
 endif()
 
-if(UNICORN_TARGET_ARCH STREQUAL "riscv")
+if(ATOMIC_LINKAGE_FIX)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} atomic)
 endif()
 
@@ -1467,13 +1467,18 @@ if(UNICORN_INSTALL AND NOT MSVC)
     endif()
     install(FILES $<TARGET_FILE:unicorn_archive> DESTINATION ${CMAKE_INSTALL_LIBDIR})
     install(FILES ${UNICORN_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unicorn)
+    if (ATOMIC_LINKAGE_FIX)
+        set(ATOMIC_LINK_PKG_CONFIG " -latomic")
+    else()
+        set(ATOMIC_LINK_PKG_CONFIG "")
+    endif()
     file(WRITE ${CMAKE_BINARY_DIR}/unicorn.pc "Name: unicorn\n\
 Description: Unicorn emulator engine\n\
 Version: ${UNICORN_VERSION_MAJOR}.${UNICORN_VERSION_MINOR}.${UNICORN_VERSION_PATCH}\n\
 libdir=${CMAKE_INSTALL_FULL_LIBDIR}\n\
 includedir=${CMAKE_INSTALL_FULL_INCLUDEDIR}\n\
 Libs: -L\$\{libdir\} -lunicorn\n\
-Libs.private: -lpthread -lm\n\
+Libs.private: -lpthread -lm${ATOMIC_LINK_PKG_CONFIG}\n\
 Cflags: -I\$\{includedir\}\n"
     )
     install(FILES ${CMAKE_BINARY_DIR}/unicorn.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
