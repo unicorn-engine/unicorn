@@ -377,7 +377,7 @@ target_ulong helper_lscbx(CPUPPCState *env, target_ulong addr, uint32_t reg,
 uint64_t helper_lq_le_parallel(CPUPPCState *env, target_ulong addr,
                                uint32_t opidx)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 > 0
     Int128 ret;
 
     ret = helper_atomic_ldo_le_mmu(env, addr, opidx, GETPC());
@@ -393,7 +393,7 @@ uint64_t helper_lq_le_parallel(CPUPPCState *env, target_ulong addr,
 uint64_t helper_lq_be_parallel(CPUPPCState *env, target_ulong addr,
                                uint32_t opidx)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 > 0
     Int128 ret;
 
     ret = helper_atomic_ldo_be_mmu(env, addr, opidx, GETPC());
@@ -409,7 +409,7 @@ uint64_t helper_lq_be_parallel(CPUPPCState *env, target_ulong addr,
 void helper_stq_le_parallel(CPUPPCState *env, target_ulong addr,
                             uint64_t lo, uint64_t hi, uint32_t opidx)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 > 0
     Int128 val;
 
     val = int128_make128(lo, hi);
@@ -423,7 +423,7 @@ void helper_stq_le_parallel(CPUPPCState *env, target_ulong addr,
 void helper_stq_be_parallel(CPUPPCState *env, target_ulong addr,
                             uint64_t lo, uint64_t hi, uint32_t opidx)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 > 0
     Int128 val;
 
     val = int128_make128(lo, hi);
@@ -438,7 +438,7 @@ uint32_t helper_stqcx_le_parallel(CPUPPCState *env, target_ulong addr,
                                   uint64_t new_lo, uint64_t new_hi,
                                   uint32_t opidx)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 > 0
     bool success = false;
 
 
@@ -464,7 +464,7 @@ uint32_t helper_stqcx_be_parallel(CPUPPCState *env, target_ulong addr,
                                   uint64_t new_lo, uint64_t new_hi,
                                   uint32_t opidx)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 > 0
     bool success = false;
 
 
