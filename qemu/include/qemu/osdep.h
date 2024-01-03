@@ -149,8 +149,8 @@ struct uc_struct;
  * code that is unreachable when features are disabled.
  * All supported versions of Glib's g_assert() satisfy this requirement.
  */
-// Unfortunately, NDK also has this problem.
-#if defined(__MINGW32__ ) || defined(__ANDROID__) || defined(__i386__)
+// Unfortunately, NDK and arm32 also have this problem.
+#if defined(__MINGW32__ ) || defined(__ANDROID__) || defined(__i386__) || defined(__arm__)
 #undef assert
 #define assert(x)  g_assert(x)
 #endif
