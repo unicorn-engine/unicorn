@@ -802,7 +802,10 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
 
             len = memory_region_len(uc, mr, address, size - count);
             if (uc->snapshot_level && uc->snapshot_level > mr->priority) {
-                mr = uc->memory_cow(uc, mr, address, len);
+                mr = uc->memory_cow(uc, mr, address & ~uc->target_page_align,
+                                    (len + (address & uc->target_page_align) +
+                                     uc->target_page_align) &
+                                        ~uc->target_page_align);
                 if (!mr) {
                     return UC_ERR_NOMEM;
                 }
