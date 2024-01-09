@@ -98,6 +98,9 @@ MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *current, hwaddr beg
     hwaddr current_offset;
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
+    assert((begin & ~TARGET_PAGE_MASK) == 0);
+    assert((size & ~TARGET_PAGE_MASK) == 0);
+
     if (current->container == uc->system_memory) {
         make_contained(uc, current);
     }
