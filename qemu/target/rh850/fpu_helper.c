@@ -534,7 +534,7 @@ target_ulong helper_fclass_s(uint64_t frs1)
     } else if (float32_is_zero_or_denormal(f)) {
         return sign ? 1 << 2 : 1 << 5;
     } else if (float32_is_any_nan(f)) {
-        float_status s = { }; /* for snan_bit_is_one */
+        float_status s = { 0 }; /* for snan_bit_is_one */
         return float32_is_quiet_nan(f, &s) ? 1 << 9 : 1 << 8;
     } else {
         return sign ? 1 << 1 : 1 << 6;
@@ -815,7 +815,7 @@ target_ulong helper_fclass_d(uint64_t frs1)
     } else if (float64_is_zero_or_denormal(f)) {
         return sign ? 1 << 2 : 1 << 5;
     } else if (float64_is_any_nan(f)) {
-        float_status s = { }; /* for snan_bit_is_one */
+        float_status s = { 0 }; /* for snan_bit_is_one */
         return float64_is_quiet_nan(f, &s) ? 1 << 9 : 1 << 8;
     } else {
         return sign ? 1 << 1 : 1 << 6;
