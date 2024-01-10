@@ -2599,7 +2599,7 @@ config_target_mak=$target_dir/config-target.mak
 target_name=$(echo $target | cut -d '-' -f 1)
 target_aligned_only="no"
 case "$target_name" in
-  alpha|hppa|mips64el|mips64|mipsel|mips|mipsn32|mipsn32el|sh4|sh4eb|sparc|sparc64|sparc32plus|xtensa|xtensaeb)
+  alpha|hppa|mips64el|mips64|mipsel|mips|mipsn32|mipsn32el|rh850|sh4|sh4eb|sparc|sparc64|sparc32plus|xtensa|xtensaeb)
   target_aligned_only="yes"
   ;;
 esac
