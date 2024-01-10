@@ -56,14 +56,14 @@ static void reg_read(CPURH850State *env, unsigned int regid, void *value)
     /* PC */
     if (regid == UC_RH850_REG_PC)
     {
-        *(uint64_t *)value = env->pc;
+        *(uint32_t *)value = env->pc;
         return;
     }
 
     /* General purpose register. */
     if ((regid >= UC_RH850_REG_R0) && (regid <= UC_RH850_REG_R31))
     {
-        *(uint64_t *)value = env->gpRegs[regid];
+        *(uint32_t *)value = env->gpRegs[regid];
         return;
     }
 
@@ -71,7 +71,7 @@ static void reg_read(CPURH850State *env, unsigned int regid, void *value)
     if ((regid >= UC_RH850_SYSREG_SELID0) && (regid <= (UC_RH850_SYSREG_SELID7 + 32)))
     {
         sel_id = (regid - 32)/32;
-        *(uint64_t *)value = env->systemRegs[sel_id][regid % 32];
+        *(uint32_t *)value = env->systemRegs[sel_id][regid % 32];
         return;
     }
 }
@@ -85,14 +85,14 @@ static void reg_write(CPURH850State *env, unsigned int regid, const void *value)
     /* PC */
     if (regid == UC_RH850_REG_PC)
     {
-        env->pc = *(uint64_t *)value;
+        env->pc = *(uint32_t *)value;
         return;
     }
 
     /* General purpose register. */
     if ((regid >= UC_RH850_REG_R0) && (regid <= UC_RH850_REG_R31))
     {
-        env->gpRegs[regid] = *(uint64_t *)value;
+        env->gpRegs[regid] = *(uint32_t *)value;
         return;
     }
 
@@ -100,7 +100,7 @@ static void reg_write(CPURH850State *env, unsigned int regid, const void *value)
     if ((regid >= UC_RH850_SYSREG_SELID0) && (regid <= (UC_RH850_SYSREG_SELID7 + 32)))
     {
         sel_id = (regid - 32)/32;
-        env->systemRegs[sel_id][regid % 32] = *(uint64_t *)value;
+        env->systemRegs[sel_id][regid % 32] = *(uint32_t *)value;
         return;
     }
 }

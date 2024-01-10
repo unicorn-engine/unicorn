@@ -14,9 +14,9 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
 static void test_rh850_add(void)
 {
     char code[] = "\x01\x0e\x06\x00\xc1\x11"; 
-    int r1 = 0x1234;
-    int r2 = 0x7777;
-    int pc;
+    uint32_t r1 = 0x1234;
+    uint32_t r2 = 0x7777;
+    uint32_t pc;
     uc_engine *uc;
 
     uc_common_setup(&uc, UC_ARCH_RH850, UC_MODE_LITTLE_ENDIAN, code,
