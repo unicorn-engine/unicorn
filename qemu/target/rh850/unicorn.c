@@ -31,14 +31,13 @@ static void rh850_release(void *ctx)
     CPUTLBDesc *desc;
     CPUTLBDescFast *fast;
 
+    release_common(ctx);
     for (i = 0; i < NB_MMU_MODES; i++) {
         desc = &(d[i]);
         fast = &(f[i]);
         g_free(desc->iotlb);
         g_free(fast->table);
     }
-
-    release_common(ctx);
 }
 
 void rh850_reg_reset(struct uc_struct *uc)

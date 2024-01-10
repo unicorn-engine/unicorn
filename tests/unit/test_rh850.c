@@ -34,7 +34,7 @@ static void test_rh850_add(void)
     TEST_CHECK(r2 == 0x89b1);
     TEST_CHECK(pc == code_start + sizeof(code) - 1);
 
-    //OK(uc_close(uc));
+    OK(uc_close(uc));
 }
 
 TEST_LIST = {{"test_rh850_add", test_rh850_add}, {NULL, NULL}};
