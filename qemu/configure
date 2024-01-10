@@ -2716,7 +2716,7 @@ case "$target_name" in
     echo "TARGET_ABI32=y" >> $config_target_mak
   ;;
   rh850)
-    TARGET_BASE_ARCH=rh850
+    TARGET_ARCH=rh850
     TARGET_ABI_DIR=rh850
     mttcg=no              # system emulation is not supported for RH850
   ;;
