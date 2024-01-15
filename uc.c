@@ -794,6 +794,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
         MemoryRegion *mr = uc->memory_mapping(uc, address);
         if (mr) {
             uint32_t operms = mr->perms;
+            uint64_t align = uc->target_page_align;
             if (!(operms & UC_PROT_WRITE)) { // write protected
                 // but this is not the program accessing memory, so temporarily
                 // mark writable
@@ -802,10 +803,8 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
 
             len = memory_region_len(uc, mr, address, size - count);
             if (uc->snapshot_level && uc->snapshot_level > mr->priority) {
-                mr = uc->memory_cow(uc, mr, address & ~uc->target_page_align,
-                                    (len + (address & uc->target_page_align) +
-                                     uc->target_page_align) &
-                                        ~uc->target_page_align);
+                mr = uc->memory_cow(uc, mr, address & ~align,
+                                    (len + (address & align) + align) & ~align);
                 if (!mr) {
                     return UC_ERR_NOMEM;
                 }
