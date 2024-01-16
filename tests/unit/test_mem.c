@@ -379,27 +379,29 @@ static void test_context_snapshot(void)
 {
     uc_engine *uc;
     uc_context *ctx;
+    uint64_t baseaddr = 0xfffff1000;
+    uint64_t offset = 0x10;
     uint64_t tmp = 1;
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
     OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY | UC_CTL_CONTEXT_CPU));
-    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, baseaddr, 0x1000, UC_PROT_ALL));
     OK(uc_context_alloc(uc, &ctx));
     OK(uc_context_save(uc, ctx));
 
-    OK(uc_mem_write(uc, 0x1000, &tmp, sizeof(tmp)));
-    OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    OK(uc_mem_write(uc, baseaddr + offset, &tmp, sizeof(tmp)));
+    OK(uc_mem_read(uc, baseaddr + offset, &tmp, sizeof(tmp)));
     TEST_CHECK(tmp == 1);
     OK(uc_context_restore(uc, ctx));
-    OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    OK(uc_mem_read(uc, baseaddr + offset, &tmp, sizeof(tmp)));
     TEST_CHECK(tmp == 0);
 
     tmp = 2;
-    OK(uc_mem_write(uc, 0x1000, &tmp, sizeof(tmp)));
-    OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    OK(uc_mem_write(uc, baseaddr + offset, &tmp, sizeof(tmp)));
+    OK(uc_mem_read(uc, baseaddr + offset, &tmp, sizeof(tmp)));
     TEST_CHECK(tmp == 2);
     OK(uc_context_restore(uc, ctx));
-    OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    OK(uc_mem_read(uc, baseaddr + offset, &tmp, sizeof(tmp)));
     TEST_CHECK(tmp == 0);
 
     OK(uc_context_free(ctx));
