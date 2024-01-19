@@ -23,6 +23,8 @@
 
 #define TCG_GUEST_DEFAULT_MO 0
 
+//#define TARGET_INSN_START_EXTRA_WORDS 2
+
 #define ELF_MACHINE EM_RH850
 #define CPUArchState struct CPURH850State
 

@@ -40,7 +40,26 @@
 /*
  * Unicorn: Special disas state for exiting in the middle of tb.
  */
-#define DISAS_UC_EXIT    DISAS_TARGET_6
+
+/* We are not using a goto_tb (for whatever reason), but have updated
+   the PC (for whatever reason), so there's no need to do it again on
+   exiting the TB.  */
+#define DISAS_PC_UPDATED        DISAS_TARGET_0
+
+/* We have emitted one or more goto_tb.  No fixup required.  */
+#define DISAS_GOTO_TB           DISAS_TARGET_1
+
+/* We have updated the PC and CC values.  */
+#define DISAS_PC_CC_UPDATED     DISAS_TARGET_2
+
+/* We are exiting the TB, but have neither emitted a goto_tb, nor
+   updated the PC for the next instruction to be executed.  */
+#define DISAS_PC_STALE          DISAS_TARGET_3
+
+/* We are exiting the TB to the main loop.  */
+#define DISAS_PC_STALE_NOCHAIN  DISAS_TARGET_4
+
+#define DISAS_UNICORN_HALT DISAS_TARGET_11
 
 /* global register indices */
 static TCGv cpu_gpr[NUM_GP_REGS];
@@ -4961,7 +4980,8 @@ static void rh850_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     bool insn_hook = false;
 
     if (uc_addr_is_exit(dc->uc, dc->base.pc_next)) {
-        dcbase->is_jmp = DISAS_UC_EXIT;
+        // imitate PGM exception to halt emulation
+        dcbase->is_jmp = DISAS_UNICORN_HALT;
     }
     else
     {
@@ -5028,6 +5048,13 @@ static void rh850_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
+static void update_pc_addr(DisasContext *s)
+{
+    /* psw.addr */
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_pc, s->base.pc_next);
+}
+
 // Emit exit TB code according to base.is_jmp
 static void rh850_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
 {
@@ -5049,7 +5076,14 @@ static void rh850_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
 
     switch (dc->base.is_jmp)
     {
+    case DISAS_UNICORN_HALT:
+        tcg_gen_movi_tl(tcg_ctx, cpu_pc, dc->pc);
+        gen_exception_halt(dc);
+        break;
     case DISAS_TOO_MANY:
+    case DISAS_PC_STALE:
+    case DISAS_PC_STALE_NOCHAIN:
+        update_pc_addr(dc);
         gen_goto_tb_imm(dc, 0, dc->pc);
         break;
     case DISAS_INDIRECT_JUMP:
@@ -5062,10 +5096,6 @@ static void rh850_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     case DISAS_NORETURN:
     case DISAS_TB_EXIT_ALREADY_GENERATED:
     	break;
-    case DISAS_UC_EXIT:
-        tcg_gen_movi_tl(tcg_ctx, cpu_pc, dc->pc);
-        gen_exception_halt(dc);
-        break;
     default:
         g_assert_not_reached();
     }

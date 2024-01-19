@@ -5,12 +5,12 @@
 #define UC_QEMU_TARGET_RH850_H
 
 // functions to read & write registers
-int rh850_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void **vals, int count);
-int rh850_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, int count);
+uc_err reg_read_rh850(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size);
+uc_err reg_write_rh850(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc);
 
-void rh850_reg_reset(struct uc_struct *uc);
+void reg_reset_rh850(struct uc_struct *uc);
 
 void rh850_uc_init(struct uc_struct *uc);
 #endif
