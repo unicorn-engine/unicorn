@@ -91,7 +91,11 @@ const  UC_RH850_SYSREG_SELID0 = 32;
 // RH8509 Registers aliases.
 
   UC_RH850_REG_ZERO = 0;
+<<<<<<< HEAD
   UC_RH850_REG_SP = 3;
+=======
+  UC_RH850_REG_SP = 2;
+>>>>>>> 4abc05b3 (Removed hook-related code (causes some issues for now).)
   UC_RH850_REG_EP = 30;
   UC_RH850_REG_LP = 31;
 

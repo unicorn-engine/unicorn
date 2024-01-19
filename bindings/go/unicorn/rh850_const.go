@@ -88,7 +88,11 @@ const (
 // RH8509 Registers aliases.
 
 	RH850_REG_ZERO = 0
+<<<<<<< HEAD
 	RH850_REG_SP = 3
+=======
+	RH850_REG_SP = 2
+>>>>>>> 4abc05b3 (Removed hook-related code (causes some issues for now).)
 	RH850_REG_EP = 30
 	RH850_REG_LP = 31
 )
