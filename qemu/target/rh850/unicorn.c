@@ -12,12 +12,12 @@ RH850CPU *cpu_rh850_init(struct uc_struct *uc, const char *cpu_model);
 
 static void rh850_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    rh850_cpu_set_pc(uc->cpu, address);
+    ((CPURH850State *)uc->cpu->env_ptr)->pc = address;
 }
 
 static uint64_t rh850_get_pc(struct uc_struct *uc)
 {
-    return rh850_cpu_get_pc(uc->cpu);
+    return ((CPURH850State *)uc->cpu->env_ptr)->pc;
 }
 
 static void rh850_release(void *ctx)
@@ -40,7 +40,7 @@ static void rh850_release(void *ctx)
     }
 }
 
-void rh850_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env = uc->cpu->env_ptr;
 
@@ -48,125 +48,70 @@ void rh850_reg_reset(struct uc_struct *uc)
     env->pc = 0;
 }
 
-static void reg_read(CPURH850State *env, unsigned int regid, void *value)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value, size_t *size)
 {
     int sel_id;
+    CPURH850State *env = _env;
+    uc_err ret = UC_ERR_ARG;
 
     /* PC */
     if (regid == UC_RH850_REG_PC)
     {
+        CHECK_REG_TYPE(uint32_t);
         *(uint32_t *)value = env->pc;
-        return;
     }
 
     /* General purpose register. */
     if ((regid >= UC_RH850_REG_R0) && (regid <= UC_RH850_REG_R31))
     {
+        CHECK_REG_TYPE(uint32_t);
         *(uint32_t *)value = env->gpRegs[regid];
-        return;
     }
 
     /* System registers. */
-    if ((regid >= UC_RH850_SYSREG_SELID0) && (regid <= (UC_RH850_SYSREG_SELID7 + 32)))
+    if ((regid >= UC_RH850_SYSREG_SELID0) && (regid < (UC_RH850_SYSREG_SELID7 + 32)))
     {
+        CHECK_REG_TYPE(uint32_t);
         sel_id = (regid - 32)/32;
         *(uint32_t *)value = env->systemRegs[sel_id][regid % 32];
-        return;
     }
+
+    return ret;
 }
 
-static void reg_write(CPURH850State *env, unsigned int regid, const void *value)
-{
-    /* TODO */
 
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value, size_t *size, int *setpc)
+{
     int sel_id;
+    CPURH850State *env = _env;
+    uc_err ret = UC_ERR_ARG;
 
     /* PC */
     if (regid == UC_RH850_REG_PC)
     {
+        CHECK_REG_TYPE(uint32_t);
         env->pc = *(uint32_t *)value;
-        return;
+        *setpc = 1;
     }
 
     /* General purpose register. */
     if ((regid >= UC_RH850_REG_R0) && (regid <= UC_RH850_REG_R31))
     {
+        CHECK_REG_TYPE(uint32_t);
         env->gpRegs[regid] = *(uint32_t *)value;
-        return;
     }
 
     /* System registers. */
     if ((regid >= UC_RH850_SYSREG_SELID0) && (regid <= (UC_RH850_SYSREG_SELID7 + 32)))
     {
+        CHECK_REG_TYPE(uint32_t);
         sel_id = (regid - 32)/32;
         env->systemRegs[sel_id][regid % 32] = *(uint32_t *)value;
-        return;
-    }
-}
-
-static int rh850_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                         int count)
-{
-    CPURH850State *env = &(RH850_CPU(uc->cpu)->env);
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        reg_read(env, regid, value);
-    }
-    return 0;
-}
-
-static int rh850_reg_write(struct uc_struct *uc, unsigned int *regs,
-                          void *const *vals, int count)
-{
-    CPURH850State *env = &(RH850_CPU(uc->cpu)->env);
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        reg_write(env, regid, value);
-        if (regid == UC_RH850_REG_PC) {
-            // force to quit execution and flush TB
-            uc->quit_request = true;
-            uc_emu_stop(uc);
-        }
-    }
-    return 0;
-}
-
-DEFAULT_VISIBILITY
-int rh850_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void **vals, int count)
-{
-    CPURH850State *env = (CPURH850State *)ctx->data;
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        reg_read(env, regid, value);
     }
 
-    return 0;
-}
-
-DEFAULT_VISIBILITY
-int rh850_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, int count)
-{
-    CPURH850State *env = (CPURH850State *)ctx->data;
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        reg_write(env, regid, value);
-    }
-
-    return 0;
+    return ret;
 }
 
 static int rh850_cpus_init(struct uc_struct *uc, const char *cpu_model)
@@ -183,10 +128,10 @@ static int rh850_cpus_init(struct uc_struct *uc, const char *cpu_model)
 DEFAULT_VISIBILITY
 void rh850_uc_init(struct uc_struct *uc)
 {
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->release = rh850_release;
-    uc->reg_read = rh850_reg_read;
-    uc->reg_write = rh850_reg_write;
-    uc->reg_reset = rh850_reg_reset;
     uc->set_pc = rh850_set_pc;
     uc->get_pc = rh850_get_pc;
     uc->cpus_init = rh850_cpus_init;

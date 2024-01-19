@@ -2152,8 +2152,8 @@ static context_reg_rw_t find_context_reg_rw(uc_arch arch, uc_mode mode)
 #endif
 #ifdef UNICORN_HAS_RH850
     case UC_ARCH_RH850:
-        rw->context_reg_read = rh850_context_reg_read;
-        rw->context_reg_write = rh850_context_reg_write;
+        rw.read = reg_read_rh850;
+        rw.write = reg_write_rh850;
         break;
 #endif
 #ifdef UNICORN_HAS_RISCV
