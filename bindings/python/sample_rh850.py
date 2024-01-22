@@ -51,11 +51,7 @@ def test_rh850():
         mu.hook_add(UC_HOOK_CODE, hook_code)
 
         # emulate machine code in infinite time
-<<<<<<< HEAD
-        mu.emu_start(ADDRESS, ADDRESS + len(RH850_CODE) - 1)
-=======
         mu.emu_start(ADDRESS, ADDRESS + len(RH850_CODE))
->>>>>>> 4abc05b3 (Removed hook-related code (causes some issues for now).)
 
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
