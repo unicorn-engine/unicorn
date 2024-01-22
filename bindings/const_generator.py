@@ -149,6 +149,7 @@ template = {
             'm68k.h': 'm68k',
             'ppc.h': 'ppc',
             'riscv.h': 'riscv',
+            'rh850.h': 'rh850',
             's390x.h' : 's390x',
             'tricore.h' : 'tricore',
             'unicorn.h': 'unicorn',
