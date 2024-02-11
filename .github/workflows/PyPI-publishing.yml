@@ -73,6 +73,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: '🛠️ Set up Python'
+      if: ${{ !contains(matrix.config.os, 'macos-14') }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.config.python-ver }}
