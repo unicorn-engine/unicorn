@@ -326,7 +326,7 @@ jobs:
         # python-version: ${{ matrix.config.python-ver }}
 
     - name: '🚧 Mac build'
-      if: contains(matrix.config.name, 'macos-x64')
+      if: contains(matrix.config.name, 'macos')
       shell: bash
       run: |
         brew install p7zip cmake ninja pkg-config
