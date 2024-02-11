@@ -67,14 +67,13 @@ jobs:
           - {
               os: macos-14,
               arch: aarch64,
-              python-ver: '3.8'
+              python-ver: '3.10'
             }
     steps:
     - uses: actions/checkout@v2
 
     - name: '🛠️ Set up Python'
-      if: ${{ !contains(matrix.config.os, 'macos-14') }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.config.python-ver }}
 
