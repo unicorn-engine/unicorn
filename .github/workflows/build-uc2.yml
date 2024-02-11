@@ -258,25 +258,49 @@ jobs:
       matrix:
         config:
           - { 
-              os: macos-latest,
+              os: macos-12, # x64
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
               name: 'macos-x64 cmake shared',
               shared: 'yes',
-              artifact: 'macos-cmake-shared-x64.7z',
+              artifact: 'macos-x64-cmake-shared-x64.7z',
               build_type: 'Debug',
               archiver: '7za a',
               generators: 'Ninja'
             }
           - { 
-              os: macos-latest,
+              os: macos-12,
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
               name: 'macos-x64 cmake static',
               shared: 'no',
-              artifact: 'macos-cmake-static-x64.7z',
+              artifact: 'macos-x64-cmake-static-x64.7z',
+              build_type: 'Debug',
+              archiver: '7za a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: macos-14, # arm64
+              arch: arm64,
+              python-arch: arm64,
+              python-ver: '3.8',
+              name: 'macos-x64 cmake shared',
+              shared: 'yes',
+              artifact: 'macos-arm64-cmake-shared-x64.7z',
+              build_type: 'Debug',
+              archiver: '7za a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: macos-14,
+              arch: arm64,
+              python-arch: arm64,
+              python-ver: '3.8',
+              name: 'macos-arm64 cmake static',
+              shared: 'no',
+              artifact: 'macos-arm64-cmake-static-x64.7z',
               build_type: 'Debug',
               archiver: '7za a',
               generators: 'Ninja'
