@@ -59,10 +59,15 @@ jobs:
               name: 'sdist'
             }
           - { 
-             os: macos-latest,
+             os: macos-12,
              arch: x64,
              python-ver: '3.8',
              name: 'macos_x86_64'
+            }
+          - {
+              os: macos-14,
+              arch: aarch64,
+              python-ver: '3.8'
             }
     steps:
     - uses: actions/checkout@v2
