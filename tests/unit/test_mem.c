@@ -333,7 +333,8 @@ static void test_snapshot_with_vtlb(void)
     uc_hook hook;
 
     // mov eax, [0x2020]; inc eax; mov [0x2020], eax
-    char code[] = "\xA1\x20\x20\x00\x00\x04\x00\x00\x00\xFF\xC0\xA3\x20\x20\x00\x00\x04\x00\x00\x00";
+    char code[] = "\xA1\x20\x20\x00\x00\x04\x00\x00\x00\xFF\xC0\xA3\x20\x20\x00"
+                  "\x00\x04\x00\x00\x00";
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
 
@@ -342,9 +343,9 @@ static void test_snapshot_with_vtlb(void)
     OK(uc_context_alloc(uc, &c1));
     OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY));
 
-
     OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
-    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_snapshot_with_vtlb_callback, NULL, 1, 0));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL,
+                   test_snapshot_with_vtlb_callback, NULL, 1, 0));
 
     // Map physical memory
     OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_EXEC | UC_PROT_READ));
@@ -354,11 +355,13 @@ static void test_snapshot_with_vtlb(void)
     // Initial context save
     OK(uc_context_save(uc, c0));
 
-    OK(uc_emu_start(uc, 0x400000000 + 0x1000, 0x400000000 + 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_emu_start(uc, 0x400000000 + 0x1000,
+                    0x400000000 + 0x1000 + sizeof(code) - 1, 0, 0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
     TEST_CHECK(mem == 1);
     OK(uc_context_save(uc, c1));
-    OK(uc_emu_start(uc, 0x400000000 + 0x1000, 0x400000000 + 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_emu_start(uc, 0x400000000 + 0x1000,
+                    0x400000000 + 0x1000 + sizeof(code) - 1, 0, 0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
     TEST_CHECK(mem == 2);
     OK(uc_context_restore(uc, c1));

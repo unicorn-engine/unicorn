@@ -293,14 +293,13 @@ static void test_arm64_hook_mrs(void)
     uc_close(uc);
 }
 
-
-#define CHECK(x) do {      \
-    if((x) != UC_ERR_OK) {              \
-        fprintf(stderr, "FAIL at %s:%d: %s\n", __FILE__, __LINE__, #x); \
-        exit(1);            \
-    }                       \
-} while(0)
-
+#define CHECK(x)                                                               \
+    do {                                                                       \
+        if ((x) != UC_ERR_OK) {                                                \
+            fprintf(stderr, "FAIL at %s:%d: %s\n", __FILE__, __LINE__, #x);    \
+            exit(1);                                                           \
+        }                                                                      \
+    } while (0)
 
 /* Test PAC support in the emulator. Code adapted from
 https://github.com/unicorn-engine/unicorn/issues/1789#issuecomment-1536320351 */
@@ -309,8 +308,8 @@ static void test_arm64_pac(void)
     uc_engine *uc;
     uint64_t x1 = 0x0000aaaabbbbccccULL;
 
-    // paciza x1
-    #define ARM64_PAC_CODE "\xe1\x23\xc1\xda"
+// paciza x1
+#define ARM64_PAC_CODE "\xe1\x23\xc1\xda"
 
     printf("Try ARM64 PAC\n");
 
@@ -318,7 +317,8 @@ static void test_arm64_pac(void)
     CHECK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
     CHECK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM64_MAX));
     CHECK(uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL));
-    CHECK(uc_mem_write(uc, ADDRESS, ARM64_PAC_CODE, sizeof(ARM64_PAC_CODE) - 1));
+    CHECK(
+        uc_mem_write(uc, ADDRESS, ARM64_PAC_CODE, sizeof(ARM64_PAC_CODE) - 1));
     CHECK(uc_reg_write(uc, UC_ARM64_REG_X1, &x1));
 
     /** Initialize PAC support **/
@@ -334,7 +334,7 @@ static void test_arm64_pac(void)
     CHECK(uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg));
 
     // NS && RW && API
-    reg.val |= (1 | (1<<10) | (1<<17));
+    reg.val |= (1 | (1 << 10) | (1 << 17));
 
     CHECK(uc_reg_write(uc, UC_ARM64_REG_CP_REG, &reg));
 
@@ -348,10 +348,10 @@ static void test_arm64_pac(void)
     CHECK(uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg));
 
     // EnIA && EnIB
-    reg.val |= (1<<31) | (1<<30);
+    reg.val |= (1 << 31) | (1 << 30);
 
     CHECK(uc_reg_write(uc, UC_ARM64_REG_CP_REG, &reg));
-    
+
     // HCR_EL2
     reg.op0 = 0b11;
     reg.op1 = 0b100;
@@ -360,12 +360,13 @@ static void test_arm64_pac(void)
     reg.op2 = 0b000;
 
     // HCR.API
-    reg.val |= (1ULL<<41);
+    reg.val |= (1ULL << 41);
 
     CHECK(uc_reg_write(uc, UC_ARM64_REG_CP_REG, &reg));
 
     /** Check that PAC worked **/
-    CHECK(uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(ARM64_PAC_CODE) - 1, 0, 0));
+    CHECK(
+        uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(ARM64_PAC_CODE) - 1, 0, 0));
     CHECK(uc_reg_read(uc, UC_ARM64_REG_X1, &x1));
 
     printf("X1 = 0x%" PRIx64 "\n", x1);
