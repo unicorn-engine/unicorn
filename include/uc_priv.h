@@ -416,6 +416,9 @@ struct uc_struct {
 #endif
     GArray *unmapped_regions;
     int32_t snapshot_level;
+    uint64_t nested; // the nested level of all exposed API
+    bool thread_executable_entry;
+    bool current_executable;
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()

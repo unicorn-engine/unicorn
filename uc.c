@@ -27,12 +27,50 @@
 #include "qemu/target/s390x/unicorn.h"
 #include "qemu/target/tricore/unicorn.h"
 
+#include "qemu/include/tcg/tcg-apple-jit.h"
 #include "qemu/include/qemu/queue.h"
 #include "qemu-common.h"
 
 static void clear_deleted_hooks(uc_engine *uc);
 static uc_err uc_snapshot(uc_engine *uc);
 static uc_err uc_restore_latest_snapshot(uc_engine *uc);
+
+#ifdef HAVE_PTHREAD_JIT_PROTECT
+static void save_jit_state(uc_engine *uc)
+{
+    if (!uc->nested) {
+        uc->thread_executable_entry = thread_executable();
+        uc->current_executable = uc->thread_executable_entry;
+    }
+
+    uc->nested += 1;
+}
+
+static void restore_jit_state(uc_engine *uc)
+{
+    assert(uc->nested > 0);
+    if (uc->nested == 1) {
+        assert(uc->current_executable == thread_executable());
+        if (uc->current_executable != uc->thread_executable_entry) {
+            if (uc->thread_executable_entry) {
+                jit_write_protect(true);
+            } else {
+                jit_write_protect(false);
+            }
+        }
+    }
+    uc->nested -= 1;
+}
+#else
+static void save_jit_state(uc_engine *uc)
+{
+    (void *)uc;
+}
+static void restore_jit_state(uc_engine *uc)
+{
+    (void *)uc;
+}
+#endif
 
 static void *hook_insert(struct list *l, struct hook *h)
 {
@@ -206,6 +244,7 @@ bool uc_arch_supported(uc_arch arch)
 }
 
 #define UC_INIT(uc)                                                            \
+    save_jit_state(uc);                                                        \
     if (unlikely(!(uc)->init_done)) {                                          \
         int __init_ret = uc_init_engine(uc);                                   \
         if (unlikely(__init_ret != UC_ERR_OK)) {                               \
@@ -229,7 +268,6 @@ static gint uc_exits_cmp(gconstpointer a, gconstpointer b, gpointer user_data)
 
 static uc_err uc_init_engine(uc_engine *uc)
 {
-
     if (uc->init_done) {
         return UC_ERR_HANDLE;
     }
@@ -547,10 +585,12 @@ uc_err uc_reg_read_batch(uc_engine *uc, int *regs, void **vals, int count)
         size_t size = (size_t)-1;
         uc_err err = reg_read(env, mode, regid, value, &size);
         if (err) {
+            restore_jit_state(uc);
             return err;
         }
     }
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -571,6 +611,7 @@ uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals,
         size_t size = (size_t)-1;
         uc_err err = reg_write(env, mode, regid, value, &size, &setpc);
         if (err) {
+            restore_jit_state(uc);
             return err;
         }
     }
@@ -580,6 +621,7 @@ uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals,
         break_translation_loop(uc);
     }
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -598,10 +640,12 @@ uc_err uc_reg_read_batch2(uc_engine *uc, int *regs, void *const *vals,
         void *value = vals[i];
         uc_err err = reg_read(env, mode, regid, value, sizes + i);
         if (err) {
+            restore_jit_state(uc);
             return err;
         }
     }
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -621,6 +665,7 @@ uc_err uc_reg_write_batch2(uc_engine *uc, int *regs, const void *const *vals,
         const void *value = vals[i];
         uc_err err = reg_write(env, mode, regid, value, sizes + i, &setpc);
         if (err) {
+            restore_jit_state(uc);
             return err;
         }
     }
@@ -630,6 +675,7 @@ uc_err uc_reg_write_batch2(uc_engine *uc, int *regs, const void *const *vals,
         break_translation_loop(uc);
     }
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -638,7 +684,9 @@ uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
 {
     UC_INIT(uc);
     size_t size = (size_t)-1;
-    return uc->reg_read(uc->cpu->env_ptr, uc->mode, regid, value, &size);
+    uc_err err = uc->reg_read(uc->cpu->env_ptr, uc->mode, regid, value, &size);
+    restore_jit_state(uc);
+    return err;
 }
 
 UNICORN_EXPORT
@@ -650,6 +698,7 @@ uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
     uc_err err =
         uc->reg_write(uc->cpu->env_ptr, uc->mode, regid, value, &size, &setpc);
     if (err) {
+        restore_jit_state(uc);
         return err;
     }
     if (setpc) {
@@ -658,6 +707,7 @@ uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
         break_translation_loop(uc);
     }
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -665,7 +715,9 @@ UNICORN_EXPORT
 uc_err uc_reg_read2(uc_engine *uc, int regid, void *value, size_t *size)
 {
     UC_INIT(uc);
-    return uc->reg_read(uc->cpu->env_ptr, uc->mode, regid, value, size);
+    uc_err err = uc->reg_read(uc->cpu->env_ptr, uc->mode, regid, value, size);
+    restore_jit_state(uc);
+    return err;
 }
 
 UNICORN_EXPORT
@@ -676,6 +728,7 @@ uc_err uc_reg_write2(uc_engine *uc, int regid, const void *value, size_t *size)
     uc_err err =
         uc->reg_write(uc->cpu->env_ptr, uc->mode, regid, value, size, &setpc);
     if (err) {
+        restore_jit_state(uc);
         return err;
     }
     if (setpc) {
@@ -684,6 +737,7 @@ uc_err uc_reg_write2(uc_engine *uc, int regid, const void *value, size_t *size)
         break_translation_loop(uc);
     }
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -727,10 +781,13 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     UC_INIT(uc);
 
     // qemu cpu_physical_memory_rw() size is an int
-    if (size > INT_MAX)
+    if (size > INT_MAX) {
+        restore_jit_state(uc);
         return UC_ERR_ARG;
+    }
 
     if (!check_mem_area(uc, address, size)) {
+        restore_jit_state(uc);
         return UC_ERR_READ_UNMAPPED;
     }
 
@@ -752,8 +809,10 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     }
 
     if (count == size) {
+        restore_jit_state(uc);
         return UC_ERR_OK;
     } else {
+        restore_jit_state(uc);
         return UC_ERR_READ_UNMAPPED;
     }
 }
@@ -768,10 +827,13 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
     UC_INIT(uc);
 
     // qemu cpu_physical_memory_rw() size is an int
-    if (size > INT_MAX)
+    if (size > INT_MAX) {
+        restore_jit_state(uc);
         return UC_ERR_ARG;
+    }
 
     if (!check_mem_area(uc, address, size)) {
+        restore_jit_state(uc);
         return UC_ERR_WRITE_UNMAPPED;
     }
 
@@ -814,8 +876,10 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
     }
 
     if (count == size) {
+        restore_jit_state(uc);
         return UC_ERR_OK;
     } else {
+        restore_jit_state(uc);
         return UC_ERR_WRITE_UNMAPPED;
     }
 }
@@ -897,7 +961,10 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     uc->timed_out = false;
     uc->first_tb = true;
 
-    UC_INIT(uc);
+    // Avoid nested uc_emu_start saves wrong jit states.
+    if (uc->nested_level == 0) {
+        UC_INIT(uc);
+    }
 
     // Advance the nested levels. We must decrease the level count by one when
     // we return from uc_emu_start.
@@ -1042,6 +1109,8 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         // remove hooks to delete
         // make sure we delete all hooks at the first level.
         clear_deleted_hooks(uc);
+
+        restore_jit_state(uc);
     }
 
     if (timeout) {
@@ -1061,7 +1130,9 @@ uc_err uc_emu_stop(uc_engine *uc)
 {
     UC_INIT(uc);
     uc->stop_request = true;
-    return break_translation_loop(uc);
+    uc_err err = break_translation_loop(uc);
+    restore_jit_state(uc);
+    return err;
 }
 
 // return target index where a memory region at the address exists, or could be
@@ -1196,10 +1267,13 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 
     res = mem_map_check(uc, address, size, perms);
     if (res) {
+        restore_jit_state(uc);
         return res;
     }
 
-    return mem_map(uc, uc->memory_map(uc, address, size, perms));
+    res = mem_map(uc, uc->memory_map(uc, address, size, perms));
+    restore_jit_state(uc);
+    return res;
 }
 
 UNICORN_EXPORT
@@ -1211,15 +1285,19 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size,
     UC_INIT(uc);
 
     if (ptr == NULL) {
+        restore_jit_state(uc);
         return UC_ERR_ARG;
     }
 
     res = mem_map_check(uc, address, size, perms);
     if (res) {
+        restore_jit_state(uc);
         return res;
     }
 
-    return mem_map(uc, uc->memory_map_ptr(uc, address, size, perms, ptr));
+    res = mem_map(uc, uc->memory_map_ptr(uc, address, size, perms, ptr));
+    restore_jit_state(uc);
+    return res;
 }
 
 UNICORN_EXPORT
@@ -1232,13 +1310,17 @@ uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
     UC_INIT(uc);
 
     res = mem_map_check(uc, address, size, UC_PROT_ALL);
-    if (res)
+    if (res) {
+        restore_jit_state(uc);
         return res;
+    }
 
     // The callbacks do not need to be checked for NULL here, as their presence
     // (or lack thereof) will determine the permissions used.
-    return mem_map(uc, uc->memory_map_io(uc, address, size, read_cb, write_cb,
-                                         user_data_read, user_data_write));
+    res = mem_map(uc, uc->memory_map_io(uc, address, size, read_cb, write_cb,
+                                        user_data_read, user_data_write));
+    restore_jit_state(uc);
+    return res;
 }
 
 // Create a backup copy of the indicated MemoryRegion.
@@ -1512,26 +1594,31 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
 
     // snapshot and protection can't be mixed
     if (uc->snapshot_level > 0) {
+        restore_jit_state(uc);
         return UC_ERR_ARG;
     }
 
     if (size == 0) {
         // trivial case, no change
+        restore_jit_state(uc);
         return UC_ERR_OK;
     }
 
     // address must be aligned to uc->target_page_size
     if ((address & uc->target_page_align) != 0) {
+        restore_jit_state(uc);
         return UC_ERR_ARG;
     }
 
     // size must be multiple of uc->target_page_size
     if ((size & uc->target_page_align) != 0) {
+        restore_jit_state(uc);
         return UC_ERR_ARG;
     }
 
     // check for only valid permissions
     if ((perms & ~UC_PROT_ALL) != 0) {
+        restore_jit_state(uc);
         return UC_ERR_ARG;
     }
 
@@ -1539,6 +1626,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     // TODO check if protected is possible
     // deny after cow
     if (!check_mem_area(uc, address, size)) {
+        restore_jit_state(uc);
         return UC_ERR_NOMEM;
     }
 
@@ -1551,6 +1639,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
         len = memory_region_len(uc, mr, addr, size - count);
         if (mr->ram) {
             if (!split_region(uc, mr, addr, len, false)) {
+                restore_jit_state(uc);
                 return UC_ERR_NOMEM;
             }
 
@@ -1565,6 +1654,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
 
         } else {
             if (!split_mmio_region(uc, mr, addr, len, false)) {
+                restore_jit_state(uc);
                 return UC_ERR_NOMEM;
             }
 
@@ -1586,6 +1676,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
         }
     }
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -1623,26 +1714,32 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
 
     if (size == 0) {
         // nothing to unmap
+        restore_jit_state(uc);
         return UC_ERR_OK;
     }
 
     // address must be aligned to uc->target_page_size
     if ((address & uc->target_page_align) != 0) {
+        restore_jit_state(uc);
         return UC_ERR_ARG;
     }
 
     // size must be multiple of uc->target_page_size
     if ((size & uc->target_page_align) != 0) {
+        restore_jit_state(uc);
         return UC_ERR_ARG;
     }
 
     // check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size)) {
+        restore_jit_state(uc);
         return UC_ERR_NOMEM;
     }
 
     if (uc->snapshot_level > 0) {
-        return uc_mem_unmap_snapshot(uc, address, size, NULL);
+        uc_err res = uc_mem_unmap_snapshot(uc, address, size, NULL);
+        restore_jit_state(uc);
+        return res;
     }
 
     // Now we know entire region is mapped, so do the unmap
@@ -1654,10 +1751,12 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
         len = memory_region_len(uc, mr, addr, size - count);
         if (!mr->ram) {
             if (!split_mmio_region(uc, mr, addr, len, true)) {
+                restore_jit_state(uc);
                 return UC_ERR_NOMEM;
             }
         } else {
             if (!split_region(uc, mr, addr, len, true)) {
+                restore_jit_state(uc);
                 return UC_ERR_NOMEM;
             }
         }
@@ -1672,6 +1771,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
         addr += len;
     }
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -1686,6 +1786,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 
     struct hook *hook = calloc(1, sizeof(struct hook));
     if (hook == NULL) {
+        restore_jit_state(uc);
         return UC_ERR_NOMEM;
     }
 
@@ -1711,6 +1812,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         if (uc->insn_hook_validate) {
             if (!uc->insn_hook_validate(hook->insn)) {
                 free(hook);
+                restore_jit_state(uc);
                 return UC_ERR_HOOK;
             }
         }
@@ -1718,16 +1820,19 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         if (uc->hook_insert) {
             if (hook_insert(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
                 free(hook);
+                restore_jit_state(uc);
                 return UC_ERR_NOMEM;
             }
         } else {
             if (hook_append(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
                 free(hook);
+                restore_jit_state(uc);
                 return UC_ERR_NOMEM;
             }
         }
 
         uc->hooks_count[UC_HOOK_INSN_IDX]++;
+        restore_jit_state(uc);
         return UC_ERR_OK;
     }
 
@@ -1742,6 +1847,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         if (uc->opcode_hook_invalidate) {
             if (!uc->opcode_hook_invalidate(hook->op, hook->op_flags)) {
                 free(hook);
+                restore_jit_state(uc);
                 return UC_ERR_HOOK;
             }
         }
@@ -1749,11 +1855,13 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         if (uc->hook_insert) {
             if (hook_insert(&uc->hook[UC_HOOK_TCG_OPCODE_IDX], hook) == NULL) {
                 free(hook);
+                restore_jit_state(uc);
                 return UC_ERR_NOMEM;
             }
         } else {
             if (hook_append(&uc->hook[UC_HOOK_TCG_OPCODE_IDX], hook) == NULL) {
                 free(hook);
+                restore_jit_state(uc);
                 return UC_ERR_NOMEM;
             }
         }
@@ -1769,11 +1877,13 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
                 if (uc->hook_insert) {
                     if (hook_insert(&uc->hook[i], hook) == NULL) {
                         free(hook);
+                        restore_jit_state(uc);
                         return UC_ERR_NOMEM;
                     }
                 } else {
                     if (hook_append(&uc->hook[i], hook) == NULL) {
                         free(hook);
+                        restore_jit_state(uc);
                         return UC_ERR_NOMEM;
                     }
                 }
@@ -1789,6 +1899,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         free(hook);
     }
 
+    restore_jit_state(uc);
     return ret;
 }
 
@@ -1816,6 +1927,7 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
         }
     }
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -1928,6 +2040,7 @@ uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
         r = g_malloc0(*count * sizeof(uc_mem_region));
         if (r == NULL) {
             // out of memory
+            restore_jit_state(uc);
             return UC_ERR_NOMEM;
         }
     }
@@ -1940,6 +2053,7 @@ uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
 
     *regions = r;
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -1974,6 +2088,7 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
         break;
     }
 
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
@@ -1990,8 +2105,10 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
         (*_context)->context_size = size - sizeof(uc_context);
         (*_context)->arch = uc->arch;
         (*_context)->mode = uc->mode;
+        restore_jit_state(uc);
         return UC_ERR_OK;
     } else {
+        restore_jit_state(uc);
         return UC_ERR_NOMEM;
     }
 }
@@ -2008,6 +2125,7 @@ size_t uc_context_size(uc_engine *uc)
 {
     UC_INIT(uc);
 
+    restore_jit_state(uc);
     if (!uc->context_size) {
         // return the total size of struct uc_context
         return sizeof(uc_context) + uc->cpu_context_size;
@@ -2025,6 +2143,7 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
     if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
         ret = uc_snapshot(uc);
         if (ret != UC_ERR_OK) {
+            restore_jit_state(uc);
             return ret;
         }
     }
@@ -2034,11 +2153,15 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
     if (uc->context_content & UC_CTL_CONTEXT_CPU) {
         if (!uc->context_save) {
             memcpy(context->data, uc->cpu->env_ptr, context->context_size);
+            restore_jit_state(uc);
             return UC_ERR_OK;
         } else {
-            return uc->context_save(uc, context);
+            ret = uc->context_save(uc, context);
+            restore_jit_state(uc);
+            return ret;
         }
     }
+    restore_jit_state(uc);
     return ret;
 }
 
@@ -2378,6 +2501,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
 
             uint32_t *page_size = va_arg(args, uint32_t *);
             *page_size = uc->target_page_size;
+
+            restore_jit_state(uc);
         } else {
             uint32_t page_size = va_arg(args, uint32_t);
             int bits = 0;
@@ -2406,6 +2531,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
 
             err = UC_ERR_OK;
         }
+
         break;
     }
 
@@ -2431,6 +2557,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             err = UC_ERR_ARG;
         }
+
+        restore_jit_state(uc);
         break;
     }
 
@@ -2464,6 +2592,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             err = UC_ERR_ARG;
         }
+
+        restore_jit_state(uc);
         break;
     }
 
@@ -2474,6 +2604,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
 
             int *model = va_arg(args, int *);
             *model = uc->cpu_model;
+
+            save_jit_state(uc);
         } else {
             int model = va_arg(args, int);
 
@@ -2579,6 +2711,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             err = UC_ERR_ARG;
         }
+
+        restore_jit_state(uc);
         break;
     }
 
@@ -2597,6 +2731,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             err = UC_ERR_ARG;
         }
+
+        restore_jit_state(uc);
         break;
     }
 
@@ -2609,6 +2745,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             err = UC_ERR_ARG;
         }
+
+        restore_jit_state(uc);
         break;
 
     case UC_CTL_TLB_FLUSH:
@@ -2620,6 +2758,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             err = UC_ERR_ARG;
         }
+
+        restore_jit_state(uc);
         break;
 
     case UC_CTL_TLB_TYPE: {
@@ -2632,6 +2772,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             err = UC_ERR_ARG;
         }
+
+        restore_jit_state(uc);
         break;
     }
 
@@ -2645,6 +2787,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
 
             uint32_t *size = va_arg(args, uint32_t *);
             *size = uc->tcg_buffer_size;
+
+            restore_jit_state(uc);
         }
         break;
     }
@@ -2660,6 +2804,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             err = UC_ERR_ARG;
         }
+
+        restore_jit_state(uc);
         break;
 
     default:

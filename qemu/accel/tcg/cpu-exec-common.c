@@ -38,7 +38,7 @@ void cpu_loop_exit(CPUState *cpu)
 {
     /* Unlock JIT write protect if applicable. */
     if (cpu->uc->nested_level == 1) {
-        tb_exec_unlock(cpu->uc->tcg_ctx);
+        tb_exec_unlock(cpu->uc);
     }
     /* Undo the setting in cpu_tb_exec.  */
     cpu->can_do_io = 1;

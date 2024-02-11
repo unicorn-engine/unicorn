@@ -36,8 +36,8 @@
 #include "sysemu/tcg.h"
 #include "uc_priv.h"
 
-static bool tb_exec_is_locked(TCGContext*);
-static void tb_exec_change(TCGContext*, bool locked);
+static bool tb_exec_is_locked(struct uc_struct*);
+static void tb_exec_change(struct uc_struct*, bool locked);
 
 /* #define DEBUG_TB_INVALIDATE */
 /* #define DEBUG_TB_FLUSH */
@@ -1115,7 +1115,9 @@ static void tb_htable_init(struct uc_struct *uc)
 
 
 static void uc_tb_flush(struct uc_struct *uc) {
+    tb_exec_unlock(uc);
     tb_flush(uc->cpu);
+    tb_exec_lock(uc);
 }
 
 static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t len) 
@@ -1223,8 +1225,9 @@ void tcg_exec_init(struct uc_struct *uc, uint32_t tb_size)
     page_init(uc);
     tb_htable_init(uc);
     code_gen_alloc(uc, tb_size);
-    tb_exec_unlock(uc->tcg_ctx);
+    tb_exec_unlock(uc);
     tcg_prologue_init(uc->tcg_ctx);
+    tb_exec_lock(uc);
     /* cpu_interrupt_handler is not used in uc1 */
     uc->l1_map = g_malloc0(sizeof(void *) * V_L1_MAX_SIZE);
     /* Invalidate / Cache TBs */
@@ -1497,8 +1500,8 @@ static void do_tb_phys_invalidate(TCGContext *tcg_ctx, TranslationBlock *tb, boo
     bool code_gen_locked;
 
     assert_memory_lock();
-    code_gen_locked = tb_exec_is_locked(tcg_ctx);
-    tb_exec_unlock(tcg_ctx);
+    code_gen_locked = tb_exec_is_locked(uc);
+    tb_exec_unlock(uc);
 
     /* make sure no further incoming jumps will be chained to this TB */
     tb->cflags = tb->cflags | CF_INVALID;
@@ -1509,7 +1512,7 @@ static void do_tb_phys_invalidate(TCGContext *tcg_ctx, TranslationBlock *tb, boo
                      tb->trace_vcpu_dstate);
     if (!(tb->cflags & CF_NOCACHE) &&
         !qht_remove(&tcg_ctx->tb_ctx.htable, tb, h)) {
-        tb_exec_change(tcg_ctx, code_gen_locked);
+        tb_exec_change(uc, code_gen_locked);
         return;
     }
 
@@ -1540,7 +1543,7 @@ static void do_tb_phys_invalidate(TCGContext *tcg_ctx, TranslationBlock *tb, boo
 
     tcg_ctx->tb_phys_invalidate_count = tcg_ctx->tb_phys_invalidate_count + 1;
 
-    tb_exec_change(tcg_ctx, code_gen_locked);
+    tb_exec_change(uc, code_gen_locked);
 }
 
 static void tb_phys_invalidate__locked(TCGContext *tcg_ctx, TranslationBlock *tb)
@@ -1710,7 +1713,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
 
     assert_memory_lock();
 #ifdef HAVE_PTHREAD_JIT_PROTECT
-    tb_exec_unlock(tcg_ctx);
+    tb_exec_unlock(cpu->uc);
 #endif
     phys_pc = get_page_addr_code(env, pc);
 
@@ -2169,32 +2172,35 @@ void tcg_flush_softmmu_tlb(struct uc_struct *uc)
 
 
 #ifdef HAVE_PTHREAD_JIT_PROTECT
-static bool tb_exec_is_locked(TCGContext *tcg_ctx)
+static bool tb_exec_is_locked(struct uc_struct *uc)
 {
-    return tcg_ctx->code_gen_locked;
+    return uc->current_executable;
 }
 
-static void tb_exec_change(TCGContext *tcg_ctx, bool locked)
+static void tb_exec_change(struct uc_struct *uc, bool executable)
 {
-    jit_write_protect(locked);
-    tcg_ctx->code_gen_locked = locked;
+    assert(uc->current_executable == thread_executable());
+    if (uc->current_executable != executable) {
+        jit_write_protect(executable);
+        uc->current_executable = executable;
+    }
 }
 #else /* not needed on non-Darwin platforms */
-static bool tb_exec_is_locked(TCGContext *tcg_ctx)
+static bool tb_exec_is_locked(struct uc_struct *uc)
 {
     return false;
 }
 
-static void tb_exec_change(TCGContext *tcg_ctx, bool locked) {}
+static void tb_exec_change(struct uc_struct *uc, bool locked) {}
 #endif
 
-void tb_exec_lock(TCGContext *tcg_ctx)
+void tb_exec_lock(struct uc_struct *uc)
 {
     /* assumes sys_icache_invalidate already called */
-    tb_exec_change(tcg_ctx, true);
+    tb_exec_change(uc, true);
 }
 
-void tb_exec_unlock(TCGContext *tcg_ctx)
+void tb_exec_unlock(struct uc_struct *uc)
 {
-    tb_exec_change(tcg_ctx, false);
+    tb_exec_change(uc, false);
 }

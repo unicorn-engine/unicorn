@@ -33,6 +33,36 @@ static inline void jit_write_protect(int enabled)
     return pthread_jit_write_protect_np(enabled);
 }
 
+// Returns the S3_6_c15_c1_5 register's value
+// Taken from 
+// https://stackoverflow.com/questions/70019553/lldb-how-to-read-the-permissions-of-a-memory-region-for-a-thread
+// https://blog.svenpeter.dev/posts/m1_sprr_gxf/
+static uint64_t read_sprr_perm(void)
+{
+    uint64_t v;
+    __asm__ __volatile__("isb sy\n"
+                         "mrs %0, S3_6_c15_c1_5\n"
+                         : "=r"(v)::"memory");
+    return v;
+}
+
+__attribute__((unused)) static uint8_t thread_mask() 
+{
+    uint64_t v = read_sprr_perm();
+
+    return (v >> 20) & 3;
+}
+
+__attribute__((unused)) static bool thread_writeable()
+{
+    return thread_mask() == 3;
+}
+
+__attribute__((unused)) static bool thread_executable()
+{
+    return thread_mask() == 1;
+}
+
 #else /* defined(__aarch64__) && defined(CONFIG_DARWIN) */
 
 static inline void jit_write_protect(int enabled)
