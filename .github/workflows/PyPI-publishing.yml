@@ -67,7 +67,8 @@ jobs:
           - {
               os: macos-14,
               arch: aarch64,
-              python-ver: '3.10'
+              python-ver: '3.10',
+              name: 'macos_aarch64'
             }
     steps:
     - uses: actions/checkout@v2
