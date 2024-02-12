@@ -236,7 +236,7 @@ bitflags! {
         const SPARC32 = Self::MIPS32.bits();
         const SPARC64 = Self::MIPS64.bits();
         const V9 = Self::THUMB.bits();
-        const RH850 = Self::RH850.bits();
+        const RH850 = 4;
         const RISCV32 = Self::MIPS32.bits();
         const RISCV64 = Self::MIPS64.bits();
     }
