@@ -107,7 +107,7 @@ pub enum RH850CpuModel {
 }
 
 impl From<RH850CpuModel> for i32 {
-    fn from(value: Riscv32CpuModel) -> Self {
+    fn from(value: RH850CpuModel) -> Self {
         value as i32
     }
 }
