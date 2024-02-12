@@ -51,6 +51,7 @@ pub use crate::riscv::*;
 pub use crate::s390x::*;
 pub use crate::sparc::*;
 pub use crate::tricore::*;
+pub use crate::rh850::*;
 pub use crate::unicorn_const::*;
 pub use crate::x86::*;
 
