@@ -427,6 +427,8 @@ struct uc_context {
     uc_mode mode;        // the mode of this context
     uc_arch arch;        // the arch of this context
     int snapshot_level;  // the memory snapshot level to restore
+    bool ramblock_freed; // wheter there was a some ramblock freed
+    RAMBlock *last_block;// The last element of the ramblock list
     char data[0];        // context
 };
 
