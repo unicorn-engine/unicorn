@@ -4985,6 +4985,7 @@ static void rh850_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     }
     else
     {
+        #if 0
         // Unicorn: trace this instruction on request
         if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, dc->pc)) {
 
@@ -5000,6 +5001,7 @@ static void rh850_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
             // the callback might want to stop emulation immediately
             check_exit_request(tcg_ctx);
         }
+        #endif
 
         dc->opcode = cpu_lduw_code(env, dc->pc);  // get opcode from memory
 
@@ -5027,6 +5029,7 @@ static void rh850_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
             }
         }
 
+        #if 0
         if (insn_hook) {
             // Unicorn: patch the callback to have the proper instruction size.
             if (prev_op) {
@@ -5043,6 +5046,7 @@ static void rh850_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 
             tcg_op->args[1] = dc->base.pc_next - dc->pc;
         }
+        #endif
 
         dc->pc = dc->base.pc_next;   
     }
