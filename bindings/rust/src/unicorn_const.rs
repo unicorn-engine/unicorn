@@ -181,7 +181,7 @@ pub enum Arch {
     RISCV   = 8,
     S390X   = 9,
     TRICORE = 10,
-    RH850   = 11
+    RH850   = 11,
     MAX     = 12,
 }
 
