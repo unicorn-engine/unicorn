@@ -181,7 +181,8 @@ pub enum Arch {
     RISCV   = 8,
     S390X   = 9,
     TRICORE = 10,
-    MAX     = 11,
+    RH850   = 11
+    MAX     = 12,
 }
 
 impl TryFrom<usize> for Arch {
@@ -199,6 +200,7 @@ impl TryFrom<usize> for Arch {
             x if x == Self::RISCV as usize => Ok(Self::RISCV),
             x if x == Self::S390X as usize => Ok(Self::S390X),
             x if x == Self::TRICORE as usize => Ok(Self::TRICORE),
+            x if x == Self::RH850 as usize => Ok(Self::RH850),
             x if x == Self::MAX as usize => Ok(Self::MAX),
             _ => Err(uc_error::ARCH),
         }
@@ -234,6 +236,7 @@ bitflags! {
         const SPARC32 = Self::MIPS32.bits();
         const SPARC64 = Self::MIPS64.bits();
         const V9 = Self::THUMB.bits();
+        const RH850 = Self::RH850.bits();
         const RISCV32 = Self::MIPS32.bits();
         const RISCV64 = Self::MIPS64.bits();
     }
