@@ -957,12 +957,10 @@ void flatview_add_to_dispatch(struct uc_struct *uc, FlatView *fv, MemoryRegionSe
 
 static ram_addr_t find_ram_offset_last(struct uc_struct *uc, ram_addr_t size)
 {
-    RAMBlock *block;
     ram_addr_t result = 0;
+    RAMBlock *block = uc->ram_list.last_block;
 
-    RAMBLOCK_FOREACH(block) {
-        result = MAX(block->offset + block->max_length, result);
-    }
+    result = block->offset + block->max_length;
 
     if (result + size > RAM_ADDR_MAX) {
         abort();
@@ -1076,18 +1074,26 @@ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
      * QLIST (which has an RCU-friendly variant) does not have insertion at
      * tail, so save the last element in last_block.
      */
-    RAMBLOCK_FOREACH(block) {
-        last_block = block;
-        if (block->max_length < new_block->max_length) {
-            break;
+    if (new_block->max_length > uc->target_page_size) {
+        RAMBLOCK_FOREACH(block) {
+            last_block = block;
+            if (block->max_length < new_block->max_length) {
+                break;
+            }
         }
+    } else {
+        last_block = uc->ram_list.last_block;
+        block = NULL;
     }
+
     if (block) {
         QLIST_INSERT_BEFORE_RCU(block, new_block, next);
     } else if (last_block) {
         QLIST_INSERT_AFTER_RCU(last_block, new_block, next);
+        uc->ram_list.last_block = new_block;
     } else { /* list is empty */
         QLIST_INSERT_HEAD_RCU(&uc->ram_list.blocks, new_block, next);
+        uc->ram_list.last_block = new_block;
     }
     uc->ram_list.mru_block = NULL;
 
