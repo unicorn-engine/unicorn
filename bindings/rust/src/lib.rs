@@ -68,6 +68,7 @@ mod riscv;
 mod s390x;
 mod sparc;
 mod tricore;
+mod rh850;
 mod x86;
 
 #[derive(Debug)]
