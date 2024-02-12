@@ -1074,7 +1074,7 @@ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
      * QLIST (which has an RCU-friendly variant) does not have insertion at
      * tail, so save the last element in last_block.
      */
-    if (new_block->max_length > uc->target_page_size) {
+    if (uc->ram_list.freed || new_block->max_length > uc->target_page_size) {
         RAMBLOCK_FOREACH(block) {
             last_block = block;
             if (block->max_length < new_block->max_length) {
@@ -1171,6 +1171,7 @@ void qemu_ram_free(struct uc_struct *uc, RAMBlock *block)
     QLIST_REMOVE_RCU(block, next);
     uc->ram_list.mru_block = NULL;
     uc->ram_list.freed = true;
+    uc->ram_list.last_block = NULL;
     /* Write list before version */
     //smp_wmb();
     // call_rcu(block, reclaim_ramblock, rcu);
