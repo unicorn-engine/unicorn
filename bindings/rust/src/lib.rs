@@ -999,6 +999,7 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::RISCV => RegisterRISCV::PC as i32,
             Arch::S390X => RegisterS390X::PC as i32,
             Arch::TRICORE => RegisterTRICORE::PC as i32,
+            Arch::RH850 => RegisterRH850::PC as i32,
             Arch::MAX => panic!("Illegal Arch specified"),
         };
         self.reg_read(reg)
@@ -1022,6 +1023,7 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::RISCV => RegisterRISCV::PC as i32,
             Arch::S390X => RegisterS390X::PC as i32,
             Arch::TRICORE => RegisterTRICORE::PC as i32,
+            Arch::RH850 => RegisterRH850::PC as i32,
             Arch::MAX => panic!("Illegal Arch specified"),
         };
         self.reg_write(reg, value)
