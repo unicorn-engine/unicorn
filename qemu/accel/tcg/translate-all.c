@@ -2171,7 +2171,7 @@ void tcg_flush_softmmu_tlb(struct uc_struct *uc)
 }
 
 
-#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && defined(HAVE_SPRR) && (defined(__arm__) || defined(__aarch64__))
 static bool tb_exec_is_locked(struct uc_struct *uc)
 {
     return uc->current_executable;
