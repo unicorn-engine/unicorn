@@ -124,6 +124,8 @@ struct uc_struct;
  * 
  * Issue: https://github.com/desktop/desktop/issues/12978
  */
+// Even if we don't have sprr available (mostly in virtual machine), we still need MAP_JIT though there is no
+// protection enforced.
 #if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 #define USE_MAP_JIT
 #endif
