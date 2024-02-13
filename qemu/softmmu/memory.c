@@ -94,6 +94,7 @@ static void make_contained(struct uc_struct *uc, MemoryRegion *current)
 
 MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *current, hwaddr begin, size_t size)
 {
+    hwaddr addr;
     hwaddr offset;
     hwaddr current_offset;
     MemoryRegion *ram = g_new(MemoryRegion, 1);
@@ -118,7 +119,9 @@ MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *current, hwaddr beg
     memory_region_add_subregion_overlap(current->container, offset, ram, uc->snapshot_level);
 
     if (uc->cpu) {
-        tlb_flush(uc->cpu);
+        for (addr = ram->addr; (int64_t)(ram->end - addr) > 0; addr += uc->target_page_size) {
+           tlb_flush_page(uc->cpu, addr);
+        }
     }
 
     uc->memory_region_update_pending = true;
