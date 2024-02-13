@@ -344,6 +344,10 @@ jobs:
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip
         ctest -VV -C ${{ matrix.config.build_type }}
+    
+    - name: Setup tmate session
+      if: ${{ failure() }}
+      uses: mxschmitt/action-tmate@v3
 
     - name: '🚧 Android x86_64 build'
       if: contains(matrix.config.name, 'android')
