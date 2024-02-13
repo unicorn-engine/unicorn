@@ -35,7 +35,7 @@ static void clear_deleted_hooks(uc_engine *uc);
 static uc_err uc_snapshot(uc_engine *uc);
 static uc_err uc_restore_latest_snapshot(uc_engine *uc);
 
-#ifdef HAVE_PTHREAD_JIT_PROTECT
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 static void save_jit_state(uc_engine *uc)
 {
     if (!uc->nested) {
