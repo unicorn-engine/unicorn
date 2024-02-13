@@ -25,7 +25,7 @@
 #ifndef TCG_APPLE_JIT_H
 #define TCG_APPLE_JIT_H
 
-#ifdef HAVE_PTHREAD_JIT_PROTECT
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 
 /* write protect enable = write disable */
 static inline void jit_write_protect(int enabled)
