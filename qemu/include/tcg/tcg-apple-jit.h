@@ -37,7 +37,7 @@ static inline void jit_write_protect(int enabled)
 // Taken from 
 // https://stackoverflow.com/questions/70019553/lldb-how-to-read-the-permissions-of-a-memory-region-for-a-thread
 // https://blog.svenpeter.dev/posts/m1_sprr_gxf/
-static uint64_t read_sprr_perm(void)
+static inline uint64_t read_sprr_perm(void)
 {
     uint64_t v;
     __asm__ __volatile__("isb sy\n"
@@ -46,19 +46,19 @@ static uint64_t read_sprr_perm(void)
     return v;
 }
 
-__attribute__((unused)) static uint8_t thread_mask() 
+__attribute__((unused)) static inline uint8_t thread_mask() 
 {
     uint64_t v = read_sprr_perm();
 
     return (v >> 20) & 3;
 }
 
-__attribute__((unused)) static bool thread_writeable()
+__attribute__((unused)) static inline bool thread_writeable()
 {
     return thread_mask() == 3;
 }
 
-__attribute__((unused)) static bool thread_executable()
+__attribute__((unused)) static inline bool thread_executable()
 {
     return thread_mask() == 1;
 }
