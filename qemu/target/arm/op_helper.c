@@ -939,6 +939,7 @@ uint32_t HELPER(uc_hooksys64)(CPUARMState *env, uint32_t insn, void *hk)
     struct hook *hook = (struct hook*)hk;
     uc_arm64_cp_reg cp_reg;
     uint32_t rt;
+    uc_engine *uc = env->uc;
 
     if (hook->to_delete) {
         return 0;
@@ -965,5 +966,7 @@ uint32_t HELPER(uc_hooksys64)(CPUARMState *env, uint32_t insn, void *hk)
         cp_reg.val = 0;
     }
 
-    return ((uc_cb_insn_sys_t)(hook->callback))(env->uc, uc_rt, &cp_reg, hook->user_data);
+    uint32_t ret;
+    JIT_CALLBACK_GUARD_VAR(ret, ((uc_cb_insn_sys_t)(hook->callback))(env->uc, uc_rt, &cp_reg, hook->user_data));
+    return ret;
 }

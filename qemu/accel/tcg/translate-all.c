@@ -2183,6 +2183,9 @@ static void tb_exec_change(struct uc_struct *uc, bool executable)
     if (uc->current_executable != executable) {
         jit_write_protect(executable);
         uc->current_executable = executable;
+        assert(
+            executable == thread_executable()
+        );
     }
 }
 #else /* not needed on non-Darwin platforms */

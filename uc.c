@@ -1957,8 +1957,8 @@ void helper_uc_traceopcode(struct hook *hook, uint64_t arg1, uint64_t arg2,
     // hold in most cases for uc_tracecode.
     //
     // TODO: Shall we have a flag to allow users to control whether updating PC?
-    ((uc_hook_tcg_op_2)hook->callback)(uc, address, arg1, arg2, size,
-                                       hook->user_data);
+    JIT_CALLBACK_GUARD(((uc_hook_tcg_op_2)hook->callback)(
+        uc, address, arg1, arg2, size, hook->user_data));
 
     if (unlikely(uc->stop_request)) {
         return;
@@ -2002,16 +2002,16 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
         if (size == 0) {
             if (index == UC_HOOK_CODE_IDX && uc->count_hook) {
                 // this is the instruction counter (first hook in the list)
-                ((uc_cb_hookcode_t)hook->callback)(uc, address, size,
-                                                   hook->user_data);
+                JIT_CALLBACK_GUARD(((uc_cb_hookcode_t)hook->callback)(
+                    uc, address, size, hook->user_data));
             }
 
             return;
         }
 
         if (HOOK_BOUND_CHECK(hook, (uint64_t)address)) {
-            ((uc_cb_hookcode_t)hook->callback)(uc, address, size,
-                                               hook->user_data);
+            JIT_CALLBACK_GUARD(((uc_cb_hookcode_t)hook->callback)(
+                uc, address, size, hook->user_data));
         }
 
         // the last callback may already asked to stop emulation

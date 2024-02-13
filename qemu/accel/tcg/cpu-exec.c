@@ -274,7 +274,7 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
                 }
 
                 if (HOOK_BOUND_CHECK(hook, (uint64_t)tb->pc)) {
-                    ((uc_hook_edge_gen_t)hook->callback)(uc, &cur_tb, &prev_tb, hook->user_data);
+                    JIT_CALLBACK_GUARD(((uc_hook_edge_gen_t)hook->callback)(uc, &cur_tb, &prev_tb, hook->user_data));
                 }
             }
         }
@@ -334,6 +334,7 @@ static inline void cpu_handle_debug_exception(CPUState *cpu)
 static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
 {
     bool catched = false;
+    bool executable = false;
     struct uc_struct *uc = cpu->uc;
     struct hook *hook;
 
@@ -347,7 +348,7 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
             if (hook->to_delete) {
                 continue;
             }
-            catched = ((uc_cb_hookinsn_invalid_t)hook->callback)(uc, hook->user_data);
+            JIT_CALLBACK_GUARD_VAR(catched, ((uc_cb_hookinsn_invalid_t)hook->callback)(uc, hook->user_data));
             if (catched) {
                 break;
             }
@@ -401,7 +402,7 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
             if (hook->to_delete) {
                 continue;
             }
-            ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
+            JIT_CALLBACK_GUARD(((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data));
             catched = true;
         }
         // Unicorn: If un-catched interrupt, stop executions.

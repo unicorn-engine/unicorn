@@ -29,7 +29,7 @@
 #include "cpu.h"
 #include "exec/memory.h"
 #include "uc_priv.h"
-
+#include "tcg/tcg-apple-jit.h"
 
 void cpu_outb(struct uc_struct *uc, uint32_t addr, uint8_t val)
 {
@@ -43,8 +43,9 @@ void cpu_outb(struct uc_struct *uc, uint32_t addr, uint8_t val)
     HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
         if (hook->to_delete)
             continue;
-        if (hook->insn == UC_X86_INS_OUT)
-            ((uc_cb_insn_out_t)hook->callback)(uc, addr, 1, val, hook->user_data);
+        if (hook->insn == UC_X86_INS_OUT) {
+            JIT_CALLBACK_GUARD(((uc_cb_insn_out_t)hook->callback)(uc, addr, 1, val, hook->user_data));
+        }
     }
 }
 
@@ -63,8 +64,9 @@ void cpu_outw(struct uc_struct *uc, uint32_t addr, uint16_t val)
     HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
         if (hook->to_delete)
             continue;
-        if (hook->insn == UC_X86_INS_OUT)
-            ((uc_cb_insn_out_t)hook->callback)(uc, addr, 2, val, hook->user_data);
+        if (hook->insn == UC_X86_INS_OUT) {
+            JIT_CALLBACK_GUARD(((uc_cb_insn_out_t)hook->callback)(uc, addr, 2, val, hook->user_data));
+        }
     }
 }
 
@@ -83,8 +85,9 @@ void cpu_outl(struct uc_struct *uc, uint32_t addr, uint32_t val)
     HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
         if (hook->to_delete)
             continue;
-        if (hook->insn == UC_X86_INS_OUT)
-            ((uc_cb_insn_out_t)hook->callback)(uc, addr, 4, val, hook->user_data);
+        if (hook->insn == UC_X86_INS_OUT) {
+            JIT_CALLBACK_GUARD(((uc_cb_insn_out_t)hook->callback)(uc, addr, 4, val, hook->user_data));
+        }
     }
 }
 
@@ -102,8 +105,11 @@ uint8_t cpu_inb(struct uc_struct *uc, uint32_t addr)
     HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
         if (hook->to_delete)
             continue;
-        if (hook->insn == UC_X86_INS_IN)
-            return ((uc_cb_insn_in_t)hook->callback)(uc, addr, 1, hook->user_data);
+        if (hook->insn == UC_X86_INS_IN) {
+            uint8_t ret;
+            JIT_CALLBACK_GUARD_VAR(ret, ((uc_cb_insn_in_t)hook->callback)(uc, addr, 1, hook->user_data));
+            return ret;
+        }
     }
 
     return 0;
@@ -124,8 +130,11 @@ uint16_t cpu_inw(struct uc_struct *uc, uint32_t addr)
     HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
         if (hook->to_delete)
             continue;
-        if (hook->insn == UC_X86_INS_IN)
-            return ((uc_cb_insn_in_t)hook->callback)(uc, addr, 2, hook->user_data);
+        if (hook->insn == UC_X86_INS_IN) {
+            uint16_t ret;
+            JIT_CALLBACK_GUARD_VAR(ret, ((uc_cb_insn_in_t)hook->callback)(uc, addr, 2, hook->user_data));
+            return ret;
+        }
     }
 
     return 0;
@@ -148,8 +157,11 @@ uint32_t cpu_inl(struct uc_struct *uc, uint32_t addr)
     HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
         if (hook->to_delete)
             continue;
-        if (hook->insn == UC_X86_INS_IN)
-            return ((uc_cb_insn_in_t)hook->callback)(uc, addr, 4, hook->user_data);
+        if (hook->insn == UC_X86_INS_IN) {
+            uint32_t ret;
+            JIT_CALLBACK_GUARD_VAR(ret, ((uc_cb_insn_in_t)hook->callback)(uc, addr, 4, hook->user_data));
+            return ret;
+        }
     }
 
     return 0;

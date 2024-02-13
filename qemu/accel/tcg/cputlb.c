@@ -1475,7 +1475,9 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                         continue;
                     if (!HOOK_BOUND_CHECK(hook, paddr))
                         continue;
-                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, paddr, size, 0, hook->user_data)))
+                    JIT_CALLBACK_GUARD_VAR(handled,
+                                           ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, paddr, size, 0, hook->user_data));
+                    if (handled)
                         break;
 
                     // the last callback may already asked to stop emulation
@@ -1490,7 +1492,9 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                         continue;
                     if (!HOOK_BOUND_CHECK(hook, paddr))
                         continue;
-                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, paddr, size, 0, hook->user_data)))
+                    JIT_CALLBACK_GUARD_VAR(handled, 
+                                           ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, paddr, size, 0, hook->user_data));
+                    if (handled)
                         break;
 
                     // the last callback may already asked to stop emulation
@@ -1551,7 +1555,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 continue;
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
-            ((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, paddr, size, 0, hook->user_data);
+            JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, paddr, size, 0, hook->user_data));
 
             // the last callback may already asked to stop emulation
             if (uc->stop_request)
@@ -1566,7 +1570,9 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, paddr))
                     continue;
-                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, paddr, size, 0, hook->user_data)))
+                JIT_CALLBACK_GUARD_VAR(handled, 
+                                       ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, paddr, size, 0, hook->user_data));
+                if (handled)
                     break;
 
                 // the last callback may already asked to stop emulation
@@ -1610,7 +1616,9 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, paddr))
                     continue;
-                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, paddr, size, 0, hook->user_data)))
+                JIT_CALLBACK_GUARD_VAR(handled,
+                                       ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, paddr, size, 0, hook->user_data));
+                if (handled)
                     break;
 
                 // the last callback may already asked to stop emulation
@@ -1718,8 +1726,7 @@ _out:
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, paddr))
                     continue;
-                ((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ_AFTER, paddr, size, res, hook->user_data);
-
+                JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ_AFTER, paddr, size, res, hook->user_data));
                 // the last callback may already asked to stop emulation
                 if (uc->stop_request)
                     break;
@@ -2062,8 +2069,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 continue;
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
-            ((uc_cb_hookmem_t)hook->callback)(uc, UC_MEM_WRITE, paddr, size, val, hook->user_data);
-
+            JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(uc, UC_MEM_WRITE, paddr, size, val, hook->user_data));
             // the last callback may already asked to stop emulation
             if (uc->stop_request)
                 break;
@@ -2078,7 +2084,9 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 continue;
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
-            if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_UNMAPPED, paddr, size, val, hook->user_data)))
+            JIT_CALLBACK_GUARD_VAR(handled,
+                                   ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_UNMAPPED, paddr, size, val, hook->user_data));
+            if (handled)
                 break;
 
             // the last callback may already asked to stop emulation
@@ -2125,7 +2133,9 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 continue;
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
-            if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, paddr, size, val, hook->user_data)))
+            JIT_CALLBACK_GUARD_VAR(handled,
+                                   ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, paddr, size, val, hook->user_data));
+            if (handled)
                 break;
 
             // the last callback may already asked to stop emulation

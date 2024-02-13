@@ -63,12 +63,47 @@ __attribute__((unused)) static bool thread_executable()
     return thread_mask() == 1;
 }
 
+#define JIT_CALLBACK_GUARD(x)                       \
+{                                                   \
+    bool executable = uc->current_executable;       \
+    assert (executable == thread_executable());     \
+    x;                                              \
+    if (executable != thread_executable()) {        \
+        jit_write_protect(executable);              \
+    }                                               \
+}                                                   \
+
+
+#define JIT_CALLBACK_GUARD_VAR(var, x)                  \
+{                                                       \
+    bool executable = uc->current_executable;           \
+    assert (executable == thread_executable());         \
+    var = x;                                            \
+    if (executable != thread_executable()) {            \
+        jit_write_protect(executable);                  \
+    }                                                   \
+}                                                       \
+
+
 #else /* defined(__aarch64__) && defined(CONFIG_DARWIN) */
 
 static inline void jit_write_protect(int enabled)
 {
     return;
 }
+
+#define JIT_CALLBACK_GUARD(x) \
+{                             \
+    (void*)uc;                \
+    x;                        \
+}                             \
+
+
+#define JIT_CALLBACK_GUARD_VAR(var, x)  \
+{                                       \
+    (void*)uc;                          \
+    var = x;                            \
+}                                       \
 
 #endif
 
