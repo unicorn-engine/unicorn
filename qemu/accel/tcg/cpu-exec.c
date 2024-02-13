@@ -334,7 +334,6 @@ static inline void cpu_handle_debug_exception(CPUState *cpu)
 static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
 {
     bool catched = false;
-    bool executable = false;
     struct uc_struct *uc = cpu->uc;
     struct hook *hook;
 
