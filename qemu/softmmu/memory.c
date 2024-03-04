@@ -27,7 +27,7 @@
 //#define DEBUG_UNASSIGNED
 
 void memory_region_transaction_begin(void);
-void memory_region_transaction_commit(MemoryRegion *mr);
+static void memory_region_transaction_commit(MemoryRegion *mr);
 
 typedef struct AddrRange AddrRange;
 
@@ -113,7 +113,6 @@ MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *current, hwaddr beg
         g_free(ram);
         return NULL;
     }
-    memory_region_transaction_begin();
 
     memcpy(ramblock_ptr(ram->ram_block, 0), ramblock_ptr(current->ram_block, current_offset), size);
     memory_region_add_subregion_overlap(current->container, offset, ram, uc->snapshot_level);
@@ -123,9 +122,6 @@ MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *current, hwaddr beg
            tlb_flush_page(uc->cpu, addr);
         }
     }
-
-    uc->memory_region_update_pending = true;
-    memory_region_transaction_commit(ram);
 
     return ram;
 }
@@ -912,6 +908,44 @@ static void flatviews_init(struct uc_struct *uc)
     }
 }
 
+static bool flatview_update(FlatView *fv, MemoryRegion *mr)
+{
+    struct uc_struct *uc = mr->uc;
+    MemoryRegion *c = mr;
+    AddrRange r;
+    hwaddr addr = 0;
+    r.size = mr->size;
+    do {
+        addr += c->addr;
+    } while ((c = c->container));
+    r.start = int128_make64(addr);
+
+    if (!mr->container || !QTAILQ_EMPTY(&mr->subregions))
+        return false;
+
+    for (size_t i = 0; i < fv->nr; i++) {
+        if (!addrrange_intersects(fv->ranges[i].addr, r)) {
+            continue;
+        }
+        if (!addrrange_equal(fv->ranges[i].addr, r)) {
+            break;
+        }
+        fv->ranges[i].mr = mr;
+        fv->ranges[i].offset_in_region = 0;
+        fv->ranges[i].readonly = mr->readonly;
+        address_space_dispatch_free(fv->dispatch);
+        fv->dispatch = address_space_dispatch_new(uc, fv);
+        for (size_t j = 0; j < fv->nr; j++) {
+            MemoryRegionSection mrs =
+                section_from_flat_range(&fv->ranges[j], fv);
+            flatview_add_to_dispatch(uc, fv, &mrs);
+        }
+        address_space_dispatch_compact(fv->dispatch);
+        return true;
+    }
+    return false;
+}
+
 static void flatviews_reset(struct uc_struct *uc)
 {
     AddressSpace *as;
@@ -978,18 +1012,23 @@ void memory_region_transaction_begin(void)
 {
 }
 
-void memory_region_transaction_commit(MemoryRegion *mr)
+static void memory_region_transaction_commit(MemoryRegion *mr)
 {
-    AddressSpace *as;
+    AddressSpace *as = memory_region_to_address_space(mr);
+    FlatView *fv = NULL;
+    if (as)
+        fv = address_space_to_flatview(as);
 
     if (mr->uc->memory_region_update_pending) {
-        flatviews_reset(mr->uc);
-
         MEMORY_LISTENER_CALL_GLOBAL(mr->uc, begin, Forward);
 
-        QTAILQ_FOREACH(as, &mr->uc->address_spaces, address_spaces_link) {
-            address_space_set_flatview(as);
+        if (!fv || !flatview_update(fv, mr)) {
+            flatviews_reset(mr->uc);
+            QTAILQ_FOREACH(as, &mr->uc->address_spaces, address_spaces_link) {
+                address_space_set_flatview(as);
+            }
         }
+
         mr->uc->memory_region_update_pending = false;
         MEMORY_LISTENER_CALL_GLOBAL(mr->uc, commit, Forward);
     }
@@ -1241,7 +1280,7 @@ static void memory_region_update_container_subregions(MemoryRegion *subregion)
 
 done:
     mr->uc->memory_region_update_pending = true;
-    memory_region_transaction_commit(mr);
+    memory_region_transaction_commit(subregion);
 }
 
 static void memory_region_add_subregion_common(MemoryRegion *mr,
