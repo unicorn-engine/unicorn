@@ -36,7 +36,7 @@ def hook_code(uc, address, size, user_data):
 def hook_code64(uc, address, size, user_data):
     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
     rip = uc.reg_read(UC_X86_REG_RIP)
-    print(">>> RIP is 0x%x" %rip);
+    print(">>> RIP is 0x%x" %rip)
 
 
 # callback for tracing invalid memory access (READ or WRITE)
