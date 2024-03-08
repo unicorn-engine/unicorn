@@ -1,5 +1,7 @@
 # Python Bindings for Unicorn
 
+Originally written by Nguyen Anh Quynh, polished and redesigned by elicn, maintained by all community contributors.
+
 ## Install
 
 Install a prebuilt wheel from PyPI:
