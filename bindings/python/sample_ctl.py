@@ -3,7 +3,6 @@
 # By Lazymio(@wtdcode), 2021
 
 from unicorn import *
-from unicorn.unicorn import UC_HOOK_EDGE_GEN_CB
 from unicorn.x86_const import *
 from datetime import datetime
 
@@ -58,7 +57,7 @@ def test_uc_ctl_tb_cache():
     # Now we clear cache for all TBs.
     for i in range(8):
         uc.ctl_remove_cache(addr + i * 512, addr + i * 512 + 1)
-    
+
     evicted = time_emulation(uc, addr, addr + len(code))
 
     print(f">>> Run time: First time {standard}, Cached: {cached}, Cached evicted: {evicted}")
@@ -93,7 +92,7 @@ def test_uc_ctl_exits():
     uc.hook_add(UC_HOOK_EDGE_GENERATED, trace_new_edge)
 
     # Trace cmp instruction.
-    uc.hook_add(UC_HOOK_TCG_OPCODE, trace_tcg_sub, UC_TCG_OP_SUB, UC_TCG_OP_FLAG_CMP)
+    uc.hook_add(UC_HOOK_TCG_OPCODE, trace_tcg_sub, aux1=UC_TCG_OP_SUB, aux2=UC_TCG_OP_FLAG_CMP)
 
     uc.ctl_exits_enabled(True)
 
