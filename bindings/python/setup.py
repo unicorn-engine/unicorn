@@ -136,7 +136,7 @@ def build_libraries():
             os.mkdir(BUILD_DIR)
         conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
 
-        cmake_args = ["cmake", '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
+        cmake_args = ["cmake", '-B', BUILD_DIR, '-S', UC_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
         if os.getenv("TRACE", ""):
             cmake_args += ["-DUNICORN_TRACER=on"]
         subprocess.check_call(cmake_args)
