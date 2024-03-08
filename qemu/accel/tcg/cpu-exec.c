@@ -354,11 +354,10 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
         }
         if (!catched) {
             uc->invalid_error = UC_ERR_INSN_INVALID;
+            // we want to stop emulation
+            *ret = EXCP_HLT;
+            return true;
         }
-
-        // we want to stop emulation
-        *ret = EXCP_HLT;
-        return true;
     }
 
     if (cpu->exception_index < 0) {
