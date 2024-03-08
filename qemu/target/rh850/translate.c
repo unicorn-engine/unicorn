@@ -2217,17 +2217,20 @@ static void gen_data_manipulation(DisasContext *ctx, int rs1, int rs2, int opera
 			int_cond = extract32(ctx->opcode,0,4);
 			TCGv condResult = condition_satisfied(tcg_ctx, int_cond);
 			cont = gen_new_label(tcg_ctx);
+			end = gen_new_label(tcg_ctx);
 
-			tcg_gen_movi_i32(tcg_ctx, operand_local, 0x00000000);
 			tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_NE, condResult, 0x1, cont);
-			  tcg_gen_movi_i32(tcg_ctx, operand_local, 0x00000001);
+			tcg_gen_movi_i32(tcg_ctx, operand_local, 0x00000001);
+			tcg_gen_br(tcg_ctx, end);
 
 			gen_set_label(tcg_ctx, cont);
-
+			tcg_gen_movi_i32(tcg_ctx, operand_local, 0x00000000);
+			
+			gen_set_label(tcg_ctx, end);
 			gen_set_gpr(tcg_ctx, rs2, operand_local);
 
-            tcg_temp_free(tcg_ctx, condResult);
-            tcg_temp_free(tcg_ctx, operand_local);
+			tcg_temp_free(tcg_ctx, condResult);
+			tcg_temp_free(tcg_ctx, operand_local);
 		}
 			break;
 
@@ -4250,6 +4253,7 @@ static void decode_RH850_32(CPURH850State *env, DisasContext *ctx)
 						}
                         else
                         {
+                            printf("gen SETF\r\n");
 							gen_data_manipulation(ctx, rs1, rs2, OPC_RH850_SETF_cccc_reg2);
 						}
 						break;
