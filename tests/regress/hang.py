@@ -19,7 +19,7 @@ def hook_intr(uc, intno, user_data):
     # only handle Linux syscall
     rip = uc.reg_read(UC_X86_REG_RIP)
     if intno != 0x80:
-        print("=== 0x%x: got interrupt %x, quit" %(rip, intno));
+        print("=== 0x%x: got interrupt %x, quit" %(rip, intno))
         uc.emu_stop()
         return
 

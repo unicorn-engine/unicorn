@@ -74,7 +74,7 @@ def read_string(uc, address):
 def hook_intr(uc, intno, user_data):
     # only handle Linux syscall
     if intno != 0x80:
-        print("got interrupt %x ???" %intno);
+        print("got interrupt %x ???" %intno)
         uc.emu_stop()
         return
 

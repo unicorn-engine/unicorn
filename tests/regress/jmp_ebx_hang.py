@@ -18,13 +18,13 @@ class JumEbxHang(regress.RegressTest):
         # If EBX is zero then an exception is raised, as expected
         mu.reg_write(unicorn.x86_const.UC_X86_REG_EBX, 0x0)
 
-        print(">>> jmp ebx (ebx = 0)");
+        print(">>> jmp ebx (ebx = 0)")
         with self.assertRaises(UcError) as m:
             mu.emu_start(CODE_ADDR, CODE_ADDR + 2, count=1)
 
         self.assertEqual(m.exception.errno, UC_ERR_FETCH_UNMAPPED)
 
-        print(">>> jmp ebx (ebx = 0xaa96a47f)");
+        print(">>> jmp ebx (ebx = 0xaa96a47f)")
         mu = unicorn.Uc(UC_ARCH_X86, UC_MODE_32)
         mu.mem_map(CODE_ADDR, 1024 * 4)
         # If we write this address to EBX then the emulator hangs on emu_start
