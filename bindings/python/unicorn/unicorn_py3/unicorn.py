@@ -10,6 +10,9 @@ from .arch.types import *
 
 __version__ = f'{uc.UC_VERSION_MAJOR}.{uc.UC_VERSION_MINOR}.{uc.UC_VERSION_PATCH}'
 
+def _structure_repr(self):
+    return "%s(%s)" % (self.__class__.__name__, ", ".join("%s=%s" % (k, getattr(self, k)) for (k, _) in self._fields_))
+
 
 class _uc_mem_region(ctypes.Structure):
     _fields_ = (
@@ -22,6 +25,7 @@ class _uc_mem_region(ctypes.Structure):
     def value(self) -> Tuple[int, int, int]:
         return tuple(getattr(self, fname) for fname, _ in self._fields_)
 
+    __repr__ = _structure_repr
 
 class uc_tb(ctypes.Structure):
     """"TranslationBlock
@@ -32,6 +36,8 @@ class uc_tb(ctypes.Structure):
         ('icount', ctypes.c_uint16),
         ('size',   ctypes.c_uint16)
     )
+    
+    __repr__ = _structure_repr
 
 
 def __load_uc_lib() -> ctypes.CDLL:

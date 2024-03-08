@@ -18,7 +18,7 @@ ARM64CPReg = Tuple[int, int, int, int, int, int]
 HOOK_INSN_SYS_CFUNC = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_void_p)
 
 
-class UcRegCP(UcTupledReg[ARM64CPReg]):
+class UcRegCP64(UcTupledReg[ARM64CPReg]):
     """ARM64 coprocessors registers for instructions MRS, MSR
     """
 
@@ -52,7 +52,7 @@ class UcAArch64(Uc):
         def __hook_insn_sys():
             @uccallback(HOOK_INSN_SYS_CFUNC)
             def __hook_insn_sys_cb(handle: int, reg: int, pcp_reg: Any, key: int) -> int:
-                cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(UcRegCP)).contents
+                cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(UcRegCP64)).contents
 
                 class CpReg(NamedTuple):
                     crn: int
@@ -102,7 +102,7 @@ class UcAArch64(Uc):
 
         if reg_cls is None:
             if reg_id == const.UC_ARM64_REG_CP_REG:
-                return self._reg_read(reg_id, UcRegCP, *aux)
+                return self._reg_read(reg_id, UcRegCP64, *aux)
 
             else:
                 # fallback to default reading method
@@ -116,7 +116,7 @@ class UcAArch64(Uc):
 
         if reg_cls is None:
             if reg_id == const.UC_ARM64_REG_CP_REG:
-                self._reg_write(reg_id, UcRegCP, value)
+                self._reg_write(reg_id, UcRegCP64, value)
 
             else:
                 # fallback to default writing method

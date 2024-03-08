@@ -13,6 +13,9 @@ from .types import UcTupledReg, UcReg128
 
 ARMCPReg = Tuple[int, int, int, int, int, int, int, int]
 
+def _structure_repr(self):
+    return "%s(%s)" % (self.__class__.__name__, ", ".join("%s=%s" % (k, getattr(self, k)) for (k, _) in self._fields_))
+
 
 class UcRegCP(UcTupledReg[ARMCPReg]):
     """ARM coprocessors registers for instructions MRC, MCR, MRRC, MCRR
@@ -33,6 +36,7 @@ class UcRegCP(UcTupledReg[ARMCPReg]):
     def value(self) -> int:
         return self.val
 
+    __repr__ = _structure_repr
 
 class UcAArch32(Uc):
     """Unicorn subclass for ARM architecture.
