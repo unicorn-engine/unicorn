@@ -292,6 +292,10 @@ else()
     if (ATOMIC_LINKAGE_FIX)
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS} -latomic")
     endif()
+    if (CMAKE_OSX_SYSROOT)
+        # https://github.com/unicorn-engine/unicorn/issues/1917
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS} -isysroot ${CMAKE_OSX_SYSROOT} ")
+    endif()
 
     set(TARGET_LIST "--target-list=")
     if(UNICORN_HAS_X86)
