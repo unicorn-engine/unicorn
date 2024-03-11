@@ -763,7 +763,7 @@ fn x86_block_callback() {
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
 
     let hook = emu
-        .add_block_hook(callback)
+        .add_block_hook(1, 0, callback)
         .expect("failed to add block hook");
     assert_eq!(
         emu.emu_start(0x1000, 0x1002, 10 * SECOND_SCALE, 1000),
