@@ -620,6 +620,8 @@ impl<'a, D> Unicorn<'a, D> {
     /// Add a block hook.
     pub fn add_block_hook<F: 'a>(
         &mut self,
+        begin: u64,
+        end: u64,
         callback: F,
     ) -> Result<UcHookId, uc_error>
     where
@@ -638,8 +640,8 @@ impl<'a, D> Unicorn<'a, D> {
                 HookType::BLOCK,
                 ffi::block_hook_proxy::<D, F> as _,
                 user_data.as_mut() as *mut _ as _,
-                1,
-                0,
+                begin,
+                end,
             )
         }
         .and_then(|| {
