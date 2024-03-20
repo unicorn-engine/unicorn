@@ -421,7 +421,7 @@ typedef enum uc_hook_type {
   Callback function for hooking memory (READ, WRITE & FETCH)
 
   @type: this memory is being READ, or WRITE
-  @address: address where the code is being executed
+  @address: address where memory is being written or read to
   @size: size of data being read or written
   @value: value of data being written to memory, or irrelevant if type = READ.
   @user_data: user data passed to tracing APIs
@@ -435,7 +435,7 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
     PROT events)
 
   @type: this memory is being READ, or WRITE
-  @address: address where the code is being executed
+  @address: address where memory is being written or read to
   @size: size of data being read or written
   @value: value of data being written to memory, or irrelevant if type = READ.
   @user_data: user data passed to tracing APIs
