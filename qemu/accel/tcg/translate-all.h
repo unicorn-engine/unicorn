@@ -28,7 +28,7 @@ struct page_collection *page_collection_lock(struct uc_struct *uc, tb_page_addr_
 void page_collection_unlock(struct page_collection *set);
 void tb_invalidate_phys_page_fast(struct uc_struct *uc, struct page_collection *pages,
                                   tb_page_addr_t start, int len,
-                                  uintptr_t retaddr);
+                                  uintptr_t retaddr, vaddr mem_vaddr);
 void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end);
 void tb_invalidate_phys_range(struct uc_struct *uc, ram_addr_t start, ram_addr_t end);
 void tb_check_watchpoint(CPUState *cpu, uintptr_t retaddr);
