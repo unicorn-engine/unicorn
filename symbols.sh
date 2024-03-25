@@ -6268,6 +6268,12 @@ tcg_s390_program_interrupt \
 tcg_s390_data_exception \
 "
 
+rh850_SYMBOLS="restore_state_to_opc \
+helper_tlb_flush \
+helper_uc_rh850_exit \
+gen_intermediate_code \
+"
+
 tricore_SYMBOLS="
 helper_fadd \
 helper_fsub \
@@ -6281,7 +6287,7 @@ restore_state_to_opc \
 helper_uc_tricore_exit \
 "
 
-ARCHS="x86_64 arm aarch64 riscv32 riscv64 mips mipsel mips64 mips64el sparc sparc64 m68k ppc ppc64 s390x tricore"
+ARCHS="x86_64 arm aarch64 rh850 riscv32 riscv64 mips mipsel mips64 mips64el sparc sparc64 m68k ppc ppc64 s390x tricore"
 
 for arch in $ARCHS; do
 

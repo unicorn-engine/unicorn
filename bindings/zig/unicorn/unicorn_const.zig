@@ -23,7 +23,8 @@ pub const unicornConst = enum(c_int) {
 	ARCH_RISCV = 8,
 	ARCH_S390X = 9,
 	ARCH_TRICORE = 10,
-	ARCH_MAX = 11,
+	ARCH_RH850 = 11,
+	ARCH_MAX = 12,
 
 	MODE_LITTLE_ENDIAN = 0,
 	MODE_BIG_ENDIAN = 1073741824,
@@ -50,6 +51,7 @@ pub const unicornConst = enum(c_int) {
 	MODE_SPARC32 = 4,
 	MODE_SPARC64 = 8,
 	MODE_V9 = 16,
+	MODE_RH850 = 4,
 	MODE_RISCV32 = 4,
 	MODE_RISCV64 = 8,
 
@@ -75,6 +77,7 @@ pub const unicornConst = enum(c_int) {
 	ERR_HOOK_EXIST = 19,
 	ERR_RESOURCE = 20,
 	ERR_EXCEPTION = 21,
+	ERR_OVERFLOW = 22,
 	MEM_READ = 16,
 	MEM_WRITE = 17,
 	MEM_FETCH = 18,
@@ -140,11 +143,15 @@ pub const unicornConst = enum(c_int) {
 	CTL_TB_FLUSH = 10,
 	CTL_TLB_FLUSH = 11,
 	CTL_TLB_TYPE = 12,
+	CTL_TCG_BUFFER_SIZE = 13,
+	CTL_CONTEXT_MODE = 14,
 
 	PROT_NONE = 0,
 	PROT_READ = 1,
 	PROT_WRITE = 2,
 	PROT_EXEC = 4,
 	PROT_ALL = 7,
+	CTL_CONTEXT_CPU = 1,
+	CTL_CONTEXT_MEMORY = 2,
 
 };

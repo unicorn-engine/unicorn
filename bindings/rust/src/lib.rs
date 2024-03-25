@@ -51,6 +51,7 @@ pub use crate::riscv::*;
 pub use crate::s390x::*;
 pub use crate::sparc::*;
 pub use crate::tricore::*;
+pub use crate::rh850::*;
 pub use crate::unicorn_const::*;
 pub use crate::x86::*;
 
@@ -67,6 +68,7 @@ mod riscv;
 mod s390x;
 mod sparc;
 mod tricore;
+mod rh850;
 mod x86;
 
 #[derive(Debug)]
@@ -1001,6 +1003,7 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::RISCV => RegisterRISCV::PC as i32,
             Arch::S390X => RegisterS390X::PC as i32,
             Arch::TRICORE => RegisterTRICORE::PC as i32,
+            Arch::RH850 => RegisterRH850::PC as i32,
             Arch::MAX => panic!("Illegal Arch specified"),
         };
         self.reg_read(reg)
@@ -1024,6 +1027,7 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::RISCV => RegisterRISCV::PC as i32,
             Arch::S390X => RegisterS390X::PC as i32,
             Arch::TRICORE => RegisterTRICORE::PC as i32,
+            Arch::RH850 => RegisterRH850::PC as i32,
             Arch::MAX => panic!("Illegal Arch specified"),
         };
         self.reg_write(reg, value)
