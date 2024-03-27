@@ -103,11 +103,7 @@ impl<'a> MmioCallbackScope<'a> {
         !self.regions.is_empty()
     }
 
-    fn unmap(
-        &mut self,
-        begin: u64,
-        size: usize,
-    ) {
+    fn unmap(&mut self, begin: u64, size: usize) {
         let end: u64 = begin + size as u64;
         self.regions = self
             .regions
@@ -124,7 +120,10 @@ impl<'a> MmioCallbackScope<'a> {
                     } else {
                         // The unmapped region is in the middle of this region
                         let second_b = end + 1;
-                        vec![(*b, (begin - *b) as usize), (second_b, (e - second_b) as usize)]
+                        vec![
+                            (*b, (begin - *b) as usize),
+                            (second_b, (e - second_b) as usize),
+                        ]
                     }
                 } else if end > *b {
                     if end >= e {
@@ -175,10 +174,7 @@ pub struct Unicorn<'a, D: 'a> {
 impl<'a> Unicorn<'a, ()> {
     /// Create a new instance of the unicorn engine for the specified architecture
     /// and hardware mode.
-    pub fn new(
-        arch: Arch,
-        mode: Mode,
-    ) -> Result<Unicorn<'a, ()>, uc_error> {
+    pub fn new(arch: Arch, mode: Mode) -> Result<Unicorn<'a, ()>, uc_error> {
         Self::new_with_data(arch, mode, ())
     }
 
@@ -216,11 +212,7 @@ where
 {
     /// Create a new instance of the unicorn engine for the specified architecture
     /// and hardware mode.
-    pub fn new_with_data(
-        arch: Arch,
-        mode: Mode,
-        data: D,
-    ) -> Result<Unicorn<'a, D>, uc_error> {
+    pub fn new_with_data(arch: Arch, mode: Mode, data: D) -> Result<Unicorn<'a, D>, uc_error> {
         let mut handle = ptr::null_mut();
         unsafe { ffi::uc_open(arch, mode, &mut handle) }.and_then(|| {
             Ok(Unicorn {
@@ -238,10 +230,7 @@ where
 }
 
 impl<'a, D> core::fmt::Debug for Unicorn<'a, D> {
-    fn fmt(
-        &self,
-        formatter: &mut core::fmt::Formatter,
-    ) -> core::fmt::Result {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
         write!(formatter, "Unicorn {{ uc: {:p} }}", self.get_handle())
     }
 }
@@ -286,41 +275,31 @@ impl<'a, D> Unicorn<'a, D> {
     pub fn mem_regions(&self) -> Result<Vec<MemRegion>, uc_error> {
         let mut nb_regions: u32 = 0;
         let p_regions: *const MemRegion = ptr::null_mut();
-        unsafe { ffi::uc_mem_regions(self.get_handle(), &p_regions, &mut nb_regions) }.and_then(|| {
-            let mut regions = Vec::new();
-            for i in 0..nb_regions {
-                regions.push(unsafe { core::mem::transmute_copy(&*p_regions.add(i as usize)) });
-            }
-            unsafe { libc::free(p_regions as _) };
-            Ok(regions)
-        })
+        unsafe { ffi::uc_mem_regions(self.get_handle(), &p_regions, &mut nb_regions) }.and_then(
+            || {
+                let mut regions = Vec::new();
+                for i in 0..nb_regions {
+                    regions.push(unsafe { core::mem::transmute_copy(&*p_regions.add(i as usize)) });
+                }
+                unsafe { libc::free(p_regions as _) };
+                Ok(regions)
+            },
+        )
     }
 
     /// Read a range of bytes from memory at the specified emulated physical address.
-    pub fn mem_read(
-        &self,
-        address: u64,
-        buf: &mut [u8],
-    ) -> Result<(), uc_error> {
+    pub fn mem_read(&self, address: u64, buf: &mut [u8]) -> Result<(), uc_error> {
         unsafe { ffi::uc_mem_read(self.get_handle(), address, buf.as_mut_ptr(), buf.len()) }.into()
     }
 
     /// Return a range of bytes from memory at the specified emulated physical address as vector.
-    pub fn mem_read_as_vec(
-        &self,
-        address: u64,
-        size: usize,
-    ) -> Result<Vec<u8>, uc_error> {
+    pub fn mem_read_as_vec(&self, address: u64, size: usize) -> Result<Vec<u8>, uc_error> {
         let mut buf = vec![0; size];
         unsafe { ffi::uc_mem_read(self.get_handle(), address, buf.as_mut_ptr(), size) }.and(Ok(buf))
     }
 
     /// Write the data in `bytes` to the emulated physical address `address`
-    pub fn mem_write(
-        &mut self,
-        address: u64,
-        bytes: &[u8],
-    ) -> Result<(), uc_error> {
+    pub fn mem_write(&mut self, address: u64, bytes: &[u8]) -> Result<(), uc_error> {
         unsafe { ffi::uc_mem_write(self.get_handle(), address, bytes.as_ptr(), bytes.len()) }.into()
     }
 
@@ -437,7 +416,12 @@ impl<'a, D> Unicorn<'a, D> {
     where
         F: FnMut(&mut Unicorn<D>, u64, usize) -> u64,
     {
-        self.mmio_map(address, size, Some(callback), None::<fn(&mut Unicorn<D>, u64, usize, u64)>)
+        self.mmio_map(
+            address,
+            size,
+            Some(callback),
+            None::<fn(&mut Unicorn<D>, u64, usize, u64)>,
+        )
     }
 
     /// Map in a write-only MMIO region backed by a callback.
@@ -453,28 +437,25 @@ impl<'a, D> Unicorn<'a, D> {
     where
         F: FnMut(&mut Unicorn<D>, u64, usize, u64),
     {
-        self.mmio_map(address, size, None::<fn(&mut Unicorn<D>, u64, usize) -> u64>, Some(callback))
+        self.mmio_map(
+            address,
+            size,
+            None::<fn(&mut Unicorn<D>, u64, usize) -> u64>,
+            Some(callback),
+        )
     }
 
     /// Unmap a memory region.
     ///
     /// `address` must be aligned to 4kb or this will return `Error::ARG`.
     /// `size` must be a multiple of 4kb or this will return `Error::ARG`.
-    pub fn mem_unmap(
-        &mut self,
-        address: u64,
-        size: libc::size_t,
-    ) -> Result<(), uc_error> {
+    pub fn mem_unmap(&mut self, address: u64, size: libc::size_t) -> Result<(), uc_error> {
         let err = unsafe { ffi::uc_mem_unmap(self.get_handle(), address, size) };
         self.mmio_unmap(address, size);
         err.into()
     }
 
-    fn mmio_unmap(
-        &mut self,
-        address: u64,
-        size: libc::size_t,
-    ) {
+    fn mmio_unmap(&mut self, address: u64, size: libc::size_t) {
         for scope in self.inner_mut().mmio_callbacks.iter_mut() {
             scope.unmap(address, size);
         }
@@ -497,44 +478,32 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Write an unsigned value from a register.
-    pub fn reg_write<T: Into<i32>>(
-        &mut self,
-        regid: T,
-        value: u64,
-    ) -> Result<(), uc_error> {
-        unsafe { ffi::uc_reg_write(self.get_handle(), regid.into(), &value as *const _ as _) }.into()
+    pub fn reg_write<T: Into<i32>>(&mut self, regid: T, value: u64) -> Result<(), uc_error> {
+        unsafe { ffi::uc_reg_write(self.get_handle(), regid.into(), &value as *const _ as _) }
+            .into()
     }
 
     /// Write variable sized values into registers.
     ///
     /// The user has to make sure that the buffer length matches the register size.
     /// This adds support for registers >64 bit (GDTR/IDTR, XMM, YMM, ZMM (x86); Q, V (arm64)).
-    pub fn reg_write_long<T: Into<i32>>(
-        &self,
-        regid: T,
-        value: &[u8],
-    ) -> Result<(), uc_error> {
+    pub fn reg_write_long<T: Into<i32>>(&self, regid: T, value: &[u8]) -> Result<(), uc_error> {
         unsafe { ffi::uc_reg_write(self.get_handle(), regid.into(), value.as_ptr() as _) }.into()
     }
 
     /// Read an unsigned value from a register.
     ///
     /// Not to be used with registers larger than 64 bit.
-    pub fn reg_read<T: Into<i32>>(
-        &self,
-        regid: T,
-    ) -> Result<u64, uc_error> {
+    pub fn reg_read<T: Into<i32>>(&self, regid: T) -> Result<u64, uc_error> {
         let mut value: u64 = 0;
-        unsafe { ffi::uc_reg_read(self.get_handle(), regid.into(), &mut value as *mut u64 as _) }.and(Ok(value))
+        unsafe { ffi::uc_reg_read(self.get_handle(), regid.into(), &mut value as *mut u64 as _) }
+            .and(Ok(value))
     }
 
     /// Read 128, 256 or 512 bit register value into heap allocated byte array.
     ///
     /// This adds safe support for registers >64 bit (GDTR/IDTR, XMM, YMM, ZMM, ST (x86); Q, V (arm64)).
-    pub fn reg_read_long<T: Into<i32>>(
-        &self,
-        regid: T,
-    ) -> Result<Box<[u8]>, uc_error> {
+    pub fn reg_read_long<T: Into<i32>>(&self, regid: T) -> Result<Box<[u8]>, uc_error> {
         let curr_reg_id = regid.into();
         let curr_arch = self.get_arch();
 
@@ -575,12 +544,10 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Read a signed 32-bit value from a register.
-    pub fn reg_read_i32<T: Into<i32>>(
-        &self,
-        regid: T,
-    ) -> Result<i32, uc_error> {
+    pub fn reg_read_i32<T: Into<i32>>(&self, regid: T) -> Result<i32, uc_error> {
         let mut value: i32 = 0;
-        unsafe { ffi::uc_reg_read(self.get_handle(), regid.into(), &mut value as *mut i32 as _) }.and(Ok(value))
+        unsafe { ffi::uc_reg_read(self.get_handle(), regid.into(), &mut value as *mut i32 as _) }
+            .and(Ok(value))
     }
 
     /// Add a code hook.
@@ -691,10 +658,7 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Add an interrupt hook.
-    pub fn add_intr_hook<F: 'a>(
-        &mut self,
-        callback: F,
-    ) -> Result<UcHookId, uc_error>
+    pub fn add_intr_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>, u32),
     {
@@ -723,10 +687,7 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Add hook for invalid instructions
-    pub fn add_insn_invalid_hook<F: 'a>(
-        &mut self,
-        callback: F,
-    ) -> Result<UcHookId, uc_error>
+    pub fn add_insn_invalid_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>) -> bool,
     {
@@ -755,10 +716,7 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Add hook for x86 IN instruction.
-    pub fn add_insn_in_hook<F: 'a>(
-        &mut self,
-        callback: F,
-    ) -> Result<UcHookId, uc_error>
+    pub fn add_insn_in_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>, u32, usize) -> u32,
     {
@@ -788,10 +746,7 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Add hook for x86 OUT instruction.
-    pub fn add_insn_out_hook<F: 'a>(
-        &mut self,
-        callback: F,
-    ) -> Result<UcHookId, uc_error>
+    pub fn add_insn_out_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>, u32, usize, u32),
     {
@@ -892,10 +847,7 @@ impl<'a, D> Unicorn<'a, D> {
     /// Remove a hook.
     ///
     /// `hook_id` is the value returned by `add_*_hook` functions.
-    pub fn remove_hook(
-        &mut self,
-        hook_id: UcHookId,
-    ) -> Result<(), uc_error> {
+    pub fn remove_hook(&mut self, hook_id: UcHookId) -> Result<(), uc_error> {
         // drop the hook
         let inner = self.inner_mut();
         inner.hooks.retain(|(id, _)| id != &hook_id);
@@ -908,15 +860,13 @@ impl<'a, D> Unicorn<'a, D> {
     /// To be populated via `context_save`.
     pub fn context_alloc(&self) -> Result<Context, uc_error> {
         let mut empty_context: ffi::uc_context = ptr::null_mut();
-        unsafe { ffi::uc_context_alloc(self.get_handle(), &mut empty_context) }
-            .and(Ok(Context { context: empty_context }))
+        unsafe { ffi::uc_context_alloc(self.get_handle(), &mut empty_context) }.and(Ok(Context {
+            context: empty_context,
+        }))
     }
 
     /// Save current Unicorn context to previously allocated Context struct.
-    pub fn context_save(
-        &self,
-        context: &mut Context,
-    ) -> Result<(), uc_error> {
+    pub fn context_save(&self, context: &mut Context) -> Result<(), uc_error> {
         unsafe { ffi::uc_context_save(self.get_handle(), context.context) }.into()
     }
 
@@ -930,7 +880,9 @@ impl<'a, D> Unicorn<'a, D> {
         unsafe {
             ffi::uc_context_alloc(self.get_handle(), &mut new_context).and_then(|| {
                 ffi::uc_context_save(self.get_handle(), new_context)
-                    .and(Ok(Context { context: new_context }))
+                    .and(Ok(Context {
+                        context: new_context,
+                    }))
                     .map_err(|e| {
                         ffi::uc_context_free(new_context);
                         e
@@ -944,10 +896,7 @@ impl<'a, D> Unicorn<'a, D> {
     /// Perform a quick rollback of the CPU context, including registers and some
     /// internal metadata. Contexts may not be shared across engine instances with
     /// differing arches or modes. Memory has to be restored manually, if needed.
-    pub fn context_restore(
-        &self,
-        context: &Context,
-    ) -> Result<(), uc_error> {
+    pub fn context_restore(&self, context: &Context) -> Result<(), uc_error> {
         unsafe { ffi::uc_context_restore(self.get_handle(), context.context) }.into()
     }
 
@@ -978,10 +927,7 @@ impl<'a, D> Unicorn<'a, D> {
     /// Query the internal status of the engine.
     ///
     /// supported: `MODE`, `PAGE_SIZE`, `ARCH`
-    pub fn query(
-        &self,
-        query: Query,
-    ) -> Result<usize, uc_error> {
+    pub fn query(&self, query: Query) -> Result<usize, uc_error> {
         let mut result: libc::size_t = Default::default();
         unsafe { ffi::uc_query(self.get_handle(), query, &mut result) }.and(Ok(result))
     }
@@ -1008,10 +954,7 @@ impl<'a, D> Unicorn<'a, D> {
 
     /// Sets the program counter for this `unicorn` instance.
     #[inline]
-    pub fn set_pc(
-        &mut self,
-        value: u64,
-    ) -> Result<(), uc_error> {
+    pub fn set_pc(&mut self, value: u64) -> Result<(), uc_error> {
         let arch = self.get_arch();
         let reg = match arch {
             Arch::X86 => RegisterX86::RIP as i32,
@@ -1031,54 +974,107 @@ impl<'a, D> Unicorn<'a, D> {
 
     pub fn ctl_get_mode(&self) -> Result<Mode, uc_error> {
         let mut result: i32 = Default::default();
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_MODE), &mut result) }
-            .and_then(|| Ok(Mode::from_bits_truncate(result)))
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_READ!(ControlType::UC_CTL_UC_MODE),
+                &mut result,
+            )
+        }
+        .and_then(|| Ok(Mode::from_bits_truncate(result)))
     }
 
     pub fn ctl_get_page_size(&self) -> Result<u32, uc_error> {
         let mut result: u32 = Default::default();
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_PAGE_SIZE), &mut result) }
-            .and_then(|| Ok(result))
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_READ!(ControlType::UC_CTL_UC_PAGE_SIZE),
+                &mut result,
+            )
+        }
+        .and_then(|| Ok(result))
     }
 
-    pub fn ctl_set_page_size(
-        &self,
-        page_size: u32,
-    ) -> Result<(), uc_error> {
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_UC_PAGE_SIZE), page_size) }.into()
+    pub fn ctl_set_page_size(&self, page_size: u32) -> Result<(), uc_error> {
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_WRITE!(ControlType::UC_CTL_UC_PAGE_SIZE),
+                page_size,
+            )
+        }
+        .into()
     }
 
     pub fn ctl_get_arch(&self) -> Result<Arch, uc_error> {
         let mut result: i32 = Default::default();
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_ARCH), &mut result) }
-            .and_then(|| Arch::try_from(result as usize))
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_READ!(ControlType::UC_CTL_UC_ARCH),
+                &mut result,
+            )
+        }
+        .and_then(|| Arch::try_from(result as usize))
     }
 
     pub fn ctl_get_timeout(&self) -> Result<u64, uc_error> {
         let mut result: u64 = Default::default();
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_TIMEOUT), &mut result) }
-            .and(Ok(result))
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_READ!(ControlType::UC_CTL_UC_TIMEOUT),
+                &mut result,
+            )
+        }
+        .and(Ok(result))
     }
 
     pub fn ctl_exits_enable(&self) -> Result<(), uc_error> {
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_UC_USE_EXITS), 1) }.into()
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_WRITE!(ControlType::UC_CTL_UC_USE_EXITS),
+                1,
+            )
+        }
+        .into()
     }
 
     pub fn ctl_exits_disable(&self) -> Result<(), uc_error> {
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_UC_USE_EXITS), 0) }.into()
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_WRITE!(ControlType::UC_CTL_UC_USE_EXITS),
+                0,
+            )
+        }
+        .into()
     }
 
     pub fn ctl_get_exits_count(&self) -> Result<usize, uc_error> {
         let mut result: libc::size_t = 0usize;
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_EXITS_CNT), &mut result) }
-            .and(Ok(result))
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_READ!(ControlType::UC_CTL_UC_EXITS_CNT),
+                &mut result,
+            )
+        }
+        .and(Ok(result))
     }
 
     pub fn ctl_get_exits(&self) -> Result<Vec<u64>, uc_error> {
         let exits_count: libc::size_t = self.ctl_get_exits_count()?;
         let mut exits: Vec<u64> = Vec::with_capacity(exits_count);
         unsafe {
-            ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_UC_EXITS), exits.as_mut_ptr(), exits_count)
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_READ!(ControlType::UC_CTL_UC_EXITS),
+                exits.as_mut_ptr(),
+                exits_count,
+            )
         }
         .and_then(|| unsafe {
             exits.set_len(exits_count);
@@ -1086,10 +1082,7 @@ impl<'a, D> Unicorn<'a, D> {
         })
     }
 
-    pub fn ctl_set_exits(
-        &self,
-        exits: &[u64],
-    ) -> Result<(), uc_error> {
+    pub fn ctl_set_exits(&self, exits: &[u64]) -> Result<(), uc_error> {
         unsafe {
             ffi::uc_ctl(
                 self.get_handle(),
@@ -1103,24 +1096,37 @@ impl<'a, D> Unicorn<'a, D> {
 
     pub fn ctl_get_cpu_model(&self) -> Result<i32, uc_error> {
         let mut result: i32 = Default::default();
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ!(ControlType::UC_CTL_CPU_MODEL), &mut result) }
-            .and(Ok(result))
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_READ!(ControlType::UC_CTL_CPU_MODEL),
+                &mut result,
+            )
+        }
+        .and(Ok(result))
     }
 
-    pub fn ctl_set_cpu_model(
-        &self,
-        cpu_model: i32,
-    ) -> Result<(), uc_error> {
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_CPU_MODEL), cpu_model) }.into()
+    pub fn ctl_set_cpu_model(&self, cpu_model: i32) -> Result<(), uc_error> {
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_WRITE!(ControlType::UC_CTL_CPU_MODEL),
+                cpu_model,
+            )
+        }
+        .into()
     }
 
-    pub fn ctl_remove_cache(
-        &self,
-        address: u64,
-        end: u64,
-    ) -> Result<(), uc_error> {
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TB_REMOVE_CACHE), address, end) }
-            .into()
+    pub fn ctl_remove_cache(&self, address: u64, end: u64) -> Result<(), uc_error> {
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_WRITE!(ControlType::UC_CTL_TB_REMOVE_CACHE),
+                address,
+                end,
+            )
+        }
+        .into()
     }
 
     pub fn ctl_request_cache(
@@ -1128,29 +1134,56 @@ impl<'a, D> Unicorn<'a, D> {
         address: u64,
         tb: &mut TranslationBlock,
     ) -> Result<(), uc_error> {
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_READ_WRITE!(ControlType::UC_CTL_TB_REQUEST_CACHE), address, tb) }
-            .into()
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_READ_WRITE!(ControlType::UC_CTL_TB_REQUEST_CACHE),
+                address,
+                tb,
+            )
+        }
+        .into()
     }
 
     pub fn ctl_flush_tb(&self) -> Result<(), uc_error> {
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TB_FLUSH)) }.into()
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_WRITE!(ControlType::UC_CTL_TB_FLUSH),
+            )
+        }
+        .into()
     }
 
     pub fn ctl_flush_tlb(&self) -> Result<(), uc_error> {
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TLB_FLUSH)) }.into()
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_WRITE!(ControlType::UC_CTL_TLB_FLUSH),
+            )
+        }
+        .into()
     }
 
-    pub fn ctl_context_mode(
-        &self,
-        mode: ContextMode,
-    ) -> Result<(), uc_error> {
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_CONTEXT_MODE), mode) }.into()
+    pub fn ctl_context_mode(&self, mode: ContextMode) -> Result<(), uc_error> {
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_WRITE!(ControlType::UC_CTL_CONTEXT_MODE),
+                mode,
+            )
+        }
+        .into()
     }
 
-    pub fn ctl_tlb_type(
-        &self,
-        t: TlbType,
-    ) -> Result<(), uc_error> {
-        unsafe { ffi::uc_ctl(self.get_handle(), UC_CTL_WRITE!(ControlType::UC_CTL_TLB_TYPE), t as i32) }.into()
+    pub fn ctl_tlb_type(&self, t: TlbType) -> Result<(), uc_error> {
+        unsafe {
+            ffi::uc_ctl(
+                self.get_handle(),
+                UC_CTL_WRITE!(ControlType::UC_CTL_TLB_TYPE),
+                t as i32,
+            )
+        }
+        .into()
     }
 }

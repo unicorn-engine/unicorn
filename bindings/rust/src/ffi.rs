@@ -15,30 +15,15 @@ pub type uc_hook = *mut c_void;
 pub type uc_context = *mut c_void;
 
 extern "C" {
-    pub fn uc_version(
-        major: *mut u32,
-        minor: *mut u32,
-    ) -> u32;
+    pub fn uc_version(major: *mut u32, minor: *mut u32) -> u32;
     pub fn uc_arch_supported(arch: Arch) -> bool;
-    pub fn uc_open(
-        arch: Arch,
-        mode: Mode,
-        engine: *mut uc_handle,
-    ) -> uc_error;
+    pub fn uc_open(arch: Arch, mode: Mode, engine: *mut uc_handle) -> uc_error;
     pub fn uc_close(engine: uc_handle) -> uc_error;
     pub fn uc_context_free(mem: uc_context) -> uc_error;
     pub fn uc_errno(engine: uc_handle) -> uc_error;
     pub fn uc_strerror(error_code: uc_error) -> *const c_char;
-    pub fn uc_reg_write(
-        engine: uc_handle,
-        regid: c_int,
-        value: *const c_void,
-    ) -> uc_error;
-    pub fn uc_reg_read(
-        engine: uc_handle,
-        regid: c_int,
-        value: *mut c_void,
-    ) -> uc_error;
+    pub fn uc_reg_write(engine: uc_handle, regid: c_int, value: *const c_void) -> uc_error;
+    pub fn uc_reg_read(engine: uc_handle, regid: c_int, value: *mut c_void) -> uc_error;
     pub fn uc_mem_write(
         engine: uc_handle,
         address: u64,
@@ -51,12 +36,7 @@ extern "C" {
         bytes: *mut u8,
         size: libc::size_t,
     ) -> uc_error;
-    pub fn uc_mem_map(
-        engine: uc_handle,
-        address: u64,
-        size: libc::size_t,
-        perms: u32,
-    ) -> uc_error;
+    pub fn uc_mem_map(engine: uc_handle, address: u64, size: libc::size_t, perms: u32) -> uc_error;
     pub fn uc_mem_map_ptr(
         engine: uc_handle,
         address: u64,
@@ -73,11 +53,7 @@ extern "C" {
         write_cb: *mut c_void,
         user_data_write: *mut c_void,
     ) -> uc_error;
-    pub fn uc_mem_unmap(
-        engine: uc_handle,
-        address: u64,
-        size: libc::size_t,
-    ) -> uc_error;
+    pub fn uc_mem_unmap(engine: uc_handle, address: u64, size: libc::size_t) -> uc_error;
     pub fn uc_mem_protect(
         engine: uc_handle,
         address: u64,
@@ -107,32 +83,12 @@ extern "C" {
         end: u64,
         ...
     ) -> uc_error;
-    pub fn uc_hook_del(
-        engine: uc_handle,
-        hook: uc_hook,
-    ) -> uc_error;
-    pub fn uc_query(
-        engine: uc_handle,
-        query_type: Query,
-        result: *mut libc::size_t,
-    ) -> uc_error;
-    pub fn uc_context_alloc(
-        engine: uc_handle,
-        context: *mut uc_context,
-    ) -> uc_error;
-    pub fn uc_context_save(
-        engine: uc_handle,
-        context: uc_context,
-    ) -> uc_error;
-    pub fn uc_context_restore(
-        engine: uc_handle,
-        context: uc_context,
-    ) -> uc_error;
-    pub fn uc_ctl(
-        engine: uc_handle,
-        control: u32,
-        ...
-    ) -> uc_error;
+    pub fn uc_hook_del(engine: uc_handle, hook: uc_hook) -> uc_error;
+    pub fn uc_query(engine: uc_handle, query_type: Query, result: *mut libc::size_t) -> uc_error;
+    pub fn uc_context_alloc(engine: uc_handle, context: *mut uc_context) -> uc_error;
+    pub fn uc_context_save(engine: uc_handle, context: uc_context) -> uc_error;
+    pub fn uc_context_restore(engine: uc_handle, context: uc_context) -> uc_error;
+    pub fn uc_ctl(engine: uc_handle, control: u32, ...) -> uc_error;
 }
 
 pub struct UcHook<'a, D: 'a, F: 'a> {
@@ -293,10 +249,8 @@ pub unsafe extern "C" fn insn_out_hook_proxy<D, F>(
     (user_data.callback)(&mut user_data_uc, port, size, value);
 }
 
-pub unsafe extern "C" fn insn_sys_hook_proxy<D, F>(
-    uc: uc_handle,
-    user_data: *mut UcHook<D, F>,
-) where
+pub unsafe extern "C" fn insn_sys_hook_proxy<D, F>(uc: uc_handle, user_data: *mut UcHook<D, F>)
+where
     F: FnMut(&mut crate::Unicorn<D>),
 {
     let user_data = &mut *user_data;
