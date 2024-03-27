@@ -18,6 +18,14 @@
  * <http://www.gnu.org/licenses/lgpl-2.1.html>
  */
 
+/*
+   Modified for Unicorn Engine by Glenn Baker <glenn.baker@gmx.com>, 2024
+*/
+
+DEF_HELPER_4(uc_tracecode, void, i32, i32, ptr, i64)
+DEF_HELPER_6(uc_traceopcode, void, ptr, i64, i64, i32, ptr, i64)
+DEF_HELPER_1(uc_avr_exit,void, env)
+
 DEF_HELPER_1(wdr, void, env)
 DEF_HELPER_1(debug, void, env)
 DEF_HELPER_1(break, void, env)
