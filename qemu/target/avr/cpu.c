@@ -19,11 +19,10 @@
  */
 
 #include "qemu/osdep.h"
-#include "qapi/error.h"
-#include "qemu/qemu-print.h"
 #include "exec/exec-all.h"
 #include "cpu.h"
 #include "disas/dis-asm.h"
+#include "unicorn_helper.h"
 
 static void avr_cpu_set_pc(CPUState *cs, vaddr value)
 {
@@ -56,7 +55,8 @@ static void avr_cpu_reset(DeviceState *ds)
     AVRCPUClass *mcc = AVR_CPU_GET_CLASS(cpu);
     CPUAVRState *env = &cpu->env;
 
-    mcc->parent_reset(ds);
+    if (mcc->parent_reset)
+        mcc->parent_reset(ds);
 
     env->pc_w = 0;
     env->sregI = 1;
@@ -80,29 +80,28 @@ static void avr_cpu_reset(DeviceState *ds)
     memset(env->r, 0, sizeof(env->r));
 }
 
+#if 0
 static void avr_cpu_disas_set_info(CPUState *cpu, disassemble_info *info)
 {
     info->mach = bfd_arch_avr;
     info->print_insn = avr_print_insn;
 }
+#endif
 
-static void avr_cpu_realizefn(DeviceState *dev, Error **errp)
+static void avr_cpu_realizefn(DeviceState *dev)
 {
     CPUState *cs = CPU(dev);
     AVRCPUClass *mcc = AVR_CPU_GET_CLASS(dev);
-    Error *local_err = NULL;
 
-    cpu_exec_realizefn(cs, &local_err);
-    if (local_err != NULL) {
-        error_propagate(errp, local_err);
-        return;
-    }
+    cpu_exec_realizefn(cs);
     qemu_init_vcpu(cs);
     cpu_reset(cs);
 
-    mcc->parent_realize(dev, errp);
+    if (mcc->parent_realize)
+        mcc->parent_realize(dev);
 }
 
+#if 0
 static void avr_cpu_set_int(void *opaque, int irq, int level)
 {
     AVRCPU *cpu = opaque;
@@ -120,18 +119,24 @@ static void avr_cpu_set_int(void *opaque, int irq, int level)
         }
     }
 }
+#endif
 
-static void avr_cpu_initfn(Object *obj)
+static void avr_cpu_initfn(Object *obj, struct uc_struct *uc)
 {
     AVRCPU *cpu = AVR_CPU(obj);
+    CPUAVRState *const env = &cpu->env;
 
+    env->uc = uc;
     cpu_set_cpustate_pointers(cpu);
 
+#if 0
     /* Set the number of interrupts supported by the CPU. */
     qdev_init_gpio_in(DEVICE(cpu), avr_cpu_set_int,
                       sizeof(cpu->env.intsrc) * 8);
+#endif
 }
 
+#if 0
 static ObjectClass *avr_cpu_class_by_name(const char *cpu_model)
 {
     ObjectClass *oc;
@@ -143,7 +148,9 @@ static ObjectClass *avr_cpu_class_by_name(const char *cpu_model)
     }
     return oc;
 }
+#endif
 
+#if 0
 static void avr_cpu_dump_state(CPUState *cs, FILE *f, int flags)
 {
     AVRCPU *cpu = AVR_CPU(cs);
@@ -182,36 +189,45 @@ static void avr_cpu_dump_state(CPUState *cs, FILE *f, int flags)
     }
     qemu_fprintf(f, "\n");
 }
+#endif
 
 static void avr_cpu_class_init(ObjectClass *oc, void *data)
 {
-    DeviceClass *dc = DEVICE_CLASS(oc);
     CPUClass *cc = CPU_CLASS(oc);
     AVRCPUClass *mcc = AVR_CPU_CLASS(oc);
 
-    mcc->parent_realize = dc->realize;
-    dc->realize = avr_cpu_realizefn;
+    mcc->parent_realize = NULL;
+    mcc->parent_reset = NULL;
 
-    device_class_set_parent_reset(dc, avr_cpu_reset, &mcc->parent_reset);
-
+#if 0
     cc->class_by_name = avr_cpu_class_by_name;
+#endif
 
+    cc->reset = avr_cpu_reset;
     cc->has_work = avr_cpu_has_work;
     cc->do_interrupt = avr_cpu_do_interrupt;
     cc->cpu_exec_interrupt = avr_cpu_exec_interrupt;
+#if 0
     cc->dump_state = avr_cpu_dump_state;
+#endif
     cc->set_pc = avr_cpu_set_pc;
+#if 0
     cc->memory_rw_debug = avr_cpu_memory_rw_debug;
+#endif
     cc->get_phys_page_debug = avr_cpu_get_phys_page_debug;
     cc->tlb_fill = avr_cpu_tlb_fill;
+#if 0
     cc->vmsd = &vms_avr_cpu;
     cc->disas_set_info = avr_cpu_disas_set_info;
+#endif
     cc->tcg_initialize = avr_cpu_tcg_init;
     cc->synchronize_from_tb = avr_cpu_synchronize_from_tb;
+#if 0
     cc->gdb_read_register = avr_cpu_gdb_read_register;
     cc->gdb_write_register = avr_cpu_gdb_write_register;
     cc->gdb_num_core_regs = 35;
     cc->gdb_core_xml_file = "avr-cpu.xml";
+#endif
 }
 
 /*
@@ -321,11 +337,28 @@ static void avr_avr6_initfn(Object *obj)
 }
 
 typedef struct AVRCPUInfo {
+    int model;
     const char *name;
     void (*initfn)(Object *obj);
 } AVRCPUInfo;
 
+static const AVRCPUInfo avr_cpu_info[] ={
+    {UC_CPU_AVR_AVR5, "avr5", avr_avr5_initfn},
+    {UC_CPU_AVR_AVR51, "avr51", avr_avr51_initfn},
+    {UC_CPU_AVR_AVR6, "avr6", avr_avr6_initfn},
+};
 
+static const AVRCPUInfo *avr_cpu_info_get(int cpu_model)
+{
+    for (int i = 0; i < ARRAY_SIZE(avr_cpu_info); i++) {
+        const AVRCPUInfo *const cip = &avr_cpu_info[i];
+        if (cpu_model == cip->model)
+            return cip;
+    }
+    return NULL;
+}
+
+#if 0
 static void avr_cpu_list_entry(gpointer data, gpointer user_data)
 {
     const char *typename = object_class_get_name(OBJECT_CLASS(data));
@@ -364,3 +397,48 @@ static const TypeInfo avr_cpu_type_info[] = {
 };
 
 DEFINE_TYPES(avr_cpu_type_info)
+#endif
+
+AVRCPU *cpu_avr_init(struct uc_struct *uc)
+{
+    AVRCPU *cpu;
+    CPUState *cs;
+    CPUClass *cc;
+    ObjectClass *oc;
+
+    cpu = calloc(1, sizeof(*cpu));
+    if (cpu == NULL) {
+        return NULL;
+    }
+
+    if (uc->cpu_model == INT_MAX)
+        uc->cpu_model = UC_CPU_AVR_AVR6;
+    const AVRCPUInfo *const cip = avr_cpu_info_get(uc->cpu_model);
+    if (!cip) {
+        free(cpu);
+        return NULL;
+    }
+
+    cs = &cpu->parent_obj;
+    cc = &AVR_CPU_GET_CLASS(cpu)->parent_class;
+    oc = (ObjectClass *)cc;
+    cs->cc = cc;
+    cs->uc = uc;
+    uc->cpu = cs;
+
+    cpu_class_init(uc, cc);
+    avr_cpu_class_init(oc, NULL);
+
+    cpu_common_initfn(uc, cs);
+    avr_cpu_initfn(cs, uc);
+    cip->initfn(cs);
+
+    avr_cpu_realizefn(cs);
+
+    // init address space
+    cpu_address_space_init(cs, 0, cs->memory);
+
+    qemu_init_vcpu(cs);
+
+    return cpu;
+}

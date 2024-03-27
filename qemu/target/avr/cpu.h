@@ -23,6 +23,7 @@
 
 #include "cpu-qom.h"
 #include "exec/cpu-defs.h"
+#include "disas/dis-asm.h"
 
 #ifdef CONFIG_USER_ONLY
 #error "AVR 8-bit does not support user mode"
@@ -137,6 +138,9 @@ struct CPUAVRState {
     bool fullacc; /* CPU/MEM if true MEM only otherwise */
 
     uint64_t features;
+
+    // Unicorn engine
+    struct uc_struct *uc;
 };
 
 /**
@@ -152,6 +156,8 @@ typedef struct AVRCPU {
 
     CPUNegativeOffsetState neg;
     CPUAVRState env;
+
+    AVRCPUClass cc;
 } AVRCPU;
 
 extern const struct VMStateDescription vms_avr_cpu;
@@ -182,7 +188,7 @@ static inline int avr_cpu_mmu_index(CPUAVRState *env, bool ifetch)
     return ifetch ? MMU_CODE_IDX : MMU_DATA_IDX;
 }
 
-void avr_cpu_tcg_init(void);
+void avr_cpu_tcg_init(struct uc_struct *uc);
 
 void avr_cpu_list(void);
 int cpu_avr_exec(CPUState *cpu);

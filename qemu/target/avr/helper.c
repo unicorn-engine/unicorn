@@ -21,8 +21,8 @@
 #include "qemu/osdep.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
-#include "exec/address-spaces.h"
 #include "exec/helper-proto.h"
+#include "unicorn_helper.h"
 
 bool avr_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 {
@@ -160,10 +160,12 @@ void helper_unsupported(CPUAVRState *env)
      *  it's EXCP_DEBUG for meanwhile
      */
     cs->exception_index = EXCP_DEBUG;
+#if 0
     if (qemu_loglevel_mask(LOG_UNIMP)) {
         qemu_log("UNSUPPORTED\n");
         cpu_dump_state(cs, stderr, 0);
     }
+#endif
     cpu_loop_exit(cs);
 }
 
@@ -204,6 +206,9 @@ void helper_wdr(CPUAVRState *env)
  */
 target_ulong helper_inb(CPUAVRState *env, uint32_t port)
 {
+    CPUAVRState *const cpu = env;
+    struct uc_struct *const uc = env->uc;
+
     target_ulong data = 0;
 
     switch (port) {
@@ -253,6 +258,9 @@ target_ulong helper_inb(CPUAVRState *env, uint32_t port)
  */
 void helper_outb(CPUAVRState *env, uint32_t port, uint32_t data)
 {
+    CPUAVRState *const cpu = env;
+    struct uc_struct *const uc = env->uc;
+
     data &= 0x000000ff;
 
     switch (port) {
@@ -303,6 +311,9 @@ void helper_outb(CPUAVRState *env, uint32_t port, uint32_t data)
  */
 target_ulong helper_fullrd(CPUAVRState *env, uint32_t addr)
 {
+    CPUAVRState *const cpu = env;
+    struct uc_struct *const uc = env->uc;
+
     uint8_t data;
 
     env->fullacc = false;
@@ -327,6 +338,9 @@ target_ulong helper_fullrd(CPUAVRState *env, uint32_t addr)
  */
 void helper_fullwr(CPUAVRState *env, uint32_t data, uint32_t addr)
 {
+    CPUAVRState *const cpu = env;
+    struct uc_struct *const uc = env->uc;
+
     env->fullacc = false;
 
     /* Following logic assumes this: */
@@ -345,4 +359,13 @@ void helper_fullwr(CPUAVRState *env, uint32_t data, uint32_t addr)
         address_space_stb(&address_space_memory, OFFSET_DATA + addr, data,
                           MEMTXATTRS_UNSPECIFIED, NULL);
     }
+}
+
+void helper_uc_avr_exit(CPUAVRState *env)
+{
+    CPUState *cs = env_cpu(env);
+
+    cs->exception_index = EXCP_HLT;
+    cs->halted = 1;
+    cpu_loop_exit(cs);
 }

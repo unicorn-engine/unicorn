@@ -22,12 +22,19 @@
 #define QEMU_AVR_QOM_H
 
 #include "hw/core/cpu.h"
-#include "qom/object.h"
+
+typedef void Object;
+typedef void ObjectClass;
+
+typedef void DeviceState;
+typedef void (*DeviceRealize)(DeviceState *ds);
+typedef void (*DeviceReset)(DeviceState *ds);
 
 #define TYPE_AVR_CPU "avr-cpu"
 
-OBJECT_DECLARE_TYPE(AVRCPU, AVRCPUClass,
-                    AVR_CPU)
+#define AVR_CPU(obj) ((AVRCPU *)obj)
+#define AVR_CPU_CLASS(klass) ((AVRCPUClass *)klass)
+#define AVR_CPU_GET_CLASS(obj) (&((AVRCPU *)obj)->cc)
 
 /**
  *  AVRCPUClass:
@@ -37,13 +44,13 @@ OBJECT_DECLARE_TYPE(AVRCPU, AVRCPUClass,
  *
  *  A AVR CPU model.
  */
-struct AVRCPUClass {
+typedef struct AVRCPUClass {
     /*< private >*/
     CPUClass parent_class;
     /*< public >*/
     DeviceRealize parent_realize;
     DeviceReset parent_reset;
-};
+} AVRCPUClass;
 
 
 #endif /* !defined (QEMU_AVR_CPU_QOM_H) */
