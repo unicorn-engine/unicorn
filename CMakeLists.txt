@@ -67,7 +67,7 @@ option(UNICORN_FUZZ "Enable fuzzing" OFF)
 option(UNICORN_LOGGING "Enable logging" OFF)
 option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
-set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x;tricore" CACHE STRING "Enabled unicorn architectures")
+set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x;tricore;avr" CACHE STRING "Enabled unicorn architectures")
 option(UNICORN_TRACER "Trace unicorn execution" OFF)
 
 foreach(ARCH_LOOP ${UNICORN_ARCH})
@@ -254,6 +254,11 @@ else()
                 set(UNICORN_TARGET_ARCH "tricore")
                 break()
             endif()
+            string(FIND ${UC_COMPILER_MACRO} "__AVR__" UC_RET)
+            if (${UC_RET} GREATER_EQUAL "0")
+                set(UNICORN_TARGET_ARCH "avr")
+                break()
+            endif()
             message(FATAL_ERROR "Unknown host compiler: ${CMAKE_C_COMPILER}.")
         endwhile(TRUE)
     endif()
@@ -288,6 +293,9 @@ else()
     endif()
     if (UNICORN_HAS_TRICORE)
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_TRICORE ")
+    endif()
+    if (UNICORN_HAS_AVR)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_AVR ")
     endif()
 
     set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-fPIC")
@@ -339,6 +347,9 @@ else()
     endif()
     if (UNICORN_HAS_TRICORE)
         set (TARGET_LIST "${TARGET_LIST}tricore-softmmu, ")
+    endif()
+    if (UNICORN_HAS_AVR)
+        set (TARGET_LIST "${TARGET_LIST}avr-softmmu, ")
     endif()
     set(TARGET_LIST "${TARGET_LIST} ")
 
@@ -435,6 +446,12 @@ else()
         execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
             INPUT_FILE ${CMAKE_BINARY_DIR}/tricore-softmmu/config-target.mak
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/tricore-softmmu/config-target.h
+        )
+    endif()
+    if (UNICORN_HAS_AVR)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/avr-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/avr-softmmu/config-target.h
         )
     endif()
     add_compile_options(
@@ -1135,6 +1152,34 @@ endif()
 endif()
 
 
+if (UNICORN_HAS_AVR)
+add_library(avr-softmmu STATIC
+    ${UNICORN_ARCH_COMMON}
+
+    qemu/target/avr/cpu.c
+    qemu/target/avr/helper.c
+    qemu/target/avr/translate.c
+    qemu/target/avr/unicorn.c
+)
+
+if(MSVC)
+    target_compile_options(avr-softmmu PRIVATE
+        -DNEED_CPU_H
+        /FIavr.h
+        /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/avr-softmmu
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/avr
+    )
+else()
+    target_compile_options(avr-softmmu PRIVATE
+        -DNEED_CPU_H
+        -include avr.h
+        -I${CMAKE_BINARY_DIR}/avr-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/avr
+    )
+endif()
+endif()
+
+
 set(UNICORN_SRCS
     uc.c
 
@@ -1308,6 +1353,11 @@ if (UNICORN_HAS_TRICORE)
     set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_tricore)
     target_link_libraries(tricore-softmmu unicorn-common)
     set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_tricore)
+endif()
+if (UNICORN_HAS_AVR)
+    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_AVR)
+    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} avr-softmmu)
+    target_link_libraries(avr-softmmu unicorn-common)
 endif()
 
 # Extra tests
