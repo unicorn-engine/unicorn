@@ -42,32 +42,72 @@ use libc::c_void;
 
 use ffi::uc_handle;
 
-pub use crate::arm::*;
-pub use crate::arm64::*;
-pub use crate::m68k::*;
-pub use crate::mips::*;
-pub use crate::ppc::*;
-pub use crate::riscv::*;
-pub use crate::s390x::*;
-pub use crate::sparc::*;
-pub use crate::tricore::*;
-pub use crate::unicorn_const::*;
-pub use crate::x86::*;
-
 #[macro_use]
 pub mod unicorn_const;
+pub use unicorn_const::*;
 pub mod ffi; // lets consumers call ffi if desired
 
+// include arm support if conditionally compiled in
+#[cfg(feature = "arch_arm")]
 mod arm;
+#[cfg(feature = "arch_arm")]
+pub use crate::arm::*;
+
+// include arm64 support if conditionally compiled in
+// NOTE: unicorn-c only separates on top-level arch name,
+//       not on the bit-length, so we include both
+#[cfg(feature = "arch_arm")]
 mod arm64;
+#[cfg(feature = "arch_arm")]
+pub use crate::arm64::*;
+
+// include m68k support if conditionally compiled in
+#[cfg(feature = "arch_m68k")]
 mod m68k;
+#[cfg(feature = "arch_m68k")]
+pub use crate::m68k::*;
+
+// include mips support if conditionally compiled in
+#[cfg(feature = "arch_mips")]
 mod mips;
+#[cfg(feature = "arch_mips")]
+pub use crate::mips::*;
+
+// include ppc support if conditionally compiled in
+#[cfg(feature = "arch_ppc")]
 mod ppc;
+#[cfg(feature = "arch_ppc")]
+pub use crate::ppc::*;
+
+// include riscv support if conditionally compiled in
+#[cfg(feature = "arch_riscv")]
 mod riscv;
+#[cfg(feature = "arch_riscv")]
+pub use crate::riscv::*;
+
+// include s390x support if conditionally compiled in
+#[cfg(feature = "arch_s390x")]
 mod s390x;
+#[cfg(feature = "arch_s390x")]
+pub use crate::s390x::*;
+
+// include sparc support if conditionally compiled in
+#[cfg(feature = "arch_sparc")]
 mod sparc;
+#[cfg(feature = "arch_sparc")]
+pub use crate::sparc::*;
+
+// include tricore support if conditionally compiled in
+#[cfg(feature = "arch_tricore")]
 mod tricore;
+#[cfg(feature = "arch_tricore")]
+pub use crate::tricore::*;
+
+// include x86 support if conditionally compiled in
+#[cfg(feature = "arch_x86")]
 mod x86;
+#[cfg(feature = "arch_x86")]
+pub use crate::x86::*;
 
 #[derive(Debug)]
 pub struct Context {
@@ -508,7 +548,9 @@ impl<'a, D> Unicorn<'a, D> {
         let curr_arch = self.get_arch();
 
         let value_size = match curr_arch {
+            #[cfg(feature = "arch_x86")]
             Arch::X86 => Self::value_size_x86(curr_reg_id)?,
+            #[cfg(feature = "arch_arm")]
             Arch::ARM64 => Self::value_size_arm64(curr_reg_id)?,
             _ => Err(uc_error::ARCH)?,
         };
@@ -517,6 +559,7 @@ impl<'a, D> Unicorn<'a, D> {
             .and_then(|| Ok(value.into_boxed_slice()))
     }
 
+    #[cfg(feature = "arch_arm")]
     fn value_size_arm64(curr_reg_id: i32) -> Result<usize, uc_error> {
         match curr_reg_id {
             r if (RegisterARM64::Q0 as i32..=RegisterARM64::Q31 as i32).contains(&r)
@@ -528,6 +571,7 @@ impl<'a, D> Unicorn<'a, D> {
         }
     }
 
+    #[cfg(feature = "arch_x86")]
     fn value_size_x86(curr_reg_id: i32) -> Result<usize, uc_error> {
         match curr_reg_id {
             r if (RegisterX86::XMM0 as i32..=RegisterX86::XMM31 as i32).contains(&r) => Ok(16),
@@ -716,6 +760,7 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Add hook for x86 IN instruction.
+    #[cfg(feature = "arch_x86")]
     pub fn add_insn_in_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>, u32, usize) -> u32,
@@ -746,6 +791,7 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Add hook for x86 OUT instruction.
+    #[cfg(feature = "arch_x86")]
     pub fn add_insn_out_hook<F: 'a>(&mut self, callback: F) -> Result<UcHookId, uc_error>
     where
         F: FnMut(&mut Unicorn<D>, u32, usize, u32),
@@ -776,6 +822,7 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Add hook for x86 SYSCALL or SYSENTER.
+    #[cfg(feature = "arch_x86")]
     pub fn add_insn_sys_hook<F>(
         &mut self,
         insn_type: InsnSysX86,
@@ -932,44 +979,52 @@ impl<'a, D> Unicorn<'a, D> {
         unsafe { ffi::uc_query(self.get_handle(), query, &mut result) }.and(Ok(result))
     }
 
+    /// Get the `i32` register value for the program counter for the specified architecture.
+    ///
+    /// If an architecture is not compiled in, this function will return `uc_error::ARCH`.
+    #[inline]
+    fn arch_to_pc_register(arch: Arch) -> Result<i32, uc_error> {
+        match arch {
+            #[cfg(feature = "arch_x86")]
+            Arch::X86 => Ok(RegisterX86::RIP as i32),
+            #[cfg(feature = "arch_arm")]
+            Arch::ARM => Ok(RegisterARM::PC as i32),
+            #[cfg(feature = "arch_arm")]
+            Arch::ARM64 => Ok(RegisterARM64::PC as i32),
+            #[cfg(feature = "arch_mips")]
+            Arch::MIPS => Ok(RegisterMIPS::PC as i32),
+            #[cfg(feature = "arch_sparc")]
+            Arch::SPARC => Ok(RegisterSPARC::PC as i32),
+            #[cfg(feature = "arch_m68k")]
+            Arch::M68K => Ok(RegisterM68K::PC as i32),
+            #[cfg(feature = "arch_ppc")]
+            Arch::PPC => Ok(RegisterPPC::PC as i32),
+            #[cfg(feature = "arch_riscv")]
+            Arch::RISCV => Ok(RegisterRISCV::PC as i32),
+            #[cfg(feature = "arch_s390x")]
+            Arch::S390X => Ok(RegisterS390X::PC as i32),
+            #[cfg(feature = "arch_tricore")]
+            Arch::TRICORE => Ok(RegisterTRICORE::PC as i32),
+            // returns `uc_error::ARCH` for `Arch::MAX`, and any
+            // other architecture that are not compiled in
+            _ => Err(uc_error::ARCH),
+        }
+    }
+
     /// Gets the current program counter for this `unicorn` instance.
     #[inline]
     pub fn pc_read(&self) -> Result<u64, uc_error> {
         let arch = self.get_arch();
-        let reg = match arch {
-            Arch::X86 => RegisterX86::RIP as i32,
-            Arch::ARM => RegisterARM::PC as i32,
-            Arch::ARM64 => RegisterARM64::PC as i32,
-            Arch::MIPS => RegisterMIPS::PC as i32,
-            Arch::SPARC => RegisterSPARC::PC as i32,
-            Arch::M68K => RegisterM68K::PC as i32,
-            Arch::PPC => RegisterPPC::PC as i32,
-            Arch::RISCV => RegisterRISCV::PC as i32,
-            Arch::S390X => RegisterS390X::PC as i32,
-            Arch::TRICORE => RegisterTRICORE::PC as i32,
-            Arch::MAX => panic!("Illegal Arch specified"),
-        };
-        self.reg_read(reg)
+
+        self.reg_read(Self::arch_to_pc_register(arch)?)
     }
 
     /// Sets the program counter for this `unicorn` instance.
     #[inline]
     pub fn set_pc(&mut self, value: u64) -> Result<(), uc_error> {
         let arch = self.get_arch();
-        let reg = match arch {
-            Arch::X86 => RegisterX86::RIP as i32,
-            Arch::ARM => RegisterARM::PC as i32,
-            Arch::ARM64 => RegisterARM64::PC as i32,
-            Arch::MIPS => RegisterMIPS::PC as i32,
-            Arch::SPARC => RegisterSPARC::PC as i32,
-            Arch::M68K => RegisterM68K::PC as i32,
-            Arch::PPC => RegisterPPC::PC as i32,
-            Arch::RISCV => RegisterRISCV::PC as i32,
-            Arch::S390X => RegisterS390X::PC as i32,
-            Arch::TRICORE => RegisterTRICORE::PC as i32,
-            Arch::MAX => panic!("Illegal Arch specified"),
-        };
-        self.reg_write(reg, value)
+
+        self.reg_write(Self::arch_to_pc_register(arch)?, value)
     }
 
     pub fn ctl_get_mode(&self) -> Result<Mode, uc_error> {
