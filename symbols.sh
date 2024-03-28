@@ -6282,7 +6282,21 @@ restore_state_to_opc \
 helper_uc_tricore_exit \
 "
 
-ARCHS="x86_64 arm aarch64 riscv32 riscv64 mips mipsel mips64 mips64el sparc sparc64 m68k ppc ppc64 s390x tricore"
+avr_SYMBOLS="
+helper_sleep \
+helper_unsupported \
+helper_debug \
+helper_break \
+helper_inb \
+helper_outb \
+helper_fullrd \
+helper_fullwr \
+helper_wdr \
+gen_intermediate_code \
+restore_state_to_opc \
+"
+
+ARCHS="x86_64 arm aarch64 riscv32 riscv64 mips mipsel mips64 mips64el sparc sparc64 m68k ppc ppc64 s390x tricore avr"
 
 for arch in $ARCHS; do
 
