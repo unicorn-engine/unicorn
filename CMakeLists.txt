@@ -1357,6 +1357,7 @@ endif()
 if (UNICORN_HAS_AVR)
     set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_AVR)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} avr-softmmu)
+    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_avr)
     target_link_libraries(avr-softmmu unicorn-common)
 endif()
 
