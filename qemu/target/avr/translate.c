@@ -2988,10 +2988,34 @@ static void translate(DisasContext *ctx)
         return;
     }
 
+    // Unicorn: trace this instruction on request
+    bool insn_hook = false;
+    TCGOp *insn_prev_op = NULL;
+    if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, insn_pc*2)) {
+
+        // sync PC in advance
+        tcg_gen_movi_tl(cpu_pc, insn_pc);
+
+        // save the last operand
+        insn_prev_op = tcg_last_op(tcg_ctx);
+        insn_hook = true;
+        gen_uc_tracecode(tcg_ctx, 0xf1, UC_HOOK_CODE_IDX, uc, insn_pc*2);
+
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
+    }
+
     uint32_t opcode = next_word(ctx);
     if (!decode_insn(ctx, opcode)) {
         gen_helper_unsupported(cpu_env);
         ctx->bstate = DISAS_NORETURN;
+    }
+
+    if (insn_hook) {
+        // Unicorn: patch the callback to have the proper instruction size.
+        TCGOp *const tcg_op = insn_prev_op ?
+            QTAILQ_NEXT(insn_prev_op, link) : QTAILQ_FIRST(&tcg_ctx->ops);
+        tcg_op->args[1] = (ctx->npc - insn_pc)*2;
     }
 }
 
@@ -3056,7 +3080,9 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb, int max_insns)
     target_ulong pc_start = tb->pc / 2;
     int num_insns = 0;
 
+    INIT_UC_CONTEXT_FROM_DISAS(&ctx);
     INIT_TCG_CONTEXT_AND_CPU_ENV_FROM_DISAS(&ctx);
+
     if (tb->flags & TB_FLAGS_FULL_ACCESS) {
         /*
          * This flag is set by ST/LD instruction we will regenerate it ONLY
@@ -3066,6 +3092,17 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb, int max_insns)
     }
     if (ctx.singlestep) {
         max_insns = 1;
+    }
+
+    // Unicorn: trace this block on request
+    bool block_hook = false;
+    TCGOp *block_prev_op = NULL;
+    if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_BLOCK, tb->pc)) {
+
+        // save the last operand
+        block_prev_op = tcg_last_op(tcg_ctx);
+        block_hook = true;
+        gen_uc_tracecode(tcg_ctx, 0xf8, UC_HOOK_BLOCK_IDX, uc, tb->pc);
     }
 
     gen_tb_start(tb);
@@ -3187,6 +3224,15 @@ done_generating:
 
     tb->size = (ctx.npc - pc_start) * 2;
     tb->icount = num_insns;
+
+    hooked_regions_check(uc, tb->pc, tb->size);
+
+    if (block_hook) {
+        // Unicorn: patch the callback to have the proper block size.
+        TCGOp *const tcg_op = block_prev_op ?
+            QTAILQ_NEXT(block_prev_op, link) : QTAILQ_FIRST(&tcg_ctx->ops);
+        tcg_op->args[1] = (ctx.npc - pc_start)*2;
+    }
 
 #ifdef DEBUG_DISAS
 #if 0
