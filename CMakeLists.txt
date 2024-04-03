@@ -1359,6 +1359,7 @@ if (UNICORN_HAS_AVR)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} avr-softmmu)
     set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_avr)
     target_link_libraries(avr-softmmu unicorn-common)
+    set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_avr)
 endif()
 
 # Extra tests
