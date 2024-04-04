@@ -227,6 +227,31 @@ static void avr_release(void *ctx)
     }
 }
 
+static inline bool is_flash_memory(hwaddr addr, size_t size, uint32_t perms)
+{
+    if ((addr ^ UC_AVR_MEM_FLASH) >> 24)
+        return false;
+    if ((perms & UC_PROT_ALL) != (UC_PROT_READ|UC_PROT_EXEC))
+        return false;
+    return true;
+}
+
+static MemoryRegion *avr_memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms)
+{
+    MemoryRegion *const mr = memory_map(uc, begin, size, perms);
+    if (mr && is_flash_memory(begin, size, perms))
+        set_avr_feature(&AVR_CPU(uc->cpu)->env, AVR_FEATURE_FLASH);
+    return mr;
+}
+
+static MemoryRegion *avr_memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms, void *ptr)
+{
+    MemoryRegion *const mr = memory_map_ptr(uc, begin, size, perms, ptr);
+    if (mr && is_flash_memory(begin, size, perms))
+        set_avr_feature(&AVR_CPU(uc->cpu)->env, AVR_FEATURE_FLASH);
+    return mr;
+}
+
 void avr_uc_init(struct uc_struct *uc)
 {
     uc->reg_read = avr_reg_read;
@@ -238,4 +263,6 @@ void avr_uc_init(struct uc_struct *uc)
     uc->release = avr_release;
     uc->cpu_context_size = offsetof(CPUAVRState, features);
     uc_common_init(uc);
+    uc->memory_map = avr_memory_map;
+    uc->memory_map_ptr = avr_memory_map_ptr;
 }
