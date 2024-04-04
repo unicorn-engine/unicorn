@@ -24,6 +24,12 @@ typedef enum uc_cpu_avr {
     UC_CPU_AVR_AVR6 = 6,
 } uc_cpu_avr;
 
+//> AVR memory
+typedef enum uc_avr_mem {
+    // Flash program memory (code)
+    UC_AVR_MEM_FLASH = 0x08000000,
+} uc_avr_mem;
+
 //> AVR registers
 typedef enum uc_avr_reg {
     UC_AVR_REG_INVALID = 0,

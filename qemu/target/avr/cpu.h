@@ -61,10 +61,16 @@
  *
  * It's also useful to know where some things are, like the IO registers.
  */
+#if 1
+// Unicorn:
+#define OFFSET_CODE 0x08000000 /* UC_AVR_MEM_FLASH */
+#define OFFSET_DATA 0x00000000
+#else
 /* Flash program memory */
 #define OFFSET_CODE 0x00000000
 /* CPU registers, IO registers, and SRAM */
 #define OFFSET_DATA 0x00800000
+#endif
 /* CPU registers specifically, these are mapped at the start of data */
 #define OFFSET_CPU_REGISTERS OFFSET_DATA
 /*
@@ -107,6 +113,8 @@ typedef enum AVRFeature {
     AVR_FEATURE_RAMPX,
     AVR_FEATURE_RAMPY,
     AVR_FEATURE_RAMPZ,
+
+    AVR_FEATURE_FLASH, /* Unicorn: was Flash program memory mapped? */
 } AVRFeature;
 
 typedef struct CPUAVRState CPUAVRState;
@@ -186,6 +194,12 @@ static inline void set_avr_feature(CPUAVRState *env, int feature)
 static inline int avr_cpu_mmu_index(CPUAVRState *env, bool ifetch)
 {
     return ifetch ? MMU_CODE_IDX : MMU_DATA_IDX;
+}
+
+static inline uint32_t avr_code_base(CPUAVRState *env)
+{
+    return OFFSET_CODE && avr_feature(env, AVR_FEATURE_FLASH) ?
+        OFFSET_CODE : 0;
 }
 
 void avr_cpu_tcg_init(struct uc_struct *uc);

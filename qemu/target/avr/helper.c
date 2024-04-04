@@ -112,12 +112,14 @@ bool avr_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
 
     if (mmu_idx == MMU_CODE_IDX) {
         /* access to code in flash */
-        paddr = OFFSET_CODE + address;
+        paddr = avr_code_base(&AVR_CPU(cs)->env) | address;
         prot = PAGE_READ | PAGE_EXEC;
+#if 0
         if (paddr + TARGET_PAGE_SIZE > OFFSET_DATA) {
             error_report("execution left flash memory");
             abort();
         }
+#endif
     } else if (address < NUMBER_OF_CPU_REGISTERS + NUMBER_OF_IO_REGISTERS) {
         /*
          * access to CPU registers, exit and rebuilt this TB to use full access
@@ -129,7 +131,7 @@ bool avr_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
         cpu_loop_exit_restore(cs, retaddr);
     } else {
         /* access to memory. nothing special */
-        paddr = OFFSET_DATA + address;
+        paddr = OFFSET_DATA | address;
         prot = PAGE_READ | PAGE_WRITE;
     }
 
@@ -326,7 +328,7 @@ target_ulong helper_fullrd(CPUAVRState *env, uint32_t addr)
         data = helper_inb(env, addr - NUMBER_OF_CPU_REGISTERS);
     } else {
         /* memory */
-        data = address_space_ldub(&address_space_memory, OFFSET_DATA + addr,
+        data = address_space_ldub(&address_space_memory, OFFSET_DATA | addr,
                                   MEMTXATTRS_UNSPECIFIED, NULL);
     }
     return data;
@@ -356,7 +358,7 @@ void helper_fullwr(CPUAVRState *env, uint32_t data, uint32_t addr)
         helper_outb(env, addr - NUMBER_OF_CPU_REGISTERS, data);
     } else {
         /* memory */
-        address_space_stb(&address_space_memory, OFFSET_DATA + addr, data,
+        address_space_stb(&address_space_memory, OFFSET_DATA | addr, data,
                           MEMTXATTRS_UNSPECIFIED, NULL);
     }
 }
