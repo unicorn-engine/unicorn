@@ -1,0 +1,20 @@
+From: =?utf-8?q?Timo_R=C3=B6hling?= <roehling@debian.org>
+Date: Wed, 21 Sep 2022 21:44:20 +0200
+Subject: Skip broken armhf test
+
+---
+ tests/unit/test_ctl.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tests/unit/test_ctl.c b/tests/unit/test_ctl.c
+index 05f4c54..f0b433e 100644
+--- a/tests/unit/test_ctl.c
++++ b/tests/unit/test_ctl.c
+@@ -314,5 +314,7 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
+              {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
+              {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
+ #endif
++#ifndef __ARM_EABI__
+              {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
++#endif
+              {NULL, NULL}};

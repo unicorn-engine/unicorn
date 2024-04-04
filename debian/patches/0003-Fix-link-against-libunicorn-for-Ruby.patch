@@ -1,0 +1,22 @@
+From: =?utf-8?q?Timo_R=C3=B6hling?= <roehling@debian.org>
+Date: Mon, 11 Apr 2022 01:59:08 +0200
+Subject: Fix link against libunicorn for Ruby
+
+Forwarded: not-needed
+---
+ bindings/ruby/unicorn_gem/ext/extconf.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/bindings/ruby/unicorn_gem/ext/extconf.rb b/bindings/ruby/unicorn_gem/ext/extconf.rb
+index 8c00bd1..8f9641d 100644
+--- a/bindings/ruby/unicorn_gem/ext/extconf.rb
++++ b/bindings/ruby/unicorn_gem/ext/extconf.rb
+@@ -2,7 +2,7 @@ require 'mkmf'
+ 
+ extension_name = 'unicorn_engine'
+ 
+-dir_config(extension_name)
++dir_config(extension_name, ENV['CPATH'].split(':'), ENV['LD_LIBRARY_PATH'].split(':'))
+ pkg_config('unicorn')
+ have_library('unicorn')
+ 

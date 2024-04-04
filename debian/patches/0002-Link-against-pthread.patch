@@ -1,0 +1,30 @@
+From: =?utf-8?q?Timo_R=C3=B6hling?= <roehling@debian.org>
+Date: Mon, 11 Apr 2022 01:06:00 +0200
+Subject: Link against pthread
+
+Forwarded: not-needed
+---
+ CMakeLists.txt | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4110ae5..f44066d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1323,6 +1323,8 @@ else()
+     target_link_libraries(unicorn PUBLIC
+         m
+     )
++    find_package(Threads REQUIRED)
++    target_link_libraries(unicorn PRIVATE Threads::Threads)
+ 
+     # For static archive
+     if (BUILD_SHARED_LIBS)
+@@ -1334,6 +1336,7 @@ else()
+             ${UNICORN_LINK_LIBRARIES}
+             m
+         )
++        target_link_libraries(unicorn_static PRIVATE Threads::Threads)
+     endif()
+ 
+     set_target_properties(unicorn PROPERTIES

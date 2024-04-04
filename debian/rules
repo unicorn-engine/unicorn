@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/architecture.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export PYBUILD_NAME = unicorn
+export DH_RUBY = --gem-install
+
+%:
+	dh $@ --buildsystem=cmake
+
+execute_after_dh_auto_clean-arch \
+execute_after_dh_auto_configure-arch \
+execute_after_dh_auto_build-arch \
+execute_after_dh_auto_install-arch: execute_after_%-arch:
+	CPATH=$(CURDIR)/include \
+	LD_LIBRARY_PATH=$(CURDIR)/obj-$(DEB_HOST_GNU_TYPE) \
+	$* --buildsystem=ruby
+
+execute_after_dh_auto_configure-indep \
+execute_after_dh_auto_build-indep \
+execute_after_dh_auto_install-indep: execute_after_%-indep:
+	LD_LIBRARY_PATH=$(CURDIR)/obj-$(DEB_HOST_GNU_TYPE) \
+	$* --buildsystem=pybuild --sourcedirectory=bindings/python

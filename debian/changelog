@@ -1,0 +1,87 @@
+unicorn-engine (2.0.1.post1-4) unstable; urgency=medium
+
+  * Fix build error with pybuild in dh_auto_clean
+
+ -- Timo Röhling <roehling@debian.org>  Tue, 15 Aug 2023 18:04:35 +0200
+
+unicorn-engine (2.0.1.post1-3) unstable; urgency=medium
+
+  * Properly execute dh_auto_clean (Closes: #1048756)
+
+ -- Timo Röhling <roehling@debian.org>  Tue, 15 Aug 2023 17:03:51 +0200
+
+unicorn-engine (2.0.1.post1-2) unstable; urgency=medium
+
+  * Make package cross-buildable
+  * Bump Standards-Version to 4.6.2
+
+ -- Timo Röhling <roehling@debian.org>  Mon, 19 Jun 2023 00:07:41 +0200
+
+unicorn-engine (2.0.1.post1-1) unstable; urgency=medium
+
+  * New upstream version 2.0.1.post1
+
+ -- Timo Röhling <roehling@debian.org>  Fri, 25 Nov 2022 11:50:59 +0100
+
+unicorn-engine (2.0.1-1) unstable; urgency=medium
+
+  * New upstream version 2.0.1
+
+ -- Timo Röhling <roehling@debian.org>  Fri, 04 Nov 2022 14:12:52 +0100
+
+unicorn-engine (2.0.0-5) unstable; urgency=medium
+
+  * Fix book keeping patch for RAM blocks
+  * Apply Multi-Arch hint
+
+ -- Timo Röhling <roehling@debian.org>  Thu, 29 Sep 2022 16:28:32 +0200
+
+unicorn-engine (2.0.0-4) unstable; urgency=medium
+
+  * Fix big endian issues (Closes: #1020536)
+
+ -- Timo Röhling <roehling@debian.org>  Fri, 23 Sep 2022 16:40:19 +0200
+
+unicorn-engine (2.0.0-3) unstable; urgency=medium
+
+  * Try to fix book keeping for RAM blocks
+
+ -- Timo Röhling <roehling@debian.org>  Thu, 22 Sep 2022 14:35:19 +0200
+
+unicorn-engine (2.0.0-2) unstable; urgency=medium
+
+  * Upload to unstable
+  * Move Python to indep build
+  * Fix setup.py and its antiquated distutils usage
+  * No need to try and run non-existing tests for bindings
+  * Work around test issues
+
+ -- Timo Röhling <roehling@debian.org>  Wed, 21 Sep 2022 21:50:02 +0200
+
+unicorn-engine (2.0.0-1) experimental; urgency=medium
+
+  * New upstream version 2.0.0 (Closes: #1019449)
+  * New SONAME libunicorn.so.2
+
+ -- Timo Röhling <roehling@debian.org>  Sat, 10 Sep 2022 00:45:24 +0200
+
+unicorn-engine (1.0.3-3) unstable; urgency=medium
+
+  * Fix independent any/all builds
+
+ -- Timo Röhling <roehling@debian.org>  Thu, 08 Sep 2022 09:43:30 +0200
+
+unicorn-engine (1.0.3-2) unstable; urgency=medium
+
+  * Fix d/copyright
+  * Bump Standards-Version to 4.6.1
+  * Override non-applicable lintian error
+  * Use -fPIC instead of -fpic
+
+ -- Timo Röhling <roehling@debian.org>  Thu, 08 Sep 2022 00:37:43 +0200
+
+unicorn-engine (1.0.3-1) unstable; urgency=medium
+
+  * Initial release. (Closes: #1003221)
+
+ -- Timo Röhling <roehling@debian.org>  Mon, 11 Apr 2022 02:06:21 +0200

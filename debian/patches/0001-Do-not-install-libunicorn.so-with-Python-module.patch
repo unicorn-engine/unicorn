@@ -1,0 +1,297 @@
+From: =?utf-8?q?Timo_R=C3=B6hling?= <roehling@debian.org>
+Date: Sun, 10 Apr 2022 23:16:05 +0200
+Subject: Do not install libunicorn.so with Python module
+
+Forwarded: not-needed
+---
+ bindings/python/setup.py           | 215 +------------------------------------
+ bindings/python/unicorn/unicorn.py |  42 +-------
+ 2 files changed, 2 insertions(+), 255 deletions(-)
+
+diff --git a/bindings/python/setup.py b/bindings/python/setup.py
+index 8c579ad..289a257 100755
+--- a/bindings/python/setup.py
++++ b/bindings/python/setup.py
+@@ -1,216 +1,10 @@
+ #!/usr/bin/env python
+ # Python binding for Unicorn engine. Nguyen Anh Quynh <aquynh@gmail.com>
+ 
+-from __future__ import print_function
+-import glob
+-import os
+-import subprocess
+-import shutil
+-import sys
+-import platform
+-
+-from distutils import log
+-from distutils.core import setup
+-from distutils.util import get_platform
+-from distutils.command.build import build
+-from distutils.command.sdist import sdist
+-from setuptools.command.bdist_egg import bdist_egg
+-
+-SYSTEM = sys.platform
+-
+-# sys.maxint is 2**31 - 1 on both 32 and 64 bit mingw
+-IS_64BITS = platform.architecture()[0] == '64bit'
+-
+-# are we building from the repository or from a source distribution?
+-ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+-LIBS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'lib')
+-HEADERS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'include')
+-SRC_DIR = os.path.join(ROOT_DIR, 'src')
+-UC_DIR = SRC_DIR if os.path.exists(SRC_DIR) else os.path.join(ROOT_DIR, '../..')
+-BUILD_DIR = os.path.join(UC_DIR, 'build_python')
++from setuptools import setup
+ 
+ VERSION = "2.0.1.post1"
+ 
+-if SYSTEM == 'darwin':
+-    LIBRARY_FILE = "libunicorn.2.dylib"
+-    STATIC_LIBRARY_FILE = "libunicorn.a"
+-elif SYSTEM in ('win32', 'cygwin'):
+-    LIBRARY_FILE = "unicorn.dll"
+-    STATIC_LIBRARY_FILE = "unicorn.lib"
+-else:
+-    LIBRARY_FILE = "libunicorn.so.2"
+-    STATIC_LIBRARY_FILE = "libunicorn.a"
+-
+-def clean_bins():
+-    shutil.rmtree(LIBS_DIR, ignore_errors=True)
+-    shutil.rmtree(HEADERS_DIR, ignore_errors=True)
+-
+-def copy_sources():
+-    """Copy the C sources into the source directory.
+-    This rearranges the source files under the python distribution
+-    directory.
+-    """
+-    src = []
+-
+-    shutil.rmtree(SRC_DIR, ignore_errors=True)
+-    os.mkdir(SRC_DIR)
+-
+-    shutil.copytree(os.path.join(ROOT_DIR, '../../qemu'), os.path.join(SRC_DIR, 'qemu/'))
+-    shutil.copytree(os.path.join(ROOT_DIR, '../../msvc'), os.path.join(SRC_DIR, 'msvc/'))
+-    shutil.copytree(os.path.join(ROOT_DIR, '../../include'), os.path.join(SRC_DIR, 'include/'))
+-    # make -> configure -> clean -> clean tests fails unless tests is present
+-    shutil.copytree(os.path.join(ROOT_DIR, '../../tests'), os.path.join(SRC_DIR, 'tests/'))
+-    shutil.copytree(os.path.join(ROOT_DIR, '../../samples'), os.path.join(SRC_DIR, 'samples/'))
+-    shutil.copytree(os.path.join(ROOT_DIR, '../../glib_compat'), os.path.join(SRC_DIR, 'glib_compat/'))
+-
+-    try:
+-        # remove site-specific configuration file
+-        # might not exist
+-        os.remove(os.path.join(SRC_DIR, 'qemu/config-host.mak'))
+-    except OSError:
+-        pass
+-
+-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.[ch]")))
+-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.mk")))
+-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.cmake")))
+-
+-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../LICENSE*")))
+-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../README.md")))
+-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.TXT")))
+-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../CMakeLists.txt")))
+-
+-    for filename in src:
+-        outpath = os.path.join(SRC_DIR, os.path.basename(filename))
+-        log.info("%s -> %s" % (filename, outpath))
+-        shutil.copy(filename, outpath)
+-
+-def build_libraries():
+-    """
+-    Prepare the unicorn directory for a binary distribution or installation.
+-    Builds shared libraries and copies header files.
+-
+-    Will use a src/ dir if one exists in the current directory, otherwise assumes it's in the repo
+-    """
+-    cwd = os.getcwd()
+-    clean_bins()
+-    os.mkdir(HEADERS_DIR)
+-    os.mkdir(LIBS_DIR)
+-
+-    # copy public headers
+-    shutil.copytree(os.path.join(UC_DIR, 'include', 'unicorn'), os.path.join(HEADERS_DIR, 'unicorn'))
+-
+-    # check if a prebuilt library exists
+-    # if so, use it instead of building
+-    if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)):
+-        shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE), LIBS_DIR)
+-        if STATIC_LIBRARY_FILE is not None and os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE)):
+-            shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE), LIBS_DIR)
+-        return
+-
+-    # otherwise, build!!
+-    os.chdir(UC_DIR)
+-
+-    try:
+-        subprocess.check_call(['msbuild', '/help'])
+-    except:
+-        has_msbuild = False
+-    else:
+-        has_msbuild = True
+-
+-    if has_msbuild and SYSTEM == 'win32':
+-        plat = 'Win32' if platform.architecture()[0] == '32bit' else 'x64'
+-        conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
+-        if not os.path.exists(BUILD_DIR):
+-            os.mkdir(BUILD_DIR)
+-        
+-        subprocess.check_call(['cmake', '-B', BUILD_DIR, '-G', "Visual Studio 16 2019", "-A", plat, "-DCMAKE_BUILD_TYPE=" + conf])
+-        subprocess.check_call(['msbuild', 'unicorn.sln', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=BUILD_DIR)
+-
+-        obj_dir = os.path.join(BUILD_DIR, conf)
+-        shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
+-        shutil.copy(os.path.join(BUILD_DIR, STATIC_LIBRARY_FILE), LIBS_DIR)
+-    else:
+-        # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
+-        if not os.path.exists(BUILD_DIR):
+-            os.mkdir(BUILD_DIR)
+-        conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
+-
+-        cmake_args = ["cmake", '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
+-        if os.getenv("TRACE", ""):
+-            cmake_args += ["-DUNICORN_TRACER=on"]
+-        subprocess.check_call(cmake_args)
+-        os.chdir(BUILD_DIR)
+-        threads = os.getenv("THREADS", "4")
+-        subprocess.check_call(["cmake", "--build", ".", "-j" + threads])
+-    
+-        shutil.copy(LIBRARY_FILE, LIBS_DIR)
+-        shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+-
+-    os.chdir(cwd)
+-
+-
+-class custom_sdist(sdist):
+-    def run(self):
+-        clean_bins()
+-        copy_sources()
+-        return sdist.run(self)
+-
+-class custom_build(build):
+-    def run(self):
+-        if 'LIBUNICORN_PATH' in os.environ:
+-            log.info("Skipping building C extensions since LIBUNICORN_PATH is set")
+-        else:
+-            log.info("Building C extensions")
+-            build_libraries()
+-        return build.run(self)
+-
+-class custom_bdist_egg(bdist_egg):
+-    def run(self):
+-        self.run_command('build')
+-        return bdist_egg.run(self)
+-
+-def dummy_src():
+-    return []
+-
+-cmdclass = {}
+-cmdclass['build'] = custom_build
+-cmdclass['sdist'] = custom_sdist
+-cmdclass['bdist_egg'] = custom_bdist_egg
+-
+-if 'bdist_wheel' in sys.argv and '--plat-name' not in sys.argv:
+-    idx = sys.argv.index('bdist_wheel') + 1
+-    sys.argv.insert(idx, '--plat-name')
+-    name = get_platform()
+-    if 'linux' in name:
+-        # linux_* platform tags are disallowed because the python ecosystem is fubar
+-        # linux builds should be built in the centos 5 vm for maximum compatibility
+-        # see https://github.com/pypa/manylinux
+-        # see also https://github.com/angr/angr-dev/blob/master/bdist.sh
+-        sys.argv.insert(idx + 1, 'manylinux1_' + platform.machine())
+-    elif 'mingw' in name:
+-        if IS_64BITS:
+-            sys.argv.insert(idx + 1, 'win_amd64')
+-        else:
+-            sys.argv.insert(idx + 1, 'win32')
+-    else:
+-        # https://www.python.org/dev/peps/pep-0425/
+-        sys.argv.insert(idx + 1, name.replace('.', '_').replace('-', '_'))
+-
+-try:
+-    from setuptools.command.develop import develop
+-    class custom_develop(develop):
+-        def run(self):
+-            log.info("Building C extensions")
+-            build_libraries()
+-            return develop.run(self)
+-
+-    cmdclass['develop'] = custom_develop
+-except ImportError:
+-    print("Proper 'develop' support unavailable.")
+-
+-def join_all(src, files):
+-    return tuple(os.path.join(src, f) for f in files)
+-
+ long_desc = '''
+ Unicorn is a lightweight, multi-platform, multi-architecture CPU emulator framework
+ based on [QEMU](http://qemu.org).
+@@ -246,11 +40,4 @@ setup(
+         'Programming Language :: Python :: 3',
+     ],
+     requires=['ctypes'],
+-    cmdclass=cmdclass,
+-    zip_safe=False,
+-    include_package_data=True,
+-    is_pure=False,
+-    package_data={
+-        'unicorn': ['lib/*', 'include/unicorn/*']
+-    }
+ )
+diff --git a/bindings/python/unicorn/unicorn.py b/bindings/python/unicorn/unicorn.py
+index 2e6a938..2f14179 100644
+--- a/bindings/python/unicorn/unicorn.py
++++ b/bindings/python/unicorn/unicorn.py
+@@ -71,47 +71,7 @@ def _load_lib(path, lib_name):
+         #print('FAIL to load %s' %lib_file, e)
+         return None
+ 
+-_uc = None
+-
+-# Loading attempts, in order
+-# - user-provided environment variable
+-# - pkg_resources can get us the path to the local libraries
+-# - we can get the path to the local libraries by parsing our filename
+-# - global load
+-# - python's lib directory
+-# - last-gasp attempt at some hardcoded paths on darwin and linux
+-
+-_path_list = [os.getenv('LIBUNICORN_PATH', None),
+-              pkg_resources.resource_filename(__name__, 'lib'),
+-              os.path.join(os.path.split(__file__)[0], 'lib'),
+-              '',
+-              distutils.sysconfig.get_python_lib(),
+-              "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64',
+-              os.getenv('PATH', '')]
+-
+-#print(_path_list)
+-#print("-" * 80)
+-
+-for _path in _path_list:
+-    if _path is None: continue
+-    _uc = _load_lib(_path, _lib.get(sys.platform, "libunicorn.so"))
+-    if _uc is not None:
+-        break
+-
+-# Try to search old unicorn1 library without SONAME
+-if _uc is None:
+-    for _path in _path_list:
+-        if _path is None:
+-            continue
+-        
+-        _uc = _load_lib(_path, "libunicorn.so")
+-        if _uc is not None:
+-            # In this case, show a warning for users
+-            print("Found an old style dynamic library libunicorn.so, consider checking your installation", file=sys.stderr)
+-            break
+-
+-if _uc is None:
+-    raise ImportError("ERROR: fail to load the dynamic library.")
++_uc = ctypes.cdll.LoadLibrary("libunicorn.so.2")
+ 
+ __version__ = "%u.%u.%u" % (uc.UC_VERSION_MAJOR, uc.UC_VERSION_MINOR, uc.UC_VERSION_PATCH)
+ 

@@ -1,0 +1,533 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://github.com/unicorn-engine/unicorn
+
+Files: *
+Copyright: 2015-2022, Dang Hoang Vu <dang.hvu@gmail.com>
+           2015-2022, Nguyen Anh Quynh <aquynh@gmail.com>
+           2015-2022, Unicorn contributors
+License: LGPL-2+
+
+Files: bindings/dotnet/*
+Copyright: 2016, Antonio Parata
+License: LGPL-2+
+
+Files: bindings/haskell/*
+Copyright: 2016, Adrian Herrera
+License: GPL-2+
+
+Files: bindings/java/*
+Copyright: 2015-2016, Chris Eagle
+License: GPL-2
+
+Files: bindings/ruby/*
+Copyright: 2016, Sascha Schirra
+License: GPL-2
+
+Files: bindings/rust/*
+Copyright: 2016, Sébastien Duquette
+License: GPL-2+
+
+Files: bindings/pascal/*
+Copyright: 2018, Coldzer0 <coldzer0@protonmail.ch>
+License: GPL-2+
+
+Files: bindings/python/*
+Copyright: 2015-2021, Nguyen Anh Quynh <aquynh@gmail.com>
+License: BSD-3-clause
+
+Files: bindings/vb6/*
+Copyright: David Zimmer <david.zimmer@fireeye.com>
+License: Apache-2.0
+
+Files: debian/*
+Copyright: 2022, Timo Röhling <roehling@debian.org>
+License: Expat
+
+Files: qemu/*
+Copyright: 2009-2011, Alexander Graf <agraf@suse.de>
+           2022, Aptiv
+           Bastian Koppelmann <kbastian@mail.uni-paderborn.de>
+           2016, Chris Eagle <cseagle@gmail.com>
+           2004, Cisco Systems Inc
+           2005-2007, CodeSourcery
+           2010, Corentin Chary
+           1995-1996, David S. Miller <davem@caip.rutgers.edu>
+           2008, Dmitry Baryshkov
+           2016-2017, Emilio G. Cota <cota@braap.org>
+           2003, Fabrice Bellard
+           2011-2012, Fujitsu Corp
+           2008, Herbert Xu <herbert@gondor.apana.org.au>
+           2013, Huawei Technologies Duesseldorf GmbH
+           2008-2018, IBM Corp
+           2016, Jean-Christophe Dubois
+           2013-2019, Linaro Ltd
+           2016-2017, Lluís Vilanova <vilanova@ac.upc.edu>
+           2018, Peer Adelt <peer.adelt@hni.uni-paderborn.de>
+           2004-2019, Red Hat Inc
+           2012-2014, SUSE LINUX Products GmbH
+           2016-2017, Sagar Karandikar <sagark@eecs.berkeley.edu>
+           2017-2018, SiFive Inc
+           2015, Thomas Huth
+           2009, Ulrich Hecht
+License: GPL-2+
+Comment: The forked QEMU code was mainly distributed under GPL-2+,
+ but various subcomponents and the modifications by the Unicorn
+ project have been put under different but compatible licenses,
+ as detailed below.
+
+Files: qemu/exec-vary.c
+       qemu/exec.c
+       qemu/include/exec/cpu-all.h
+       qemu/include/exec/cpu-defs.h
+       qemu/include/exec/cpu_ldst.h
+       qemu/include/exec/cputlb.h
+       qemu/include/exec/exec-all.h
+       qemu/include/exec/ioport.h
+       qemu/include/exec/memory_ldst.inc.h
+       qemu/include/exec/memory_ldst_cached.inc.h
+       qemu/include/exec/memory_ldst_phys.inc.h
+       qemu/include/exec/tb-context.h
+       qemu/include/exec/tb-hash.h
+       qemu/memory_ldst.inc.c
+       qemu/target/arm/arm_ldst.h
+       qemu/target/arm/cpu.h
+       qemu/target/arm/crypto_helper.c
+       qemu/target/arm/helper-a64.c
+       qemu/target/arm/helper-a64.h
+       qemu/target/arm/helper-sve.h
+       qemu/target/arm/iwmmxt_helper.c
+       qemu/target/arm/op_helper.c
+       qemu/target/arm/pauth_helper.c
+       qemu/target/arm/sve_helper.c
+       qemu/target/arm/translate-a64.c
+       qemu/target/arm/translate-a64.h
+       qemu/target/arm/translate-sve.c
+       qemu/target/arm/translate-vfp.inc.c
+       qemu/target/arm/translate.c
+       qemu/target/arm/vec_helper.c
+       qemu/target/i386/bpt_helper.c
+       qemu/target/i386/cc_helper.c
+       qemu/target/i386/cc_helper_template.h
+       qemu/target/i386/cpu.c
+       qemu/target/i386/cpu.h
+       qemu/target/i386/excp_helper.c
+       qemu/target/i386/fpu_helper.c
+       qemu/target/i386/helper.c
+       qemu/target/i386/int_helper.c
+       qemu/target/i386/mem_helper.c
+       qemu/target/i386/misc_helper.c
+       qemu/target/i386/mpx_helper.c
+       qemu/target/i386/ops_sse.h
+       qemu/target/i386/ops_sse_header.h
+       qemu/target/i386/seg_helper.c
+       qemu/target/i386/shift_helper_template.h
+       qemu/target/i386/smm_helper.c
+       qemu/target/i386/svm_helper.c
+       qemu/target/i386/translate.c
+       qemu/target/mips/cp0_helper.c
+       qemu/target/mips/dsp_helper.c
+       qemu/target/mips/fpu_helper.c
+       qemu/target/mips/helper.c
+       qemu/target/mips/lmi_helper.c
+       qemu/target/mips/msa_helper.c
+       qemu/target/mips/op_helper.c
+       qemu/target/mips/translate.c
+       qemu/target/mips/translate_init.inc.c
+       qemu/target/ppc/compat.c
+       qemu/target/ppc/cpu-models.c
+       qemu/target/ppc/cpu-models.h
+       qemu/target/ppc/cpu.c
+       qemu/target/ppc/cpu.h
+       qemu/target/ppc/dfp_helper.c
+       qemu/target/ppc/excp_helper.c
+       qemu/target/ppc/fpu_helper.c
+       qemu/target/ppc/helper_regs.h
+       qemu/target/ppc/int_helper.c
+       qemu/target/ppc/internal.h
+       qemu/target/ppc/mem_helper.c
+       qemu/target/ppc/misc_helper.c
+       qemu/target/ppc/mmu-book3s-v3.c
+       qemu/target/ppc/mmu-book3s-v3.h
+       qemu/target/ppc/mmu-hash32.c
+       qemu/target/ppc/mmu-hash64.c
+       qemu/target/ppc/mmu-radix64.c
+       qemu/target/ppc/mmu_helper.c
+       qemu/target/ppc/timebase_helper.c
+       qemu/target/ppc/translate.c
+       qemu/target/ppc/translate_init.inc.c
+       qemu/target/sparc/cc_helper.c
+       qemu/target/sparc/cpu.c
+       qemu/target/sparc/fop_helper.c
+       qemu/target/sparc/helper.c
+       qemu/target/sparc/int32_helper.c
+       qemu/target/sparc/int64_helper.c
+       qemu/target/sparc/ldst_helper.c
+       qemu/target/sparc/mmu_helper.c
+       qemu/target/sparc/translate.c
+       qemu/target/sparc/vis_helper.c
+       qemu/target/sparc/win_helper.c
+Copyright: 2020, Aleksandar Markovic <amarkovic@wavecomp.com>
+           2013, Alexander Graf <agraf@suse.de>
+           2005-2012, CodeSourcery LLC
+           2013-2016, David Gibson
+           Dongxue Zhang <elta.era@gmail.com>
+           2003-2008, Fabrice Bellard
+           2011, Freescale Semiconductor Inc
+           2007, Herve Poussineau
+           2014, IBM Corp
+           2014, Imagination Technologies
+           2008, Intel Corp
+           2011, Jan Kiszka, Siemens AG
+           2012, Jia Liu & Dongxue Zhang
+           2003-2007, Jocelyn Mayer
+           2013-2019, Linaro Ltd
+           2006, Marius Groeger
+           2015, Nguyen Anh Quynh
+           2017, Nikunj A Dadhania
+           2007, OpenedHand Ltd
+           2013-2018, Red Hat Inc
+           2011, Richard Henderson <rth@twiddle.net>
+           2013, SUSE LINUX Products GmbH
+           2016-2017, Suraj Jitindar Singh, IBM Corporation
+           2006, Thiemo Seufer
+           2003, Thomas M. Ogrisegg <tom@fnord.at>
+           2020, Wave Computing Inc
+License: LGPL-2+
+
+Files: qemu/accel/tcg/atomic_template.h
+       qemu/accel/tcg/cpu-exec-common.c
+       qemu/accel/tcg/cpu-exec.c
+       qemu/accel/tcg/cputlb.c
+       qemu/accel/tcg/tcg-runtime-gvec.c
+       qemu/accel/tcg/translate-all.c
+       qemu/accel/tcg/translate-all.h
+       qemu/crypto/*
+       qemu/include/crypto/init.h
+       qemu/include/crypto/random.h
+       qemu/include/qemu/bitmap.h
+       qemu/include/qemu/bitops.h
+       qemu/include/qemu/rcu_queue.h
+       qemu/include/tcg/*
+       qemu/target/arm/vfp_helper.c
+       qemu/target/i386/cpu-qom.h
+       qemu/target/m68k/cpu-qom.h
+       qemu/target/m68k/cpu.c
+       qemu/target/m68k/cpu.h
+       qemu/target/m68k/fpu_helper.c
+       qemu/target/m68k/helper.c
+       qemu/target/m68k/op_helper.c
+       qemu/target/m68k/translate.c
+       qemu/target/mips/cpu-qom.h
+       qemu/target/mips/cpu.c
+       qemu/target/ppc/cpu-qom.h
+       qemu/target/s390x/cc_helper.c
+       qemu/target/s390x/cpu-qom.h
+       qemu/target/s390x/excp_helper.c
+       qemu/target/s390x/fpu_helper.c
+       qemu/target/s390x/helper.c
+       qemu/target/s390x/int_helper.c
+       qemu/target/s390x/mem_helper.c
+       qemu/target/s390x/misc_helper.c
+       qemu/target/s390x/translate.c
+       qemu/target/sparc/cpu-qom.h
+       qemu/target/tricore/cpu-param.h
+       qemu/target/tricore/cpu-qom.h
+       qemu/target/tricore/cpu.c
+       qemu/target/tricore/cpu.h
+       qemu/target/tricore/fpu_helper.c
+       qemu/target/tricore/helper.c
+       qemu/target/tricore/helper.h
+       qemu/target/tricore/op_helper.c
+       qemu/target/tricore/translate.c
+       qemu/target/tricore/tricore-defs.h
+       qemu/target/tricore/tricore-opcodes.h
+       qemu/tcg/tcg-op-gvec.c
+       qemu/tcg/tcg-op-vec.c
+Copyright: 2009-2011, Alexander Graf
+           2022, Aptiv
+           2012-2016, Bastian Koppelmann
+           2005-2007, CodeSourcery LLC
+           2010, Corentin Chary <corentin.chary@gmail.com>
+           2003-2005, Fabrice Bellard
+           2009-2011, IBM Corp
+           2018, Linaro Inc
+           2013, Mike D. Day
+           2009-2016, Red Hat Inc
+           2012, SUSE LINUX Products GmbH
+           2009, Ulrich Hecht
+           2020, osy
+License: LGPL-2.1+
+
+Files: qemu/accel/tcg/tcg-all.c
+       qemu/accel/tcg/tcg-runtime.c
+       qemu/hw/i386/*
+       qemu/hw/ppc/*
+       qemu/include/hw/i386/*
+       qemu/include/qemu/host-utils.h
+       qemu/include/sysemu/os-win32.h
+       qemu/include/tcg/tcg-mo.h
+       qemu/include/tcg/tcg-op.h
+       qemu/include/tcg/tcg-opc.h
+       qemu/include/tcg/tcg.h
+       qemu/softmmu/cpus.c
+       qemu/softmmu/ioport.c
+       qemu/softmmu/vl.c
+       qemu/target/mips/cp0_timer.c
+       qemu/tcg/arm/*
+       qemu/tcg/i386/*
+       qemu/tcg/mips/*
+       qemu/tcg/optimize.c
+       qemu/tcg/ppc/*
+       qemu/tcg/riscv/*
+       qemu/tcg/s390/*
+       qemu/tcg/sparc/*
+       qemu/tcg/tcg-ldst.inc.c
+       qemu/tcg/tcg-op.c
+       qemu/tcg/tcg-pool.inc.c
+       qemu/tcg/tcg.c
+       qemu/util/cutils.c
+       qemu/util/getauxval.c
+       qemu/util/host-utils.c
+       qemu/util/osdep.c
+       qemu/util/oslib-posix.c
+       qemu/util/oslib-win32.c
+       qemu/util/qemu-timer-common.c
+       qemu/util/qemu-timer.c
+Copyright: 2010-2011, AdaCore
+           2009, Alexander Graf <agraf@suse.de>
+           2008, Andrzej Zaborowski
+           2008-2009, Arnaud Patard <arnaud.patard@rtp-net.org>
+           2007-2010, Aurelien Jarno <aurelien@aurel32.net>
+           2003-2008, Fabrice Bellard
+           2010, Jes Sorensen <Jes.Sorensen@redhat.com>
+           2003-2007, Jocelyn Mayer
+           2019, Linaro Ltd
+           2009, Raymond Hettinger
+           2010-2016, Red Hat Inc
+           2010, Richard Henderson <rth@twiddle.net>
+           2010, Samsung Electronics
+           2018, SiFive Inc
+           2007, Thiemo Seufer
+           2009, Ulrich Hecht <uli@suse.de>
+License: Expat
+
+Files: qemu/include/libdecnumber/*
+       qemu/libdecnumber/*
+Copyright: 2005-2008, Free Software Foundation, Inc
+License: GPL-2+ with GCC exception
+
+Files: qemu/target/arm/cpu-param.h
+       qemu/target/i386/cpu-param.h
+       qemu/target/m68k/cpu-param.h
+       qemu/target/mips/cpu-param.h
+       qemu/target/ppc/cpu-param.h
+       qemu/target/sparc/cpu-param.h
+Copyright: 2005-2007, CodeSourcery LLC
+           2003, Fabrice Bellard
+           2007, Jocelyn Mayer
+License: LGPL-2+
+
+Files: qemu/fpu/*
+       qemu/include/fpu/*
+Copyright: 2006, Fabrice Bellard
+License: BSD-3-clause or GPL-2
+
+Files: qemu/include/fpu/softfloat-helpers.h
+       qemu/target/arm/neon_helper.c
+       qemu/target/m68k/softfloat.c
+       qemu/target/m68k/softfloat.h
+       qemu/target/m68k/softfloat_fpsp_tables.h
+Copyright: 2007-2008, CodeSourcery LLC
+License: GPL-2
+
+Files: qemu/include/qemu/xxhash.h
+Copyright: 2012-2016, Yann Collet
+License: BSD-2-clause
+
+Files: qemu/include/qemu/queue.h
+Copyright: 1991-1993, The Regents of the University of California
+License: BSD-3-clause
+
+Files: qemu/crypto/aes.c
+Copyright: Vincent Rijmen <vincent.rijmen@esat.kuleuven.ac.be>
+           Antoon Bosselaers <antoon.bosselaers@esat.kuleuven.ac.be>
+           Paulo Barreto <paulo.barreto@terra.com.br>
+License: Public-Domain
+ This code is hereby placed in the public domain.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE AUTHORS ''AS IS'' AND ANY EXPRESS
+ OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Files: tests/regress/*
+Copyright: 2015-2022, Unicorn contributors
+License: BSD-3-clause
+
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+ http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian systems, the complete text of the Apache version 2.0 license
+ can be found in "/usr/share/common-licenses/Apache-2.0".
+
+License: BSD-2-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
+
+License: BSD-3-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ 3. Neither the name of the University nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
+
+License: Expat
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ .
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+
+License: GPL-2
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ version 2 as published by the Free Software Foundation.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ On Debian systems, the full license text is available at
+ /usr/share/common-licenses/GPL-2
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ On Debian systems, the full license text is available at
+ /usr/share/common-licenses/GPL-2
+
+License: GPL-2+ with GCC exception
+ GCC is free software; you can redistribute it and/or modify it under
+ the terms of the GNU General Public License as published by the Free
+ Software Foundation; either version 2, or (at your option) any later
+ version.
+ .
+ In addition to the permissions in the GNU General Public License,
+ the Free Software Foundation gives you unlimited permission to link
+ the compiled version of this file into combinations with other
+ programs, and to distribute those combinations without any
+ restriction coming from the use of this file.  (The General Public
+ License restrictions do apply in other respects; for example, they
+ cover modification of the file, and distribution when not linked
+ into a combine executable.)
+ .
+ GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ for more details.
+ .
+ On Debian systems, the full license text is available at
+ /usr/share/common-licenses/GPL-2
+
+License: LGPL-2+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Library General Public
+ License as published by the Free Software Foundation; either
+ version 2 of the License, or (at your option) any later version.
+ .
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Library General Public License for more details.
+ .
+ On Debian systems, the full license text is available at
+ /usr/share/common-licenses/LGPL-2
+
+License: LGPL-2.1+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2.1 of the License, or (at your option) any later version.
+ .
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+ .
+ On Debian systems, the full license text is available at
+ /usr/share/common-licenses/LGPL-2.1
+

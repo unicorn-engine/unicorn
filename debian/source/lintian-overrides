@@ -1,0 +1,3 @@
+# Test binary
+unicorn-engine source: source-is-missing [tests/regress/x86_self_modifying.elf]
+

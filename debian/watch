@@ -1,0 +1,4 @@
+version=4
+opts=filenamemangle=s%(?:.*?)?v?(\d[\d.]*@ARCHIVE_EXT@)%@PACKAGE@-$1%,\
+ uversionmangle=s/-(rc|a|b)/~$1/ \
+ https://github.com/unicorn-engine/unicorn/tags (?:.*?/)?v?@ANY_VERSION@@ARCHIVE_EXT@

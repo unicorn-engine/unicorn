@@ -1,0 +1,81 @@
+Source: unicorn-engine
+Section: libs
+Priority: optional
+Maintainer: Timo Röhling <roehling@debian.org>
+Build-Depends:
+ debhelper-compat (= 13),
+ cmake,
+ dh-sequence-ruby,
+ gem2deb,
+ pkgconf,
+ rake,
+ ruby-magic:native,
+Build-Depends-Indep:
+ dh-python,
+ dh-sequence-python3,
+ python3-all,
+ python3-setuptools,
+Homepage: https://unicorn-engine.org
+Standards-Version: 4.6.2
+XS-Ruby-Versions: all
+Rules-Requires-Root: no
+Vcs-Git: https://salsa.debian.org/roehling/unicorn-engine.git
+Vcs-Browser: https://salsa.debian.org/roehling/unicorn-engine
+Description: Lightweight CPU emulator framework
+ Unicorn is a CPU emulator which is based on the CPU emulation code from
+ QEMU. Unlike QEMU, it focuses on the emulation of CPU code without a
+ full system emulation, but with the goal to make the emulation
+ extensible and easy to integrate in custom tools. Unicorn provides
+ language bindings for Python, Ruby, and Rust (among others) and has
+ instrumentation hooks for various CPU events. This makes Unicorn well
+ suited for malware analysis and reverse engineering.
+
+Package: libunicorn2
+Architecture: any
+Multi-Arch: same
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: ${source:Synopsis}
+ ${source:Extended-Description}
+ .
+ This package installs the shared library of Unicorn.
+
+Package: libunicorn-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends:
+ ${misc:Depends},
+ libunicorn2 (= ${binary:Version}),
+Description: ${source:Synopsis} (development headers)
+ ${source:Extended-Description}
+ .
+ This package installs the headers and development files.
+
+Package: python3-unicorn
+Section: python
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ libunicorn2 (>= ${source:Upstream-Version}),
+Description: ${source:Synopsis} (Python 3 bindings)
+ ${source:Extended-Description}
+ .
+ This package installs the Python 3 bindings.
+
+Package: ruby-unicorn-engine
+Section: ruby
+Architecture: any
+Multi-Arch: same
+XB-Ruby-Versions: ${ruby:Versions}
+X-DhRuby-Root: bindings/ruby/unicorn_gem
+Depends:
+ ${misc:Depends},
+ ${ruby:Depends},
+ ${shlibs:Depends},
+Description: ${source:Synopsis} (Ruby bindings)
+ ${source:Extended-Description}
+ .
+ This package installs the Ruby bindings.
