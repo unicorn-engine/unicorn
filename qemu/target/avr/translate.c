@@ -200,7 +200,8 @@ static int to_regs_00_30_by_two(DisasContext *ctx, int indx)
 
 static uint16_t next_word(DisasContext *ctx)
 {
-    return cpu_lduw_code(ctx->env, ctx->npc++ * 2);
+    // Unicorn:
+    return cpu_lduw_code(ctx->env, avr_code_base(ctx->env) | (ctx->npc++ * 2));
 }
 
 static int append_16(DisasContext *ctx, int x)
@@ -1706,6 +1707,19 @@ static void gen_data_load(DisasContext *ctx, TCGv data, TCGv addr)
     }
 }
 
+static void gen_code_load(DisasContext *ctx, TCGv Rd, TCGv addr)
+{
+    INIT_TCG_CONTEXT_FROM_DISAS(ctx);
+    // Unicorn:
+    const uint32_t code_base = avr_code_base(ctx->env);
+    if (code_base) {
+        TCGv Rc = tcg_const_i32(code_base);
+        tcg_gen_or_tl(addr, addr, Rc);
+        tcg_temp_free_i32(Rc);
+    }
+    tcg_gen_qemu_ld8u(Rd, addr, MMU_CODE_IDX); /* Rd = mem[addr] */
+}
+
 /*
  *  This instruction makes a copy of one register into another. The source
  *  register Rr is left unchanged, while the destination register Rd is loaded
@@ -2264,7 +2278,7 @@ static bool trans_LPM1(DisasContext *ctx, arg_LPM1 *a)
 
     tcg_gen_shli_tl(addr, H, 8); /* addr = H:L */
     tcg_gen_or_tl(addr, addr, L);
-    tcg_gen_qemu_ld8u(Rd, addr, MMU_CODE_IDX); /* Rd = mem[addr] */
+    gen_code_load(ctx, Rd, addr);
 
     tcg_temp_free_i32(addr);
 
@@ -2285,7 +2299,7 @@ static bool trans_LPM2(DisasContext *ctx, arg_LPM2 *a)
 
     tcg_gen_shli_tl(addr, H, 8); /* addr = H:L */
     tcg_gen_or_tl(addr, addr, L);
-    tcg_gen_qemu_ld8u(Rd, addr, MMU_CODE_IDX); /* Rd = mem[addr] */
+    gen_code_load(ctx, Rd, addr);
 
     tcg_temp_free_i32(addr);
 
@@ -2306,7 +2320,7 @@ static bool trans_LPMX(DisasContext *ctx, arg_LPMX *a)
 
     tcg_gen_shli_tl(addr, H, 8); /* addr = H:L */
     tcg_gen_or_tl(addr, addr, L);
-    tcg_gen_qemu_ld8u(Rd, addr, MMU_CODE_IDX); /* Rd = mem[addr] */
+    gen_code_load(ctx, Rd, addr);
     tcg_gen_addi_tl(addr, addr, 1); /* addr = addr + 1 */
     tcg_gen_andi_tl(L, addr, 0xff);
     tcg_gen_shri_tl(addr, addr, 8);
@@ -2342,7 +2356,7 @@ static bool trans_ELPM1(DisasContext *ctx, arg_ELPM1 *a)
     TCGv Rd = cpu_r[0];
     TCGv addr = gen_get_zaddr();
 
-    tcg_gen_qemu_ld8u(Rd, addr, MMU_CODE_IDX); /* Rd = mem[addr] */
+    gen_code_load(ctx, Rd, addr);
 
     tcg_temp_free_i32(addr);
 
@@ -2359,7 +2373,7 @@ static bool trans_ELPM2(DisasContext *ctx, arg_ELPM2 *a)
     TCGv Rd = cpu_r[a->rd];
     TCGv addr = gen_get_zaddr();
 
-    tcg_gen_qemu_ld8u(Rd, addr, MMU_CODE_IDX); /* Rd = mem[addr] */
+    gen_code_load(ctx, Rd, addr);
 
     tcg_temp_free_i32(addr);
 
@@ -2376,7 +2390,7 @@ static bool trans_ELPMX(DisasContext *ctx, arg_ELPMX *a)
     TCGv Rd = cpu_r[a->rd];
     TCGv addr = gen_get_zaddr();
 
-    tcg_gen_qemu_ld8u(Rd, addr, MMU_CODE_IDX); /* Rd = mem[addr] */
+    gen_code_load(ctx, Rd, addr);
     tcg_gen_addi_tl(addr, addr, 1); /* addr = addr + 1 */
     gen_set_zaddr(addr);
 
@@ -3127,8 +3141,8 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb, int max_insns)
          * b *0x100 - sets breakpoint at address 0x00800100 (data)
          */
         if (unlikely(!ctx.singlestep &&
-                (cpu_breakpoint_test(cs, OFFSET_CODE + ctx.npc * 2, BP_ANY) ||
-                 cpu_breakpoint_test(cs, OFFSET_DATA + ctx.npc * 2, BP_ANY)))) {
+                (cpu_breakpoint_test(cs, avr_code_base(env) | ctx.npc * 2, BP_ANY) ||
+                 cpu_breakpoint_test(cs, OFFSET_DATA | ctx.npc * 2, BP_ANY)))) {
             canonicalize_skip(&ctx);
             tcg_gen_movi_tl(cpu_pc, ctx.npc);
             gen_helper_debug(cpu_env);
