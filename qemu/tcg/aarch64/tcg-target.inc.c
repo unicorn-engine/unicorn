@@ -1586,11 +1586,16 @@ static bool tcg_out_qemu_ld_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
     TCGMemOpIdx oi = lb->oi;
     MemOp opc = get_memop(oi);
     MemOp size = opc & MO_SIZE;
+    bool success=false;
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ)|HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE)){
+        success=reloc_pc26(lb->label_ptr[0], s->code_ptr);
 
-    if (!reloc_pc19(lb->label_ptr[0], s->code_ptr)) {
+    }else{
+        success=reloc_pc19(lb->label_ptr[0], s->code_ptr);
+    }
+    if(!success){
         return false;
     }
-
     tcg_out_mov(s, TCG_TYPE_PTR, TCG_REG_X0, TCG_AREG0);
     tcg_out_mov(s, TARGET_LONG_BITS == 64, TCG_REG_X1, lb->addrlo_reg);
     tcg_out_movi(s, TCG_TYPE_I32, TCG_REG_X2, oi);
@@ -1612,10 +1617,15 @@ static bool tcg_out_qemu_st_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
     MemOp opc = get_memop(oi);
     MemOp size = opc & MO_SIZE;
 
-    if (!reloc_pc19(lb->label_ptr[0], s->code_ptr)) {
+    bool success=false;
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ)|HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE)){
+        success=reloc_pc26(lb->label_ptr[0], s->code_ptr);
+    }else{
+        success=reloc_pc19(lb->label_ptr[0], s->code_ptr);
+    }
+    if(!success){
         return false;
     }
-
     tcg_out_mov(s, TCG_TYPE_PTR, TCG_REG_X0, TCG_AREG0);
     tcg_out_mov(s, TARGET_LONG_BITS == 64, TCG_REG_X1, lb->addrlo_reg);
     tcg_out_mov(s, size == MO_64, TCG_REG_X2, lb->datalo_reg);
@@ -1660,6 +1670,11 @@ static void tcg_out_tlb_read(TCGContext *s, TCGReg addr_reg, MemOp opc,
 #ifdef TARGET_ARM
     struct uc_struct *uc = s->uc;
 #endif
+    if(HOOK_EXISTS(s->uc,UC_HOOK_MEM_READ)|HOOK_EXISTS(s->uc,UC_HOOK_MEM_WRITE)){
+          *label_ptr = s->code_ptr;
+        tcg_out_insn_3206(s,I3206_B,0);
+        return;
+    }
     unsigned a_bits = get_alignment_bits(opc);
     unsigned s_bits = opc & MO_SIZE;
     unsigned a_mask = (1u << a_bits) - 1;
@@ -1711,7 +1726,8 @@ static void tcg_out_tlb_read(TCGContext *s, TCGReg addr_reg, MemOp opc,
 
     /* If not equal, we jump to the slow path. */
     *label_ptr = s->code_ptr;
-    tcg_out_insn(s, 3202, B_C, TCG_COND_NE, 0);
+    // tcg_out_insn(s, 3202, B_C, TCG_COND_NE, 0);
+    tcg_out_insn_3202(s, I3202_B_C, TCG_COND_NE, 0);
 }
 
 #endif /* CONFIG_SOFTMMU */
