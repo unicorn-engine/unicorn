@@ -1587,7 +1587,7 @@ static bool tcg_out_qemu_ld_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
     MemOp opc = get_memop(oi);
     MemOp size = opc & MO_SIZE;
     bool success=false;
-    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ)|HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE)){
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ)||HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE)){
         success=reloc_pc26(lb->label_ptr[0], s->code_ptr);
 
     }else{
@@ -1618,7 +1618,7 @@ static bool tcg_out_qemu_st_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
     MemOp size = opc & MO_SIZE;
 
     bool success=false;
-    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ)|HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE)){
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ)||HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE)){
         success=reloc_pc26(lb->label_ptr[0], s->code_ptr);
     }else{
         success=reloc_pc19(lb->label_ptr[0], s->code_ptr);

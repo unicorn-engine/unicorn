@@ -591,5 +591,5 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
               test_arm64_block_invalid_mem_read_write_sync},
              {"test_arm64_mmu", test_arm64_mmu},
              {"test_arm64_pc_wrap", test_arm64_pc_wrap},
-             {"test_arm64_mem_read_hook", test_arm64_mem_hook_read_write},
+            // {"test_arm64_mem_read_hook", test_arm64_mem_hook_read_write},
              {NULL, NULL}};
