@@ -967,6 +967,6 @@ uint32_t HELPER(uc_hooksys64)(CPUARMState *env, uint32_t insn, void *hk)
     }
 
     uint32_t ret;
-    JIT_CALLBACK_GUARD_VAR(ret, ((uc_cb_insn_sys_t)(hook->callback))(env->uc, uc_rt, &cp_reg, hook->user_data));
+    JIT_CALLBACK_GUARD_VAR(ret, ((uc_cb_insn_sys_t)(hook->callback))(uc, uc_rt, &cp_reg, hook->user_data));
     return ret;
 }

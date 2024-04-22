@@ -1535,7 +1535,6 @@ static void test_fxsave_fpip_x86(void)
         // fxsave stores FPIP at an 8-byte offset, move FPIP to eax register
         0x8b, 0x44, 0x24, 0x08 // movl 0x8(%esp), %eax
     };
-    uc_err err;
     uint32_t X86_NOP_OFFSET = 4;
     uint32_t stack_top = (uint32_t)MEM_STACK;
     uint32_t value;
@@ -1572,7 +1571,6 @@ static void test_fxsave_fpip_x64(void)
         0x48, 0x8b, 0x44, 0x24, 0x08, // movq 0x8(%rsp), %rax
     };
 
-    uc_err err;
     uint64_t stack_top = (uint64_t)MEM_STACK;
     uint64_t X64_NOP_OFFSET = 8;
     uint64_t value;
