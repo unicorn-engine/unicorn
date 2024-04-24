@@ -343,9 +343,19 @@ typedef struct AVRCPUInfo {
 } AVRCPUInfo;
 
 static const AVRCPUInfo avr_cpu_info[] ={
-    {UC_CPU_AVR_AVR5, "avr5", avr_avr5_initfn},
-    {UC_CPU_AVR_AVR51, "avr51", avr_avr51_initfn},
-    {UC_CPU_AVR_AVR6, "avr6", avr_avr6_initfn},
+    {UC_CPU_AVR_ATMEGA16, "arch:avr5", avr_avr5_initfn},
+    {UC_CPU_AVR_ATMEGA16, "atmega16", avr_avr5_initfn},
+    {UC_CPU_AVR_ATMEGA32, "atmega32", avr_avr5_initfn},
+    {UC_CPU_AVR_ATMEGA64, "atmega64", avr_avr5_initfn},
+
+    {UC_CPU_AVR_ATMEGA128, "arch:avr51", avr_avr51_initfn},
+    {UC_CPU_AVR_ATMEGA128, "atmega128", avr_avr51_initfn},
+    {UC_CPU_AVR_ATMEGA128RFR2, "atmega128rfr2", avr_avr51_initfn},
+    {UC_CPU_AVR_ATMEGA1280, "atmega1280", avr_avr51_initfn},
+
+    {UC_CPU_AVR_ATMEGA256, "arch:avr6", avr_avr6_initfn},
+    {UC_CPU_AVR_ATMEGA256RFR2, "atmega256rfr2", avr_avr6_initfn},
+    {UC_CPU_AVR_ATMEGA2560, "atmega2560", avr_avr6_initfn},
 };
 
 static const AVRCPUInfo *avr_cpu_info_get(int cpu_model)
@@ -412,7 +422,7 @@ AVRCPU *cpu_avr_init(struct uc_struct *uc)
     }
 
     if (uc->cpu_model == INT_MAX)
-        uc->cpu_model = UC_CPU_AVR_AVR6;
+        uc->cpu_model = UC_CPU_AVR_ATMEGA128;
     const AVRCPUInfo *const cip = avr_cpu_info_get(uc->cpu_model);
     if (!cip) {
         free(cpu);
