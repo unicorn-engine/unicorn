@@ -144,6 +144,8 @@ struct CPUAVRState {
     uint64_t intsrc; /* interrupt sources */
     bool fullacc; /* CPU/MEM if true MEM only otherwise */
 
+    uint32_t des_seq_pc; /* start of DES sequence, i.e. DES 0x0 .. DES 0xf */
+
     uint64_t features;
 
     // Unicorn engine

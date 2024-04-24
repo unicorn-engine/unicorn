@@ -23,6 +23,7 @@
 #include "exec/exec-all.h"
 #include "exec/helper-proto.h"
 #include "unicorn_helper.h"
+#include "crypto/d3des.h"
 
 bool avr_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 {
@@ -370,4 +371,26 @@ void helper_uc_avr_exit(CPUAVRState *env)
     cs->exception_index = EXCP_HLT;
     cs->halted = 1;
     cpu_loop_exit(cs);
+}
+
+/*
+ * This function implements DES instructions sequence (DES 0x0 .. DES 0xf)
+ *
+ * If H = 0 then Encrypt through all 8 rounds
+ * If H = 1 then Decrypt through all 8 rounds
+ */
+void helper_des_seq(CPUAVRState *env)
+{
+    uint8_t key[8], data[8];
+
+    const uint8_t des_mode = env->sregH; // 0:encrypt, 1:decrypt
+    for (int i = 0; i < 8; i++) {
+        key[i] = env->r[15 - i];
+        data[i] = env->r[7 - i];
+    }
+    deskey(key, des_mode);
+    des(data, data);
+    for (int i = 0; i < 8; i++) {
+        env->r[7 - i] = data[i];
+    }
 }

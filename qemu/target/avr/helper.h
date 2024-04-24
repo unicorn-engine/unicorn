@@ -35,3 +35,5 @@ DEF_HELPER_3(outb, void, env, i32, i32)
 DEF_HELPER_2(inb, tl, env, i32)
 DEF_HELPER_3(fullwr, void, env, i32, i32)
 DEF_HELPER_2(fullrd, tl, env, i32)
+
+DEF_HELPER_1(des_seq, void, env)

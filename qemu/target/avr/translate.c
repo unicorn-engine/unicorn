@@ -51,6 +51,7 @@
 #define gen_helper_fullrd(...)  gen_helper_call(fullrd, __VA_ARGS__)
 #define gen_helper_fullwr(...)  gen_helper_call(fullwr, __VA_ARGS__)
 #define gen_helper_wdr(...)     gen_helper_call(wdr, __VA_ARGS__)
+#define gen_helper_des_seq(...) gen_helper_call(des_seq, __VA_ARGS__)
 
 /*
  *  Define if you want a BREAK instruction translated to a breakpoint
@@ -1050,13 +1051,21 @@ static bool trans_FMULSU(DisasContext *ctx, arg_FMULSU *a)
  */
 static bool trans_DES(DisasContext *ctx, arg_DES *a)
 {
-    /* TODO */
     if (!avr_have_feature(ctx, AVR_FEATURE_DES)) {
         return true;
     }
 
-    qemu_log_mask(LOG_UNIMP, "%s: not implemented\n", __func__);
+    CPUAVRState *const env = ctx->env;
 
+    const uint8_t K = a->imm; // round
+    if (K == 0) {
+        env->des_seq_pc = ctx->npc;
+    } else if (ctx->npc - env->des_seq_pc != K) {
+        env->des_seq_pc = 0;
+    } else if (K == 15) {
+        INIT_TCG_CONTEXT_AND_CPU_ENV_FROM_DISAS(ctx);
+        gen_helper_des_seq(cpu_env);
+    }
     return true;
 }
 

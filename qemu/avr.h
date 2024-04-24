@@ -1286,6 +1286,7 @@
 #define helper_fullrd helper_fullrd_avr
 #define helper_fullwr helper_fullwr_avr
 #define helper_wdr helper_wdr_avr
+#define helper_des_seq helper_des_seq_avr
 #define gen_intermediate_code gen_intermediate_code_avr
 #define restore_state_to_opc restore_state_to_opc_avr
 
