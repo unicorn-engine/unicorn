@@ -23,4 +23,6 @@ void avr_reg_reset(struct uc_struct *uc);
 
 void avr_uc_init(struct uc_struct *uc);
 
+int avr_cpu_model_valid(int cpu_model);
+
 #endif /* UC_QEMU_TARGET_AVR_H */
