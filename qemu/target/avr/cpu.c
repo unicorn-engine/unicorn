@@ -368,6 +368,11 @@ static const AVRCPUInfo *avr_cpu_info_get(int cpu_model)
     return NULL;
 }
 
+int avr_cpu_model_valid(int cpu_model)
+{
+    return avr_cpu_info_get(cpu_model) != NULL;
+}
+
 #if 0
 static void avr_cpu_list_entry(gpointer data, gpointer user_data)
 {
