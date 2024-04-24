@@ -335,6 +335,42 @@ static void avr_avr6_initfn(Object *obj)
     set_avr_feature(env, AVR_FEATURE_MUL);
 }
 
+/*
+ * Setting features of AVR core type avrxmega
+ * ------------------------------------------
+ *
+ * This type of AVR core is present in the following AVR MCUs:
+ *
+ * atxmega16a4, atxmega32a4, atxmega64a3, atxmega128a3, atxmega192a3,
+ * atxmega256a3
+ */
+static void avr_avrxmega_initfn(Object *obj)
+{
+    AVRCPU *cpu = AVR_CPU(obj);
+    CPUAVRState *env = &cpu->env;
+
+    avr_avr6_initfn(obj);
+    set_avr_feature(env, AVR_FEATURE_DES);
+}
+
+/*
+ * Setting features of AVR core type avrxmega (2nd revision)
+ * ------------------------------------------
+ *
+ * This type of AVR core is present in the following AVR MCUs:
+ *
+ * atxmega64a1u, atxmega64a3u, atxmega64a4u, atxmega128a1u,
+ * atxmega128a3u, atxmega128a4u, atxmega192a3u, atxmega256a3u
+ */
+static void avr_avrxmega2_initfn(Object *obj)
+{
+    AVRCPU *cpu = AVR_CPU(obj);
+    CPUAVRState *env = &cpu->env;
+
+    avr_avrxmega_initfn(obj);
+    set_avr_feature(env, AVR_FEATURE_RMW);
+}
+
 typedef struct AVRCPUInfo {
     int model;
     const char *name;
@@ -355,6 +391,24 @@ static const AVRCPUInfo avr_cpu_info[] ={
     {UC_CPU_AVR_ATMEGA256, "arch:avr6", avr_avr6_initfn},
     {UC_CPU_AVR_ATMEGA256RFR2, "atmega256rfr2", avr_avr6_initfn},
     {UC_CPU_AVR_ATMEGA2560, "atmega2560", avr_avr6_initfn},
+
+    {UC_CPU_AVR_ATXMEGA16A4, "arch:avrxmega", avr_avrxmega_initfn},
+    {UC_CPU_AVR_ATXMEGA16A4, "atxmega16a4", avr_avrxmega_initfn},
+    {UC_CPU_AVR_ATXMEGA32A4, "atxmega32a4", avr_avrxmega_initfn},
+    {UC_CPU_AVR_ATXMEGA64A3, "atxmega64a3", avr_avrxmega_initfn},
+    {UC_CPU_AVR_ATXMEGA128A3, "atxmega128a3", avr_avrxmega_initfn},
+    {UC_CPU_AVR_ATXMEGA192A3, "atxmega256a3", avr_avrxmega_initfn},
+    {UC_CPU_AVR_ATXMEGA256A3, "atxmega256a3", avr_avrxmega_initfn},
+
+    {UC_CPU_AVR_ATXMEGA64A1U, "arch:avrxmega2", avr_avrxmega2_initfn},
+    {UC_CPU_AVR_ATXMEGA64A1U, "atxmega64a1u", avr_avrxmega2_initfn},
+    {UC_CPU_AVR_ATXMEGA64A3U, "atxmega64a3u", avr_avrxmega2_initfn},
+    {UC_CPU_AVR_ATXMEGA64A4U, "atxmega64a4u", avr_avrxmega2_initfn},
+    {UC_CPU_AVR_ATXMEGA128A1U, "atxmega128a1u", avr_avrxmega2_initfn},
+    {UC_CPU_AVR_ATXMEGA128A3U, "atxmega128a3u", avr_avrxmega2_initfn},
+    {UC_CPU_AVR_ATXMEGA128A4U, "atxmega128a4u", avr_avrxmega2_initfn},
+    {UC_CPU_AVR_ATXMEGA192A3U, "atxmega192a3u", avr_avrxmega2_initfn},
+    {UC_CPU_AVR_ATXMEGA256A3U, "atxmega256a3u", avr_avrxmega2_initfn},
 };
 
 static const AVRCPUInfo *avr_cpu_info_get(int cpu_model)
