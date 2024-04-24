@@ -2714,6 +2714,11 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                     err = UC_ERR_ARG;
                     break;
                 }
+            } else if (uc->arch == UC_ARCH_AVR) {
+                if (!avr_cpu_model_valid(model)) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
             } else {
                 err = UC_ERR_ARG;
                 break;
