@@ -23,7 +23,8 @@ pub const unicornConst = enum(c_int) {
 	ARCH_RISCV = 8,
 	ARCH_S390X = 9,
 	ARCH_TRICORE = 10,
-	ARCH_MAX = 11,
+	ARCH_AVR = 11,
+	ARCH_MAX = 12,
 
 	MODE_LITTLE_ENDIAN = 0,
 	MODE_BIG_ENDIAN = 1073741824,
