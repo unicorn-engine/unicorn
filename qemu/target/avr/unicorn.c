@@ -80,11 +80,25 @@ static void reg_read(CPUAVRState *env, unsigned int regid, void *value)
         *(uint8_t *)value = cpu_get_sreg(env);
         break;
 
-    default:
+    default: {
+        uint64_t v = 0;
         if (regid >= UC_AVR_REG_R0 && regid <= UC_AVR_REG_R31) {
             *(int8_t *)value = (int8_t)env->r[regid - UC_AVR_REG_R0];
         }
+        else if (regid >= UC_AVR_REG_R0W && regid <= UC_AVR_REG_R30W) {
+            const uint32_t *const r = &env->r[regid - UC_AVR_REG_R0W];
+            for (int k = 0; k < 2; k++)
+                SET_BYTE(v, k, (r[k] & 0xff));
+            *(int16_t *)value = (int16_t)v;
+        }
+        else if (regid >= UC_AVR_REG_R0D && regid <= UC_AVR_REG_R28D) {
+            const uint32_t *const r = &env->r[regid - UC_AVR_REG_R0D];
+            for (int k = 0; k < 4; k++)
+                SET_BYTE(v, k, (r[k] & 0xff));
+            *(int32_t *)value = (int32_t)v;
+        }
         break;
+    }
     }
 }
 
@@ -154,10 +168,30 @@ static void reg_write(CPUAVRState *env, unsigned int regid,
         cpu_set_sreg(env, *(uint8_t *)value);
         break;
 
-    default:
+    default: {
+        uint64_t v;
+        uint32_t *r = NULL;
+        int rlen = 0;
         if (regid >= UC_AVR_REG_R0 && regid <= UC_AVR_REG_R31) {
-            env->r[regid - UC_AVR_REG_R0] = *(uint8_t *)value;
+            v = *(uint8_t *)value;
+            r = &env->r[regid - UC_AVR_REG_R0];
+            rlen = 1;
         }
+        else if (regid >= UC_AVR_REG_R0W && regid <= UC_AVR_REG_R30W) {
+            v = *(uint16_t *)value;
+            r = &env->r[regid - UC_AVR_REG_R0W];
+            rlen = 2;
+        }
+        else if (regid >= UC_AVR_REG_R0D && regid <= UC_AVR_REG_R28D) {
+            v = *(uint32_t *)value;
+            r = &env->r[regid - UC_AVR_REG_R0D];
+            rlen = 4;
+        }
+        if (r && rlen > 0) {
+            for (int k = 0; k < rlen; k++)
+                r[k] = GET_BYTE(v, k);
+        }
+    }
     }
 }
 
