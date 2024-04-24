@@ -1219,6 +1219,7 @@ set(UNICORN_COMMON_SRCS
     qemu/util/cacheinfo.c
 
     qemu/crypto/aes.c
+    qemu/crypto/d3des.c
 )
 
 # A workaround to avoid circle dependency between unicorn and *-softmmu
