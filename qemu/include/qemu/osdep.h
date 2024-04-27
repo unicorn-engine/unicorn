@@ -130,7 +130,7 @@ struct uc_struct;
 #define USE_MAP_JIT
 #endif
 
-#include <glib_compat.h>
+#include <glib.h>
 #include "qemu/typedefs.h"
 
 
