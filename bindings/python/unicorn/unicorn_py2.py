@@ -17,6 +17,9 @@ from collections import namedtuple
 # years since EOL of Python2 so it should be fine.
 from . import x86_const, arm_const, arm64_const, unicorn_const as uc
 
+# Compatibility placeholder, nothing special here
+ucsubclass = 0
+
 if not hasattr(sys.modules[__name__], "__file__"):
     __file__ = inspect.getfile(inspect.currentframe())
 

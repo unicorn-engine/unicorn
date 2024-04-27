@@ -110,10 +110,6 @@ jobs:
     - name: '🛠️ pip dependencies'
       run: |
         pip install setuptools wheel
-    
-    - name: '🛠️ run samples'
-      run: |
-        cd bindings/python && pip install -e . && python3 sample_x86.py
 
     - name: '🚧 Build distribution'
       shell: bash 

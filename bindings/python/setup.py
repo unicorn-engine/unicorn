@@ -232,7 +232,7 @@ Further information is available at http://www.unicorn-engine.org
 
 setup(
     provides=['unicorn'],
-    packages=['unicorn'],
+    packages=setuptools.find_packages(include=["unicorn", "unicorn.*"]),
     name='unicorn',
     version=VERSION,
     author='Nguyen Anh Quynh',
@@ -252,6 +252,6 @@ setup(
     include_package_data=True,
     is_pure=False,
     package_data={
-        'unicorn': ['lib/*', 'include/unicorn/*', 'unicorn_py3/**']
+        'unicorn': ['lib/*', 'include/unicorn/*']
     }
 )
