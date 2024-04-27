@@ -35,7 +35,7 @@
 
 #include <uc_priv.h>
 
-#include <glib_compat.h>
+#include <glib.h>
 
 /* DEBUG defines, enable DEBUG_TLB_LOG to log to the CPU_LOG_MMU target */
 /* #define DEBUG_TLB */

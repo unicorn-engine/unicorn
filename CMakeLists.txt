@@ -77,7 +77,6 @@ else()
 endif()
 
 include_directories(
-    glib_compat
     qemu
     qemu/include
     include
@@ -1107,16 +1106,6 @@ set(UNICORN_COMMON_SRCS
 
     list.c
 
-    glib_compat/glib_compat.c
-    glib_compat/gtestutils.c
-    glib_compat/garray.c
-    glib_compat/gtree.c
-    glib_compat/grand.c
-    glib_compat/glist.c
-    glib_compat/gmem.c
-    glib_compat/gpattern.c
-    glib_compat/gslice.c
-
     qemu/util/bitmap.c
     qemu/util/bitops.c
     qemu/util/crc32c.c
@@ -1135,6 +1124,11 @@ set(UNICORN_COMMON_SRCS
 
     qemu/crypto/aes.c
 )
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
+set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} ${GLIB_LDFLAGS})
+
 
 # A workaround to avoid circle dependency between unicorn and *-softmmu
 if(MSVC)
@@ -1357,8 +1351,14 @@ else()
     )
 endif()
 
+
 target_include_directories(unicorn PUBLIC
     include
+)
+
+
+target_include_directories(unicorn-common PUBLIC
+    ${GLIB_INCLUDE_DIRS}
 )
 
 # For static archive

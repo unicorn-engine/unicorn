@@ -34,7 +34,7 @@
 #include "qemu/host-utils.h"
 #include "qemu/timer.h"
 
-#include <glib_compat.h>
+#include <glib.h>
 
 /* Note: the long term plan is to reduce the dependencies on the QEMU
    CPU definitions. Currently they are used for qemu_ld/st
