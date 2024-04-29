@@ -17,6 +17,11 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
     cmake_policy(SET CMP0092 NEW)
 endif()
 
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.3")
+    # Honor visibility properties for all target types.
+    cmake_policy(SET CMP0063 NEW)
+endif()
+
 option(ZIG_BUILD "Enable zig build" OFF)
 if(ZIG_BUILD)
     include(cmake/zig.cmake)
@@ -1195,6 +1200,11 @@ endif()
 add_library(unicorn-common STATIC
     ${UNICORN_COMMON_SRCS}
 )
+
+set_target_properties(unicorn-common
+                      PROPERTIES
+                      C_VISIBILITY_PRESET
+                      hidden)
 
 if(NOT MSVC AND NOT ANDROID_ABI)
     target_link_libraries(unicorn-common PRIVATE pthread)
