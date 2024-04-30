@@ -97,7 +97,7 @@ def __load_uc_lib() -> ctypes.CDLL:
     lib_locations = [
         os.getenv('LIBUNICORN_PATH'),
         pkg_resources.resource_filename(__name__, 'lib'),
-        PurePath(inspect.getfile(__load_uc_lib)).parent / 'lib',
+        PurePath(inspect.getfile(__load_uc_lib)).parent.parent / 'lib',
         '',
         "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64',
     ] + [PurePath(p) / 'unicorn' / 'lib' for p in sys.path] # lazymio: ??? why PATH ??
