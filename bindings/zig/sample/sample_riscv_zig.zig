@@ -38,8 +38,8 @@ fn hook_code3(uc: ?*unicornC.uc_engine, address: u64, size: u32, user_data: ?*an
 fn hook_memalloc(uc: ?*unicornC.uc_engine, @"type": unicornC.uc_mem_type, address: u64, size: u32, user_data: ?*anyopaque) callconv(.C) bool {
     _ = user_data;
     _ = @"type";
-    var algined_address = address & 0xFFFFFFFFFFFFF000;
-    var aligned_size = (@as(u32, @intCast(size / 0x1000)) + 1) * 0x1000;
+    const algined_address = address & 0xFFFFFFFFFFFFF000;
+    const aligned_size = (@as(u32, @intCast(size / 0x1000)) + 1) * 0x1000;
 
     log.info(">>> Allocating block at 0x{} (0x{}), block size = 0x{} (0x{})", .{ address, algined_address, size, aligned_size });
 
