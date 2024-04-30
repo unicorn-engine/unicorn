@@ -20,7 +20,7 @@ const SampleDescripton = struct {
 /// This will also get exported as a library that other zig projects can use
 /// as a dependency via the zig build system.
 fn create_unicorn_sys(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) *std.Build.Module {
-    const unicorn_sys = b.createModule(.{
+    const unicorn_sys = b.addModule("unicorn-sys", .{
         .target = target,
         .optimize = optimize,
         .root_source_file = b.path("bindings/zig/unicorn/unicorn.zig"),

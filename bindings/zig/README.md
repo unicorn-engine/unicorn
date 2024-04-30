@@ -7,4 +7,18 @@ based on [QEMU](http://www.qemu.org/).
 
 ## How to use
 
-Add to your project the file `unicorn/unicorn.zig` that will manage all the available architectures.
+Using the [Zig Build System](https://ziglang.org/learn/build-system/), you can include
+the following into your local `build.zig.zon`
+
+``` zig
+.{
+    .dependencies = .{
+        .unicorn = .{
+            .url = "https://github.com/unicorn-engine/unicorn/archive/<ref SHA>.tar.gz",
+            .hash = "<hash>",
+        }
+    },
+}
+```
+
+Note that currently the only module exported publicly is `unicorn-sys`
