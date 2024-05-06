@@ -15,11 +15,11 @@ on:
   pull_request:
 
 jobs:
-  build:
+  build-ubuntu:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-latest, macos-latest]
+        runs-on: [ubuntu-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v3
@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
       - uses: goto-bus-stop/setup-zig@v2
         with:
-          version: 0.11.0
+          version: 0.12.0
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: latest
@@ -39,7 +39,33 @@ jobs:
       
       - name: Build Summary
         run: zig build --summary all -freference-trace
+  build-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [macos-latest]
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.12.0
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: latest
+          ninjaVersion: latest
 
+        # MacOS has a hard process limit that we will hit if we do a
+        # parallel build, so disable parallel cmake build (manual
+        # option set in `build.zig`)
+      - name: CMake Build
+        run: zig build -Dparallel=false cmake
+
+      - name: Build Summary
+        run: zig build --summary all -freference-trace
 # ===================================================================  
   # zig-mingw:
   #   runs-on: windows-latest
