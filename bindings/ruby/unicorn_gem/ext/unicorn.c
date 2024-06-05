@@ -118,8 +118,9 @@ VALUE m_uc_reg_read(VALUE self, VALUE reg_id){
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
 
-    uc_arch arch;
-    uc_query(_uc, UC_QUERY_ARCH, &arch);
+    size_t arch_result;
+    uc_query(_uc, UC_QUERY_ARCH, &arch_result);
+    uc_arch arch = (uc_arch) arch_result;
 
     if(arch == UC_ARCH_X86) {
         switch(tmp_reg){
@@ -202,8 +203,9 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
     
-    uc_arch arch;
-    uc_query(_uc, UC_QUERY_ARCH, &arch);
+    size_t arch_result;
+    uc_query(_uc, UC_QUERY_ARCH, &arch_result);
+    uc_arch arch = (uc_arch) arch_result;
 
     if(arch == UC_ARCH_X86) {
         switch(tmp_reg){
