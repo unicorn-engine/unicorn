@@ -1550,16 +1550,18 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
     // now it is read on mapped memory
     if (!code_read) {
         // this is date reading
-        HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ) {
-            if (hook->to_delete)
-                continue;
-            if (!HOOK_BOUND_CHECK(hook, paddr))
-                continue;
-            JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, paddr, size, 0, hook->user_data));
+        if (!uc->size_recur_mem) { 
+            HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ) {
+                if (hook->to_delete)
+                    continue;
+                if (!HOOK_BOUND_CHECK(hook, paddr))
+                    continue;
+                JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, paddr, size, 0, hook->user_data));
 
-            // the last callback may already asked to stop emulation
-            if (uc->stop_request)
-                break;
+                // the last callback may already asked to stop emulation
+                if (uc->stop_request)
+                    break;
+            }
         }
 
         // callback on non-readable memory
