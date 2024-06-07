@@ -918,7 +918,7 @@ static bool flatview_update(FlatView *fv, MemoryRegion *mr)
     do {
         addr += c->addr;
     } while ((c = c->container));
-    r.start = addr;
+    r.start = int128_make64(addr);
 
     if (!mr->container || !QTAILQ_EMPTY(&mr->subregions))
         return false;
