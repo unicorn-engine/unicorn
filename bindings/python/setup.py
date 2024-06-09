@@ -3,6 +3,7 @@
 
 from __future__ import print_function
 import glob
+import logging
 import os
 import subprocess
 import shutil
@@ -10,12 +11,13 @@ import sys
 import platform
 import setuptools
 
-from distutils import log
-from distutils.core import setup
-from distutils.util import get_platform
-from distutils.command.build import build
-from distutils.command.sdist import sdist
+from setuptools import setup
+from sysconfig import get_platform
+from setuptools.command.build import build
+from setuptools.command.sdist import sdist
 from setuptools.command.bdist_egg import bdist_egg
+
+log = logging.getLogger(__name__)
 
 SYSTEM = sys.platform
 
