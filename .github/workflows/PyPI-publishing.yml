@@ -109,7 +109,7 @@ jobs:
 
     - name: '🛠️ pip dependencies'
       run: |
-        pip install setuptools wheel
+        pip install --upgrade setuptools wheel
 
     - name: '🚧 Build distribution'
       shell: bash 
