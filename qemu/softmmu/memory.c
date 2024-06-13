@@ -941,9 +941,6 @@ static bool flatview_update(FlatView *fv, MemoryRegion *mr)
             flatview_add_to_dispatch(uc, fv, &mrs);
         }
         address_space_dispatch_compact(fv->dispatch);
-        if (uc->cpu) {
-	    (void)uc;
-        }
         return true;
     }
     return false;
