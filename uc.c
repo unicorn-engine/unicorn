@@ -2147,8 +2147,8 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
             restore_jit_state(uc);
             return ret;
         }
-	context->ramblock_freed = uc->ram_list.freed;
-	context->last_block = uc->ram_list.last_block;
+        context->ramblock_freed = uc->ram_list.freed;
+        context->last_block = uc->ram_list.last_block;
     }
 
     context->snapshot_level = uc->snapshot_level;
@@ -2420,8 +2420,8 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
             return ret;
         }
         uc_snapshot(uc);
-	uc->ram_list.freed = context->ramblock_freed;
-	uc->ram_list.last_block = context->last_block;
+        uc->ram_list.freed = context->ramblock_freed;
+        uc->ram_list.last_block = context->last_block;
     }
 
     if (uc->context_content & UC_CTL_CONTEXT_CPU) {
