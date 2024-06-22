@@ -7829,11 +7829,15 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             gen_op_mov_reg_v(s, MO_64, reg, s->T0);
         } else
 #endif
-        {
+        if (dflag == MO_32) {
             gen_op_mov_v_reg(s, MO_32, s->T0, reg);
             tcg_gen_ext32u_tl(tcg_ctx, s->T0, s->T0);
             tcg_gen_bswap32_tl(tcg_ctx, s->T0, s->T0);
             gen_op_mov_reg_v(s, MO_32, reg, s->T0);
+        }
+        else {
+            tcg_gen_movi_tl(tcg_ctx, s->T0, 0);
+            gen_op_mov_reg_v(s, MO_16, reg, s->T0);
         }
         break;
     case 0xd6: /* salc */
