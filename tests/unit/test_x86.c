@@ -3,6 +3,11 @@
 const uint64_t code_start = 0x1000;
 const uint64_t code_len = 0x4000;
 
+#define MEM_BASE 0x40000000
+#define MEM_SIZE 1024 * 1024
+#define MEM_STACK MEM_BASE + (MEM_SIZE / 2)
+#define MEM_TEXT MEM_STACK + 4096
+
 static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
                             const char *code, uint64_t size)
 {
@@ -10,6 +15,90 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_map(*uc, code_start, code_len, UC_PROT_ALL));
     OK(uc_mem_write(*uc, code_start, code, size));
 }
+
+typedef struct RegInfo_t {
+    const char *file;
+    int line;
+    const char *name;
+    uc_x86_reg reg;
+    uint64_t value;
+} RegInfo;
+
+typedef struct QuickTest_t {
+    uc_mode mode;
+    uint8_t *code_data;
+    size_t code_size;
+    size_t in_count;
+    RegInfo in_regs[32];
+    size_t out_count;
+    RegInfo out_regs[32];
+} QuickTest;
+
+static void QuickTest_run(QuickTest *test)
+{
+    uc_engine *uc;
+
+    // initialize emulator in X86-64bit mode
+    OK(uc_open(UC_ARCH_X86, test->mode, &uc));
+
+    // map 1MB of memory for this emulation
+    OK(uc_mem_map(uc, MEM_BASE, MEM_SIZE, UC_PROT_ALL));
+    OK(uc_mem_write(uc, MEM_TEXT, test->code_data, test->code_size));
+    if (test->mode == UC_MODE_64) {
+        uint64_t stack_top = MEM_STACK;
+        OK(uc_reg_write(uc, UC_X86_REG_RSP, &stack_top));
+    } else {
+        uint32_t stack_top = MEM_STACK;
+        OK(uc_reg_write(uc, UC_X86_REG_ESP, &stack_top));
+    }
+    for (size_t i = 0; i < test->in_count; i++) {
+        OK(uc_reg_write(uc, test->in_regs[i].reg, &test->in_regs[i].value));
+    }
+    OK(uc_emu_start(uc, MEM_TEXT, MEM_TEXT + test->code_size, 0, 0));
+    for (size_t i = 0; i < test->out_count; i++) {
+        RegInfo *out = &test->out_regs[i];
+        if (test->mode == UC_MODE_64) {
+            uint64_t value = 0;
+            OK(uc_reg_read(uc, out->reg, &value));
+            acutest_check_(value == out->value, out->file, out->line,
+                           "OUT_REG(%s, 0x%llX) = 0x%llX", out->name,
+                           out->value, value);
+        } else {
+            uint32_t value = 0;
+            OK(uc_reg_read(uc, out->reg, &value));
+            acutest_check_(value == (uint32_t)out->value, out->file, out->line,
+                           "OUT_REG(%s, 0x%X) = 0x%X", out->name,
+                           (uint32_t)out->value, value);
+        }
+    }
+    OK(uc_mem_unmap(uc, MEM_BASE, MEM_SIZE));
+    OK(uc_close(uc));
+}
+
+#define TEST_CODE(MODE, CODE)                                                  \
+    QuickTest t;                                                               \
+    memset(&t, 0, sizeof(t));                                                  \
+    t.mode = MODE;                                                             \
+    t.code_data = CODE;                                                        \
+    t.code_size = sizeof(CODE)
+
+#define TEST_IN_REG(NAME, VALUE)                                               \
+    t.in_regs[t.in_count].file = __FILE__;                                     \
+    t.in_regs[t.in_count].line = __LINE__;                                     \
+    t.in_regs[t.in_count].name = #NAME;                                        \
+    t.in_regs[t.in_count].reg = UC_X86_REG_##NAME;                             \
+    t.in_regs[t.in_count].value = VALUE;                                       \
+    t.in_count++
+
+#define TEST_OUT_REG(NAME, VALUE)                                              \
+    t.out_regs[t.out_count].file = __FILE__;                                   \
+    t.out_regs[t.out_count].line = __LINE__;                                   \
+    t.out_regs[t.out_count].name = #NAME;                                      \
+    t.out_regs[t.out_count].reg = UC_X86_REG_##NAME;                           \
+    t.out_regs[t.out_count].value = VALUE;                                     \
+    t.out_count++
+
+#define TEST_RUN() QuickTest_run(&t)
 
 typedef struct _INSN_IN_RESULT {
     uint32_t port;
@@ -1427,7 +1516,7 @@ static void test_x86_vtlb(void)
     OK(uc_close(uc));
 }
 
-static void test_x86_segmentation()
+static void test_x86_segmentation(void)
 {
     uc_engine *uc;
     uint64_t fs = 0x53;
@@ -1446,7 +1535,7 @@ static void test_x86_0xff_lcall_callback(uc_engine *uc, uint64_t address,
 }
 
 // This aborts prior to a7a5d187e77f7853755eff4768658daf8095c3b7
-static void test_x86_0xff_lcall()
+static void test_x86_0xff_lcall(void)
 {
     uc_engine *uc;
     uc_hook hk;
@@ -1483,7 +1572,7 @@ static bool test_x86_64_not_overwriting_tmp0_for_pc_update_cb(
 
 // https://github.com/unicorn-engine/unicorn/issues/1717
 // https://github.com/unicorn-engine/unicorn/issues/1862
-static void test_x86_64_not_overwriting_tmp0_for_pc_update()
+static void test_x86_64_not_overwriting_tmp0_for_pc_update(void)
 {
     uc_engine *uc;
     uc_hook hk;
@@ -1512,11 +1601,6 @@ static void test_x86_64_not_overwriting_tmp0_for_pc_update()
 
     OK(uc_close(uc));
 }
-
-#define MEM_BASE 0x40000000
-#define MEM_SIZE 1024 * 1024
-#define MEM_STACK MEM_BASE + (MEM_SIZE / 2)
-#define MEM_TEXT MEM_STACK + 4096
 
 static void test_fxsave_fpip_x86(void)
 {
