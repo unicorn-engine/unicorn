@@ -4792,12 +4792,12 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     CPUX86State *env = cpu->env_ptr;
-    int b, prefixes;
+    int b, prefixes, prefix_count;
     int shift;
     MemOp ot, aflag, dflag;
     int modrm, reg, rm, mod, op, opreg, val;
     target_ulong next_eip, tval;
-    int rex_w, rex_r;
+    int rex_w, rex_r, rex_byte, rex_index;
     target_ulong pc_start = s->base.pc_next;
     TCGOp *tcg_op, *prev_op = NULL;
     bool insn_hook = false;
@@ -4854,6 +4854,9 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     prefixes = 0;
     rex_w = -1;
     rex_r = 0;
+    rex_byte = 0;
+    rex_index = -1;
+    prefix_count = 0;
 
  next_byte:
     b = x86_ldub_code(env, s);
@@ -4861,36 +4864,47 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     switch (b) {
     case 0xf3:
         prefixes |= PREFIX_REPZ;
+        prefix_count++;
         goto next_byte;
     case 0xf2:
         prefixes |= PREFIX_REPNZ;
+        prefix_count++;
         goto next_byte;
     case 0xf0:
         prefixes |= PREFIX_LOCK;
+        prefix_count++;
         goto next_byte;
     case 0x2e:
         s->override = R_CS;
+        prefix_count++;
         goto next_byte;
     case 0x36:
         s->override = R_SS;
+        prefix_count++;
         goto next_byte;
     case 0x3e:
         s->override = R_DS;
+        prefix_count++;
         goto next_byte;
     case 0x26:
         s->override = R_ES;
+        prefix_count++;
         goto next_byte;
     case 0x64:
         s->override = R_FS;
+        prefix_count++;
         goto next_byte;
     case 0x65:
         s->override = R_GS;
+        prefix_count++;
         goto next_byte;
     case 0x66:
         prefixes |= PREFIX_DATA;
+        prefix_count++;
         goto next_byte;
     case 0x67:
         prefixes |= PREFIX_ADR;
+        prefix_count++;
         goto next_byte;
 #ifdef TARGET_X86_64
     case 0x40:
@@ -4910,13 +4924,9 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0x4e:
     case 0x4f:
         if (CODE64(s)) {
-            /* REX prefix */
-            rex_w = (b >> 3) & 1;
-            rex_r = (b & 0x4) << 1;
-            s->rex_x = (b & 0x2) << 2;
-            REX_B(s) = (b & 0x1) << 3;
-            /* select uniform byte register addressing */
-            s->x86_64_hregs = true;
+            rex_byte = b;
+            rex_index = prefix_count;
+            prefix_count++;
             goto next_byte;
         }
         break;
@@ -4944,7 +4954,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
                 goto illegal_op;
             }
 #ifdef TARGET_X86_64
-            if (s->x86_64_hregs) {
+            if (rex_byte != 0) {
                 goto illegal_op;
             }
 #endif
@@ -4979,11 +4989,23 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             s->vex_l = (vex3 >> 2) & 1;
             prefixes |= pp_prefix[vex3 & 3] | PREFIX_VEX;
         }
+        prefix_count++;
         break;
     }
 
     /* Post-process prefixes.  */
     if (CODE64(s)) {
+        /* 2.2.1: A REX prefix is ignored when it does not immediately precede the opcode byte */
+        if (rex_byte != 0 && rex_index + 1 == prefix_count) {
+            /* REX prefix */
+            rex_w = (rex_byte >> 3) & 1;
+            rex_r = (rex_byte & 0x4) << 1;
+            s->rex_x = (rex_byte & 0x2) << 2;
+            REX_B(s) = (rex_byte & 0x1) << 3;
+            /* select uniform byte register addressing */
+            s->x86_64_hregs = true;
+        }
+
         /* In 64-bit mode, the default data size is 32-bit.  Select 64-bit
            data with rex_w, and 16-bit data with 0x66; rex_w takes precedence
            over 0x66 if both are present.  */
