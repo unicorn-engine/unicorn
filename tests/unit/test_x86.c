@@ -1674,6 +1674,110 @@ static void test_fxsave_fpip_x64(void)
     OK(uc_close(uc));
 }
 
+static void test_bswap_ax(void)
+{
+    // References:
+    // - https://gynvael.coldwind.pl/?id=268
+    // - https://github.com/JonathanSalwan/Triton/issues/1131
+    {
+        uint8_t code[] = {
+            // bswap ax
+            0x66, 0x0F, 0xC8,
+        };
+        TEST_CODE(UC_MODE_32, code);
+        TEST_IN_REG(EAX, 0x44332211);
+        TEST_OUT_REG(EAX, 0x44330000);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // bswap ax
+            0x66, 0x0F, 0xC8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_OUT_REG(RAX, 0x8877665544330000);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // bswap rax (66h ignored)
+            0x66, 0x48, 0x0F, 0xC8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_OUT_REG(RAX, 0x1122334455667788);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // bswap ax (rex ignored)
+            0x48, 0x66, 0x0F, 0xC8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_OUT_REG(RAX, 0x8877665544330000);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // bswap eax
+            0x0F, 0xC8,
+        };
+        TEST_CODE(UC_MODE_32, code);
+        TEST_IN_REG(EAX, 0x44332211);
+        TEST_OUT_REG(EAX, 0x11223344);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // bswap eax
+            0x0F, 0xC8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_OUT_REG(RAX, 0x0000000011223344);
+        TEST_RUN();
+    }
+}
+
+static void test_rex_x64(void)
+{
+    {
+        uint8_t code[] = {
+            // mov ax, bx (rex.w ignored)
+            0x48, 0x66, 0x89, 0xD8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_IN_REG(RBX, 0x1122334455667788);
+        TEST_OUT_REG(RAX, 0x8877665544337788);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // mov rax, rbx (66h ignored)
+            0x66, 0x48, 0x89, 0xD8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_IN_REG(RBX, 0x1122334455667788);
+        TEST_OUT_REG(RAX, 0x1122334455667788);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // mov ax, bx (expected encoding)
+            0x66, 0x89, 0xD8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_IN_REG(RBX, 0x1122334455667788);
+        TEST_OUT_REG(RAX, 0x8877665544337788);
+        TEST_RUN();
+    }
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1725,4 +1829,6 @@ TEST_LIST = {
      test_x86_64_not_overwriting_tmp0_for_pc_update},
     {"test_fxsave_fpip_x86", test_fxsave_fpip_x86},
     {"test_fxsave_fpip_x64", test_fxsave_fpip_x64},
+    {"test_bswap_x64", test_bswap_ax},
+    {"test_rex_x64", test_rex_x64},
     {NULL, NULL}};
