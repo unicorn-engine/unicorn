@@ -2144,7 +2144,7 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
 
     if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
         if (!context->fv) {
-            context->fv = g_malloc(sizeof(*context->fv));
+            context->fv = g_malloc0(sizeof(*context->fv));
         }
         if (!context->fv) {
             return UC_ERR_NOMEM;
