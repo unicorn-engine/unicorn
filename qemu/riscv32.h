@@ -54,6 +54,7 @@
 #define vm_start vm_start_riscv32
 #define address_space_dispatch_compact address_space_dispatch_compact_riscv32
 #define flatview_translate flatview_translate_riscv32
+#define flatview_copy flatview_copy_riscv32
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_riscv32
 #define qemu_get_cpu qemu_get_cpu_riscv32
 #define cpu_address_space_init cpu_address_space_init_riscv32
@@ -90,6 +91,7 @@
 #define iotlb_to_section iotlb_to_section_riscv32
 #define address_space_dispatch_new address_space_dispatch_new_riscv32
 #define address_space_dispatch_free address_space_dispatch_free_riscv32
+#define address_space_dispatch_clear address_space_dispatch_clear_riscv32
 #define flatview_read_continue flatview_read_continue_riscv32
 #define address_space_read_full address_space_read_full_riscv32
 #define address_space_write address_space_write_riscv32

@@ -2106,6 +2106,7 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
         (*_context)->context_size = size - sizeof(uc_context);
         (*_context)->arch = uc->arch;
         (*_context)->mode = uc->mode;
+        (*_context)->fv = NULL;
         restore_jit_state(uc);
         return UC_ERR_OK;
     } else {
@@ -2142,6 +2143,16 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
     uc_err ret = UC_ERR_OK;
 
     if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
+        if (!context->fv) {
+            context->fv = g_malloc(sizeof(*context->fv));
+        }
+        if (!context->fv) {
+            return UC_ERR_NOMEM;
+        }
+        if (!uc->flatview_copy(uc, context->fv, uc->address_space_memory.current_map, false)) {
+            restore_jit_state(uc);
+            return UC_ERR_NOMEM;
+        }
         ret = uc_snapshot(uc);
         if (ret != UC_ERR_OK) {
             restore_jit_state(uc);
@@ -2422,6 +2433,9 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
         uc_snapshot(uc);
         uc->ram_list.freed = context->ramblock_freed;
         uc->ram_list.last_block = context->last_block;
+        if (!uc->flatview_copy(uc, uc->address_space_memory.current_map, context->fv, true)) {
+            return UC_ERR_NOMEM;
+        }
     }
 
     if (uc->context_content & UC_CTL_CONTEXT_CPU) {
@@ -2438,6 +2452,10 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 UNICORN_EXPORT
 uc_err uc_context_free(uc_context *context)
 {
+    if (context->fv) {
+        free(context->fv->ranges);
+    }
+    g_free(context->fv);
     return uc_free(context);
 }
 

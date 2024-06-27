@@ -54,6 +54,7 @@
 #define vm_start vm_start_tricore
 #define address_space_dispatch_compact address_space_dispatch_compact_tricore
 #define flatview_translate flatview_translate_tricore
+#define flatview_copy flatview_copy_tricore
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_tricore
 #define qemu_get_cpu qemu_get_cpu_tricore
 #define cpu_address_space_init cpu_address_space_init_tricore
@@ -90,6 +91,7 @@
 #define iotlb_to_section iotlb_to_section_tricore
 #define address_space_dispatch_new address_space_dispatch_new_tricore
 #define address_space_dispatch_free address_space_dispatch_free_tricore
+#define address_space_dispatch_clear address_space_dispatch_clear_tricore
 #define flatview_read_continue flatview_read_continue_tricore
 #define address_space_read_full address_space_read_full_tricore
 #define address_space_write address_space_write_tricore

@@ -195,19 +195,26 @@ MemoryRegion *memory_map_io(struct uc_struct *uc, ram_addr_t begin, size_t size,
     return mmio;
 }
 
+static void memory_region_remove_subregion(MemoryRegion *mr,
+                                 MemoryRegion *subregion)
+{
+    assert(subregion->container == mr);
+    subregion->container = NULL;
+    QTAILQ_REMOVE(&mr->subregions, subregion, subregions_link);
+}
+
 void memory_region_filter_subregions(MemoryRegion *mr, int32_t level)
 {
     MemoryRegion *subregion, *subregion_next;
-    memory_region_transaction_begin();
+ //   memory_region_transaction_begin();
     QTAILQ_FOREACH_SAFE(subregion, &mr->subregions, subregions_link, subregion_next) {
         if (subregion->priority >= level) {
-            memory_region_del_subregion(mr, subregion);
+            memory_region_remove_subregion(mr, subregion);
             subregion->destructor(subregion);
             g_free(subregion);
-            mr->uc->memory_region_update_pending = true;
         }
     }
-    memory_region_transaction_commit(mr);
+  //  memory_region_transaction_commit(mr);
 }
 
 static void memory_region_remove_mapped_block(struct uc_struct *uc, MemoryRegion *mr, bool free)
@@ -908,6 +915,37 @@ static void flatviews_init(struct uc_struct *uc)
     }
 }
 
+bool flatview_copy(struct uc_struct *uc, FlatView *dst, FlatView *src, bool update_dispatcher)
+{
+    if (!dst->ranges || !dst->nr_allocated || dst->nr_allocated < src->nr) {
+        if (dst->ranges && dst->nr_allocated) {
+            free(dst->ranges);
+        }
+        dst->ranges = calloc(src->nr_allocated, sizeof(*dst->ranges));
+        if (!dst->ranges) {
+            return false;
+        }
+        dst->nr_allocated = src->nr_allocated;
+    }
+    memcpy(dst->ranges, src->ranges, src->nr*sizeof(*dst->ranges));
+    dst->nr = src->nr;
+    if (!update_dispatcher) {
+        return true;
+    }
+    if (dst->dispatch) {
+        address_space_dispatch_clear(dst->dispatch);
+    }
+    dst->dispatch = address_space_dispatch_new(uc, dst);
+    for (size_t j = 0; j < dst->nr; j++) {
+        MemoryRegionSection mrs =
+            section_from_flat_range(&dst->ranges[j], dst);
+	mrs.mr->subpage = false;
+        flatview_add_to_dispatch(uc, dst, &mrs);
+    }
+    address_space_dispatch_compact(dst->dispatch);
+    return true;
+}
+
 static bool flatview_update(FlatView *fv, MemoryRegion *mr)
 {
     struct uc_struct *uc = mr->uc;
@@ -933,7 +971,7 @@ static bool flatview_update(FlatView *fv, MemoryRegion *mr)
         fv->ranges[i].mr = mr;
         fv->ranges[i].offset_in_region = 0;
         fv->ranges[i].readonly = mr->readonly;
-        address_space_dispatch_free(fv->dispatch);
+        address_space_dispatch_clear(fv->dispatch);
         fv->dispatch = address_space_dispatch_new(uc, fv);
         for (size_t j = 0; j < fv->nr; j++) {
             MemoryRegionSection mrs =
