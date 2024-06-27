@@ -108,6 +108,8 @@ typedef MemoryRegion *(*uc_memory_mapping_t)(struct uc_struct *, hwaddr addr);
 
 typedef void (*uc_memory_filter_t)(MemoryRegion *, int32_t);
 
+typedef bool (*uc_flatview_copy_t)(struct uc_struct *, FlatView *, FlatView *, bool);
+
 typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
 typedef int (*uc_cpus_init)(struct uc_struct *, const char *);
@@ -288,6 +290,7 @@ struct uc_struct {
     uc_args_uc_ram_size_ptr_t memory_map_ptr;
     uc_memory_mapping_t memory_mapping;
     uc_memory_filter_t memory_filter_subregions;
+    uc_flatview_copy_t flatview_copy;
     uc_mem_unmap_t memory_unmap;
     uc_mem_unmap_t memory_moveout;
     uc_mem_unmap_t memory_movein;
@@ -429,6 +432,7 @@ struct uc_context {
     int snapshot_level;  // the memory snapshot level to restore
     bool ramblock_freed; // wheter there was a some ramblock freed
     RAMBlock *last_block;// The last element of the ramblock list
+    FlatView *fv;        // The current flatview of the memory
     char data[0];        // context
 };
 

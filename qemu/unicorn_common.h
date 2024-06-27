@@ -140,6 +140,7 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->set_tlb = uc_set_tlb;
     uc->memory_mapping = find_memory_mapping;
     uc->memory_filter_subregions = memory_region_filter_subregions;
+    uc->flatview_copy = flatview_copy;
     uc->memory_cow = memory_cow;
 
     if (!uc->release)

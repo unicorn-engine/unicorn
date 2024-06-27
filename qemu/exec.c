@@ -1455,6 +1455,13 @@ AddressSpaceDispatch *address_space_dispatch_new(struct uc_struct *uc, FlatView 
     return d;
 }
 
+void address_space_dispatch_clear(AddressSpaceDispatch *d)
+{
+    g_free(d->map.sections);
+    g_free(d->map.nodes);
+    g_free(d);
+}
+
 void address_space_dispatch_free(AddressSpaceDispatch *d)
 {
     phys_sections_free(&d->map);
