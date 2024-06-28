@@ -932,6 +932,7 @@ bool flatview_copy(struct uc_struct *uc, FlatView *dst, FlatView *src, bool upda
     if (!update_dispatcher) {
         return true;
     }
+    MEMORY_LISTENER_CALL_GLOBAL(uc, begin, Forward);
     if (dst->dispatch) {
         address_space_dispatch_clear(dst->dispatch);
     }
@@ -943,6 +944,7 @@ bool flatview_copy(struct uc_struct *uc, FlatView *dst, FlatView *src, bool upda
         flatview_add_to_dispatch(uc, dst, &mrs);
     }
     address_space_dispatch_compact(dst->dispatch);
+    MEMORY_LISTENER_CALL_GLOBAL(uc, commit, Forward);
     return true;
 }
 
