@@ -280,6 +280,7 @@ static void test_snapshot(void)
     uc_engine *uc;
     uc_context *c0, *c1;
     uint32_t mem;
+    uint8_t code_data;
     // mov eax, [0x2020]; inc eax; mov [0x2020], eax
     char code[] = "\xa1\x20\x20\x00\x00\x00\x00\x00\x00\xff\xc0\xa3\x20\x20\x00"
                   "\x00\x00\x00\x00\x00";
@@ -302,13 +303,15 @@ static void test_snapshot(void)
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
     TEST_CHECK(mem == 2);
     OK(uc_context_restore(uc, c1));
-    // TODO check mem
+
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
     TEST_CHECK(mem == 1);
     OK(uc_context_restore(uc, c0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
     TEST_CHECK(mem == 0);
-    // TODO check mem
+
+    OK(uc_mem_read(uc, 0x1000, &code_data, sizeof(code_data)));
+    TEST_CHECK(code_data == 0xa1);
 
     OK(uc_context_free(c0));
     OK(uc_context_free(c1));
