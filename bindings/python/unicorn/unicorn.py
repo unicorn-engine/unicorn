@@ -2,7 +2,7 @@
 from __future__ import annotations
 import ctypes
 import ctypes.util
-import distutils.sysconfig
+import sysconfig
 from functools import wraps
 from typing import Any, Callable, List, Tuple, Union
 import pkg_resources
@@ -85,7 +85,7 @@ _path_list = [os.getenv('LIBUNICORN_PATH', None),
               pkg_resources.resource_filename(__name__, 'lib'),
               os.path.join(os.path.split(__file__)[0], 'lib'),
               '',
-              distutils.sysconfig.get_python_lib(),
+              sysconfig.get_path('platlib'),
               "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64',
               os.getenv('PATH', '')]
 
