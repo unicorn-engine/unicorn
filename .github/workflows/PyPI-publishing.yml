@@ -71,7 +71,7 @@ jobs:
               name: 'macos_aarch64'
             }
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: '🛠️ Set up Python'
       uses: actions/setup-python@v5
@@ -80,7 +80,7 @@ jobs:
 
     - name: '🛠️ Add msbuild to PATH'
       if: contains(matrix.config.name, 'win')
-      uses: microsoft/setup-msbuild@v1.0.3
+      uses: microsoft/setup-msbuild@v2
       with:
         vs-version: '16.5'
     
@@ -105,7 +105,7 @@ jobs:
     - name: '🛠️ macOS dependencies'
       if: contains(matrix.config.name, 'macos')
       run: |
-        brew install p7zip cmake ninja pkg-config
+        brew install ninja
 
     - name: '🛠️ pip dependencies'
       run: |
@@ -135,8 +135,9 @@ jobs:
               cd bindings/python && python setup.py bdist_wheel
         fi
     - name: '📤 Upload artifact'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
+         name: ${{ matrix.config.name }}
          path: ${{ github.workspace }}/bindings/python/dist/*
 
   publish:
@@ -144,13 +145,13 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags')
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          merge-multiple: true
           path: dist
 
       - name: '📦 Publish distribution to PyPI'
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.pypi_pass }}
