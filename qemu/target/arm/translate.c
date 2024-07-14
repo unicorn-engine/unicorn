@@ -31,6 +31,7 @@
 
 #include "exec/helper-proto.h"
 #include "exec/helper-gen.h"
+#include "uc_priv.h"
 
 #define ENABLE_ARCH_4T    arm_dc_feature(s, ARM_FEATURE_V4T)
 #define ENABLE_ARCH_5     arm_dc_feature(s, ARM_FEATURE_V5)
@@ -496,6 +497,20 @@ static void gen_adc_CC(TCGContext *tcg_ctx, TCGv_i32 dest, TCGv_i32 t0, TCGv_i32
 /* dest = T0 - T1. Compute C, N, V and Z flags */
 static void gen_sub_CC(TCGContext *tcg_ctx, TCGv_i32 dest, TCGv_i32 t0, TCGv_i32 t1)
 {
+    // Process TCG_OPCODE hook
+    uc_engine *uc = tcg_ctx->uc;
+    if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_TCG_OPCODE, tcg_ctx->pc_start)) {
+        struct hook *hook;
+        HOOK_FOREACH_VAR_DECLARE;
+        HOOK_FOREACH(uc, hook, UC_HOOK_TCG_OPCODE) {
+            if (hook->to_delete)
+                continue;
+            if (hook->op == UC_TCG_OP_SUB && (hook->op_flags & UC_TCG_OP_FLAG_CMP) ) {
+                gen_uc_traceopcode(tcg_ctx, hook, (TCGv_i64)t0, (TCGv_i64)t1, 32, uc, tcg_ctx->pc_start);
+            }
+        }
+    }
+
     TCGv_i32 tmp;
     tcg_gen_sub_i32(tcg_ctx, tcg_ctx->cpu_NF, t0, t1);
     tcg_gen_mov_i32(tcg_ctx, tcg_ctx->cpu_ZF, tcg_ctx->cpu_NF);
