@@ -123,6 +123,76 @@ Therefore, if you still prefer the previous `paddr = vaddr` simple mapping, we h
 
 In theory, `UC_TLB_VIRTUAL` will achieve better performance as it skips all MMU details, though not benchmarked.
 
+## Something is wrong - I would like to dig deeper
+
+Unicorn uses at several places logging by the qemu implementation.
+This might provide a first glance what could be wrong.
+
+The logs contains optionally the filename and the line number including
+additional messages to indicate what is happening.
+However, the qemu logs are partially commented-out and incomplete, but give it a try.
+You might want to dig deeper - and add your own log messages where you expect or try to find the bug.
+
+See the `unicorn/qemu/include/qemu/log.h` file for details.
+To enable logs, you must recompile Unicorn with the enabled `LOGGING_ENABLED` define.
+
+Logs are written in different log levels, which might result into a very verbose logging if enabled.
+To control the log level information, two environment variables could be used.
+
+`UNICORN_LOG_LEVEL` and `UNICORN_LOG_DETAIL_LEVEL`.
+
+These environment variables are parsed into `uint32_t` values once, (due to performance reasons)
+so set these environment variables before you execute any line of Unicorn.
+Allowed are hexa-decimal, decimal and octal values, which fits into a buffer of 10 chars. (see stroul for details).
+
+To define how detailed and what should be logged, use the following environment variables:
+
+- `UNICORN_LOG_LEVEL`=\<32bit mask\>
+  - The qemu bit mask what should be logged.
+  - Use the value of `UINT32_MAX` to log everything.
+  - If no bit is set in the mask, there will be no logging.
+- `UNICORN_LOG_DETAIL_LEVEL`=\<level\>
+  - The level defines how the filename and line is constructed.
+    - 0: no filename and no line is used.
+    - 1: full filename including the leading path is used with line information.
+    - 2: just the filename with line information. It might be a little confusing,
+    as the file name can be used in several places.
+  - If unsure or unwanted, leave this variable undefined or set it to 0.
+
+As an example to set up the environment for python correctly, see the example below.
+
+```python
+import os
+os.environ['UNICORN_LOG_LEVEL'] = "0xFFFFFFFF" # verbose - print anything 
+os.environ['UNICORN_LOG_DETAIL_LEVEL'] = "1" # full filename with line info
+```
+
+Please note that file names are statically compiled in and can reveal the paths
+of the file system used during compilation.
+
+## My code does not do what I would expect - is this a bug?
+
+Please create an github issue and provide as much details as possible.
+
+- [ ] Simplified version of your script / source
+  - Make sure that "no" external dependencies are needed.
+  - E.g. remove additional use of capstone or CTF tools.
+- [ ] Used Unicorn git-hash commit
+  - Make sure to exclude any changes of you made in unicorn.
+  - Alternativily provide the repo link to your commit.
+- [ ] Detailed explaination what is expected
+  - Try to verify if the instructions can be processed by qemu.
+  - Dumping the registers of unicorn and qemu helps a lot.
+- [ ] Detailed explaination what is observed
+  - Describe what's going on (and what you might think about it).
+- [ ] Output from your executed script
+  - You might have additional log messages which could be helpful.
+- [ ] Output from the qemu-logs
+  - Try to gather more informations by enabling the qemu logging.
+- [ ] More details
+  - Attach more details to help reproduce the bug.
+  - Like attaching a repo link to the CTF challenge containing the binary or source code.
+
 ## I'd like to make contributions, where do I start?
 
 See [milestones](https://github.com/unicorn-engine/unicorn/milestones) and [coding convention](https://github.com/unicorn-engine/unicorn/wiki/Coding-Convention
