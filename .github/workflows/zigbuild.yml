@@ -22,7 +22,7 @@ jobs:
         runs-on: [ubuntu-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
@@ -46,7 +46,7 @@ jobs:
         runs-on: [macos-latest]
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
@@ -74,7 +74,7 @@ jobs:
   #     matrix:
   #       include: [{ msystem: CLANG64, arch: x86_64, prefix: /clang64 }, { msystem: CLANG32, arch: i686, prefix: /clang32 }, { msystem: CLANGARM64, arch: aarch64, prefix: /clangarm64 }]
   #   steps:
-  #     - uses: actions/checkout@v3
+  #     - uses: actions/checkout@v4
   #       with:
   #         path: temp
   #         submodules: recursive
