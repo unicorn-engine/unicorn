@@ -65,11 +65,11 @@ static void restore_jit_state(uc_engine *uc)
 #else
 static void save_jit_state(uc_engine *uc)
 {
-    (void *)uc;
+    (void)uc;
 }
 static void restore_jit_state(uc_engine *uc)
 {
-    (void *)uc;
+    (void)uc;
 }
 #endif
 

@@ -94,14 +94,14 @@ static inline void jit_write_protect(int enabled)
 
 #define JIT_CALLBACK_GUARD(x) \
 {                             \
-    (void*)uc;                \
+    (void)uc;                 \
     x;                        \
 }                             \
 
 
 #define JIT_CALLBACK_GUARD_VAR(var, x)  \
 {                                       \
-    (void*)uc;                          \
+    (void)uc;                           \
     var = x;                            \
 }                                       \
 
