@@ -776,6 +776,180 @@ fn emulate_riscv64_invalid_insn_interrupt() {
 }
 
 #[test]
+fn emulate_riscv64_mem_error_hook() {
+    let riscv_code: Vec<u8> = vec![
+        0x17, 0x45, 0x01, 0x00, // auipc a0,0x14
+        0x13, 0x05, 0x85, 0x00, // addi  a0,a0,8 # 14008
+        0x03, 0x25, 0x05, 0x00, // lw    a0,0(a0)
+    ];
+
+    struct Data {
+        hook_calls: usize,
+        call: Option<HookCall>,
+    }
+    #[derive(Debug, PartialEq)]
+    struct HookCall {
+        typ: MemType,
+        addr: u64,
+        size: usize,
+    }
+
+    let mut emu = unicorn_engine::Unicorn::new_with_data(
+        Arch::RISCV,
+        Mode::RISCV64,
+        Data {
+            hook_calls: 0,
+            call: None,
+        },
+    )
+    .expect("failed to initialize unicorn instance");
+
+    // Attempt to write to memory before mapping it.
+    assert_eq!(
+        emu.mem_write(0x1000, &riscv_code),
+        (Err(uc_error::WRITE_UNMAPPED))
+    );
+
+    assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
+    assert_eq!(emu.mem_write(0x1000, &riscv_code), Ok(()));
+    assert_eq!(
+        emu.mem_read_as_vec(0x1000, riscv_code.len()),
+        Ok(riscv_code.clone())
+    );
+
+    emu.ctl_tlb_type(unicorn_engine::TlbType::VIRTUAL)
+        .expect("failed to select virtual TLB");
+    emu.add_tlb_hook(0, !0, |_, vaddr, _| {
+        if vaddr < 0x4000 {
+            // The first page is identity-mapped.
+            Some(TlbEntry {
+                paddr: vaddr,
+                perms: Permission::ALL,
+            })
+        } else {
+            // All other memory is unmapped
+            None
+        }
+    })
+    .expect("failed to add TLB hook");
+
+    emu.add_mem_hook(HookType::MEM_INVALID, 0, !0, |emu, typ, addr, size, _| {
+        let data = emu.get_data_mut();
+        data.hook_calls += 1;
+        data.call = Some(HookCall { typ, addr, size });
+        false
+    })
+    .expect("failed to add memory hook");
+
+    assert_eq!(
+        emu.emu_start(
+            0x1000,
+            (0x1000 + riscv_code.len()) as u64,
+            10 * SECOND_SCALE,
+            1000
+        ),
+        Ok(())
+    );
+
+    assert_eq!(
+        emu.get_data().hook_calls,
+        1,
+        "interrupt hook should have been called exactly once"
+    );
+    assert_eq!(
+        emu.get_data().call,
+        Some(HookCall {
+            typ: MemType::READ_PROT,
+            addr: !0,
+            size: 8,
+        }),
+        "wrong hook call for read from unmapped memory"
+    );
+}
+
+#[test]
+fn emulate_riscv64_mem_error_interrupt() {
+    let riscv_code: Vec<u8> = vec![
+        0x17, 0x45, 0x01, 0x00, // auipc a0,0x14
+        0x13, 0x05, 0x85, 0x00, // addi  a0,a0,8 # 14008
+        0x03, 0x25, 0x05, 0x00, // lw    a0,0(a0)
+    ];
+
+    struct Data {
+        hook_calls: usize,
+        mcause: Option<u32>,
+    }
+
+    let mut emu = unicorn_engine::Unicorn::new_with_data(
+        Arch::RISCV,
+        Mode::RISCV64,
+        Data {
+            hook_calls: 0,
+            mcause: None,
+        },
+    )
+    .expect("failed to initialize unicorn instance");
+
+    // Attempt to write to memory before mapping it.
+    assert_eq!(
+        emu.mem_write(0x1000, &riscv_code),
+        (Err(uc_error::WRITE_UNMAPPED))
+    );
+
+    assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
+    assert_eq!(emu.mem_write(0x1000, &riscv_code), Ok(()));
+    assert_eq!(
+        emu.mem_read_as_vec(0x1000, riscv_code.len()),
+        Ok(riscv_code.clone())
+    );
+
+    emu.ctl_tlb_type(unicorn_engine::TlbType::VIRTUAL)
+        .expect("failed to select virtual TLB");
+    emu.add_tlb_hook(0, !0, |_, vaddr, _| {
+        if vaddr < 0x4000 {
+            // The first page is identity-mapped.
+            Some(TlbEntry {
+                paddr: vaddr,
+                perms: Permission::ALL,
+            })
+        } else {
+            // All other memory is unmapped
+            None
+        }
+    })
+    .expect("failed to add TLB hook");
+
+    emu.add_intr_hook(|emu, mcause| {
+        let data = emu.get_data_mut();
+        data.hook_calls += 1;
+        data.mcause = Some(mcause);
+        emu.emu_stop().expect("failed to stop");
+    })
+    .expect("failed to add interrupt hook");
+
+    assert_eq!(
+        emu.emu_start(
+            0x1000,
+            (0x1000 + riscv_code.len()) as u64,
+            10 * SECOND_SCALE,
+            1000
+        ),
+        Ok(())
+    );
+
+    assert_eq!(
+        emu.get_data().hook_calls,
+        1,
+        "interrupt hook should have been called exactly once"
+    );
+    assert_eq!(
+        emu.get_data().mcause,
+        Some(13_u32),
+        "wrong mcause value for load page fault"
+    );
+}
+
+#[test]
 fn emulate_riscv64_ecall_interrupt() {
     let riscv_code: Vec<u8> = vec![0x73, 0x00, 0x00, 0x00]; // ecall
 
