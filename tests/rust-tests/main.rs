@@ -3,9 +3,11 @@ extern crate alloc;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use unicorn_engine::unicorn_const::{
-    uc_error, Arch, HookType, MemType, Mode, Permission, SECOND_SCALE, TlbEntry, TlbType
+    uc_error, Arch, HookType, MemType, Mode, Permission, TlbEntry, TlbType, SECOND_SCALE,
 };
-use unicorn_engine::{InsnSysX86, RegisterARM, RegisterMIPS, RegisterPPC, RegisterX86, Unicorn};
+use unicorn_engine::{
+    InsnSysX86, RegisterARM, RegisterMIPS, RegisterPPC, RegisterRISCV, RegisterX86, Unicorn,
+};
 
 pub static X86_REGISTERS: [RegisterX86; 125] = [
     RegisterX86::AH,
@@ -621,6 +623,218 @@ fn emulate_ppc() {
         Ok(())
     );
     assert_eq!(emu.reg_read(RegisterPPC::R26), Ok(1379));
+}
+
+#[test]
+fn emulate_riscv64() {
+    let riscv_code: Vec<u8> = vec![0x13, 0x05, 0xa5, 0x00]; // addi a0, a0, 10
+
+    let mut emu = unicorn_engine::Unicorn::new(Arch::RISCV, Mode::RISCV64)
+        .expect("failed to initialize unicorn instance");
+    assert_eq!(emu.reg_write(RegisterRISCV::A0, 123), Ok(()));
+    assert_eq!(emu.reg_read(RegisterRISCV::A0), Ok(123));
+
+    // Attempt to write to memory before mapping it.
+    assert_eq!(
+        emu.mem_write(0x1000, &riscv_code),
+        (Err(uc_error::WRITE_UNMAPPED))
+    );
+
+    assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
+    assert_eq!(emu.mem_write(0x1000, &riscv_code), Ok(()));
+    assert_eq!(
+        emu.mem_read_as_vec(0x1000, riscv_code.len()),
+        Ok(riscv_code.clone())
+    );
+
+    assert_eq!(
+        emu.emu_start(
+            0x1000,
+            (0x1000 + riscv_code.len()) as u64,
+            10 * SECOND_SCALE,
+            1000
+        ),
+        Ok(())
+    );
+    assert_eq!(emu.reg_read(RegisterRISCV::A0), Ok(123 + 10));
+}
+
+#[test]
+fn emulate_riscv64_invalid_insn_hook() {
+    let riscv_code: Vec<u8> = vec![0x73, 0x10, 0x00, 0xc0]; // "unimp"
+
+    struct Data {
+        invalid_hook_called: bool,
+    }
+
+    let mut emu = unicorn_engine::Unicorn::new_with_data(
+        Arch::RISCV,
+        Mode::RISCV64,
+        Data {
+            invalid_hook_called: false,
+        },
+    )
+    .expect("failed to initialize unicorn instance");
+
+    // Attempt to write to memory before mapping it.
+    assert_eq!(
+        emu.mem_write(0x1000, &riscv_code),
+        (Err(uc_error::WRITE_UNMAPPED))
+    );
+
+    assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
+    assert_eq!(emu.mem_write(0x1000, &riscv_code), Ok(()));
+    assert_eq!(
+        emu.mem_read_as_vec(0x1000, riscv_code.len()),
+        Ok(riscv_code.clone())
+    );
+
+    emu.add_insn_invalid_hook(|emu| {
+        let data = emu.get_data_mut();
+        data.invalid_hook_called = true;
+        emu.emu_stop().expect("failed to stop");
+        false
+    })
+    .expect("failed to add invalid instruction hook");
+
+    assert_eq!(
+        emu.emu_start(
+            0x1000,
+            (0x1000 + riscv_code.len()) as u64,
+            10 * SECOND_SCALE,
+            1000
+        ),
+        Ok(())
+    );
+
+    assert!(
+        emu.get_data().invalid_hook_called,
+        "invalid instruction hook was not called"
+    );
+}
+
+#[test]
+fn emulate_riscv64_invalid_insn_interrupt() {
+    let riscv_code: Vec<u8> = vec![0x73, 0x10, 0x00, 0xc0]; // "unimp"
+
+    struct Data {
+        hook_calls: usize,
+        mcause: Option<u32>,
+    }
+
+    let mut emu = unicorn_engine::Unicorn::new_with_data(
+        Arch::RISCV,
+        Mode::RISCV64,
+        Data {
+            hook_calls: 0,
+            mcause: None,
+        },
+    )
+    .expect("failed to initialize unicorn instance");
+
+    // Attempt to write to memory before mapping it.
+    assert_eq!(
+        emu.mem_write(0x1000, &riscv_code),
+        (Err(uc_error::WRITE_UNMAPPED))
+    );
+
+    assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
+    assert_eq!(emu.mem_write(0x1000, &riscv_code), Ok(()));
+    assert_eq!(
+        emu.mem_read_as_vec(0x1000, riscv_code.len()),
+        Ok(riscv_code.clone())
+    );
+
+    emu.add_intr_hook(|emu, mcause| {
+        let data = emu.get_data_mut();
+        data.hook_calls += 1;
+        data.mcause = Some(mcause);
+        emu.emu_stop().expect("failed to stop");
+    })
+    .expect("failed to add interrupt hook");
+
+    assert_eq!(
+        emu.emu_start(
+            0x1000,
+            (0x1000 + riscv_code.len()) as u64,
+            10 * SECOND_SCALE,
+            1000
+        ),
+        Ok(())
+    );
+
+    assert_eq!(
+        emu.get_data().hook_calls,
+        1,
+        "interrupt hook should have been called exactly once"
+    );
+    assert_eq!(
+        emu.get_data().mcause,
+        Some(2_u32),
+        "wrong mcause value for illegal instruction"
+    );
+}
+
+#[test]
+fn emulate_riscv64_ecall_interrupt() {
+    let riscv_code: Vec<u8> = vec![0x73, 0x00, 0x00, 0x00]; // ecall
+
+    struct Data {
+        hook_calls: usize,
+        mcause: Option<u32>,
+    }
+
+    let mut emu = unicorn_engine::Unicorn::new_with_data(
+        Arch::RISCV,
+        Mode::RISCV64,
+        Data {
+            hook_calls: 0,
+            mcause: None,
+        },
+    )
+    .expect("failed to initialize unicorn instance");
+
+    // Attempt to write to memory before mapping it.
+    assert_eq!(
+        emu.mem_write(0x1000, &riscv_code),
+        (Err(uc_error::WRITE_UNMAPPED))
+    );
+
+    assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
+    assert_eq!(emu.mem_write(0x1000, &riscv_code), Ok(()));
+    assert_eq!(
+        emu.mem_read_as_vec(0x1000, riscv_code.len()),
+        Ok(riscv_code.clone())
+    );
+
+    emu.add_intr_hook(|emu, mcause| {
+        let data = emu.get_data_mut();
+        data.hook_calls += 1;
+        data.mcause = Some(mcause);
+        emu.emu_stop().expect("failed to stop");
+    })
+    .expect("failed to add interrupt hook");
+
+    assert_eq!(
+        emu.emu_start(
+            0x1000,
+            (0x1000 + riscv_code.len()) as u64,
+            10 * SECOND_SCALE,
+            1000
+        ),
+        Ok(())
+    );
+
+    assert_eq!(
+        emu.get_data().hook_calls,
+        1,
+        "interrupt hook should have been called exactly once"
+    );
+    assert_eq!(
+        emu.get_data().mcause,
+        Some(8_u32),
+        "wrong mcause value for ecall from U-Mode"
+    );
 }
 
 #[test]
