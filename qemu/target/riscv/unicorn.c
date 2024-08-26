@@ -79,6 +79,63 @@ static void riscv_release(void *ctx)
 
 static void reg_reset(struct uc_struct *uc) {}
 
+static uc_err reg_read_priv(CPURISCVState *env, target_ulong *value)
+{
+    // This structure is based on RISC-V Debug Specification 1.0.0-rc3,
+    // Section 4.10.1, Virtual Debug Registers: Privilege Mode.
+    // This encoding should match the decoding in reg_write_priv.
+    target_ulong priv_value = 0;
+    switch (env->priv) {
+    default:
+        // No other value should be possible, but we'll report
+        // 0 (U-Mode) in this case since that's most conservative.
+        break;
+    case PRV_U:
+        priv_value = 0;
+        break;
+    case PRV_S:
+        priv_value = 1;
+        break;
+    case PRV_M:
+        priv_value = 3;
+        break;
+    }
+    if (riscv_cpu_virt_enabled(env)) {
+        // The "v" bit is set to indicate either VS or VU mode.
+        priv_value |= 0b100;
+    }
+    *value = priv_value;
+    return UC_ERR_OK;
+}
+
+static uc_err reg_write_priv(CPURISCVState *env, target_ulong value)
+{
+    // This structure is based on RISC-V Debug Specification 1.0.0-rc3,
+    // Section 4.10.1, Virtual Debug Registers: Privilege Mode.
+    // This decoding should match the encoding in reg_read_priv.
+    if ((value & ~0b111) != 0) {
+        // Only the low three bits are settable.
+        return UC_ERR_ARG;
+    }
+    target_ulong prv = value & 0b11;
+    bool v = (value & 0b100) != 0;
+    switch (prv) {
+    default:
+        return UC_ERR_ARG;
+    case 0:
+        riscv_cpu_set_mode(env, PRV_U);
+        break;
+    case 1:
+        riscv_cpu_set_mode(env, PRV_S);
+        break;
+    case 3:
+        riscv_cpu_set_mode(env, PRV_M);
+        break;
+    }
+    riscv_cpu_set_virt_enabled(env, v);
+    return UC_ERR_OK;
+}
+
 DEFAULT_VISIBILITY
 uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
                 size_t *size)
@@ -121,6 +178,20 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
 #else
             CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = env->pc;
+#endif
+            break;
+        case UC_RISCV_REG_PRIV:
+            target_ulong priv_value;
+            ret = reg_read_priv(env, &priv_value);
+            if (ret != UC_ERR_OK) {
+                return ret;
+            }
+#ifdef TARGET_RISCV64
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = priv_value;
+#else
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = priv_value;
 #endif
             break;
         }
@@ -173,6 +244,17 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
 #endif
             *setpc = 1;
             break;
+        case UC_RISCV_REG_PRIV:
+#ifdef TARGET_RISCV64
+            CHECK_REG_TYPE(uint64_t);
+            uint64_t val;
+            val = *(uint64_t *)value;
+#else
+            CHECK_REG_TYPE(uint32_t);
+            uint32_t val;
+            val = *(uint32_t *)value;
+#endif
+            ret = reg_write_priv(env, (target_ulong)val);
         }
     }
 

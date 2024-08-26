@@ -219,7 +219,8 @@ public interface RiscvConst {
     public static final int UC_RISCV_REG_F30 = 188;
     public static final int UC_RISCV_REG_F31 = 189;
     public static final int UC_RISCV_REG_PC = 190;
-    public static final int UC_RISCV_REG_ENDING = 191;
+    public static final int UC_RISCV_REG_PRIV = 191;
+    public static final int UC_RISCV_REG_ENDING = 192;
 
     // Alias registers
     public static final int UC_RISCV_REG_ZERO = 1;
