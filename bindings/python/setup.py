@@ -251,6 +251,6 @@ setup(
     include_package_data=True,
     is_pure=False,
     package_data={
-        'unicorn': ['lib/*', 'include/unicorn/*']
+        'unicorn': ['unicorn/py.typed', 'lib/*', 'include/unicorn/*']
     }
 )
