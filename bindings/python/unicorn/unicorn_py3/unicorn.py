@@ -5,10 +5,10 @@ import ctypes
 import functools
 import weakref
 
-from unicorn import x86_const, arm_const, arm64_const, unicorn_const as uc
-from .arch.types import *
+from unicorn import unicorn_const as uc
+from .arch.types import uc_err, uc_engine, uc_context, uc_hook_h, UcReg
 
-__version__ = f'{uc.UC_VERSION_MAJOR}.{uc.UC_VERSION_MINOR}.{uc.UC_VERSION_PATCH}'
+# __version__ = f'{uc.UC_VERSION_MAJOR}.{uc.UC_VERSION_MINOR}.{uc.UC_VERSION_PATCH}'
 
 def _structure_repr(self):
     return "%s(%s)" % (self.__class__.__name__, ", ".join("%s=%s" % (k, getattr(self, k)) for (k, _) in self._fields_))
@@ -457,7 +457,7 @@ class Uc(RegStateManager):
             """
 
             def __wrapped() -> Type[Uc]:
-                archmod = importlib.import_module(f'.arch.{pkgname}', f'unicorn.unicorn_py3')
+                archmod = importlib.import_module(f'.arch.{pkgname}', 'unicorn.unicorn_py3')
 
                 return getattr(archmod, clsname)
 
@@ -1163,8 +1163,6 @@ UC_MMIO_READ_TYPE = Callable[[Uc, int, int, Any], int]
 UC_MMIO_WRITE_TYPE = Callable[[Uc, int, int, int, Any], None]
 
 
+__all__ = ['Uc', 'UcContext', 'ucsubclass', 'UcError', 'uc_version', 'version_bind', 'uc_arch_supported', 'debug']
 
-__all__ = [
-    'Uc', 'UcContext', 'ucsubclass', 'uc_version', 'uc_arch_supported', 'version_bind', 'UcError', 'uc', 'debug', 'uccallback',
-    'x86_const', 'arm_const', 'arm64_const'
-]
+

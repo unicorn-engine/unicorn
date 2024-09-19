@@ -2,15 +2,16 @@
 #
 # @author elicn
 
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Sequence, Tuple
 
 import ctypes
 
-from .. import Uc, UcError
-from .. import x86_const as const
-
-from unicorn.unicorn_py3 import uccallback
+# traditional unicorn imports
+from unicorn import x86_const as const
 from unicorn.unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
+
+# newly introduced unicorn imports
+from ..unicorn import Uc, UcError, uccallback
 from .types import uc_engine, UcTupledReg, UcReg128, UcReg256, UcReg512
 
 X86MMRReg = Tuple[int, int, int, int]
@@ -176,3 +177,6 @@ class UcIntel(Uc):
 
     def msr_write(self, msr_id: int, value: int) -> None:
         self._reg_write(const.UC_X86_REG_MSR, UcRegMSR, (msr_id, value))
+
+
+__all__ = ['UcRegMMR', 'UcRegMSR', 'UcRegFPR', 'UcIntel']

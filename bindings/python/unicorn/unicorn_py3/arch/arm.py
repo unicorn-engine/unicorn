@@ -6,9 +6,11 @@ from typing import Any, Tuple
 
 import ctypes
 
-from .. import Uc
-from .. import arm_const as const
+# traditional unicorn imports
+from unicorn import arm_const as const
 
+# newly introduced unicorn imports
+from ..unicorn import Uc
 from .types import UcTupledReg, UcReg128
 
 ARMCPReg = Tuple[int, int, int, int, int, int, int, int]
@@ -83,3 +85,5 @@ class UcAArch32(Uc):
 
         else:
             self._reg_write(reg_id, reg_cls, value)
+
+__all__ = ['UcRegCP', 'UcAArch32']

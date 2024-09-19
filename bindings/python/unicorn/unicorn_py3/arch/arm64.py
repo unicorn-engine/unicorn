@@ -6,11 +6,12 @@ from typing import Any, Callable, NamedTuple, Tuple
 
 import ctypes
 
-from .. import Uc, UcError
-from .. import arm64_const as const
+# traditional unicorn imports
+from unicorn import arm64_const as const
+from unicorn.unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
 
-from ..unicorn import uccallback
-from unicorn import UC_ERR_ARG, UC_HOOK_INSN
+# newly introduced unicorn imports
+from ..unicorn import Uc, UcError, uccallback
 from .types import uc_engine, UcTupledReg, UcReg128
 
 ARM64CPReg = Tuple[int, int, int, int, int, int]
@@ -124,3 +125,5 @@ class UcAArch64(Uc):
 
         else:
             self._reg_write(reg_id, reg_cls, value)
+
+__all__ = ['UcRegCP64', 'UcAArch64']
