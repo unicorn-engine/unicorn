@@ -184,5 +184,10 @@ class UcIntel(Uc):
     def msr_write(self, msr_id: int, value: int) -> None:
         self._reg_write(const.UC_X86_REG_MSR, UcRegMSR, (msr_id, value))
 
+    def reg_read_batch(self, reg_ids: Sequence[int]) -> Tuple:
+        reg_types = [UcIntel.__select_reg_class(rid) or self._DEFAULT_REGTYPE for rid in reg_ids]
+
+        return self._reg_read_batch(reg_ids, reg_types)
+
 
 __all__ = ['UcRegMMR', 'UcRegMSR', 'UcRegFPR', 'UcIntel']

@@ -154,6 +154,7 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
     __set_prototype('uc_errno', uc_err, uc_engine)
     __set_prototype('uc_reg_read', uc_err, uc_engine, ctypes.c_int, ctypes.c_void_p)
     __set_prototype('uc_reg_write', uc_err, uc_engine, ctypes.c_int, ctypes.c_void_p)
+    __set_prototype('uc_reg_read_batch', uc_err, uc_engine, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_void_p), ctypes.c_int)
     __set_prototype('uc_mem_read', uc_err, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
     __set_prototype('uc_mem_write', uc_err, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
     __set_prototype('uc_emu_start', uc_err, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
@@ -172,6 +173,7 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
     __set_prototype('uc_context_size', ctypes.c_size_t, uc_engine)
     __set_prototype('uc_context_reg_read', uc_err, uc_context, ctypes.c_int, ctypes.c_void_p)
     __set_prototype('uc_context_reg_write', uc_err, uc_context, ctypes.c_int, ctypes.c_void_p)
+    __set_prototype('uc_context_reg_read_batch', uc_err, uc_context, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_void_p), ctypes.c_int)
     __set_prototype('uc_context_free', uc_err, uc_context)
     __set_prototype('uc_mem_regions', uc_err, uc_engine, ctypes.POINTER(ctypes.POINTER(_uc_mem_region)), ctypes.POINTER(ctypes.c_uint32))
     # https://bugs.python.org/issue42880
@@ -330,11 +332,33 @@ class RegStateManager:
 
         raise NotImplementedError
 
-    def _reg_read(self, reg_id: int, regtype, *args):
+    def _do_reg_read_batch(self, reglist, vallist, count) -> int:
+        """Private batch register read implementation.
+        Must be implemented by the mixin object
+        """
+
+        raise NotImplementedError
+
+    def _do_reg_write_batch(self, reglist, count) -> int:
+        """Private batch register write implementation.
+        Must be implemented by the mixin object
+        """
+
+        raise NotImplementedError
+
+    @staticmethod
+    def __get_reg_read_arg(regtype: Type, *args):
+        return regtype(*args)
+
+    @staticmethod
+    def __get_reg_write_arg(regtype: Type, value):
+        return regtype.from_value(value) if issubclass(regtype, UcReg) else regtype(value)
+
+    def _reg_read(self, reg_id: int, regtype: Type, *args):
         """Register read helper method.
         """
 
-        reg = regtype(*args)
+        reg = self.__get_reg_read_arg(regtype, *args)
         status = self._do_reg_read(reg_id, ctypes.byref(reg))
 
         if status != uc.UC_ERR_OK:
@@ -346,11 +370,29 @@ class RegStateManager:
         """Register write helper method.
         """
 
-        reg = regtype.from_value(value) if issubclass(regtype, UcReg) else regtype(value)
+        reg = self.__get_reg_write_arg(regtype, value)
         status = self._do_reg_write(reg_id, ctypes.byref(reg))
 
         if status != uc.UC_ERR_OK:
             raise UcError(status, reg_id)
+
+    def _reg_read_batch(self, reg_ids: Sequence[int], reg_types: Sequence[Type]) -> Tuple:
+        """Batch register read helper method.
+        """
+
+        assert len(reg_ids) == len(reg_types)
+
+        count = len(reg_ids)
+        reg_list = (ctypes.c_int * count)(*reg_ids)
+        val_list = [rtype() for rtype in reg_types]
+        ptr_list = (ctypes.c_void_p * count)(*(ctypes.c_void_p(ctypes.addressof(elem)) for elem in val_list))
+
+        status = self._do_reg_read_batch(reg_list, ptr_list, ctypes.c_int(count))
+
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+
+        return tuple(v.value for v in val_list)
 
     def reg_read(self, reg_id: int, aux: Any = None):
         """Read architectural register value.
@@ -378,6 +420,32 @@ class RegStateManager:
 
         self._reg_write(reg_id, self._DEFAULT_REGTYPE, value)
 
+    def reg_read_batch(self, reg_ids: Sequence[int]) -> Tuple:
+        """Read a sequence of architectural registers.
+
+        Args:
+            reg_ids: a sequence of register identifiers (architecture-specific enumeration)
+
+        Returns: a tuple of registers values (register-specific format)
+
+        Raises: `UcError` in case of invalid register id
+        """
+
+        reg_types = [self._DEFAULT_REGTYPE for _ in range(len(reg_ids))]
+
+        return self._reg_read_batch(reg_ids, reg_types)
+
+    def reg_write_batch(self, reg_info: Sequence[Tuple[int, Any]]) -> None:
+        """Write a sequece of architectural registers.
+
+        Args:
+            regs_info: a sequence of tuples consisting of register identifiers and values
+
+        Raises: `UcError` in case of invalid register id or value format
+        """
+
+        # TODO
+        ...
 
 def ucsubclass(cls):
     """Uc subclass decorator.
@@ -588,6 +656,13 @@ class Uc(RegStateManager):
         """
 
         return uclib.uc_reg_write(self._uch, reg_id, reg_obj)
+
+    def _do_reg_read_batch(self, reglist, vallist, count) -> int:
+        """Private batch register read implementation.
+        Do not call directly.
+        """
+
+        return uclib.uc_reg_read_batch(self._uch, reglist, vallist, count)
 
     ###########################
     #  Memory management      #
@@ -1129,6 +1204,12 @@ class UcContext(RegStateManager):
         """
 
         return uclib.uc_context_reg_write(self._context, reg_id, reg_obj)
+
+    def _do_reg_read_batch(self, reglist, vallist, count) -> int:
+        """Private batch register read implementation.
+        """
+
+        return uclib.uc_context_reg_read_batch(self._context, reglist, vallist, count)
 
     # Make UcContext picklable
     def __getstate__(self):
