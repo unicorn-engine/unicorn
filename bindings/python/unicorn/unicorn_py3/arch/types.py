@@ -15,9 +15,6 @@ uc_hook_h  = ctypes.c_size_t
 
 VT = TypeVar('VT', bound=Tuple[int, ...])
 
-def _structure_repr(self):
-    return "%s(%s)" % (self.__class__.__name__, ", ".join("%s=%s" % (k, getattr(self, k)) for (k, _) in self._fields_))
-
 
 class UcReg(ctypes.Structure):
     """A base class for composite registers.
@@ -41,7 +38,6 @@ class UcReg(ctypes.Structure):
 
         pass
 
-    _repr_ = _structure_repr
 
 class UcTupledReg(UcReg, Generic[VT]):
     """A base class for registers whose values are represented as a set
