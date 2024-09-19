@@ -24,7 +24,7 @@ class _uc_mem_region(ctypes.Structure):
 
     @property
     def value(self) -> Tuple[int, int, int]:
-        return tuple(getattr(self, fname) for fname, _ in self._fields_)
+        return tuple(getattr(self, fname) for fname, *_ in self._fields_)
 
 
 class uc_tb(ctypes.Structure):
@@ -97,28 +97,28 @@ def __load_uc_lib() -> ctypes.CDLL:
         pkg_resources.resource_filename(__name__, 'lib'),
         PurePath(inspect.getfile(__load_uc_lib)).parent.parent / 'lib',
         '',
-        "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64',
-    ] + [PurePath(p) / 'unicorn' / 'lib' for p in sys.path] # lazymio: ??? why PATH ??
+        r'/usr/local/lib' if sys.platform == 'darwin' else r'/usr/lib64',
+    ] + [PurePath(p) / 'unicorn' / 'lib' for p in sys.path]
 
     # filter out None elements
     lib_locations = tuple(Path(loc) for loc in lib_locations if loc is not None)
 
     lib_name = {
-        'cygwin' : 'cygunicorn.dll',
-        'darwin' : 'libunicorn.2.dylib',
-        'linux'  : 'libunicorn.so.2',
+        'cygwin': 'cygunicorn.dll',
+        'darwin': 'libunicorn.2.dylib',
+        'linux':  'libunicorn.so.2',
         'linux2': 'libunicorn.so.2',
-        'win32'  : 'unicorn.dll'
+        'win32':  'unicorn.dll'
     }.get(platform, "libunicorn.so")
 
     def __attempt_load(libname: str):
         T = TypeVar('T')
 
-        def __pick_first_valid(iter: Iterable[T]) -> Optional[T]:
+        def __pick_first_valid(it: Iterable[T]) -> Optional[T]:
             """Iterate till encountering a non-None element and return it.
             """
 
-            return next((elem for elem in iter if elem is not None), None)
+            return next((elem for elem in it if elem is not None), None)
 
         return __pick_first_valid(_load_lib(loc, libname) for loc in lib_locations)
 
@@ -965,11 +965,8 @@ class Uc(RegStateManager):
 
     @staticmethod
     def __ctl_encode(ctl: int, op: int, nargs: int) -> int:
-        if not (op and (op & ~0b11) == 0):
-            raise ValueError("Op should be 0, 1, or 2")
-        
-        if not (nargs and (nargs & ~0b1111) == 0):
-            raise ValueError("Max number of arguments is 16")
+        assert nargs and (nargs & ~0b1111) == 0, f'nargs must not exceed value of 15 (got {nargs})'
+        assert op and (op & ~0b11) == 0, f'op must not exceed value of 3 (got {op})'
 
         return (op << 30) | (nargs << 26) | ctl
 
