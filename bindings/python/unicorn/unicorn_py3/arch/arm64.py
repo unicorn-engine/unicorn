@@ -1,5 +1,5 @@
-# AArch64 classes and structures.
-#
+"""AArch64 classes and structures.
+"""
 # @author elicn
 
 from typing import Any, Callable, NamedTuple, Tuple

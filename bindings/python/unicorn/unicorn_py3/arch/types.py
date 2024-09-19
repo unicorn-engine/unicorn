@@ -1,5 +1,5 @@
-# Common types and structures.
-#
+"""Common types and structures.
+"""
 # @author elicn
 
 from abc import abstractmethod
@@ -81,14 +81,23 @@ class UcLargeReg(UcReg):
 
 
 class UcReg128(UcLargeReg):
+    """Large register holding a 128-bit value.
+    """
+
     _fields_ = [('qwords', ctypes.c_uint64 * 2)]
 
 
 class UcReg256(UcLargeReg):
+    """Large register holding a 256-bit value.
+    """
+
     _fields_ = [('qwords', ctypes.c_uint64 * 4)]
 
 
 class UcReg512(UcLargeReg):
+    """Large register holding a 512-bit value.
+    """
+
     _fields_ = [('qwords', ctypes.c_uint64 * 8)]
 
 

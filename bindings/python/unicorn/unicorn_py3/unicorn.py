@@ -1,3 +1,7 @@
+"""New and improved Unicorn Python bindings by elicn
+based on Nguyen Anh Quynnh's work
+"""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Mapping, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
 
@@ -111,7 +115,7 @@ def __load_uc_lib() -> ctypes.CDLL:
         T = TypeVar('T')
 
         def __pick_first_valid(iter: Iterable[T]) -> Optional[T]:
-            """Iterate till encountering a non-None element
+            """Iterate till encountering a non-None element and return it.
             """
 
             return next((elem for elem in iter if elem is not None), None)

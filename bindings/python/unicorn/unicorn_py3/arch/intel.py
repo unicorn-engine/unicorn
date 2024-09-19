@@ -1,5 +1,5 @@
-# Intel architecture classes and structures.
-#
+"""Intel architecture classes and structures.
+"""
 # @author elicn
 
 from typing import Any, Callable, Sequence, Tuple
@@ -37,6 +37,9 @@ class UcRegMMR(UcTupledReg[X86MMRReg]):
 
 
 class UcRegMSR(UcTupledReg[X86MSRReg]):
+    """Intel Model Specific Register
+    """
+
     _fields_ = (
         ('rid', ctypes.c_uint32),
         ('val', ctypes.c_uint64)
@@ -48,6 +51,9 @@ class UcRegMSR(UcTupledReg[X86MSRReg]):
 
 
 class UcRegFPR(UcTupledReg[X86FPReg]):
+    """Intel Floating Point Register
+    """
+
     _fields_ = (
         ('mantissa', ctypes.c_uint64),
         ('exponent', ctypes.c_uint16)

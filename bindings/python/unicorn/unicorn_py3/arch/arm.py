@@ -1,5 +1,5 @@
-# AArch32 classes and structures.
-#
+"""AArch32 classes and structures.
+"""
 # @author elicn
 
 from typing import Any, Tuple
