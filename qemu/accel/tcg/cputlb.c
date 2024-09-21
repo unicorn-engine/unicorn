@@ -1204,7 +1204,14 @@ static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
     }
 
     /* For exec pages, this is cleared in tb_gen_code. */
-    tlb_set_dirty(cpu, mem_vaddr);
+    // If we:
+    // - have memory hooks installed
+    // - or doing snapshot
+    // , then never clean the tlb
+    if (!(cpu->uc->snapshot_level > 0 || mr->priority > 0) && 
+            !(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE))) {
+        tlb_set_dirty(cpu, mem_vaddr);
+    }
 }
 
 /*
