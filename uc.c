@@ -550,7 +550,7 @@ uc_err uc_close(uc_engine *uc)
     g_free(uc->l1_map);
 
     if (uc->bounce.buffer) {
-        free(uc->bounce.buffer);
+        qemu_vfree(uc->bounce.buffer);
     }
 
     // free hooks and hook lists
