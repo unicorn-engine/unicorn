@@ -1682,7 +1682,9 @@ static void test_bswap_ax(void)
     {
         uint8_t code[] = {
             // bswap ax
-            0x66, 0x0F, 0xC8,
+            0x66,
+            0x0F,
+            0xC8,
         };
         TEST_CODE(UC_MODE_32, code);
         TEST_IN_REG(EAX, 0x44332211);
@@ -1692,7 +1694,9 @@ static void test_bswap_ax(void)
     {
         uint8_t code[] = {
             // bswap ax
-            0x66, 0x0F, 0xC8,
+            0x66,
+            0x0F,
+            0xC8,
         };
         TEST_CODE(UC_MODE_64, code);
         TEST_IN_REG(RAX, 0x8877665544332211);
@@ -1702,7 +1706,10 @@ static void test_bswap_ax(void)
     {
         uint8_t code[] = {
             // bswap rax (66h ignored)
-            0x66, 0x48, 0x0F, 0xC8,
+            0x66,
+            0x48,
+            0x0F,
+            0xC8,
         };
         TEST_CODE(UC_MODE_64, code);
         TEST_IN_REG(RAX, 0x8877665544332211);
@@ -1712,7 +1719,10 @@ static void test_bswap_ax(void)
     {
         uint8_t code[] = {
             // bswap ax (rex ignored)
-            0x48, 0x66, 0x0F, 0xC8,
+            0x48,
+            0x66,
+            0x0F,
+            0xC8,
         };
         TEST_CODE(UC_MODE_64, code);
         TEST_IN_REG(RAX, 0x8877665544332211);
@@ -1722,7 +1732,8 @@ static void test_bswap_ax(void)
     {
         uint8_t code[] = {
             // bswap eax
-            0x0F, 0xC8,
+            0x0F,
+            0xC8,
         };
         TEST_CODE(UC_MODE_32, code);
         TEST_IN_REG(EAX, 0x44332211);
@@ -1732,7 +1743,8 @@ static void test_bswap_ax(void)
     {
         uint8_t code[] = {
             // bswap eax
-            0x0F, 0xC8,
+            0x0F,
+            0xC8,
         };
         TEST_CODE(UC_MODE_64, code);
         TEST_IN_REG(RAX, 0x8877665544332211);
@@ -1746,7 +1758,10 @@ static void test_rex_x64(void)
     {
         uint8_t code[] = {
             // mov ax, bx (rex.w ignored)
-            0x48, 0x66, 0x89, 0xD8,
+            0x48,
+            0x66,
+            0x89,
+            0xD8,
         };
         TEST_CODE(UC_MODE_64, code);
         TEST_IN_REG(RAX, 0x8877665544332211);
@@ -1757,7 +1772,10 @@ static void test_rex_x64(void)
     {
         uint8_t code[] = {
             // mov rax, rbx (66h ignored)
-            0x66, 0x48, 0x89, 0xD8,
+            0x66,
+            0x48,
+            0x89,
+            0xD8,
         };
         TEST_CODE(UC_MODE_64, code);
         TEST_IN_REG(RAX, 0x8877665544332211);
@@ -1768,7 +1786,9 @@ static void test_rex_x64(void)
     {
         uint8_t code[] = {
             // mov ax, bx (expected encoding)
-            0x66, 0x89, 0xD8,
+            0x66,
+            0x89,
+            0xD8,
         };
         TEST_CODE(UC_MODE_64, code);
         TEST_IN_REG(RAX, 0x8877665544332211);
