@@ -36,6 +36,9 @@ unicorn_Unicorn.o: unicorn_Unicorn.c target/headers/unicorn_Unicorn.h
 libunicorn_java$(LIB_EXT): $(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS)
 
+gen_const:
+	cd .. && python3 const_generator.py java
+
 clean:
 	rm -f libunicorn_java$(LIB_EXT)
 	rm -f $(OBJS)
