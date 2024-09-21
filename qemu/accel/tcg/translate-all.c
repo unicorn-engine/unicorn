@@ -1845,8 +1845,10 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     }
 
     /* Undoes tlb_set_dirty in notdirty_write. */
-    tlb_reset_dirty_by_vaddr(cpu, pc & TARGET_PAGE_MASK,
-                             (pc & ~TARGET_PAGE_MASK) + tb->size);
+    if (!(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE))) {
+        tlb_reset_dirty_by_vaddr(cpu, pc & TARGET_PAGE_MASK,
+                                (pc & ~TARGET_PAGE_MASK) + tb->size);
+    }
 
     /*
      * No explicit memory barrier is required -- tb_link_page() makes the
