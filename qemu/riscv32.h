@@ -787,7 +787,6 @@
 #define tlb_protect_code tlb_protect_code_riscv32
 #define tlb_unprotect_code tlb_unprotect_code_riscv32
 #define tlb_reset_dirty tlb_reset_dirty_riscv32
-#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_riscv32
 #define tlb_set_dirty tlb_set_dirty_riscv32
 #define tlb_set_page_with_attrs tlb_set_page_with_attrs_riscv32
 #define tlb_set_page tlb_set_page_riscv32
