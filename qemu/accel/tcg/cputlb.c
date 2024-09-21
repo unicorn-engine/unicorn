@@ -1193,7 +1193,7 @@ static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
     ram_addr_t ram_addr = mem_vaddr + iotlbentry->addr;
 
     if (mr == NULL) {
-        mr = memory_mapping(cpu->uc, mem_vaddr);
+        mr = cpu->uc->memory_mapping(cpu->uc, mem_vaddr);
     }
 
     if ((mr->perms & UC_PROT_EXEC) != 0) {

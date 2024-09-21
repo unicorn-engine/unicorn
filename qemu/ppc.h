@@ -1287,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_ppc
 #define gen_helper_cpsr_read gen_helper_cpsr_read_ppc
 #define gen_helper_cpsr_write gen_helper_cpsr_write_ppc
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_ppc
 #define ppc_cpu_unrealize ppc_cpu_unrealize_ppc
 #define ppc_cpu_instance_finalize ppc_cpu_instance_finalize_ppc
 #define ppc_cpu_do_interrupt ppc_cpu_do_interrupt_ppc

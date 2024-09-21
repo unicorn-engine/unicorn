@@ -1287,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_tricore
 #define gen_helper_cpsr_read gen_helper_cpsr_read_tricore
 #define gen_helper_cpsr_write gen_helper_cpsr_write_tricore
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_tricore
 #define helper_fadd helper_fadd_tricore
 #define helper_fsub helper_fsub_tricore
 #define helper_fmul helper_fmul_tricore

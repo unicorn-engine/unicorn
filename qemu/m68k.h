@@ -1287,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_m68k
 #define gen_helper_cpsr_read gen_helper_cpsr_read_m68k
 #define gen_helper_cpsr_write gen_helper_cpsr_write_m68k
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_m68k
 #define cpu_m68k_init cpu_m68k_init_m68k
 #define helper_reds32 helper_reds32_m68k
 #define helper_redf32 helper_redf32_m68k

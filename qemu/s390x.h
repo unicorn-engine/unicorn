@@ -1287,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_s390x
 #define gen_helper_cpsr_read gen_helper_cpsr_read_s390x
 #define gen_helper_cpsr_write gen_helper_cpsr_write_s390x
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_s390x
 #define helper_uc_s390x_exit helper_uc_s390x_exit_s390x
 #define tcg_s390_tod_updated tcg_s390_tod_updated_s390x
 #define tcg_s390_program_interrupt tcg_s390_program_interrupt_s390x
