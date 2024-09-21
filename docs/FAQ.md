@@ -134,7 +134,7 @@ However, the qemu logs are partially commented-out and incomplete, but give it a
 You might want to dig deeper - and add your own log messages where you expect or try to find the bug.
 
 See the `unicorn/qemu/include/qemu/log.h` file for details.
-To enable logs, you must recompile Unicorn with the enabled `LOGGING_ENABLED` define.
+To enable logs, you must recompile Unicorn with the enabled `UNICORN_LOGGING` define.
 
 Logs are written in different log levels, which might result into a very verbose logging if enabled.
 To control the log level information, two environment variables could be used.

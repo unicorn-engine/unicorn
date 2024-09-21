@@ -64,6 +64,7 @@ include(cmake/bundle_static.cmake)
 # compatability.
 option(BUILD_SHARED_LIBS "Build shared instead of static library" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_FUZZ "Enable fuzzing" OFF)
+option(UNICORN_LOGGING "Enable logging" OFF)
 option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
 set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x;tricore" CACHE STRING "Enabled unicorn architectures")
@@ -91,6 +92,11 @@ include_directories(
     include
     qemu/tcg
 )
+
+# QEMU logging facility
+if (UNICORN_LOGGING)
+    add_compile_options(-DUNICORN_LOGGING)
+endif()
 
 # Some distributions on some rare architecures don't auto link atomic for us and
 # we do this manually by adding flags.

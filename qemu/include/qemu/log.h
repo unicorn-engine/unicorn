@@ -31,15 +31,16 @@
 /* Logging functions: */
 
 /* To verbose logging, enable the next line. */
-//#define LOGGING_ENABLED // to enable logging
+//#define UNICORN_LOGGING // to enable logging
 
-#ifdef LOGGING_ENABLED
+#ifdef UNICORN_LOGGING
 
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 /**
  * Reads the @p env_name and tries to parse the value into an uint32_t.
@@ -222,7 +223,7 @@ static inline bool is_log_level_active(uint32_t level)
 
     return false;
 }
-#endif /* LOGGING_ENABLED */
+#endif /* UNICORN_LOGGING */
 
 /**
  * Logs only if the right log level is set.
