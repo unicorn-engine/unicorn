@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
       - uses: goto-bus-stop/setup-zig@v2
         with:
-          version: 0.12.0
+          version: 0.13.0
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: latest
