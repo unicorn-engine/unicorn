@@ -27,3 +27,5 @@ echo "=========================="
 python3 ./shellcode.py
 echo "=========================="
 python3 ./sample_ctl.py
+echo "=========================="
+python3 ./sample_network_auditing.py

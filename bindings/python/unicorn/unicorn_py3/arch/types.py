@@ -1,5 +1,5 @@
-# Common types and structures.
-#
+"""Common types and structures.
+"""
 # @author elicn
 
 from abc import abstractmethod
@@ -14,9 +14,6 @@ uc_hook_h  = ctypes.c_size_t
 
 
 VT = TypeVar('VT', bound=Tuple[int, ...])
-
-def _structure_repr(self):
-    return "%s(%s)" % (self.__class__.__name__, ", ".join("%s=%s" % (k, getattr(self, k)) for (k, _) in self._fields_))
 
 
 class UcReg(ctypes.Structure):
@@ -41,7 +38,6 @@ class UcReg(ctypes.Structure):
 
         pass
 
-    _repr_ = _structure_repr
 
 class UcTupledReg(UcReg, Generic[VT]):
     """A base class for registers whose values are represented as a set
@@ -85,12 +81,24 @@ class UcLargeReg(UcReg):
 
 
 class UcReg128(UcLargeReg):
+    """Large register holding a 128-bit value.
+    """
+
     _fields_ = [('qwords', ctypes.c_uint64 * 2)]
 
 
 class UcReg256(UcLargeReg):
+    """Large register holding a 256-bit value.
+    """
+
     _fields_ = [('qwords', ctypes.c_uint64 * 4)]
 
 
 class UcReg512(UcLargeReg):
+    """Large register holding a 512-bit value.
+    """
+
     _fields_ = [('qwords', ctypes.c_uint64 * 8)]
+
+
+__all__ = ['uc_err', 'uc_engine', 'uc_context', 'uc_hook_h', 'UcReg', 'UcTupledReg', 'UcLargeReg', 'UcReg128', 'UcReg256', 'UcReg512']

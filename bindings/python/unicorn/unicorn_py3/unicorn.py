@@ -1,3 +1,7 @@
+"""New and improved Unicorn Python bindings by elicn
+based on Nguyen Anh Quynnh's work
+"""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Mapping, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
 
@@ -5,13 +9,10 @@ import ctypes
 import functools
 import weakref
 
-from unicorn import x86_const, arm_const, arm64_const, unicorn_const as uc
-from .arch.types import *
+from unicorn import unicorn_const as uc
+from .arch.types import uc_err, uc_engine, uc_context, uc_hook_h, UcReg
 
-__version__ = f'{uc.UC_VERSION_MAJOR}.{uc.UC_VERSION_MINOR}.{uc.UC_VERSION_PATCH}'
-
-def _structure_repr(self):
-    return "%s(%s)" % (self.__class__.__name__, ", ".join("%s=%s" % (k, getattr(self, k)) for (k, _) in self._fields_))
+# __version__ = f'{uc.UC_VERSION_MAJOR}.{uc.UC_VERSION_MINOR}.{uc.UC_VERSION_PATCH}'
 
 
 class _uc_mem_region(ctypes.Structure):
@@ -23,9 +24,8 @@ class _uc_mem_region(ctypes.Structure):
 
     @property
     def value(self) -> Tuple[int, int, int]:
-        return tuple(getattr(self, fname) for fname, _ in self._fields_)
+        return tuple(getattr(self, fname) for fname, *_ in self._fields_)
 
-    __repr__ = _structure_repr
 
 class uc_tb(ctypes.Structure):
     """"TranslationBlock
@@ -36,8 +36,6 @@ class uc_tb(ctypes.Structure):
         ('icount', ctypes.c_uint16),
         ('size',   ctypes.c_uint16)
     )
-    
-    __repr__ = _structure_repr
 
 
 def __load_uc_lib() -> ctypes.CDLL:
@@ -97,30 +95,30 @@ def __load_uc_lib() -> ctypes.CDLL:
     lib_locations = [
         os.getenv('LIBUNICORN_PATH'),
         pkg_resources.resource_filename(__name__, 'lib'),
-        PurePath(inspect.getfile(__load_uc_lib)).parent.parent / 'lib',
+        PurePath(inspect.getfile(__load_uc_lib)).parent / 'lib',
         '',
-        "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64',
-    ] + [PurePath(p) / 'unicorn' / 'lib' for p in sys.path] # lazymio: ??? why PATH ??
+        r'/usr/local/lib' if sys.platform == 'darwin' else r'/usr/lib64',
+    ] + [PurePath(p) / 'unicorn' / 'lib' for p in sys.path]
 
     # filter out None elements
     lib_locations = tuple(Path(loc) for loc in lib_locations if loc is not None)
 
     lib_name = {
-        'cygwin' : 'cygunicorn.dll',
-        'darwin' : 'libunicorn.2.dylib',
-        'linux'  : 'libunicorn.so.2',
+        'cygwin': 'cygunicorn.dll',
+        'darwin': 'libunicorn.2.dylib',
+        'linux':  'libunicorn.so.2',
         'linux2': 'libunicorn.so.2',
-        'win32'  : 'unicorn.dll'
+        'win32':  'unicorn.dll'
     }.get(platform, "libunicorn.so")
 
     def __attempt_load(libname: str):
         T = TypeVar('T')
 
-        def __pick_first_valid(iter: Iterable[T]) -> Optional[T]:
-            """Iterate till encountering a non-None element
+        def __pick_first_valid(it: Iterable[T]) -> Optional[T]:
+            """Iterate till encountering a non-None element and return it.
             """
 
-            return next((elem for elem in iter if elem is not None), None)
+            return next((elem for elem in it if elem is not None), None)
 
         return __pick_first_valid(_load_lib(loc, libname) for loc in lib_locations)
 
@@ -156,6 +154,7 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
     __set_prototype('uc_errno', uc_err, uc_engine)
     __set_prototype('uc_reg_read', uc_err, uc_engine, ctypes.c_int, ctypes.c_void_p)
     __set_prototype('uc_reg_write', uc_err, uc_engine, ctypes.c_int, ctypes.c_void_p)
+    __set_prototype('uc_reg_read_batch', uc_err, uc_engine, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_void_p), ctypes.c_int)
     __set_prototype('uc_mem_read', uc_err, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
     __set_prototype('uc_mem_write', uc_err, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
     __set_prototype('uc_emu_start', uc_err, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
@@ -174,6 +173,7 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
     __set_prototype('uc_context_size', ctypes.c_size_t, uc_engine)
     __set_prototype('uc_context_reg_read', uc_err, uc_context, ctypes.c_int, ctypes.c_void_p)
     __set_prototype('uc_context_reg_write', uc_err, uc_context, ctypes.c_int, ctypes.c_void_p)
+    __set_prototype('uc_context_reg_read_batch', uc_err, uc_context, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_void_p), ctypes.c_int)
     __set_prototype('uc_context_free', uc_err, uc_context)
     __set_prototype('uc_mem_regions', uc_err, uc_engine, ctypes.POINTER(ctypes.POINTER(_uc_mem_region)), ctypes.POINTER(ctypes.c_uint32))
     # https://bugs.python.org/issue42880
@@ -332,11 +332,33 @@ class RegStateManager:
 
         raise NotImplementedError
 
-    def _reg_read(self, reg_id: int, regtype, *args):
+    def _do_reg_read_batch(self, reglist, vallist, count) -> int:
+        """Private batch register read implementation.
+        Must be implemented by the mixin object
+        """
+
+        raise NotImplementedError
+
+    def _do_reg_write_batch(self, reglist, count) -> int:
+        """Private batch register write implementation.
+        Must be implemented by the mixin object
+        """
+
+        raise NotImplementedError
+
+    @staticmethod
+    def __get_reg_read_arg(regtype: Type, *args):
+        return regtype(*args)
+
+    @staticmethod
+    def __get_reg_write_arg(regtype: Type, value):
+        return regtype.from_value(value) if issubclass(regtype, UcReg) else regtype(value)
+
+    def _reg_read(self, reg_id: int, regtype: Type, *args):
         """Register read helper method.
         """
 
-        reg = regtype(*args)
+        reg = self.__get_reg_read_arg(regtype, *args)
         status = self._do_reg_read(reg_id, ctypes.byref(reg))
 
         if status != uc.UC_ERR_OK:
@@ -348,11 +370,29 @@ class RegStateManager:
         """Register write helper method.
         """
 
-        reg = regtype.from_value(value) if issubclass(regtype, UcReg) else regtype(value)
+        reg = self.__get_reg_write_arg(regtype, value)
         status = self._do_reg_write(reg_id, ctypes.byref(reg))
 
         if status != uc.UC_ERR_OK:
             raise UcError(status, reg_id)
+
+    def _reg_read_batch(self, reg_ids: Sequence[int], reg_types: Sequence[Type]) -> Tuple:
+        """Batch register read helper method.
+        """
+
+        assert len(reg_ids) == len(reg_types)
+
+        count = len(reg_ids)
+        reg_list = (ctypes.c_int * count)(*reg_ids)
+        val_list = [rtype() for rtype in reg_types]
+        ptr_list = (ctypes.c_void_p * count)(*(ctypes.c_void_p(ctypes.addressof(elem)) for elem in val_list))
+
+        status = self._do_reg_read_batch(reg_list, ptr_list, ctypes.c_int(count))
+
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+
+        return tuple(v.value for v in val_list)
 
     def reg_read(self, reg_id: int, aux: Any = None):
         """Read architectural register value.
@@ -380,6 +420,32 @@ class RegStateManager:
 
         self._reg_write(reg_id, self._DEFAULT_REGTYPE, value)
 
+    def reg_read_batch(self, reg_ids: Sequence[int]) -> Tuple:
+        """Read a sequence of architectural registers.
+
+        Args:
+            reg_ids: a sequence of register identifiers (architecture-specific enumeration)
+
+        Returns: a tuple of registers values (register-specific format)
+
+        Raises: `UcError` in case of invalid register id
+        """
+
+        reg_types = [self._DEFAULT_REGTYPE for _ in range(len(reg_ids))]
+
+        return self._reg_read_batch(reg_ids, reg_types)
+
+    def reg_write_batch(self, reg_info: Sequence[Tuple[int, Any]]) -> None:
+        """Write a sequece of architectural registers.
+
+        Args:
+            regs_info: a sequence of tuples consisting of register identifiers and values
+
+        Raises: `UcError` in case of invalid register id or value format
+        """
+
+        # TODO
+        ...
 
 def ucsubclass(cls):
     """Uc subclass decorator.
@@ -457,7 +523,7 @@ class Uc(RegStateManager):
             """
 
             def __wrapped() -> Type[Uc]:
-                archmod = importlib.import_module(f'.arch.{pkgname}', f'unicorn.unicorn_py3')
+                archmod = importlib.import_module(f'.arch.{pkgname}', 'unicorn.unicorn_py3')
 
                 return getattr(archmod, clsname)
 
@@ -590,6 +656,13 @@ class Uc(RegStateManager):
         """
 
         return uclib.uc_reg_write(self._uch, reg_id, reg_obj)
+
+    def _do_reg_read_batch(self, reglist, vallist, count) -> int:
+        """Private batch register read implementation.
+        Do not call directly.
+        """
+
+        return uclib.uc_reg_read_batch(self._uch, reglist, vallist, count)
 
     ###########################
     #  Memory management      #
@@ -967,11 +1040,8 @@ class Uc(RegStateManager):
 
     @staticmethod
     def __ctl_encode(ctl: int, op: int, nargs: int) -> int:
-        if not (op and (op & ~0b11) == 0):
-            raise ValueError("Op should be 0, 1, or 2")
-        
-        if not (nargs and (nargs & ~0b1111) == 0):
-            raise ValueError("Max number of arguments is 16")
+        assert nargs and (nargs & ~0b1111) == 0, f'nargs must not exceed value of 15 (got {nargs})'
+        assert op and (op & ~0b11) == 0, f'op must not exceed value of 3 (got {op})'
 
         return (op << 30) | (nargs << 26) | ctl
 
@@ -1135,6 +1205,12 @@ class UcContext(RegStateManager):
 
         return uclib.uc_context_reg_write(self._context, reg_id, reg_obj)
 
+    def _do_reg_read_batch(self, reglist, vallist, count) -> int:
+        """Private batch register read implementation.
+        """
+
+        return uclib.uc_context_reg_read_batch(self._context, reglist, vallist, count)
+
     # Make UcContext picklable
     def __getstate__(self):
         return bytes(self), self.size, self.arch, self.mode
@@ -1163,8 +1239,6 @@ UC_MMIO_READ_TYPE = Callable[[Uc, int, int, Any], int]
 UC_MMIO_WRITE_TYPE = Callable[[Uc, int, int, int, Any], None]
 
 
+__all__ = ['Uc', 'UcContext', 'ucsubclass', 'UcError', 'uc_version', 'version_bind', 'uc_arch_supported', 'debug']
 
-__all__ = [
-    'Uc', 'UcContext', 'ucsubclass', 'uc_version', 'uc_arch_supported', 'version_bind', 'UcError', 'uc', 'debug', 'uccallback',
-    'x86_const', 'arm_const', 'arm64_const'
-]
+
