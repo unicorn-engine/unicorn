@@ -51,8 +51,8 @@ class UcAArch64(Uc):
         insn = ctypes.c_int(aux1)
 
         def __hook_insn_sys():
-            @uccallback(HOOK_INSN_SYS_CFUNC)
-            def __hook_insn_sys_cb(handle: int, reg: int, pcp_reg: Any, key: int) -> int:
+            @uccallback(self, HOOK_INSN_SYS_CFUNC)
+            def __hook_insn_sys_cb(uc: Uc, reg: int, pcp_reg: Any, key: int) -> int:
                 cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(UcRegCP64)).contents
 
                 class CpReg(NamedTuple):
@@ -65,7 +65,7 @@ class UcAArch64(Uc):
 
                 cp_reg = CpReg(cp_reg.crn, cp_reg.crm, cp_reg.op0, cp_reg.op1, cp_reg.op2, cp_reg.val)
 
-                return callback(self, reg, cp_reg, user_data)
+                return callback(uc, reg, cp_reg, user_data)
 
             return __hook_insn_sys_cb
 

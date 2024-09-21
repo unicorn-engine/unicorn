@@ -83,30 +83,30 @@ class UcIntel(Uc):
         insn = ctypes.c_int(aux1)
 
         def __hook_insn_in():
-            @uccallback(HOOK_INSN_IN_CFUNC)
-            def __hook_insn_in_cb(handle: int, port: int, size: int, key: int) -> int:
-                return callback(self, port, size, user_data)
+            @uccallback(self, HOOK_INSN_IN_CFUNC)
+            def __hook_insn_in_cb(uc: Uc, port: int, size: int, key: int) -> int:
+                return callback(uc, port, size, user_data)
 
             return __hook_insn_in_cb
 
         def __hook_insn_out():
-            @uccallback(HOOK_INSN_OUT_CFUNC)
-            def __hook_insn_out_cb(handle: int, port: int, size: int, value: int, key: int):
-                callback(self, port, size, value, user_data)
+            @uccallback(self, HOOK_INSN_OUT_CFUNC)
+            def __hook_insn_out_cb(uc: Uc, port: int, size: int, value: int, key: int):
+                callback(uc, port, size, value, user_data)
 
             return __hook_insn_out_cb
 
         def __hook_insn_syscall():
-            @uccallback(HOOK_INSN_SYSCALL_CFUNC)
-            def __hook_insn_syscall_cb(handle: int, key: int):
-                callback(self, user_data)
+            @uccallback(self, HOOK_INSN_SYSCALL_CFUNC)
+            def __hook_insn_syscall_cb(uc: Uc, key: int):
+                callback(uc, user_data)
 
             return __hook_insn_syscall_cb
 
         def __hook_insn_cpuid():
-            @uccallback(HOOK_INSN_CPUID_CFUNC)
-            def __hook_insn_cpuid_cb(handle: int, key: int) -> int:
-                return callback(self, user_data)
+            @uccallback(self, HOOK_INSN_CPUID_CFUNC)
+            def __hook_insn_cpuid_cb(uc: Uc, key: int) -> int:
+                return callback(uc, user_data)
 
             return __hook_insn_cpuid_cb
 

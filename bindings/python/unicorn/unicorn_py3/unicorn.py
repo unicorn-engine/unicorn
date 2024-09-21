@@ -281,7 +281,7 @@ if TYPE_CHECKING:
     _CFP = TypeVar('_CFP', bound=ctypes._FuncPointer)
 
 
-def uccallback(functype: Type[_CFP]):
+def uccallback(uc: Uc, functype: Type[_CFP]):
     """Unicorn callback decorator.
 
     Wraps a Python function meant to be dispatched by Unicorn as a hook callback.
@@ -294,7 +294,7 @@ def uccallback(functype: Type[_CFP]):
     def decorate(func) -> _CFP:
 
         @functools.wraps(func)
-        def wrapper(uc: Uc, *args, **kwargs):
+        def wrapper(handle: Uc, *args, **kwargs):
             try:
                 return func(uc, *args, **kwargs)
             except Exception as e:
@@ -754,17 +754,17 @@ class Uc(RegStateManager):
             read_cb: Optional[UC_MMIO_READ_TYPE], user_data_read: Any,
             write_cb: Optional[UC_MMIO_WRITE_TYPE], user_data_write: Any) -> None:
 
-        @uccallback(MMIO_READ_CFUNC)
-        def __mmio_map_read_cb(handle: int, offset: int, size: int, key: int) -> int:
+        @uccallback(self, MMIO_READ_CFUNC)
+        def __mmio_map_read_cb(uc: Uc, offset: int, size: int, key: int) -> int:
             assert read_cb is not None
 
-            return read_cb(self, offset, size, user_data_read)
+            return read_cb(uc, offset, size, user_data_read)
 
-        @uccallback(MMIO_WRITE_CFUNC)
-        def __mmio_map_write_cb(handle: int, offset: int, size: int, value: int, key: int) -> None:
+        @uccallback(self, MMIO_WRITE_CFUNC)
+        def __mmio_map_write_cb(uc: Uc, offset: int, size: int, value: int, key: int) -> None:
             assert write_cb is not None
 
-            write_cb(self, offset, size, value, user_data_write)
+            write_cb(uc, offset, size, value, user_data_write)
 
         read_cb_fptr = read_cb and __mmio_map_read_cb
         write_cb_fptr = write_cb and __mmio_map_write_cb
@@ -885,9 +885,9 @@ class Uc(RegStateManager):
         """
 
         def __hook_intr():
-            @uccallback(HOOK_INTR_CFUNC)
-            def __hook_intr_cb(handle: int, intno: int, key: int):
-                callback(self, intno, user_data)
+            @uccallback(self, HOOK_INTR_CFUNC)
+            def __hook_intr_cb(uc: Uc, intno: int, key: int):
+                callback(uc, intno, user_data)
 
             return __hook_intr_cb,
 
@@ -898,44 +898,44 @@ class Uc(RegStateManager):
             raise UcError(uc.UC_ERR_ARG)
 
         def __hook_code():
-            @uccallback(HOOK_CODE_CFUNC)
-            def __hook_code_cb(handle: int, address: int, size: int, key: int):
-                callback(self, address, size, user_data)
+            @uccallback(self, HOOK_CODE_CFUNC)
+            def __hook_code_cb(uc: Uc, address: int, size: int, key: int):
+                callback(uc, address, size, user_data)
 
             return __hook_code_cb,
 
         def __hook_invalid_mem():
-            @uccallback(HOOK_MEM_INVALID_CFUNC)
-            def __hook_mem_invalid_cb(handle: int, access: int, address: int, size: int, value: int, key: int) -> bool:
-                return callback(self, access, address, size, value, user_data)
+            @uccallback(self, HOOK_MEM_INVALID_CFUNC)
+            def __hook_mem_invalid_cb(uc: Uc, access: int, address: int, size: int, value: int, key: int) -> bool:
+                return callback(uc, access, address, size, value, user_data)
 
             return __hook_mem_invalid_cb,
 
         def __hook_mem():
-            @uccallback(HOOK_MEM_ACCESS_CFUNC)
-            def __hook_mem_access_cb(handle: int, access: int, address: int, size: int, value: int, key: int) -> None:
-                callback(self, access, address, size, value, user_data)
+            @uccallback(self, HOOK_MEM_ACCESS_CFUNC)
+            def __hook_mem_access_cb(uc: Uc, access: int, address: int, size: int, value: int, key: int) -> None:
+                callback(uc, access, address, size, value, user_data)
 
             return __hook_mem_access_cb,
 
         def __hook_invalid_insn():
-            @uccallback(HOOK_INSN_INVALID_CFUNC)
-            def __hook_insn_invalid_cb(handle: int, key: int) -> bool:
-                return callback(self, user_data)
+            @uccallback(self, HOOK_INSN_INVALID_CFUNC)
+            def __hook_insn_invalid_cb(uc: Uc, key: int) -> bool:
+                return callback(uc, user_data)
 
             return __hook_insn_invalid_cb,
 
         def __hook_edge_gen():
-            @uccallback(HOOK_EDGE_GEN_CFUNC)
-            def __hook_edge_gen_cb(handle: int, cur: ctypes._Pointer[uc_tb], prev: ctypes._Pointer[uc_tb], key: int):
-                callback(self, cur.contents, prev.contents, user_data)
+            @uccallback(self, HOOK_EDGE_GEN_CFUNC)
+            def __hook_edge_gen_cb(uc: Uc, cur: ctypes._Pointer[uc_tb], prev: ctypes._Pointer[uc_tb], key: int):
+                callback(uc, cur.contents, prev.contents, user_data)
 
             return __hook_edge_gen_cb,
 
         def __hook_tcg_opcode():
-            @uccallback(HOOK_TCG_OPCODE_CFUNC)
-            def __hook_tcg_op_cb(handle: int, address: int, arg1: int, arg2: int, size: int, key: int):
-                callback(self, address, arg1, arg2, size, user_data)
+            @uccallback(self, HOOK_TCG_OPCODE_CFUNC)
+            def __hook_tcg_op_cb(uc: Uc, address: int, arg1: int, arg2: int, size: int, key: int):
+                callback(uc, address, arg1, arg2, size, user_data)
 
             opcode = ctypes.c_uint64(aux1)
             flags = ctypes.c_uint64(aux2)
