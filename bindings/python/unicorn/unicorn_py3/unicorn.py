@@ -3,7 +3,7 @@ based on Nguyen Anh Quynnh's work
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Mapping, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Tuple, Type, TypeVar
 
 import ctypes
 import functools
@@ -591,8 +591,8 @@ class Uc(RegStateManager):
 
         # we have to keep a reference to the callbacks so they do not get gc-ed
         # see: https://docs.python.org/3/library/ctypes.html#callback-functions
-        self._callbacks: MutableMapping[int, ctypes._FuncPointer] = {}
-        self._mmio_callbacks: MutableMapping[Tuple[int, int], Tuple[Optional[MMIO_READ_CFUNC], Optional[MMIO_WRITE_CFUNC]]] = {}
+        self._callbacks: Dict[int, ctypes._FuncPointer] = {}
+        self._mmio_callbacks: Dict[Tuple[int, int], Tuple[Optional[MMIO_READ_CFUNC], Optional[MMIO_WRITE_CFUNC]]] = {}
 
         self._hook_exception: Optional[Exception] = None
 
@@ -767,20 +767,33 @@ class Uc(RegStateManager):
             raise UcError(status)
 
     def mmio_map(self, address: int, size: int,
-            read_cb: Optional[UC_MMIO_READ_TYPE], user_data_read: Any,
-            write_cb: Optional[UC_MMIO_WRITE_TYPE], user_data_write: Any) -> None:
+            read_cb: Optional[UC_MMIO_READ_TYPE], read_ud: Any,
+            write_cb: Optional[UC_MMIO_WRITE_TYPE], write_ud: Any) -> None:
+        """Map an MMIO range. This method binds a memory range to read and write accessors
+        to simulate a hardware device. Unicorn does not allocate memory to back this range.
+
+        Args:
+            address  : range base address
+            size     : range size (in bytes)
+            read_cb  : read callback to invoke upon read access. if not specified, reads \
+                       from the mmio range will be silently dropped
+            read_ud  : optinal context object to pass on to the read callback
+            write_cb : write callback to invoke unpon a write access. if not specified, writes \
+                       to the mmio range will be silently dropped
+            write_ud : optinal context object to pass on to the write callback
+        """
 
         @uccallback(self, MMIO_READ_CFUNC)
         def __mmio_map_read_cb(uc: Uc, offset: int, size: int, key: int) -> int:
             assert read_cb is not None
 
-            return read_cb(uc, offset, size, user_data_read)
+            return read_cb(uc, offset, size, read_ud)
 
         @uccallback(self, MMIO_WRITE_CFUNC)
         def __mmio_map_write_cb(uc: Uc, offset: int, size: int, value: int, key: int) -> None:
             assert write_cb is not None
 
-            write_cb(uc, offset, size, value, user_data_write)
+            write_cb(uc, offset, size, value, write_ud)
 
         read_cb_fptr = read_cb and __mmio_map_read_cb
         write_cb_fptr = write_cb and __mmio_map_write_cb
@@ -860,7 +873,7 @@ class Uc(RegStateManager):
     def __do_hook_add(self, htype: int, fptr: ctypes._FuncPointer, begin: int, end: int, *args: ctypes.c_int) -> int:
         handle = uc_hook_h()
 
-        # TODO: we do not need a callback counter to reference the callback and user data anymore,
+        # we do not need a callback counter to reference the callback and user data anymore,
         # so just pass a dummy value. that value will become the unused 'key' argument
         dummy = 0
 
@@ -905,7 +918,7 @@ class Uc(RegStateManager):
             def __hook_intr_cb(uc: Uc, intno: int, key: int):
                 callback(uc, intno, user_data)
 
-            return __hook_intr_cb,
+            return (__hook_intr_cb,)
 
         def __hook_insn():
             # each arch is expected to overload hook_add and implement this handler on their own.
@@ -918,35 +931,35 @@ class Uc(RegStateManager):
             def __hook_code_cb(uc: Uc, address: int, size: int, key: int):
                 callback(uc, address, size, user_data)
 
-            return __hook_code_cb,
+            return (__hook_code_cb,)
 
         def __hook_invalid_mem():
             @uccallback(self, HOOK_MEM_INVALID_CFUNC)
             def __hook_mem_invalid_cb(uc: Uc, access: int, address: int, size: int, value: int, key: int) -> bool:
                 return callback(uc, access, address, size, value, user_data)
 
-            return __hook_mem_invalid_cb,
+            return (__hook_mem_invalid_cb,)
 
         def __hook_mem():
             @uccallback(self, HOOK_MEM_ACCESS_CFUNC)
             def __hook_mem_access_cb(uc: Uc, access: int, address: int, size: int, value: int, key: int) -> None:
                 callback(uc, access, address, size, value, user_data)
 
-            return __hook_mem_access_cb,
+            return (__hook_mem_access_cb,)
 
         def __hook_invalid_insn():
             @uccallback(self, HOOK_INSN_INVALID_CFUNC)
             def __hook_insn_invalid_cb(uc: Uc, key: int) -> bool:
                 return callback(uc, user_data)
 
-            return __hook_insn_invalid_cb,
+            return (__hook_insn_invalid_cb,)
 
         def __hook_edge_gen():
             @uccallback(self, HOOK_EDGE_GEN_CFUNC)
             def __hook_edge_gen_cb(uc: Uc, cur: ctypes._Pointer[uc_tb], prev: ctypes._Pointer[uc_tb], key: int):
                 callback(uc, cur.contents, prev.contents, user_data)
 
-            return __hook_edge_gen_cb,
+            return (__hook_edge_gen_cb,)
 
         def __hook_tcg_opcode():
             @uccallback(self, HOOK_TCG_OPCODE_CFUNC)
@@ -956,9 +969,9 @@ class Uc(RegStateManager):
             opcode = ctypes.c_uint64(aux1)
             flags = ctypes.c_uint64(aux2)
 
-            return __hook_tcg_op_cb, opcode, flags
+            return (__hook_tcg_op_cb, opcode, flags)
 
-        handlers: Mapping[int, Callable[[], Tuple]] = {
+        handlers: Dict[int, Callable[[], Tuple]] = {
             uc.UC_HOOK_INTR               : __hook_intr,
             uc.UC_HOOK_INSN               : __hook_insn,
             uc.UC_HOOK_CODE               : __hook_code,
@@ -1034,6 +1047,11 @@ class Uc(RegStateManager):
         return result.value
 
     def context_save(self) -> UcContext:
+        """Save Unicorn instance internal context.
+
+        Returns: unicorn context instance
+        """
+
         context = UcContext(self._uch, self._arch, self._mode)
         status = uclib.uc_context_save(self._uch, context.context)
 
@@ -1043,12 +1061,24 @@ class Uc(RegStateManager):
         return context
 
     def context_update(self, context: UcContext) -> None:
+        """Update Unicorn instance internal context.
+
+        Args:
+            context : unicorn context instance to copy data from
+        """
+
         status = uclib.uc_context_save(self._uch, context.context)
 
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
     def context_restore(self, context: UcContext) -> None:
+        """Overwrite Unicorn instance internal context.
+
+        Args:
+            context : unicorn context instance to copy data from
+        """
+
         status = uclib.uc_context_restore(self._uch, context.context)
 
         if status != uc.UC_ERR_OK:
@@ -1178,6 +1208,9 @@ class Uc(RegStateManager):
 
 
 class UcContext(RegStateManager):
+    """Unicorn internal context.
+    """
+
     def __init__(self, h, arch: int, mode: int):
         self._context = uc_context()
         self._size = uclib.uc_context_size(h)
@@ -1193,18 +1226,31 @@ class UcContext(RegStateManager):
 
     @property
     def context(self):
+        """Underlying context data.
+        Normally this property should not be accessed directly.
+        """
+
         return self._context
 
     @property
     def size(self) -> int:
+        """Underlying context data size.
+        """
+
         return self._size
 
     @property
     def arch(self) -> int:
+        """Get emulated architecture (see UC_ARCH_* constants).
+        """
+
         return self._arch
 
     @property
     def mode(self) -> int:
+        """Get emulated processor mode (see UC_MODE_* constants).
+        """
+
         return self._mode
 
     # RegStateManager mixin method implementation
@@ -1228,10 +1274,10 @@ class UcContext(RegStateManager):
         return uclib.uc_context_reg_read_batch(self._context, reglist, vallist, count)
 
     # Make UcContext picklable
-    def __getstate__(self):
+    def __getstate__(self) -> Tuple[bytes, int, int, int]:
         return bytes(self), self.size, self.arch, self.mode
 
-    def __setstate__(self, state) -> None:
+    def __setstate__(self, state: Tuple[bytes, int, int, int]) -> None:
         context, size, arch, mode = state
 
         self._context = ctypes.cast(ctypes.create_string_buffer(context, size), uc_context)
@@ -1243,7 +1289,7 @@ class UcContext(RegStateManager):
         self._to_free = False
 
     def __bytes__(self) -> bytes:
-        return ctypes.string_at(self.context, self.size)
+        return ctypes.string_at(self._context, self._size)
 
     def __del__(self) -> None:
         # We need this property since we shouldn't free it if the object is constructed from pickled bytes.
@@ -1256,5 +1302,4 @@ UC_MMIO_WRITE_TYPE = Callable[[Uc, int, int, int, Any], None]
 
 
 __all__ = ['Uc', 'UcContext', 'ucsubclass', 'UcError', 'uc_version', 'version_bind', 'uc_arch_supported', 'debug']
-
 
