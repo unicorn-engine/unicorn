@@ -661,6 +661,25 @@ static void tlb_reset_dirty_range_locked(struct uc_struct *uc, CPUTLBEntry *tlb_
     }
 }
 
+static void tlb_reset_dirty_range_by_vaddr_locked(struct uc_struct *uc, CPUTLBEntry *tlb_entry,
+                                                  target_ulong start, target_ulong length)
+{
+    uintptr_t addr = tlb_entry->addr_write;
+
+    if ((addr & (TLB_INVALID_MASK | TLB_MMIO |
+                 TLB_DISCARD_WRITE | TLB_NOTDIRTY)) == 0) {
+        addr &= TARGET_PAGE_MASK;
+        if ((addr - start) < length) {
+#if TCG_OVERSIZED_GUEST
+            tlb_entry->addr_write |= TLB_NOTDIRTY;
+#else
+            tlb_entry->addr_write = tlb_entry->addr_write | TLB_NOTDIRTY;
+#endif
+        }
+    }
+}
+
+
 /*
  * Called with tlb_c.lock held.
  * Called only from the vCPU context, i.e. the TLB's owner thread.
@@ -695,6 +714,30 @@ void tlb_reset_dirty(CPUState *cpu, ram_addr_t start1, ram_addr_t length)
         for (i = 0; i < CPU_VTLB_SIZE; i++) {
             tlb_reset_dirty_range_locked(uc, &env_tlb(env)->d[mmu_idx].vtable[i],
                                          start1, length);
+        }
+    }
+}
+
+void tlb_reset_dirty_by_vaddr(CPUState *cpu, target_ulong start1, target_ulong length)
+{
+    struct uc_struct *uc = cpu->uc;
+    CPUArchState *env;
+
+    int mmu_idx;
+
+    env = cpu->env_ptr;
+    for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
+        unsigned int i;
+        unsigned int n = tlb_n_entries(&env_tlb(env)->f[mmu_idx]);
+
+        for (i = 0; i < n; i++) {
+            tlb_reset_dirty_range_by_vaddr_locked(uc, &env_tlb(env)->f[mmu_idx].table[i],
+                                                  start1, length);
+        }
+
+        for (i = 0; i < CPU_VTLB_SIZE; i++) {
+            tlb_reset_dirty_range_by_vaddr_locked(uc, &env_tlb(env)->d[mmu_idx].vtable[i],
+                                                  start1, length);
         }
     }
 }
@@ -1144,28 +1187,29 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
 }
 
 static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
-                           CPUIOTLBEntry *iotlbentry, uintptr_t retaddr)
+                           CPUIOTLBEntry *iotlbentry, uintptr_t retaddr,
+                           MemoryRegion *mr)
 {
     ram_addr_t ram_addr = mem_vaddr + iotlbentry->addr;
 
-    // trace_memory_notdirty_write_access(mem_vaddr, ram_addr, size);
+    if (mr == NULL) {
+        mr = cpu->uc->memory_mapping(cpu->uc, mem_vaddr);
+    }
 
-    if (!cpu_physical_memory_get_dirty_flag(ram_addr, DIRTY_MEMORY_CODE)) {
+    if ((mr->perms & UC_PROT_EXEC) != 0) {
         struct page_collection *pages
             = page_collection_lock(cpu->uc, ram_addr, ram_addr + size);
         tb_invalidate_phys_page_fast(cpu->uc, pages, ram_addr, size, retaddr);
         page_collection_unlock(pages);
     }
 
-    /*
-     * Set both VGA and migration bits for simplicity and to remove
-     * the notdirty callback faster.
-     */
-    cpu_physical_memory_set_dirty_range(ram_addr, size, DIRTY_CLIENTS_NOCODE);
-
-    /* We remove the notdirty callback only if the code has been flushed. */
-    if (!cpu_physical_memory_is_clean(ram_addr)) {
-        // trace_memory_notdirty_set_dirty(mem_vaddr);
+    /* For exec pages, this is cleared in tb_gen_code. */
+    // If we:
+    // - have memory hooks installed
+    // - or doing snapshot
+    // , then never clean the tlb
+    if (!(cpu->uc->snapshot_level > 0 || mr->priority > 0) && 
+            !(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE))) {
         tlb_set_dirty(cpu, mem_vaddr);
     }
 }
@@ -1244,7 +1288,7 @@ void *probe_access(CPUArchState *env, target_ulong addr, int size,
 
         /* Handle clean RAM pages.  */
         if (tlb_addr & TLB_NOTDIRTY) {
-            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr);
+            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, NULL);
         }
     }
 
@@ -1370,7 +1414,7 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
 
     if (unlikely(tlb_addr & TLB_NOTDIRTY)) {
         notdirty_write(env_cpu(env), addr, 1 << s_bits,
-                       &env_tlb(env)->d[mmu_idx].iotlb[index], retaddr);
+                       &env_tlb(env)->d[mmu_idx].iotlb[index], retaddr, NULL);
     }
 
     return hostaddr;
@@ -2216,7 +2260,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
 
         /* Handle clean RAM pages.  */
         if (tlb_addr & TLB_NOTDIRTY) {
-            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr);
+            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, mr);
         }
 
         haddr = (void *)((uintptr_t)addr + entry->addend);

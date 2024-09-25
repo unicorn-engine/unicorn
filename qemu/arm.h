@@ -1287,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_arm
 #define gen_helper_cpsr_read gen_helper_cpsr_read_arm
 #define gen_helper_cpsr_write gen_helper_cpsr_write_arm
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_arm
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_arm
 #define arm_cpu_update_virq arm_cpu_update_virq_arm
 #define arm_cpu_update_vfiq arm_cpu_update_vfiq_arm

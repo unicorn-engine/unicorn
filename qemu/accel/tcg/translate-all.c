@@ -522,6 +522,7 @@ static inline void page_unlock_tb(struct uc_struct *uc, const TranslationBlock *
     }
 }
 
+#if 0
 static inline struct page_entry *
 page_entry_new(PageDesc *pd, tb_page_addr_t index)
 {
@@ -542,7 +543,6 @@ static void page_entry_destroy(gpointer p)
     g_free(pe);
 }
 
-#if 0
 /* returns false on success */
 static bool page_entry_trylock(struct page_entry *pe)
 {
@@ -582,7 +582,6 @@ static gboolean page_entry_unlock(gpointer key, gpointer value, gpointer data)
     }
     return FALSE;
 }
-#endif
 
 /*
  * Trylock a page, and if successful, add the page to a collection.
@@ -613,20 +612,14 @@ static bool page_trylock_add(struct uc_struct *uc, struct page_collection *set, 
      */
     if (set->max == NULL || pe->index > set->max->index) {
         set->max = pe;
-#if 0
         do_page_entry_lock(pe);
-#endif
         return false;
     }
     /*
      * Try to acquire out-of-order lock; if busy, return busy so that we acquire
      * locks in order.
      */
-#if 0
     return page_entry_trylock(pe);
-#else
-    return 0;
-#endif
 }
 
 static gint tb_page_addr_cmp(gconstpointer ap, gconstpointer bp, gpointer udata)
@@ -641,6 +634,7 @@ static gint tb_page_addr_cmp(gconstpointer ap, gconstpointer bp, gpointer udata)
     }
     return 1;
 }
+#endif
 
 /*
  * Lock a range of pages ([@start,@end[) as well as the pages of all
@@ -650,6 +644,7 @@ static gint tb_page_addr_cmp(gconstpointer ap, gconstpointer bp, gpointer udata)
 struct page_collection *
 page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end)
 {
+#if 0
     struct page_collection *set = g_malloc(sizeof(*set));
     tb_page_addr_t index;
     PageDesc *pd;
@@ -664,9 +659,7 @@ page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t 
     assert_no_pages_locked();
 
  retry:
-#if 0
     g_tree_foreach(set->tree, page_entry_lock, NULL);
-#endif
 
     for (index = start; index <= end; index++) {
         TranslationBlock *tb;
@@ -677,9 +670,7 @@ page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t 
             continue;
         }
         if (page_trylock_add(uc, set, index << TARGET_PAGE_BITS)) {
-#if 0
             g_tree_foreach(set->tree, page_entry_unlock, NULL);
-#endif
             goto retry;
         }
         assert_page_locked(pd);
@@ -688,21 +679,24 @@ page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t 
                 (tb->page_addr[1] != -1 &&
                  page_trylock_add(uc, set, tb->page_addr[1]))) {
                 /* drop all locks, and reacquire in order */
-#if 0
                 g_tree_foreach(set->tree, page_entry_unlock, NULL);
-#endif
                 goto retry;
             }
         }
     }
     return set;
+#else
+    return NULL;
+#endif
 }
 
 void page_collection_unlock(struct page_collection *set)
 {
+#if 0
     /* entries are unlocked and freed via page_entry_destroy */
     g_tree_destroy(set->tree);
     g_free(set);
+#endif
 }
 
 static void page_lock_pair(struct uc_struct *uc, PageDesc **ret_p1, tb_page_addr_t phys1,
@@ -1843,6 +1837,13 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     if ((pc & TARGET_PAGE_MASK) != virt_page2) {
         phys_page2 = get_page_addr_code(env, virt_page2);
     }
+
+    /* Undoes tlb_set_dirty in notdirty_write. */
+    if (!(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE))) {
+        tlb_reset_dirty_by_vaddr(cpu, pc & TARGET_PAGE_MASK,
+                                (pc & ~TARGET_PAGE_MASK) + tb->size);
+    }
+
     /*
      * No explicit memory barrier is required -- tb_link_page() makes the
      * TB visible in a consistent state.

@@ -3728,7 +3728,7 @@ int tcg_gen_code(TCGContext *s, TranslationBlock *tb)
     TCGOp *op;
 
 #ifndef NDEBUG
-    if (getenv("UNICORN_DEBUG")) {
+    if (is_log_level_active(CPU_LOG_TB_IN_ASM)) {
         tcg_dump_ops(s, false, "TCG before optimization:");
     }
 #endif
@@ -3777,7 +3777,7 @@ int tcg_gen_code(TCGContext *s, TranslationBlock *tb)
 #endif
 
 #ifndef NDEBUG
-    if (getenv("UNICORN_DEBUG")) {
+    if (is_log_level_active(CPU_LOG_TB_IN_ASM)) {
         tcg_dump_ops(s, false, "TCG before codegen:");
     }
 #endif

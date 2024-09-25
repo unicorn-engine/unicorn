@@ -65,11 +65,11 @@ static void restore_jit_state(uc_engine *uc)
 #else
 static void save_jit_state(uc_engine *uc)
 {
-    (void *)uc;
+    (void)uc;
 }
 static void restore_jit_state(uc_engine *uc)
 {
-    (void *)uc;
+    (void)uc;
 }
 #endif
 
@@ -550,7 +550,7 @@ uc_err uc_close(uc_engine *uc)
     g_free(uc->l1_map);
 
     if (uc->bounce.buffer) {
-        free(uc->bounce.buffer);
+        qemu_vfree(uc->bounce.buffer);
     }
 
     // free hooks and hook lists
@@ -2837,7 +2837,8 @@ static uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
                         subregions_link, subregion_next)
     {
         uc->memory_filter_subregions(subregion, uc->snapshot_level);
-        if (subregion->priority >= uc->snapshot_level || (!subregion->terminates && QTAILQ_EMPTY(&subregion->subregions))) {
+        if (subregion->priority >= uc->snapshot_level ||
+            (!subregion->terminates && QTAILQ_EMPTY(&subregion->subregions))) {
             uc->memory_unmap(uc, subregion);
         }
     }

@@ -139,7 +139,7 @@ void qemu_vfree(void *ptr)
 {
 #ifdef __MINGW32__
     if (ptr) {
-        VirtualFree(ptr, 0, MEM_RELEASE);
+        __mingw_aligned_free(ptr);
     }
 #else
     //trace_qemu_vfree(ptr);

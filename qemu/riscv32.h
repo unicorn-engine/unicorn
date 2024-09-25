@@ -1287,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_riscv32
 #define gen_helper_cpsr_read gen_helper_cpsr_read_riscv32
 #define gen_helper_cpsr_write gen_helper_cpsr_write_riscv32
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_riscv32
 #define riscv_cpu_mmu_index riscv_cpu_mmu_index_riscv32
 #define riscv_cpu_exec_interrupt riscv_cpu_exec_interrupt_riscv32
 #define riscv_cpu_fp_enabled riscv_cpu_fp_enabled_riscv32

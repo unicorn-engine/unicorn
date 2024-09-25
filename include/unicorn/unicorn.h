@@ -65,7 +65,7 @@ typedef size_t uc_hook;
 #define UNICORN_DEPRECATED __declspec(deprecated)
 #else
 #pragma message(                                                               \
-        "WARNING: You need to implement UNICORN_DEPRECATED for this compiler")
+    "WARNING: You need to implement UNICORN_DEPRECATED for this compiler")
 #define UNICORN_DEPRECATED
 #endif
 

@@ -1,16 +1,17 @@
-# Intel architecture classes and structures.
-#
+"""Intel architecture classes and structures.
+"""
 # @author elicn
 
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Sequence, Tuple
 
 import ctypes
 
-from .. import Uc, UcError
-from .. import x86_const as const
-
-from unicorn.unicorn_py3 import uccallback
+# traditional unicorn imports
+from unicorn import x86_const as const
 from unicorn.unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
+
+# newly introduced unicorn imports
+from ..unicorn import Uc, UcError, uccallback
 from .types import uc_engine, UcTupledReg, UcReg128, UcReg256, UcReg512
 
 X86MMRReg = Tuple[int, int, int, int]
@@ -36,6 +37,9 @@ class UcRegMMR(UcTupledReg[X86MMRReg]):
 
 
 class UcRegMSR(UcTupledReg[X86MSRReg]):
+    """Intel Model Specific Register
+    """
+
     _fields_ = (
         ('rid', ctypes.c_uint32),
         ('val', ctypes.c_uint64)
@@ -47,6 +51,9 @@ class UcRegMSR(UcTupledReg[X86MSRReg]):
 
 
 class UcRegFPR(UcTupledReg[X86FPReg]):
+    """Intel Floating Point Register
+    """
+
     _fields_ = (
         ('mantissa', ctypes.c_uint64),
         ('exponent', ctypes.c_uint16)
@@ -76,30 +83,30 @@ class UcIntel(Uc):
         insn = ctypes.c_int(aux1)
 
         def __hook_insn_in():
-            @uccallback(HOOK_INSN_IN_CFUNC)
-            def __hook_insn_in_cb(handle: int, port: int, size: int, key: int) -> int:
-                return callback(self, port, size, user_data)
+            @uccallback(self, HOOK_INSN_IN_CFUNC)
+            def __hook_insn_in_cb(uc: Uc, port: int, size: int, key: int) -> int:
+                return callback(uc, port, size, user_data)
 
             return __hook_insn_in_cb
 
         def __hook_insn_out():
-            @uccallback(HOOK_INSN_OUT_CFUNC)
-            def __hook_insn_out_cb(handle: int, port: int, size: int, value: int, key: int):
-                callback(self, port, size, value, user_data)
+            @uccallback(self, HOOK_INSN_OUT_CFUNC)
+            def __hook_insn_out_cb(uc: Uc, port: int, size: int, value: int, key: int):
+                callback(uc, port, size, value, user_data)
 
             return __hook_insn_out_cb
 
         def __hook_insn_syscall():
-            @uccallback(HOOK_INSN_SYSCALL_CFUNC)
-            def __hook_insn_syscall_cb(handle: int, key: int):
-                callback(self, user_data)
+            @uccallback(self, HOOK_INSN_SYSCALL_CFUNC)
+            def __hook_insn_syscall_cb(uc: Uc, key: int):
+                callback(uc, user_data)
 
             return __hook_insn_syscall_cb
 
         def __hook_insn_cpuid():
-            @uccallback(HOOK_INSN_CPUID_CFUNC)
-            def __hook_insn_cpuid_cb(handle: int, key: int) -> int:
-                return callback(self, user_data)
+            @uccallback(self, HOOK_INSN_CPUID_CFUNC)
+            def __hook_insn_cpuid_cb(uc: Uc, key: int) -> int:
+                return callback(uc, user_data)
 
             return __hook_insn_cpuid_cb
 
@@ -176,3 +183,11 @@ class UcIntel(Uc):
 
     def msr_write(self, msr_id: int, value: int) -> None:
         self._reg_write(const.UC_X86_REG_MSR, UcRegMSR, (msr_id, value))
+
+    def reg_read_batch(self, reg_ids: Sequence[int]) -> Tuple:
+        reg_types = [UcIntel.__select_reg_class(rid) or self._DEFAULT_REGTYPE for rid in reg_ids]
+
+        return self._reg_read_batch(reg_ids, reg_types)
+
+
+__all__ = ['UcRegMMR', 'UcRegMSR', 'UcRegFPR', 'UcIntel']

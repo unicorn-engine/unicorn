@@ -1287,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_mips64el
 #define gen_helper_cpsr_read gen_helper_cpsr_read_mips64el
 #define gen_helper_cpsr_write gen_helper_cpsr_write_mips64el
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_mips64el
 #define helper_mfc0_mvpcontrol helper_mfc0_mvpcontrol_mips64el
 #define helper_mfc0_mvpconf0 helper_mfc0_mvpconf0_mips64el
 #define helper_mfc0_mvpconf1 helper_mfc0_mvpconf1_mips64el

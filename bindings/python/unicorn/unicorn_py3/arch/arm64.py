@@ -1,16 +1,17 @@
-# AArch64 classes and structures.
-#
+"""AArch64 classes and structures.
+"""
 # @author elicn
 
 from typing import Any, Callable, NamedTuple, Tuple
 
 import ctypes
 
-from .. import Uc, UcError
-from .. import arm64_const as const
+# traditional unicorn imports
+from unicorn import arm64_const as const
+from unicorn.unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
 
-from ..unicorn import uccallback
-from unicorn import UC_ERR_ARG, UC_HOOK_INSN
+# newly introduced unicorn imports
+from ..unicorn import Uc, UcError, uccallback
 from .types import uc_engine, UcTupledReg, UcReg128
 
 ARM64CPReg = Tuple[int, int, int, int, int, int]
@@ -50,8 +51,8 @@ class UcAArch64(Uc):
         insn = ctypes.c_int(aux1)
 
         def __hook_insn_sys():
-            @uccallback(HOOK_INSN_SYS_CFUNC)
-            def __hook_insn_sys_cb(handle: int, reg: int, pcp_reg: Any, key: int) -> int:
+            @uccallback(self, HOOK_INSN_SYS_CFUNC)
+            def __hook_insn_sys_cb(uc: Uc, reg: int, pcp_reg: Any, key: int) -> int:
                 cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(UcRegCP64)).contents
 
                 class CpReg(NamedTuple):
@@ -64,7 +65,7 @@ class UcAArch64(Uc):
 
                 cp_reg = CpReg(cp_reg.crn, cp_reg.crm, cp_reg.op0, cp_reg.op1, cp_reg.op2, cp_reg.val)
 
-                return callback(self, reg, cp_reg, user_data)
+                return callback(uc, reg, cp_reg, user_data)
 
             return __hook_insn_sys_cb
 
@@ -124,3 +125,5 @@ class UcAArch64(Uc):
 
         else:
             self._reg_write(reg_id, reg_cls, value)
+
+__all__ = ['UcRegCP64', 'UcAArch64']

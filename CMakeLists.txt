@@ -1,7 +1,7 @@
 # CMake setup for Unicorn 2.
 # By Huitao Chen & Nguyen Anh Quynh, 2019-2020
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 
 # Only required for MSVC, but we can't know the compiler at this point because we haven't
 # called enable_language() or project(), and if we did that it would lock in the old
@@ -17,10 +17,8 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
     cmake_policy(SET CMP0092 NEW)
 endif()
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.3")
-    # Honor visibility properties for all target types.
-    cmake_policy(SET CMP0063 NEW)
-endif()
+# Honor visibility properties for all target types.
+cmake_policy(SET CMP0063 NEW)
 
 option(ZIG_BUILD "Enable zig build" OFF)
 if(ZIG_BUILD)
@@ -66,6 +64,7 @@ include(cmake/bundle_static.cmake)
 # compatability.
 option(BUILD_SHARED_LIBS "Build shared instead of static library" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_FUZZ "Enable fuzzing" OFF)
+option(UNICORN_LOGGING "Enable logging" OFF)
 option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
 set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x;tricore" CACHE STRING "Enabled unicorn architectures")
@@ -93,6 +92,11 @@ include_directories(
     include
     qemu/tcg
 )
+
+# QEMU logging facility
+if (UNICORN_LOGGING)
+    add_compile_options(-DUNICORN_LOGGING)
+endif()
 
 # Some distributions on some rare architecures don't auto link atomic for us and
 # we do this manually by adding flags.

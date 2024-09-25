@@ -1287,6 +1287,7 @@ gen_helper_vfp_get_fpscr \
 gen_helper_vfp_set_fpscr \
 gen_helper_cpsr_read \
 gen_helper_cpsr_write \
+tlb_reset_dirty_by_vaddr \
 "
 
 x86_64_SYMBOLS="

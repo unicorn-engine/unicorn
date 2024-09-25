@@ -55,11 +55,11 @@ jobs:
           }
         compiler: [ gcc ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: '🛠️ Win MSVC 64 setup'
         if: contains(matrix.config.name, 'MSVC 64')
-        uses: microsoft/setup-msbuild@v1
+        uses: microsoft/setup-msbuild@v2
 
       - name: '🛠️ Win MSVC 64 dev cmd setup'
         if: contains(matrix.config.name, 'MSVC 64')
@@ -126,7 +126,7 @@ jobs:
 
       - name: '📤 Upload artifact'
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           path: ./${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
@@ -152,13 +152,13 @@ jobs:
           }
         compiler: [ gcc ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: '🚧 Mac build'
         if: contains(matrix.config.name, 'macos-x64')
         shell: bash
         run: |
-          brew install p7zip cmake ninja pkg-config
+          brew install ninja
           ninja --version
           cmake --version
           mkdir build
@@ -184,7 +184,7 @@ jobs:
 
       - name: '📤 Upload artifact'
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           path: ./${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
@@ -246,7 +246,7 @@ jobs:
           }
         compiler: [ gcc ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: '🚧 Linux x64/x86 build'
         if: contains(matrix.config.arch, 'x64') || contains(matrix.config.arch, 'x86')
@@ -276,7 +276,7 @@ jobs:
 
       - name: '🚧 Linux ppc64le/aarch64 build'
         if: contains(matrix.config.arch, 'ppc64le') || contains(matrix.config.arch, 'aarch64')
-        uses: uraimo/run-on-arch-action@v2.0.5
+        uses: uraimo/run-on-arch-action@v2
         with:
           arch: ${{ matrix.config.arch }}
           distro: ${{ matrix.config.distro }}
@@ -310,7 +310,7 @@ jobs:
 
       - name: '📤 Upload artifact'
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           path: ./${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
@@ -321,10 +321,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: 🛠️ Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
@@ -404,7 +404,7 @@ jobs:
         id: git_short_sha
         run: echo "result=$(git rev-parse --short "${{ github.sha }}")" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-dotnet@v3
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 6.0.x
 
@@ -424,14 +424,17 @@ jobs:
             || dotnet pack -c Release --version-suffix="${{ steps.git_short_sha.outputs.result }}"
 
       - name: '📤 Upload artifact'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           path: ${{ github.workspace }}/bindings/dotnet/UnicornEngine/bin/Release/UnicornEngine.Unicorn.*.nupkg
 
+      # We often exceed limit so just release on tags
       - name: 📦 Publish to Github Packages
+        if: startsWith(github.ref, 'refs/tags')
         working-directory: bindings/dotnet/UnicornEngine
         run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" --source "github" --api-key "${{ secrets.GHPR_TOKEN }}"
 
+      # Nuget is more tolerate so let's release every commit
       - name: 📦 Publish Nuget package
         working-directory: bindings/dotnet/UnicornEngine
         run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" -k "$NUGET_AUTH_TOKEN" -s https://api.nuget.org/v3/index.json

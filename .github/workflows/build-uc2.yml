@@ -135,7 +135,7 @@ jobs:
             }
         compiler: [ gcc ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: '🛠️ Win MINGW setup'
       if: contains(matrix.config.mingw, 'MINGW')
@@ -152,7 +152,7 @@ jobs:
 
     - name: '🛠️ Win MSVC 64 setup'
       if: contains(matrix.config.name, 'MSVC 64')
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
     
     - name: '🛠️ Win MSVC 64 dev cmd setup'
       if: contains(matrix.config.name, 'MSVC 64')
@@ -245,7 +245,7 @@ jobs:
 
     - name: '📤 Upload artifact'
       if: always()
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         path: ./${{ matrix.config.artifact }}
         name: ${{ matrix.config.artifact }}
@@ -306,7 +306,7 @@ jobs:
               generators: 'Ninja'
             }
           - { 
-              os: macos-11,
+              os: macos-12,
               arch: x86_64,
               python-arch: x86_64,
               python-ver: '3.8',
@@ -318,10 +318,10 @@ jobs:
             }
         compiler: [ gcc ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # - name: '🛠️ Python setup'
-      # uses: actions/setup-python@v2
+      # uses: actions/setup-python@v5
       # with:
         # python-version: ${{ matrix.config.python-ver }}
 
@@ -329,7 +329,7 @@ jobs:
       if: contains(matrix.config.name, 'macos')
       shell: bash
       run: |
-        brew install p7zip cmake ninja pkg-config
+        brew install ninja
         ninja --version
         cmake --version
         mkdir build
@@ -353,7 +353,7 @@ jobs:
       if: contains(matrix.config.name, 'android')
       shell: bash
       run: |
-        brew install p7zip cmake ninja pkg-config
+        brew install ninja
         mkdir build
         mkdir instdir
         cmake . -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
@@ -372,7 +372,7 @@ jobs:
 
     - name: '🚧 AVD Cache'
       if: contains(matrix.config.name, 'android')
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       id: avd-cache
       with:
         path: |
@@ -416,7 +416,7 @@ jobs:
 
     - name: '📤 Upload artifact'
       if: always()
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         path: ./${{ matrix.config.artifact }}
         name: ${{ matrix.config.artifact }}
@@ -502,10 +502,10 @@ jobs:
             }
         compiler: [ gcc ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # - name: '🛠️ Python setup'
-      # uses: actions/setup-python@v2
+      # uses: actions/setup-python@v5
       # with:
         # python-version: ${{ matrix.config.python-ver }}
 
@@ -536,7 +536,7 @@ jobs:
     
     - name: '🚧 Linux ppc64le/aarch64 build'
       if: contains(matrix.config.arch, 'ppc64le') || contains(matrix.config.arch, 'aarch64')
-      uses: uraimo/run-on-arch-action@v2.0.5
+      uses: uraimo/run-on-arch-action@v2
       with:
         arch: ${{ matrix.config.arch }}
         distro: ${{ matrix.config.distro }}
@@ -570,7 +570,7 @@ jobs:
 
     - name: '📤 Upload artifact'
       if: always()
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         path: ./${{ matrix.config.artifact }}
         name: ${{ matrix.config.artifact }}

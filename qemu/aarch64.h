@@ -1287,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_aarch64
 #define gen_helper_cpsr_read gen_helper_cpsr_read_aarch64
 #define gen_helper_cpsr_write gen_helper_cpsr_write_aarch64
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_aarch64
 #define cpu_aarch64_init cpu_aarch64_init_aarch64
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_aarch64
 #define arm_cpu_update_virq arm_cpu_update_virq_aarch64
