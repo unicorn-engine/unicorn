@@ -1,7 +1,9 @@
 This file details the changelog of Unicorn Engine.
 
 -------------------------------
-[Version 2.1.1]: TBD
+[Version 2.1.1]: Sept 26th, 2024
+
+This is a small release to fix a few urgent issues.
 
 - Remove pkg_resources usage
 - Fix wheels distribution for x86_64 macos

@@ -53,7 +53,7 @@ set(CMAKE_C_STANDARD 11)
 
 set(UNICORN_VERSION_MAJOR 2)
 set(UNICORN_VERSION_MINOR 1)
-set(UNICORN_VERSION_PATCH 0)
+set(UNICORN_VERSION_PATCH 1)
 
 include(cmake/bundle_static.cmake)
 
