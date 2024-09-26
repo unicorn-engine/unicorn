@@ -98,13 +98,13 @@ def __load_uc_lib() -> ctypes.CDLL:
         canonicals.append(
             resources.files("unicorn") / 'lib'
         )
-    except ImportError:
+    except:
         try:
             import pkg_resources
             canonicals.append(
                 pkg_resources.resource_filename("unicorn", 'lib')
             )
-        except ImportError:
+        except:
             # maybe importlib_resources, but ignore for now
             pass
     
