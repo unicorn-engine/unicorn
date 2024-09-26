@@ -38,6 +38,12 @@ jobs:
               os: ubuntu-latest, 
               arch: x64, 
               python-ver: '3.8', 
+              name: 'musllinux'
+            }
+          - { 
+              os: ubuntu-latest, 
+              arch: x64, 
+              python-ver: '3.8', 
               name: 'manylinux2014_x86_64'
             }
           - { 
@@ -129,6 +135,8 @@ jobs:
               docker run --rm -v `pwd`/:/work dockcross/manylinux2014-x64 > ./dockcross
               chmod +x ./dockcross
               ./dockcross bindings/python/build_wheel.sh
+        elif [ ${{ matrix.config.name }} == 'musllinux' ]; then
+              docker run --rm -v `pwd`:/work -w /work python:3.7-alpine sh /work/bindings/python/musl_wheel.sh
         elif [ ${{ matrix.config.name }} == 'sdist' ]; then
               cd bindings/python && python setup.py sdist
         else

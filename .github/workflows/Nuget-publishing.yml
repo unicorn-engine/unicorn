@@ -428,14 +428,13 @@ jobs:
         with:
           path: ${{ github.workspace }}/bindings/dotnet/UnicornEngine/bin/Release/UnicornEngine.Unicorn.*.nupkg
 
-      # We often exceed limit so just release on tags
       - name: 📦 Publish to Github Packages
         if: startsWith(github.ref, 'refs/tags')
         working-directory: bindings/dotnet/UnicornEngine
         run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" --source "github" --api-key "${{ secrets.GHPR_TOKEN }}"
 
-      # Nuget is more tolerate so let's release every commit
       - name: 📦 Publish Nuget package
+        if: startsWith(github.ref, 'refs/tags')
         working-directory: bindings/dotnet/UnicornEngine
         run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" -k "$NUGET_AUTH_TOKEN" -s https://api.nuget.org/v3/index.json
         env:
