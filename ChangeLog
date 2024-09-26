@@ -6,6 +6,7 @@ This file details the changelog of Unicorn Engine.
 - Remove pkg_resources usage
 - Fix wheels distribution for x86_64 macos
 - Fix redundant wheel hacks
+- Support musllinux distribution
 
 -------------------------------
 [Version 2.1.0]: Sept 22nd, 2024
