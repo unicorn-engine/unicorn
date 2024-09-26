@@ -139,8 +139,10 @@ jobs:
               docker run --rm -v `pwd`:/work -w /work python:3.7-alpine sh /work/bindings/python/musl_wheel.sh
         elif [ ${{ matrix.config.name }} == 'sdist' ]; then
               cd bindings/python && python setup.py sdist
+        elif [ ${{ matrix.config.name }} == 'macos_arm64' ]; then
+              cd bindings/python && _PYTHON_HOST_PLATFORM="macosx-11.0-arm64" ARCHFLAGS="-arch arm64" python setup.py bdist_wheel
         else
-              cd bindings/python && ARCHFLAGS="-arch ${{ matrix.config.arch }}" python setup.py bdist_wheel
+              cd bindings/python && python setup.py bdist_wheel
         fi
     - name: '📤 Upload artifact'
       uses: actions/upload-artifact@v4
