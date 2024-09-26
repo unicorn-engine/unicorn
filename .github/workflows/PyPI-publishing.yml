@@ -60,15 +60,15 @@ jobs:
             }
           - { 
              os: macos-12,
-             arch: x64,
+             arch: x86_64,
              python-ver: '3.8',
              name: 'macos_x86_64'
             }
           - {
               os: macos-14,
-              arch: aarch64,
+              arch: arm64,
               python-ver: '3.10',
-              name: 'macos_aarch64'
+              name: 'macos_arm64'
             }
     steps:
     - uses: actions/checkout@v4
@@ -132,7 +132,7 @@ jobs:
         elif [ ${{ matrix.config.name }} == 'sdist' ]; then
               cd bindings/python && python setup.py sdist
         else
-              cd bindings/python && python setup.py bdist_wheel
+              cd bindings/python && ARCHFLAGS="-arch ${{ matrix.config.arch }}" python setup.py bdist_wheel
         fi
     - name: '📤 Upload artifact'
       uses: actions/upload-artifact@v4
