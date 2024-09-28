@@ -311,23 +311,14 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
     case UC_X86_REG_YMM4:
     case UC_X86_REG_YMM5:
     case UC_X86_REG_YMM6:
-    case UC_X86_REG_YMM7:
-    case UC_X86_REG_YMM8:
-    case UC_X86_REG_YMM9:
-    case UC_X86_REG_YMM10:
-    case UC_X86_REG_YMM11:
-    case UC_X86_REG_YMM12:
-    case UC_X86_REG_YMM13:
-    case UC_X86_REG_YMM14:
-    case UC_X86_REG_YMM15: {
-        CHECK_REG_TYPE(float64[4]);
-        float64 *dst = (float64 *)value;
-        ZMMReg *lo_reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_YMM0];
-        XMMReg *hi_reg = &env->ymmh_regs[regid - UC_X86_REG_YMM0];
-        dst[0] = lo_reg->ZMM_Q(0);
-        dst[1] = lo_reg->ZMM_Q(1);
-        dst[2] = hi_reg->_d[0];
-        dst[3] = hi_reg->_d[1];
+    case UC_X86_REG_YMM7: {
+        CHECK_REG_TYPE(uint64_t[4]);
+        uint64_t *dst = (uint64_t *)value;
+        const ZMMReg* const reg = &env->xmm_regs[regid - UC_X86_REG_YMM0];
+        dst[0] = reg->ZMM_Q(0);
+        dst[1] = reg->ZMM_Q(1);
+        dst[2] = reg->ZMM_Q(2);
+        dst[3] = reg->ZMM_Q(3);
         return ret;
     }
 
@@ -992,6 +983,39 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             dst[1] = reg->ZMM_Q(1);
             break;
         }
+        case UC_X86_REG_YMM8:
+        case UC_X86_REG_YMM9:
+        case UC_X86_REG_YMM10:
+        case UC_X86_REG_YMM11:
+        case UC_X86_REG_YMM12:
+        case UC_X86_REG_YMM13:
+        case UC_X86_REG_YMM14:
+        case UC_X86_REG_YMM15:
+        case UC_X86_REG_YMM16:
+        case UC_X86_REG_YMM17:
+        case UC_X86_REG_YMM18:
+        case UC_X86_REG_YMM19:
+        case UC_X86_REG_YMM20:
+        case UC_X86_REG_YMM21:
+        case UC_X86_REG_YMM22:
+        case UC_X86_REG_YMM23:
+        case UC_X86_REG_YMM24:
+        case UC_X86_REG_YMM25:
+        case UC_X86_REG_YMM26:
+        case UC_X86_REG_YMM27:
+        case UC_X86_REG_YMM28:
+        case UC_X86_REG_YMM29:
+        case UC_X86_REG_YMM30:
+        case UC_X86_REG_YMM31: {
+            CHECK_REG_TYPE(uint64_t[4]);
+            uint64_t *dst = (uint64_t *)value;
+            const ZMMReg* const reg = &env->xmm_regs[regid - UC_X86_REG_YMM0];
+            dst[0] = reg->ZMM_Q(0);
+            dst[1] = reg->ZMM_Q(1);
+            dst[2] = reg->ZMM_Q(2);
+            dst[3] = reg->ZMM_Q(3);
+            break;
+        }
         case UC_X86_REG_FS_BASE:
             CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = (uint64_t)env->segs[R_FS].base;
@@ -1088,25 +1112,14 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
     case UC_X86_REG_YMM4:
     case UC_X86_REG_YMM5:
     case UC_X86_REG_YMM6:
-    case UC_X86_REG_YMM7:
-    case UC_X86_REG_YMM8:
-    case UC_X86_REG_YMM9:
-    case UC_X86_REG_YMM10:
-    case UC_X86_REG_YMM11:
-    case UC_X86_REG_YMM12:
-    case UC_X86_REG_YMM13:
-    case UC_X86_REG_YMM14:
-    case UC_X86_REG_YMM15: {
-        CHECK_REG_TYPE(float64[4]);
-        float64 *src = (float64 *)value;
-        ZMMReg *lo_reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_YMM0];
-        XMMReg *hi_reg = &env->ymmh_regs[regid - UC_X86_REG_YMM0];
-        lo_reg->ZMM_Q(0) = src[0];
-        lo_reg->ZMM_Q(1) = src[1];
-        // YMM is not supported by QEMU at all
-        // As of qemu 5.0.1, ymmh_regs is nowhere used.
-        hi_reg->_d[0] = src[2];
-        hi_reg->_d[1] = src[3];
+    case UC_X86_REG_YMM7: {
+        CHECK_REG_TYPE(uint64_t[4]);
+        const uint64_t *src = (const uint64_t *)value;
+        ZMMReg *reg = &env->xmm_regs[regid - UC_X86_REG_YMM0];
+        reg->ZMM_Q(0) = src[0];
+        reg->ZMM_Q(1) = src[1];
+        reg->ZMM_Q(2) = src[2];
+        reg->ZMM_Q(3) = src[3];
         return ret;
     }
 
@@ -1832,6 +1845,39 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             ZMMReg *reg = &env->xmm_regs[regid - UC_X86_REG_XMM0];
             reg->ZMM_Q(0) = src[0];
             reg->ZMM_Q(1) = src[1];
+            break;
+        }
+        case UC_X86_REG_YMM8:
+        case UC_X86_REG_YMM9:
+        case UC_X86_REG_YMM10:
+        case UC_X86_REG_YMM11:
+        case UC_X86_REG_YMM12:
+        case UC_X86_REG_YMM13:
+        case UC_X86_REG_YMM14:
+        case UC_X86_REG_YMM15:
+        case UC_X86_REG_YMM16:
+        case UC_X86_REG_YMM17:
+        case UC_X86_REG_YMM18:
+        case UC_X86_REG_YMM19:
+        case UC_X86_REG_YMM20:
+        case UC_X86_REG_YMM21:
+        case UC_X86_REG_YMM22:
+        case UC_X86_REG_YMM23:
+        case UC_X86_REG_YMM24:
+        case UC_X86_REG_YMM25:
+        case UC_X86_REG_YMM26:
+        case UC_X86_REG_YMM27:
+        case UC_X86_REG_YMM28:
+        case UC_X86_REG_YMM29:
+        case UC_X86_REG_YMM30:
+        case UC_X86_REG_YMM31: {
+            CHECK_REG_TYPE(uint64_t[4]);
+            const uint64_t *src = (const uint64_t *)value;
+            ZMMReg *reg = &env->xmm_regs[regid - UC_X86_REG_YMM0];
+            reg->ZMM_Q(0) = src[0];
+            reg->ZMM_Q(1) = src[1];
+            reg->ZMM_Q(2) = src[2];
+            reg->ZMM_Q(3) = src[3];
             break;
         }
         case UC_X86_REG_FS_BASE:
