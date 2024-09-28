@@ -594,6 +594,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         case UC_X86_REG_CR2:
         case UC_X86_REG_CR3:
         case UC_X86_REG_CR4:
+        case UC_X86_REG_CR8:
             CHECK_REG_TYPE(int64_t);
             *(int64_t *)value = env->cr[regid - UC_X86_REG_CR0];
             break;
@@ -1402,6 +1403,9 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_X86_REG_CR4:
             CHECK_REG_TYPE(uint64_t);
             cpu_x86_update_cr4(env, *(uint32_t *)value);
+            goto write_cr64;
+        case UC_X86_REG_CR8:
+            CHECK_REG_TYPE(uint64_t);
         write_cr64:
             env->cr[regid - UC_X86_REG_CR0] = *(uint64_t *)value;
             break;

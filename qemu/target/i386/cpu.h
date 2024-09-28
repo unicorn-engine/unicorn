@@ -1397,7 +1397,7 @@ typedef struct CPUX86State {
     SegmentCache gdt; /* only base and limit are used */
     SegmentCache idt; /* only base and limit are used */
 
-    target_ulong cr[5]; /* NOTE: cr1 is unused */
+    target_ulong cr[9]; /* NOTE: cr1, cr5-cr7 are not used */
     int32_t a20_mask;
 
     BNDReg bnd_regs[4];
