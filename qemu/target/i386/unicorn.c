@@ -285,9 +285,9 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
     case UC_X86_REG_XMM5:
     case UC_X86_REG_XMM6:
     case UC_X86_REG_XMM7: {
-        CHECK_REG_TYPE(float64[2]);
-        float64 *dst = (float64 *)value;
-        ZMMReg *reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
+        CHECK_REG_TYPE(uint64_t[2]);
+        uint64_t *dst = (uint64_t *)value;
+        const ZMMReg* const reg = &env->xmm_regs[regid - UC_X86_REG_XMM0];
         dst[0] = reg->ZMM_Q(0);
         dst[1] = reg->ZMM_Q(1);
         return ret;
@@ -968,10 +968,26 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         case UC_X86_REG_XMM12:
         case UC_X86_REG_XMM13:
         case UC_X86_REG_XMM14:
-        case UC_X86_REG_XMM15: {
-            CHECK_REG_TYPE(float64[2]);
-            float64 *dst = (float64 *)value;
-            ZMMReg *reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
+        case UC_X86_REG_XMM15:
+        case UC_X86_REG_XMM16:
+        case UC_X86_REG_XMM17:
+        case UC_X86_REG_XMM18:
+        case UC_X86_REG_XMM19:
+        case UC_X86_REG_XMM20:
+        case UC_X86_REG_XMM21:
+        case UC_X86_REG_XMM22:
+        case UC_X86_REG_XMM23:
+        case UC_X86_REG_XMM24:
+        case UC_X86_REG_XMM25:
+        case UC_X86_REG_XMM26:
+        case UC_X86_REG_XMM27:
+        case UC_X86_REG_XMM28:
+        case UC_X86_REG_XMM29:
+        case UC_X86_REG_XMM30:
+        case UC_X86_REG_XMM31: {
+            CHECK_REG_TYPE(uint64_t[2]);
+            uint64_t *dst = (uint64_t *)value;
+            const ZMMReg* const reg = &env->xmm_regs[regid - UC_X86_REG_XMM0];
             dst[0] = reg->ZMM_Q(0);
             dst[1] = reg->ZMM_Q(1);
             break;
@@ -1046,9 +1062,9 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
     case UC_X86_REG_XMM5:
     case UC_X86_REG_XMM6:
     case UC_X86_REG_XMM7: {
-        CHECK_REG_TYPE(float64[2]);
-        float64 *src = (float64 *)value;
-        ZMMReg *reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
+        CHECK_REG_TYPE(uint64_t[2]);
+        const uint64_t *src = (const uint64_t *)value;
+        ZMMReg *reg = &env->xmm_regs[regid - UC_X86_REG_XMM0];
         reg->ZMM_Q(0) = src[0];
         reg->ZMM_Q(1) = src[1];
         return ret;
@@ -1794,10 +1810,26 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_X86_REG_XMM12:
         case UC_X86_REG_XMM13:
         case UC_X86_REG_XMM14:
-        case UC_X86_REG_XMM15: {
-            CHECK_REG_TYPE(float64[2]);
-            float64 *src = (float64 *)value;
-            ZMMReg *reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
+        case UC_X86_REG_XMM15:
+        case UC_X86_REG_XMM16:
+        case UC_X86_REG_XMM17:
+        case UC_X86_REG_XMM18:
+        case UC_X86_REG_XMM19:
+        case UC_X86_REG_XMM20:
+        case UC_X86_REG_XMM21:
+        case UC_X86_REG_XMM22:
+        case UC_X86_REG_XMM23:
+        case UC_X86_REG_XMM24:
+        case UC_X86_REG_XMM25:
+        case UC_X86_REG_XMM26:
+        case UC_X86_REG_XMM27:
+        case UC_X86_REG_XMM28:
+        case UC_X86_REG_XMM29:
+        case UC_X86_REG_XMM30:
+        case UC_X86_REG_XMM31: {
+            CHECK_REG_TYPE(uint64_t[2]);
+            const uint64_t *src = (const uint64_t *)value;
+            ZMMReg *reg = &env->xmm_regs[regid - UC_X86_REG_XMM0];
             reg->ZMM_Q(0) = src[0];
             reg->ZMM_Q(1) = src[1];
             break;
