@@ -1432,11 +1432,15 @@ typedef struct CPUX86State {
     ZMMReg xmm_t0;
     MMXReg mmx_t0;
 
-    XMMReg ymmh_regs[CPU_NB_REGS];
+    /*
+     * YMM is not supported by QEMU at all
+     * As of qemu 5.0.1, ymmh_regs is nowhere used.
+     */
+    XMMReg ymmh_regs[CPU_NB_REGS];          /* currently not in use */
 
     uint64_t opmask_regs[NB_OPMASK_REGS];
-    YMMReg zmmh_regs[CPU_NB_REGS];
-    ZMMReg hi16_zmm_regs[CPU_NB_REGS];
+    YMMReg zmmh_regs[CPU_NB_REGS];          /* currently not in use */
+    ZMMReg hi16_zmm_regs[CPU_NB_REGS];      /* currently not in use */
 
     /* sysenter registers */
     uint32_t sysenter_cs;
