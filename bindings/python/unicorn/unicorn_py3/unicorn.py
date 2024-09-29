@@ -3,7 +3,7 @@ based on Nguyen Anh Quynnh's work
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import ctypes
 import functools
@@ -377,7 +377,7 @@ class RegStateManager:
             return reg_type()
 
         if isinstance(aux, tuple):
-        return reg_type(*aux)
+            return reg_type(*aux)
 
         return reg_type(aux)
 
@@ -407,15 +407,22 @@ class RegStateManager:
         if status != uc.UC_ERR_OK:
             raise UcError(status, reg_id)
 
-    def _reg_read_batch(self, reg_ids: Sequence[int], reg_types: Sequence[Type]) -> Tuple:
+    def _reg_read_batch(self, read_seq: Sequence[Tuple[int, Type, Any]]) -> Tuple:
         """Batch register read helper method.
+
+        Args:
+            read_seq: a sequence of 3-tuples containing register identifier, returned
+                      value type and auxiliary data (or `None` if aux is not required)
+
+        Returns: a tuple of values
         """
 
-        assert len(reg_ids) == len(reg_types)
+        count = len(read_seq)
+        reg_ids = (rid for rid, _, _ in read_seq)
+        reg_info = ((rtype, aux) for _, rtype, aux in read_seq)
 
-        count = len(reg_ids)
         reg_list = (ctypes.c_int * count)(*reg_ids)
-        val_list = [rtype() for rtype in reg_types]
+        val_list = [self.__get_reg_read_arg(rtype, aux) for rtype, aux in reg_info]
         ptr_list = (ctypes.c_void_p * count)(*(ctypes.c_void_p(ctypes.addressof(elem)) for elem in val_list))
 
         status = self._do_reg_read_batch(reg_list, ptr_list, ctypes.c_int(count))
@@ -437,7 +444,7 @@ class RegStateManager:
         Raises: `UcError` in case of invalid register id or auxiliary data
         """
 
-reg_type = self._select_reg_class(reg_id)
+        reg_type = self._select_reg_class(reg_id)
 
         return self._reg_read(reg_id, reg_type, aux)
 
@@ -451,24 +458,31 @@ reg_type = self._select_reg_class(reg_id)
         Raises: `UcError` in case of invalid register id or value format
         """
 
-reg_type = self._select_reg_class(reg_id)
+        reg_type = self._select_reg_class(reg_id)
 
         self._reg_write(reg_id, reg_type, value)
 
-    def reg_read_batch(self, reg_ids: Sequence[int]) -> Tuple:
-        """Read a sequence of architectural registers.
+    def reg_read_batch(self, reg_data: Sequence[Union[int, Tuple[int, Any]]]) -> Tuple:
+        """Read a sequence of architectural registers. This provides with faster means to
+        read multiple registers.
 
         Args:
-            reg_ids: a sequence of register identifiers (architecture-specific enumeration)
+            reg_ids : a sequence of register identifiers (architecture-specific enumeration)
+            aux     : a mapping of reg identifiers and auxiliary data, in case it is required
 
         Returns: a tuple of registers values (register-specific format)
 
-        Raises: `UcError` in case of invalid register id
+        Raises: `UcError` in case of an invalid register id, or an invalid aux data for a
+        register that requires it
         """
 
-        reg_types = [self._DEFAULT_REGTYPE for _ in range(len(reg_ids))]
+        def __seq_tuple(elem: Union[int, Tuple[int, Any]]) -> Tuple[int, Type, Any]:
+            reg_id, reg_aux = elem if isinstance(elem, tuple) else (elem, None)
+            reg_type = self._select_reg_class(reg_id)
 
-        return self._reg_read_batch(reg_ids, reg_types)
+            return (reg_id, reg_type, reg_aux)
+
+        return self._reg_read_batch([__seq_tuple(elem) for elem in reg_data])
 
     def reg_write_batch(self, reg_info: Sequence[Tuple[int, Any]]) -> None:
         """Write a sequece of architectural registers.
@@ -636,7 +650,7 @@ class Uc(RegStateManager):
                 if status != uc.UC_ERR_OK:
                     raise UcError(status)
 
-@property
+    @property
     def errno(self) -> int:
         """Get last error number.
 
