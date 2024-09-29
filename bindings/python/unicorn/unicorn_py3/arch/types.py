@@ -52,7 +52,11 @@ class UcTupledReg(UcReg, Generic[VT]):
 
     @classmethod
     def from_value(cls, value: VT):
-        assert isinstance(value, tuple) and len(value) == len(cls._fields_)
+        if not isinstance(value, tuple):
+            raise TypeError(f'got {type(value).__name__} while expecting a tuple')
+
+        if len(value) != len(cls._fields_):
+            raise TypeError(f'got {len(value)} elements while expecting {len(cls._fields_)}')
 
         return cls(*value)
 
@@ -72,7 +76,8 @@ class UcLargeReg(UcReg):
 
     @classmethod
     def from_value(cls, value: int):
-        assert isinstance(value, int), f'got {type(value).__name__} while expected an integer'
+        if not isinstance(value, int):
+            raise TypeError(f'got {type(value).__name__} while expecting an integer')
 
         mask = (1 << 64) - 1
         size = cls._fields_[0][1]._length_
