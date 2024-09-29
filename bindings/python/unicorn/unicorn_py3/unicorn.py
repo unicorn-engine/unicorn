@@ -372,18 +372,24 @@ class RegStateManager:
         raise NotImplementedError
 
     @staticmethod
-    def __get_reg_read_arg(regtype: Type, *args):
-        return regtype(*args)
+    def __get_reg_read_arg(reg_type: Type, aux: Any):
+        if aux is None:
+            return reg_type()
+
+        if isinstance(aux, tuple):
+        return reg_type(*aux)
+
+        return reg_type(aux)
 
     @staticmethod
-    def __get_reg_write_arg(regtype: Type, value):
-        return regtype.from_value(value) if issubclass(regtype, UcReg) else regtype(value)
+    def __get_reg_write_arg(reg_type: Type, value: Any):
+        return reg_type.from_value(value) if issubclass(reg_type, UcReg) else reg_type(value)
 
-    def _reg_read(self, reg_id: int, regtype: Type, *args):
+    def _reg_read(self, reg_id: int, reg_type: Type, aux: Any):
         """Register read helper method.
         """
 
-        reg = self.__get_reg_read_arg(regtype, *args)
+        reg = self.__get_reg_read_arg(reg_type, aux)
         status = self._do_reg_read(reg_id, ctypes.byref(reg))
 
         if status != uc.UC_ERR_OK:
@@ -391,11 +397,11 @@ class RegStateManager:
 
         return reg.value
 
-    def _reg_write(self, reg_id: int, regtype: Type, value) -> None:
+    def _reg_write(self, reg_id: int, reg_type: Type, value: Any) -> None:
         """Register write helper method.
         """
 
-        reg = self.__get_reg_write_arg(regtype, value)
+        reg = self.__get_reg_write_arg(reg_type, value)
         status = self._do_reg_write(reg_id, ctypes.byref(reg))
 
         if status != uc.UC_ERR_OK:
@@ -431,7 +437,9 @@ class RegStateManager:
         Raises: `UcError` in case of invalid register id or auxiliary data
         """
 
-        return self._reg_read(reg_id, self._DEFAULT_REGTYPE)
+reg_type = self._select_reg_class(reg_id)
+
+        return self._reg_read(reg_id, reg_type, aux)
 
     def reg_write(self, reg_id: int, value) -> None:
         """Write to architectural register.
@@ -443,7 +451,9 @@ class RegStateManager:
         Raises: `UcError` in case of invalid register id or value format
         """
 
-        self._reg_write(reg_id, self._DEFAULT_REGTYPE, value)
+reg_type = self._select_reg_class(reg_id)
+
+        self._reg_write(reg_id, reg_type, value)
 
     def reg_read_batch(self, reg_ids: Sequence[int]) -> Tuple:
         """Read a sequence of architectural registers.

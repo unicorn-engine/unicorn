@@ -93,40 +93,12 @@ class UcAArch64(Uc):
         """
 
         reg_class = (
-(UcAArch64.REG_RANGE_CP, UcRegCP64),
+            (UcAArch64.REG_RANGE_CP, UcRegCP64),
             (UcAArch64.REG_RANGE_Q,  UcReg128),
             (UcAArch64.REG_RANGE_V,  UcReg128)
         )
 
         return next((c for rng, c in reg_class if reg_id in rng), cls._DEFAULT_REGTYPE)
 
-    def reg_read(self, reg_id: int, aux: Any = None):
-        # select register class for special cases
-        reg_cls = UcAArch64.__select_reg_class(reg_id)
-
-        if reg_cls is None:
-            if reg_id == const.UC_ARM64_REG_CP_REG:
-                return self._reg_read(reg_id, UcRegCP64, *aux)
-
-            else:
-                # fallback to default reading method
-                return super().reg_read(reg_id, aux)
-
-        return self._reg_read(reg_id, reg_cls)
-
-    def reg_write(self, reg_id: int, value) -> None:
-        # select register class for special cases
-        reg_cls = UcAArch64.__select_reg_class(reg_id)
-
-        if reg_cls is None:
-            if reg_id == const.UC_ARM64_REG_CP_REG:
-                self._reg_write(reg_id, UcRegCP64, value)
-
-            else:
-                # fallback to default writing method
-                super().reg_write(reg_id, value)
-
-        else:
-            self._reg_write(reg_id, reg_cls, value)
 
 __all__ = ['UcRegCP64', 'UcAArch64']
