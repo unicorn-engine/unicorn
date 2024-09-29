@@ -91,26 +91,19 @@ def __load_uc_lib() -> ctypes.CDLL:
     # - we can get the path to the local libraries by parsing our filename
     # - global load
     # - python's lib directory
-    canonicals = []
-    
-    try:
+
+    if sys.version_info.minor >= 12:
         from importlib import resources
-        canonicals.append(
-            resources.files("unicorn") / 'lib'
-        )
-    except:
-        try:
-            import pkg_resources
-            canonicals.append(
-                pkg_resources.resource_filename("unicorn", 'lib')
-            )
-        except:
-            # maybe importlib_resources, but ignore for now
-            pass
-    
+
+        canonicals = resources.files('unicorn') / 'lib'
+    else:
+        import pkg_resources
+
+        canonicals = pkg_resources.resource_filename('unicorn', 'lib')
+
     lib_locations = [
         os.getenv('LIBUNICORN_PATH'),
-    ] + canonicals + [
+        canonicals,
         PurePath(inspect.getfile(__load_uc_lib)).parent / 'lib',
         '',
         r'/usr/local/lib' if sys.platform == 'darwin' else r'/usr/lib64',
