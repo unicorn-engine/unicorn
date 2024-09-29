@@ -617,6 +617,15 @@ class Uc(RegStateManager):
                 if status != uc.UC_ERR_OK:
                     raise UcError(status)
 
+@property
+    def errno(self) -> int:
+        """Get last error number.
+
+        Returns: error number (see: UC_ERR_*)
+        """
+
+        return uclib.uc_errno(self._uch)
+
     ###########################
     #  Emulation controllers  #
     ###########################
