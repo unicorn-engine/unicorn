@@ -171,6 +171,7 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
     __set_prototype('uc_reg_read', uc_err, uc_engine, ctypes.c_int, ctypes.c_void_p)
     __set_prototype('uc_reg_write', uc_err, uc_engine, ctypes.c_int, ctypes.c_void_p)
     __set_prototype('uc_reg_read_batch', uc_err, uc_engine, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_void_p), ctypes.c_int)
+    __set_prototype('uc_reg_write_batch', uc_err, uc_engine, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_void_p), ctypes.c_int)
     __set_prototype('uc_mem_read', uc_err, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
     __set_prototype('uc_mem_write', uc_err, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
     __set_prototype('uc_emu_start', uc_err, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
@@ -432,6 +433,26 @@ class RegStateManager:
 
         return tuple(v.value for v in val_list)
 
+    def _reg_write_batch(self, write_seq: Sequence[Tuple[int, Type, Any]]) -> None:
+        """Batch register write helper method.
+
+        Args:
+            write_seq: a sequence of 3-tuples containing register identifier, value type and value
+        """
+
+        count = len(write_seq)
+        reg_ids = (rid for rid, _, _ in write_seq)
+        reg_info = ((rtype, aux) for _, rtype, aux in write_seq)
+
+        reg_list = (ctypes.c_int * count)(*reg_ids)
+        val_list = [self.__get_reg_write_arg(rtype, rval) for rtype, rval in reg_info]
+        ptr_list = (ctypes.c_void_p * count)(*(ctypes.c_void_p(ctypes.addressof(elem)) for elem in val_list))
+
+        status = self._do_reg_write_batch(reg_list, ptr_list, ctypes.c_int(count))
+
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+
     def reg_read(self, reg_id: int, aux: Any = None):
         """Read architectural register value.
 
@@ -484,17 +505,24 @@ class RegStateManager:
 
         return self._reg_read_batch([__seq_tuple(elem) for elem in reg_data])
 
-    def reg_write_batch(self, reg_info: Sequence[Tuple[int, Any]]) -> None:
-        """Write a sequece of architectural registers.
+    def reg_write_batch(self, reg_data: Sequence[Tuple[int, Any]]) -> None:
+        """Write a sequece of architectural registers. This provides with faster means to
+        write multiple registers.
 
         Args:
-            regs_info: a sequence of tuples consisting of register identifiers and values
+            reg_data: a sequence of register identifiers matched with their designated values
 
         Raises: `UcError` in case of invalid register id or value format
         """
 
-        # TODO
-        ...
+        def __seq_tuple(elem: Tuple[int, Any]) -> Tuple[int, Type, Any]:
+            reg_id, reg_val = elem
+            reg_type = self._select_reg_class(reg_id)
+
+            return (reg_id, reg_type, reg_val)
+
+        self._reg_write_batch([__seq_tuple(elem) for elem in reg_data])
+
 
 def ucsubclass(cls):
     """Uc subclass decorator.
@@ -721,6 +749,13 @@ class Uc(RegStateManager):
         """
 
         return uclib.uc_reg_read_batch(self._uch, reglist, vallist, count)
+
+    def _do_reg_write_batch(self, reglist, vallist, count) -> int:
+        """Private batch register write implementation.
+        Do not call directly.
+        """
+
+        return uclib.uc_reg_write_batch(self._uch, reglist, vallist, count)
 
     ###########################
     #  Memory management      #
@@ -1314,6 +1349,12 @@ class UcContext(RegStateManager):
         """
 
         return uclib.uc_context_reg_read_batch(self._context, reglist, vallist, count)
+
+    def _do_reg_write_batch(self, reglist, vallist, count) -> int:
+        """Private batch register write implementation.
+        """
+
+        return uclib.uc_context_reg_write_batch(self._context, reglist, vallist, count)
 
     # Make UcContext picklable
     def __getstate__(self) -> Tuple[bytes, int, int, int]:
