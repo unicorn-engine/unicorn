@@ -2,7 +2,7 @@
 """
 # @author elicn
 
-from typing import Any, Callable, Sequence, Tuple
+from typing import Any, Callable, Tuple, Type
 
 import ctypes
 
@@ -63,6 +63,8 @@ class UcRegFPR(UcTupledReg[X86FPReg]):
 class UcIntel(Uc):
     """Unicorn subclass for Intel architecture.
     """
+
+    REG_RANGE_MSR = (const.UC_X86_REG_MSR,)
 
     REG_RANGE_MMR = (
         const.UC_X86_REG_IDTR,
@@ -127,12 +129,13 @@ class UcIntel(Uc):
 
         return getattr(self, '_Uc__do_hook_add')(htype, fptr, begin, end, insn)
 
-    @staticmethod
-    def __select_reg_class(reg_id: int):
-        """Select class for special architectural registers.
+    @classmethod
+    def _select_reg_class(cls, reg_id: int) -> Type:
+        """Select the appropriate class for the specified architectural register.
         """
 
         reg_class = (
+(UcIntel.REG_RANGE_MSR, UcRegMSR),
             (UcIntel.REG_RANGE_MMR, UcRegMMR),
             (UcIntel.REG_RANGE_FP,  UcRegFPR),
             (UcIntel.REG_RANGE_XMM, UcReg128),
@@ -140,7 +143,7 @@ class UcIntel(Uc):
             (UcIntel.REG_RANGE_ZMM, UcReg512)
         )
 
-        return next((cls for rng, cls in reg_class if reg_id in rng), None)
+        return next((c for rng, c in reg_class if reg_id in rng), cls._DEFAULT_REGTYPE)
 
     def reg_read(self, reg_id: int, aux: Any = None):
         # select register class for special cases

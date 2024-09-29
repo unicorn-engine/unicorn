@@ -2,7 +2,7 @@
 """
 # @author elicn
 
-from typing import Any, Tuple
+from typing import Tuple, Type
 
 import ctypes
 
@@ -40,18 +40,21 @@ class UcAArch32(Uc):
     """Unicorn subclass for ARM architecture.
     """
 
+    REG_RANGE_CP = (const.UC_ARM_REG_CP_REG,)
+
     REG_RANGE_Q = range(const.UC_ARM_REG_Q0, const.UC_ARM_REG_Q15 + 1)
 
-    @staticmethod
-    def __select_reg_class(reg_id: int):
-        """Select class for special architectural registers.
+    @classmethod
+    def _select_reg_class(cls, reg_id: int) -> Type:
+        """Select the appropriate class for the specified architectural register.
         """
 
         reg_class = (
-            (UcAArch32.REG_RANGE_Q, UcReg128),
+(UcAArch32.REG_RANGE_CP, UcRegCP),
+            (UcAArch32.REG_RANGE_Q, UcReg128)
         )
 
-        return next((cls for rng, cls in reg_class if reg_id in rng), None)
+        return next((c for rng, c in reg_class if reg_id in rng), cls._DEFAULT_REGTYPE)
 
     def reg_read(self, reg_id: int, aux: Any = None):
         # select register class for special cases

@@ -334,6 +334,15 @@ class RegStateManager:
 
     _DEFAULT_REGTYPE = ctypes.c_uint64
 
+    @classmethod
+    def _select_reg_class(cls, reg_id: int) -> Type:
+        """An architecture-specific method that returns the appropriate
+        value type for a specified reg identifier. All rich `Uc` subclasses
+        are expected to implement their own
+        """
+
+        return cls._DEFAULT_REGTYPE
+
     def _do_reg_read(self, reg_id: int, reg_obj) -> int:
         """Private register read implementation.
         Must be implemented by the mixin object

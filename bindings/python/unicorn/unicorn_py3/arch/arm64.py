@@ -2,7 +2,7 @@
 """
 # @author elicn
 
-from typing import Any, Callable, NamedTuple, Tuple
+from typing import Any, Callable, NamedTuple, Tuple, Type
 
 import ctypes
 
@@ -40,6 +40,8 @@ class UcRegCP64(UcTupledReg[ARM64CPReg]):
 class UcAArch64(Uc):
     """Unicorn subclass for ARM64 architecture.
     """
+
+    REG_RANGE_CP = (const.UC_ARM64_REG_CP_REG,)
 
     REG_RANGE_Q = range(const.UC_ARM64_REG_Q0, const.UC_ARM64_REG_Q31 + 1)
     REG_RANGE_V = range(const.UC_ARM64_REG_V0, const.UC_ARM64_REG_V31 + 1)
@@ -85,17 +87,18 @@ class UcAArch64(Uc):
 
         return getattr(self, '_Uc__do_hook_add')(htype, fptr, begin, end, insn)
 
-    @staticmethod
-    def __select_reg_class(reg_id: int):
-        """Select class for special architectural registers.
+    @classmethod
+    def _select_reg_class(cls, reg_id: int) -> Type:
+        """Select the appropriate class for the specified architectural register.
         """
 
         reg_class = (
-            (UcAArch64.REG_RANGE_Q, UcReg128),
-            (UcAArch64.REG_RANGE_V, UcReg128)
+(UcAArch64.REG_RANGE_CP, UcRegCP64),
+            (UcAArch64.REG_RANGE_Q,  UcReg128),
+            (UcAArch64.REG_RANGE_V,  UcReg128)
         )
 
-        return next((cls for rng, cls in reg_class if reg_id in rng), None)
+        return next((c for rng, c in reg_class if reg_id in rng), cls._DEFAULT_REGTYPE)
 
     def reg_read(self, reg_id: int, aux: Any = None):
         # select register class for special cases
