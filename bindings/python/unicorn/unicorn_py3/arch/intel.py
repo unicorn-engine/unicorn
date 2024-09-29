@@ -145,9 +145,25 @@ class UcIntel(Uc):
 
         return next((c for rng, c in reg_class if reg_id in rng), cls._DEFAULT_REGTYPE)
 
+    def msr_read(self, msr_id: int) -> int:
+        """Read a model-specific register.
+
+        Args:
+            msr_id: MSR index
+
+        Returns: MSR value
+        """
+
         return self.reg_read(const.UC_X86_REG_MSR, msr_id)
 
     def msr_write(self, msr_id: int, value: int) -> None:
+        """Write to a model-specific register.
+
+        Args:
+            msr_id: MSR index
+            value: new MSR value
+        """
+
         self.reg_write(const.UC_X86_REG_MSR, (msr_id, value))
 
 

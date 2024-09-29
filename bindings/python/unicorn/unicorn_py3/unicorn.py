@@ -311,7 +311,7 @@ def uccallback(uc: Uc, functype: Type[_CFP]):
     def decorate(func) -> _CFP:
 
         @functools.wraps(func)
-        def wrapper(handle: Uc, *args, **kwargs):
+        def wrapper(handle: int, *args, **kwargs):
             try:
                 return func(uc, *args, **kwargs)
             except Exception as e:
@@ -345,28 +345,28 @@ class RegStateManager:
         return cls._DEFAULT_REGTYPE
 
     def _do_reg_read(self, reg_id: int, reg_obj) -> int:
-        """Private register read implementation.
+        """Low level register read implementation.
         Must be implemented by the mixin object
         """
 
         raise NotImplementedError
 
     def _do_reg_write(self, reg_id: int, reg_obj) -> int:
-        """Private register write implementation.
+        """Low level register write implementation.
         Must be implemented by the mixin object
         """
 
         raise NotImplementedError
 
     def _do_reg_read_batch(self, reglist, vallist, count) -> int:
-        """Private batch register read implementation.
+        """Low level batch register read implementation.
         Must be implemented by the mixin object
         """
 
         raise NotImplementedError
 
-    def _do_reg_write_batch(self, reglist, count) -> int:
-        """Private batch register write implementation.
+    def _do_reg_write_batch(self, reglist, vallist, count) -> int:
+        """Low level batch register write implementation.
         Must be implemented by the mixin object
         """
 
@@ -452,6 +452,10 @@ class RegStateManager:
 
         if status != uc.UC_ERR_OK:
             raise UcError(status)
+
+    #########################
+    #  External facing API  #
+    #########################
 
     def reg_read(self, reg_id: int, aux: Any = None):
         """Read architectural register value.
