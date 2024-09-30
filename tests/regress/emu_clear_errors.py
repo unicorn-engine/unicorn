@@ -8,21 +8,20 @@ from unicorn import *
 from unicorn.x86_const import *
 
 
-CODE = binascii.unhexlify(b"".join([
-    b"8B 74 01 28",       # mov esi, dword ptr [ecx + eax + 0x28]  mapped: 0x1000
-    b"03 F0",             # add esi, eax                                   0x1004
-    b"8D 45 FC",          # lea eax, dword ptr [ebp - 4]                   0x1006
-    b"50",                # push eax                                       0x1009
-    b"6A 40",             # push 0x40                                      0x100A
-    b"6A 10",             # push 0x10                                      0x100C
-    b"56",                # push esi                                       0x100E
-    b"FF 15 20 20 00 10"  # call some address                              0x100F
-  ]).replace(" ", ""))
+CODE = binascii.unhexlify((
+    "8B 74 01 28"       # mov esi, dword ptr [ecx + eax + 0x28]  mapped: 0x1000
+    "03 F0"             # add esi, eax                                   0x1004
+    "8D 45 FC"          # lea eax, dword ptr [ebp - 4]                   0x1006
+    "50"                # push eax                                       0x1009
+    "6A 40"             # push 0x40                                      0x100A
+    "6A 10"             # push 0x10                                      0x100C
+    "56"                # push esi                                       0x100E
+    "FF 15 20 20 00 10" # call some address                              0x100F
+).replace(' ', ''))
 
 
 def showpc(mu):
-    pc = mu.reg_read(UC_X86_REG_EIP)
-    print("pc: 0x%x" % (pc))
+    regress.logger.info("pc: 0x%x", mu.reg_read(UC_X86_REG_EIP))
 
 
 class HookCodeStopEmuTest(regress.RegressTest):
@@ -45,8 +44,8 @@ class HookCodeStopEmuTest(regress.RegressTest):
 
         def _hook(_, access, address, length, value, context):
             pc = mu.reg_read(UC_X86_REG_EIP)
-            print("mem unmapped: pc: %x access: %x address: %x length: %x value: %x" % (
-                pc, access, address, length, value))
+            regress.logger.info("mem unmapped: pc: %x access: %x address: %x length: %x value: %x", pc, access, address, length, value)
+
             mu.emu_stop()
             return True
 

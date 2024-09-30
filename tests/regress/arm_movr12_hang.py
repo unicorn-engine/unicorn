@@ -13,7 +13,7 @@ class MovHang(regress.RegressTest):
         uc.mem_write(0x1000, '00c000e3'.decode('hex'))  # movw r12, #0
 
         def hook_block(uc, addr, *args):
-            print 'enter block 0x%04x' % addr
+            regress.logger.info('enter block 0x%04x', addr)
             uc.count += 1
 
         uc.reg_write(UC_ARM_REG_R12, 0x123)

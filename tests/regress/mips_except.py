@@ -1,14 +1,17 @@
 #!/usr/bin/python
-from unicorn import *
-from unicorn.mips_const import *
 
 import regress
 
-def hook_intr(uc, intno, _):
-    print 'interrupt', intno
+from unicorn import *
+from unicorn.mips_const import *
 
 CODE = 0x400000
-asm = '0000a48f'.decode('hex')  # lw    $a0, ($sp)
+asm = b'\x00\x00\xa4\x8f'  # lw    $a0, ($sp)
+
+
+def hook_intr(uc, intno, _):
+    regress.logger.info('interrupt', intno)
+
 
 class MipsExcept(regress.RegressTest):
 
@@ -36,6 +39,6 @@ class MipsExcept(regress.RegressTest):
 
         self.assertEqual(UC_ERR_READ_UNMAPPED, m.exception.errno)
 
+
 if __name__ == '__main__':
     regress.main()
-

@@ -1,32 +1,37 @@
 ﻿from unicorn import *
 from unicorn.arm_const import *
-import binascii
+
+import regress
+
 
 MB = 1024 * 1024
 PAGE = 4 * 1024
 
+
 def PrintArmRegisters(uc_emu):
-    print 'R0 : '+hex(uc_emu.reg_read(UC_ARM_REG_R0))
-    print 'R1 : '+hex(uc_emu.reg_read(UC_ARM_REG_R1))
-    print 'R2 : '+hex(uc_emu.reg_read(UC_ARM_REG_R2))
-    print 'R3 : '+hex(uc_emu.reg_read(UC_ARM_REG_R3))
-    print 'R4 : '+hex(uc_emu.reg_read(UC_ARM_REG_R4))
-    print 'R5 : '+hex(uc_emu.reg_read(UC_ARM_REG_R5))
-    print 'R6 : '+hex(uc_emu.reg_read(UC_ARM_REG_R6))
-    print 'R7 : '+hex(uc_emu.reg_read(UC_ARM_REG_R7))
-    print 'R8 : '+hex(uc_emu.reg_read(UC_ARM_REG_R8))
-    print 'R9 : '+hex(uc_emu.reg_read(UC_ARM_REG_R9))
-    print 'R10 : '+hex(uc_emu.reg_read(UC_ARM_REG_R10))
-    print 'R11 : '+hex(uc_emu.reg_read(UC_ARM_REG_R11))
-    print 'R12 : '+hex(uc_emu.reg_read(UC_ARM_REG_R12))
-    print 'SP : '+hex(uc_emu.reg_read(UC_ARM_REG_SP))
-    print 'LR : '+hex(uc_emu.reg_read(UC_ARM_REG_LR))
-    print 'PC : '+hex(uc_emu.reg_read(UC_ARM_REG_PC))
+    regress.logger.info('R0  : %08x', uc_emu.reg_read(UC_ARM_REG_R0))
+    regress.logger.info('R1  : %08x', uc_emu.reg_read(UC_ARM_REG_R1))
+    regress.logger.info('R2  : %08x', uc_emu.reg_read(UC_ARM_REG_R2))
+    regress.logger.info('R3  : %08x', uc_emu.reg_read(UC_ARM_REG_R3))
+    regress.logger.info('R4  : %08x', uc_emu.reg_read(UC_ARM_REG_R4))
+    regress.logger.info('R5  : %08x', uc_emu.reg_read(UC_ARM_REG_R5))
+    regress.logger.info('R6  : %08x', uc_emu.reg_read(UC_ARM_REG_R6))
+    regress.logger.info('R7  : %08x', uc_emu.reg_read(UC_ARM_REG_R7))
+    regress.logger.info('R8  : %08x', uc_emu.reg_read(UC_ARM_REG_R8))
+    regress.logger.info('R9  : %08x', uc_emu.reg_read(UC_ARM_REG_R9))
+    regress.logger.info('R10 : %08x', uc_emu.reg_read(UC_ARM_REG_R10))
+    regress.logger.info('R11 : %08x', uc_emu.reg_read(UC_ARM_REG_R11))
+    regress.logger.info('R12 : %08x', uc_emu.reg_read(UC_ARM_REG_R12))
+    regress.logger.info('SP  : %08x', uc_emu.reg_read(UC_ARM_REG_SP))
+    regress.logger.info('LR  : %08x', uc_emu.reg_read(UC_ARM_REG_LR))
+    regress.logger.info('PC  : %08x', uc_emu.reg_read(UC_ARM_REG_PC))
+
     flags = uc_emu.reg_read(UC_ARM_REG_CPSR)
-    print 'carry : '+str(flags >> 29 & 0x1)
-    print 'overflow : '+str(flags >> 28 & 0x1)
-    print 'negative : '+str(flags >> 31 & 0x1)
-    print 'zero : '+str(flags >> 30 & 0x1)
+
+    regress.logger.info('carry    : %d', (flags >> 29) & 0b1)
+    regress.logger.info('overflow : %d', (flags >> 28) & 0b1)
+    regress.logger.info('negative : %d', (flags >> 31) & 0b1)
+    regress.logger.info('zero     : %d', (flags >> 30) & 0b1)
   
 '''
     issue #287
@@ -125,10 +130,10 @@ def UseUcToEmulate():
         uc_emu.mem_write(0, TestCode)
         uc_emu.emu_start(0, 24)
         PrintArmRegisters(uc_emu)
-        
+
     except UcError as e:
-        print("ERROR: %s" % e)
+        regress.logger.exception("ERROR: %s", e)
         PrintArmRegisters(uc_emu)
-        
+
 
 UseUcToEmulate()

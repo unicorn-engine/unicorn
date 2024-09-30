@@ -13,7 +13,7 @@ def hook_code(uc, addr, size, user_data):
 
 class REP(regress.RegressTest):
 
-    def test_rep(self):
+    def runTest(self):
         mu = Uc(UC_ARCH_X86, UC_MODE_32)
 
         mu.mem_map(0, PAGE_SIZE)

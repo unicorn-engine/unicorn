@@ -1,12 +1,14 @@
 #!/usr/bin/python
 
+import regress
+
 from unicorn import *
 from unicorn.mips_const import *
 
-import regress
 
 def intr_hook(uc, intno, data):
-    print 'interrupt=%d, v0=%d, pc=0x%08x' % (intno, uc.reg_read(UC_MIPS_REG_V0), uc.reg_read(UC_MIPS_REG_PC))
+    regress.logger.info('interrupt=%d, v0=%d, pc=0x%08x', intno, uc.reg_read(UC_MIPS_REG_V0), uc.reg_read(UC_MIPS_REG_PC))
+
 
 class MipsSyscall(regress.RegressTest):
     def test(self):

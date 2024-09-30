@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # Moshe Kravchik
 
-from __future__ import print_function
-from unicorn import *
-from unicorn.arm_const import *
 import binascii
 import regress
 
+from unicorn import *
+from unicorn.arm_const import *
 
 # code to be emulated
 
@@ -31,7 +30,8 @@ SCRATCH_ADDRESS    = 0x1000
 class SIMDNotReadArm(regress.RegressTest):
     def runTest(self):
         code = ENABLE_VFP_CODE+VLD_CODE+VST_CODE
-        print("Emulate THUMB code")
+        regress.logger.info("Emulate THUMB code")
+
         try:
             # Initialize emulator in thumb mode
             mu = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
@@ -59,55 +59,56 @@ class SIMDNotReadArm(regress.RegressTest):
             mu.reg_write(UC_ARM_REG_D6, UC_ARM_REG_D6)
             mu.reg_write(UC_ARM_REG_D7, UC_ARM_REG_D7)
 
-            print(">>> Before emulation ")
-            print("\tD6 = 0x%x" % mu.reg_read(UC_ARM_REG_D6))
-            print("\tD7 = 0x%x" % mu.reg_read(UC_ARM_REG_D7))
+            regress.logger.info(">>> Before emulation ")
+            regress.logger.info("\tD6 = 0x%x", mu.reg_read(UC_ARM_REG_D6))
+            regress.logger.info("\tD7 = 0x%x", mu.reg_read(UC_ARM_REG_D7))
+
             for i in range(UC_ARM_REG_R0, UC_ARM_REG_R12):
                 val = mu.reg_read(i)
-                print("\t %s = 0x%x" % ("R" + str(i-UC_ARM_REG_R0),val))
+                regress.logger.info("\t %s = 0x%x", "R" + str(i - UC_ARM_REG_R0), val)
 
             self.assertEqual(UC_ARM_REG_D6, mu.reg_read(UC_ARM_REG_D6))
             self.assertEqual(UC_ARM_REG_D7, mu.reg_read(UC_ARM_REG_D7))
 
             try:
                 content = mu.mem_read(SCRATCH_ADDRESS, 100)
-                print("Memory at addr 0x%X %s" % (SCRATCH_ADDRESS, binascii.hexlify(content)))
-                content = mu.mem_read(SCRATCH_ADDRESS+0x100, 100)
-                print("Memory at addr 0x%X %s" % (SCRATCH_ADDRESS+0x100, binascii.hexlify(content)))
-            except Exception, errtxt:
-                print (errtxt)
+                regress.logger.info("Memory at addr 0x%X %s", SCRATCH_ADDRESS, binascii.hexlify(content))
 
+                content = mu.mem_read(SCRATCH_ADDRESS+0x100, 100)
+                regress.logger.info("Memory at addr 0x%X %s" , SCRATCH_ADDRESS+0x100, binascii.hexlify(content))
+
+            except Exception as errtxt:
+                regress.logger.exception(errtxt)
 
             # emulate machine code in infinite time
             mu.emu_start(ADDRESS, ADDRESS + len(code))
 
             # now print out some registers
-            print(">>> Emulation done. Below is the CPU context")
+            regress.logger.info(">>> Emulation done. Below is the CPU context")
+            regress.logger.info(">>> SP = 0x%x", mu.reg_read(UC_ARM_REG_SP))
+            regress.logger.info(">>> PC = 0x%x", mu.reg_read(UC_ARM_REG_PC))
 
-            sp = mu.reg_read(UC_ARM_REG_SP)
-            print(">>> SP = 0x%x" %sp)
-            val = mu.reg_read(UC_ARM_REG_PC)
-            print(">>> PC = 0x%x" %val)
             for i in range(UC_ARM_REG_R0, UC_ARM_REG_R12):
-                val = mu.reg_read(i)
-                print(">>> %s = 0x%x" % ("R" + str(i-UC_ARM_REG_R0),val))
+                regress.logger.info(">>> %s = 0x%x", "R" + str(i-UC_ARM_REG_R0), mu.reg_read(i))
 
-            print("\tD6 = 0x%x" % mu.reg_read(UC_ARM_REG_D6))
-            print("\tD7 = 0x%x" % mu.reg_read(UC_ARM_REG_D7))
+            regress.logger.info("\tD6 = 0x%x", mu.reg_read(UC_ARM_REG_D6))
+            regress.logger.info("\tD7 = 0x%x", mu.reg_read(UC_ARM_REG_D7))
 
             try:
                 content = mu.mem_read(SCRATCH_ADDRESS, 100)
-                print("Memory at addr 0x%X %s" % (SCRATCH_ADDRESS, binascii.hexlify(content)))
+                regress.logger.info("Memory at addr 0x%X %s", SCRATCH_ADDRESS, binascii.hexlify(content))
+
                 content = mu.mem_read(SCRATCH_ADDRESS+0x100, 100)
-                print("Memory at addr 0x%X %s" % (SCRATCH_ADDRESS+0x100, binascii.hexlify(content)))
-            except Exception, errtxt:
-                print (errtxt)
+                regress.logger.info("Memory at addr 0x%X %s", SCRATCH_ADDRESS+0x100, binascii.hexlify(content))
+
+            except Exception as errtxt:
+                regress.logger.exception(errtxt)
 
             self.assertEqual(mu.reg_read(UC_ARM_REG_D6), 0x0101010101010101)
             self.assertEqual(mu.reg_read(UC_ARM_REG_D7), 0x0101010101010101)
 
         except UcError as e:
-            print("ERROR: %s" % e)
+            regress.logger.exception("ERROR: %s", e)
 
 if __name__ == '__main__':
     regress.main()
