@@ -47,15 +47,14 @@ static void avr_cpu_synchronize_from_tb(CPUState *cs, TranslationBlock *tb)
     env->pc_w = tb->pc / 2; /* internally PC points to words */
 }
 
-static void avr_cpu_reset(DeviceState *ds)
+static void avr_cpu_reset(CPUState *cs)
 {
-    CPUState *cs = CPU(ds);
     AVRCPU *cpu = AVR_CPU(cs);
     AVRCPUClass *mcc = AVR_CPU_GET_CLASS(cpu);
     CPUAVRState *env = &cpu->env;
 
     if (mcc->parent_reset)
-        mcc->parent_reset(ds);
+        mcc->parent_reset(cs);
 
     env->pc_w = 0;
     env->sregI = 1;
