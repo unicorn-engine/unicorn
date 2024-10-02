@@ -20,9 +20,11 @@
     INIT_CPU_ENV_FROM_TCG_CONTEXT(tcg_ctx)
 
 /* "qapi/error.h */
+#if 0
 #include <error.h>
 #define error_report(...) \
     (error)(EXIT_FAILURE, 0, __VA_ARGS__)
+#endif
 
 /* "exec/address-spaces.h" */
 #define address_space_memory \
