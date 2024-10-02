@@ -23,6 +23,7 @@ typedef struct {
 } arg_decode_insn5;
 
 typedef struct {
+    int noarg_;
 } arg_decode_insn6;
 
 typedef struct {
