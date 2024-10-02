@@ -1288,4 +1288,8 @@
 #define helper_wdr helper_wdr_avr
 #define gen_intermediate_code gen_intermediate_code_avr
 #define restore_state_to_opc restore_state_to_opc_avr
+
+#define reg_read reg_read_avr
+#define reg_write reg_write_avr
+#define uc_init uc_init_avr
 #endif

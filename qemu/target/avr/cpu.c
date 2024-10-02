@@ -367,6 +367,7 @@ static const AVRCPUInfo *avr_cpu_info_get(int cpu_model)
     return NULL;
 }
 
+DEFAULT_VISIBILITY
 int avr_cpu_model_valid(int cpu_model)
 {
     return avr_cpu_info_get(cpu_model) != NULL;
