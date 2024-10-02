@@ -486,7 +486,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 free(uc);
                 return UC_ERR_MODE;
             }
-            uc->init_arch = avr_uc_init;
+            uc->init_arch = uc_init_avr;
             break;
 #endif
         }
@@ -2298,8 +2298,8 @@ static context_reg_rw_t find_context_reg_rw(uc_arch arch, uc_mode mode)
 #endif
 #ifdef UNICORN_HAS_AVR
     case UC_ARCH_AVR:
-        rw->context_reg_read = avr_context_reg_read;
-        rw->context_reg_write = avr_context_reg_write;
+        rw.read = reg_read_avr;
+        rw.write = reg_write_avr;
         break;
 #endif
     }
