@@ -13,6 +13,8 @@ public interface AVRConst {
     public static final int UC_AVR_ARCH_AVR5 = 50;
     public static final int UC_AVR_ARCH_AVR51 = 51;
     public static final int UC_AVR_ARCH_AVR6 = 60;
+    public static final int UC_AVR_ARCH_AVRXMEGA = 100;
+    public static final int UC_AVR_ARCH_AVRXMEGAR2 = 101;
     public static final int UC_CPU_AVR_ARCH = 1000;
 
     // AVR CPU
@@ -25,6 +27,20 @@ public interface AVRConst {
     public static final int UC_CPU_AVR_ATMEGA256 = 60256;
     public static final int UC_CPU_AVR_ATMEGA256RFR2 = 60257;
     public static final int UC_CPU_AVR_ATMEGA2560 = 60258;
+    public static final int UC_CPU_AVR_ATXMEGA16A4 = 100016;
+    public static final int UC_CPU_AVR_ATXMEGA32A4 = 100032;
+    public static final int UC_CPU_AVR_ATXMEGA64A3 = 100064;
+    public static final int UC_CPU_AVR_ATXMEGA64A1U = 101064;
+    public static final int UC_CPU_AVR_ATXMEGA64A3U = 101065;
+    public static final int UC_CPU_AVR_ATXMEGA64A4U = 101066;
+    public static final int UC_CPU_AVR_ATXMEGA128A3 = 100128;
+    public static final int UC_CPU_AVR_ATXMEGA128A1U = 101128;
+    public static final int UC_CPU_AVR_ATXMEGA128A3U = 101129;
+    public static final int UC_CPU_AVR_ATXMEGA128A4U = 101130;
+    public static final int UC_CPU_AVR_ATXMEGA192A3 = 100192;
+    public static final int UC_CPU_AVR_ATXMEGA192A3U = 101192;
+    public static final int UC_CPU_AVR_ATXMEGA256A3 = 100256;
+    public static final int UC_CPU_AVR_ATXMEGA256A3U = 101256;
 
     // AVR memory
     public static final int UC_AVR_MEM_FLASH = 134217728;
