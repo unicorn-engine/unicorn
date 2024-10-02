@@ -223,6 +223,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = env->pc;
             break;
+        case UC_ARM64_REG_WSP:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = READ_DWORD(env->xregs[31]);
+            break;
         case UC_ARM64_REG_SP:
             CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = env->xregs[31];
@@ -262,6 +266,14 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         case UC_ARM64_REG_FPSR:
             CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = vfp_get_fpsr(env);
+            break;
+        case UC_ARM64_REG_XZR:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = 0;
+            break;
+        case UC_ARM64_REG_WZR:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = 0;
             break;
         }
     }
@@ -356,6 +368,10 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             env->pc = *(uint64_t *)value;
             *setpc = 1;
             break;
+        case UC_ARM64_REG_WSP:
+            CHECK_REG_TYPE(uint32_t);
+            WRITE_DWORD(env->xregs[31], (*(uint32_t *)value));
+            break;
         case UC_ARM64_REG_SP:
             CHECK_REG_TYPE(uint64_t);
             env->xregs[31] = *(uint64_t *)value;
@@ -396,6 +412,14 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_ARM64_REG_FPSR:
             CHECK_REG_TYPE(uint32_t);
             vfp_set_fpsr(env, *(uint32_t *)value);
+            break;
+        case UC_ARM64_REG_XZR:
+            CHECK_REG_TYPE(uint64_t);
+            // no-ops actually
+            break;
+        case UC_ARM64_REG_WZR:
+            CHECK_REG_TYPE(uint32_t);
+            // no-ops actually
             break;
         }
     }
