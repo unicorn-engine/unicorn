@@ -10,6 +10,8 @@
 #include "uc_priv.h"
 #include "unicorn_common.h"
 #include "unicorn.h"
+#include "stdio.h"
+#include "inttypes.h"
 
 ARMCPU *cpu_arm_init(struct uc_struct *uc);
 
@@ -353,6 +355,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         }
     }
 
+    CHECK_RET_DEPRECATE(ret, regid);
     return ret;
 }
 
@@ -553,6 +556,7 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         }
     }
 
+    CHECK_RET_DEPRECATE(ret, regid);
     return ret;
 }
 
