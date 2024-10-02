@@ -1,3 +1,9 @@
+unicorn-engine (2.1.1-1~bpo12+1) unstable; urgency=medium
+
+  * New upstream version 2.1.1.
+
+ -- Glenn Baker <glenn.baker@gmx.com>  Wed, 02 Oct 2024 13:27:24 +0200
+
 unicorn-engine (2.0.1.post1-4) unstable; urgency=medium
 
   * Fix build error with pybuild in dh_auto_clean
