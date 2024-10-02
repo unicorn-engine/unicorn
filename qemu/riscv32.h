@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _riscv32
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_riscv32
+#define reg_read reg_read_riscv32
+#define reg_write reg_write_riscv32
+#define uc_init uc_init_riscv32
 #define uc_add_inline_hook uc_add_inline_hook_riscv32
 #define uc_del_inline_hook uc_del_inline_hook_riscv32
 #define tb_invalidate_phys_range tb_invalidate_phys_range_riscv32
@@ -119,7 +123,10 @@
 #define memory_map memory_map_riscv32
 #define memory_map_io memory_map_io_riscv32
 #define memory_map_ptr memory_map_ptr_riscv32
+#define memory_cow memory_cow_riscv32
 #define memory_unmap memory_unmap_riscv32
+#define memory_moveout memory_moveout_riscv32
+#define memory_movein memory_movein_riscv32
 #define memory_free memory_free_riscv32
 #define flatview_unref flatview_unref_riscv32
 #define address_space_get_flatview address_space_get_flatview_riscv32
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_riscv32
 #define memory_region_add_subregion memory_region_add_subregion_riscv32
 #define memory_region_del_subregion memory_region_del_subregion_riscv32
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_riscv32
 #define memory_region_find memory_region_find_riscv32
+#define memory_region_filter_subregions memory_region_filter_subregions_riscv32
 #define memory_listener_register memory_listener_register_riscv32
 #define memory_listener_unregister memory_listener_unregister_riscv32
 #define address_space_remove_listeners address_space_remove_listeners_riscv32
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_riscv32
 #define memory_region_init_ram memory_region_init_ram_riscv32
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_riscv32
+#define find_memory_mapping find_memory_mapping_riscv32
 #define exec_inline_op exec_inline_op_riscv32
 #define floatx80_default_nan floatx80_default_nan_riscv32
 #define float_raise float_raise_riscv32
@@ -1277,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_riscv32
 #define gen_helper_cpsr_read gen_helper_cpsr_read_riscv32
 #define gen_helper_cpsr_write gen_helper_cpsr_write_riscv32
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_riscv32
 #define riscv_cpu_mmu_index riscv_cpu_mmu_index_riscv32
 #define riscv_cpu_exec_interrupt riscv_cpu_exec_interrupt_riscv32
 #define riscv_cpu_fp_enabled riscv_cpu_fp_enabled_riscv32
@@ -1360,9 +1371,6 @@
 #define riscv_translate_init riscv_translate_init_riscv32
 #define restore_state_to_opc restore_state_to_opc_riscv32
 #define cpu_riscv_init cpu_riscv_init_riscv32
-#define riscv_reg_reset riscv_reg_reset_riscv32
-#define riscv_reg_read riscv_reg_read_riscv32
-#define riscv_reg_write riscv_reg_write_riscv32
 #define helper_fcvt_l_s helper_fcvt_l_s_riscv32
 #define helper_fcvt_lu_s helper_fcvt_lu_s_riscv32
 #define helper_fcvt_s_l helper_fcvt_s_l_riscv32

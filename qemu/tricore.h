@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _tricore
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_tricore
+#define reg_read reg_read_tricore
+#define reg_write reg_write_tricore
+#define uc_init uc_init_tricore
 #define uc_add_inline_hook uc_add_inline_hook_tricore
 #define uc_del_inline_hook uc_del_inline_hook_tricore
 #define tb_invalidate_phys_range tb_invalidate_phys_range_tricore
@@ -119,7 +123,10 @@
 #define memory_map memory_map_tricore
 #define memory_map_io memory_map_io_tricore
 #define memory_map_ptr memory_map_ptr_tricore
+#define memory_cow memory_cow_tricore
 #define memory_unmap memory_unmap_tricore
+#define memory_moveout memory_moveout_tricore
+#define memory_movein memory_movein_tricore
 #define memory_free memory_free_tricore
 #define flatview_unref flatview_unref_tricore
 #define address_space_get_flatview address_space_get_flatview_tricore
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_tricore
 #define memory_region_add_subregion memory_region_add_subregion_tricore
 #define memory_region_del_subregion memory_region_del_subregion_tricore
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_tricore
 #define memory_region_find memory_region_find_tricore
+#define memory_region_filter_subregions memory_region_filter_subregions_tricore
 #define memory_listener_register memory_listener_register_tricore
 #define memory_listener_unregister memory_listener_unregister_tricore
 #define address_space_remove_listeners address_space_remove_listeners_tricore
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_tricore
 #define memory_region_init_ram memory_region_init_ram_tricore
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_tricore
+#define find_memory_mapping find_memory_mapping_tricore
 #define exec_inline_op exec_inline_op_tricore
 #define floatx80_default_nan floatx80_default_nan_tricore
 #define float_raise float_raise_tricore
@@ -1277,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_tricore
 #define gen_helper_cpsr_read gen_helper_cpsr_read_tricore
 #define gen_helper_cpsr_write gen_helper_cpsr_write_tricore
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_tricore
 #define helper_fadd helper_fadd_tricore
 #define helper_fsub helper_fsub_tricore
 #define helper_fmul helper_fmul_tricore

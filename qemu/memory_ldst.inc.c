@@ -30,13 +30,10 @@ static inline uint32_t glue(address_space_ldl_internal, SUFFIX)(struct uc_struct
     hwaddr l = 4;
     hwaddr addr1;
     MemTxResult r;
-    bool release_lock = false;
 
     //RCU_READ_LOCK();
     mr = TRANSLATE(addr, &addr1, &l, false, attrs);
     if (l < 4 || !memory_access_is_direct(mr, false)) {
-        release_lock |= prepare_mmio_access(mr);
-
         /* I/O case */
         r = memory_region_dispatch_read(uc, mr, addr1, &val,
                                         MO_32 | devend_memop(endian), attrs);
@@ -95,13 +92,10 @@ static inline uint64_t glue(address_space_ldq_internal, SUFFIX)(struct uc_struct
     hwaddr l = 8;
     hwaddr addr1;
     MemTxResult r;
-    bool release_lock = false;
 
     //RCU_READ_LOCK();
     mr = TRANSLATE(addr, &addr1, &l, false, attrs);
     if (l < 8 || !memory_access_is_direct(mr, false)) {
-        release_lock |= prepare_mmio_access(mr);
-
         /* I/O case */
         r = memory_region_dispatch_read(uc, mr, addr1, &val,
                                         MO_64 | devend_memop(endian), attrs);
@@ -158,13 +152,10 @@ uint32_t glue(address_space_ldub, SUFFIX)(struct uc_struct *uc, ARG1_DECL,
     hwaddr l = 1;
     hwaddr addr1;
     MemTxResult r;
-    bool release_lock = false;
 
     //RCU_READ_LOCK();
     mr = TRANSLATE(addr, &addr1, &l, false, attrs);
     if (!memory_access_is_direct(mr, false)) {
-        release_lock |= prepare_mmio_access(mr);
-
         /* I/O case */
         r = memory_region_dispatch_read(uc, mr, addr1, &val, MO_8, attrs);
     } else {
@@ -191,13 +182,10 @@ static inline uint32_t glue(address_space_lduw_internal, SUFFIX)(struct uc_struc
     hwaddr l = 2;
     hwaddr addr1;
     MemTxResult r;
-    bool release_lock = false;
 
     //RCU_READ_LOCK();
     mr = TRANSLATE(addr, &addr1, &l, false, attrs);
     if (l < 2 || !memory_access_is_direct(mr, false)) {
-        release_lock |= prepare_mmio_access(mr);
-
         /* I/O case */
         r = memory_region_dispatch_read(uc, mr, addr1, &val,
                                         MO_16 | devend_memop(endian), attrs);
@@ -256,13 +244,10 @@ void glue(address_space_stl_notdirty, SUFFIX)(struct uc_struct *uc, ARG1_DECL,
     hwaddr l = 4;
     hwaddr addr1;
     MemTxResult r;
-    bool release_lock = false;
 
     //RCU_READ_LOCK();
     mr = TRANSLATE(addr, &addr1, &l, true, attrs);
     if (l < 4 || !memory_access_is_direct(mr, true)) {
-        release_lock |= prepare_mmio_access(mr);
-
         r = memory_region_dispatch_write(uc, mr, addr1, val, MO_32, attrs);
     } else {
         ptr = qemu_map_ram_ptr(mr->uc, mr->ram_block, addr1);
@@ -286,12 +271,10 @@ static inline void glue(address_space_stl_internal, SUFFIX)(struct uc_struct *uc
     hwaddr l = 4;
     hwaddr addr1;
     MemTxResult r;
-    bool release_lock = false;
 
     //RCU_READ_LOCK();
     mr = TRANSLATE(addr, &addr1, &l, true, attrs);
     if (l < 4 || !memory_access_is_direct(mr, true)) {
-        release_lock |= prepare_mmio_access(mr);
         r = memory_region_dispatch_write(uc, mr, addr1, val,
                                          MO_32 | devend_memop(endian), attrs);
     } else {
@@ -346,12 +329,10 @@ void glue(address_space_stb, SUFFIX)(struct uc_struct *uc, ARG1_DECL,
     hwaddr l = 1;
     hwaddr addr1;
     MemTxResult r;
-    bool release_lock = false;
 
     //RCU_READ_LOCK();
     mr = TRANSLATE(addr, &addr1, &l, true, attrs);
     if (!memory_access_is_direct(mr, true)) {
-        release_lock |= prepare_mmio_access(mr);
         r = memory_region_dispatch_write(uc, mr, addr1, val, MO_8, attrs);
     } else {
         /* RAM case */
@@ -376,12 +357,10 @@ static inline void glue(address_space_stw_internal, SUFFIX)(struct uc_struct *uc
     hwaddr l = 2;
     hwaddr addr1;
     MemTxResult r;
-    bool release_lock = false;
 
     //RCU_READ_LOCK();
     mr = TRANSLATE(addr, &addr1, &l, true, attrs);
     if (l < 2 || !memory_access_is_direct(mr, true)) {
-        release_lock |= prepare_mmio_access(mr);
         r = memory_region_dispatch_write(uc, mr, addr1, val,
                                          MO_16 | devend_memop(endian), attrs);
     } else {
@@ -437,12 +416,10 @@ static void glue(address_space_stq_internal, SUFFIX)(struct uc_struct *uc, ARG1_
     hwaddr l = 8;
     hwaddr addr1;
     MemTxResult r;
-    bool release_lock = false;
 
     //RCU_READ_LOCK();
     mr = TRANSLATE(addr, &addr1, &l, true, attrs);
     if (l < 8 || !memory_access_is_direct(mr, true)) {
-        release_lock |= prepare_mmio_access(mr);
         r = memory_region_dispatch_write(uc, mr, addr1, val,
                                          MO_64 | devend_memop(endian), attrs);
     } else {

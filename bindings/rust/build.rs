@@ -84,6 +84,43 @@ fn build_with_cmake() {
         config.generator("Ninja");
     }
 
+    let mut archs = String::new();
+
+    if std::env::var("CARGO_FEATURE_ARCH_X86").is_ok() {
+        archs.push_str("x86;");
+    }
+    if std::env::var("CARGO_FEATURE_ARCH_ARM").is_ok() {
+        archs.push_str("arm;");
+    }
+    if std::env::var("CARGO_FEATURE_ARCH_AARCH64").is_ok() {
+        archs.push_str("aarch64;");
+    }
+    if std::env::var("CARGO_FEATURE_ARCH_RISCV").is_ok() {
+        archs.push_str("riscv;");
+    }
+    if std::env::var("CARGO_FEATURE_ARCH_MIPS").is_ok() {
+        archs.push_str("mips;");
+    }
+    if std::env::var("CARGO_FEATURE_ARCH_SPARC").is_ok() {
+        archs.push_str("sparc;");
+    }
+    if std::env::var("CARGO_FEATURE_ARCH_M68K").is_ok() {
+        archs.push_str("m68k;");
+    }
+    if std::env::var("CARGO_FEATURE_ARCH_PPC").is_ok() {
+        archs.push_str("ppc;");
+    }
+    if std::env::var("CARGO_FEATURE_ARCH_S390X").is_ok() {
+        archs.push_str("s390x;");
+    }
+    if std::env::var("CARGO_FEATURE_ARCH_TRICORE").is_ok() {
+        archs.push_str("tricore;");
+    }
+
+    if !archs.is_empty() {
+        archs.pop();
+    }
+
     // need to clear build target and append "build" to the path because
     // unicorn's CMakeLists.txt doesn't properly support 'install', so we use
     // the build artifacts from the build directory, which cmake crate sets
@@ -91,6 +128,7 @@ fn build_with_cmake() {
     let dst = config
         .define("UNICORN_BUILD_TESTS", "OFF")
         .define("UNICORN_INSTALL", "OFF")
+        .define("UNICORN_ARCH", archs)
         .no_build_target(true)
         .build();
     println!(
@@ -100,7 +138,11 @@ fn build_with_cmake() {
 
     // Lazymio(@wtdcode): Dynamic link may break. See: https://github.com/rust-lang/cargo/issues/5077
     if cfg!(feature = "dynamic_linkage") {
-        println!("cargo:rustc-link-lib=dylib=unicorn");
+        if compiler.is_like_msvc() {
+            println!("cargo:rustc-link-lib=dylib=unicorn-import");
+        } else {
+            println!("cargo:rustc-link-lib=dylib=unicorn");
+        }
     } else {
         println!("cargo:rustc-link-lib=static=unicorn");
     }
@@ -121,7 +163,11 @@ fn main() {
                 println!("cargo:rustc-link-search=native={}", dir.to_str().unwrap());
             }
             if cfg!(feature = "dynamic_linkage") {
-                println!("cargo:rustc-link-lib=dylib=unicorn");
+                if cc::Build::new().get_compiler().is_like_msvc() {
+                    println!("cargo:rustc-link-lib=dylib=unicorn-import");
+                } else {
+                    println!("cargo:rustc-link-lib=dylib=unicorn");
+                }
             } else {
                 println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
                 println!("cargo:rustc-link-lib=static=unicorn");

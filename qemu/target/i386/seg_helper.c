@@ -973,14 +973,17 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
 {
     // Unicorn: call registered syscall hooks
     struct hook *hook;
+    uc_engine *uc = env->uc;
+
     HOOK_FOREACH_VAR_DECLARE;
     HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
         if (hook->to_delete)
             continue;
         if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
-        if (hook->insn == UC_X86_INS_SYSCALL)
-            ((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data);
+        if (hook->insn == UC_X86_INS_SYSCALL) {
+            JIT_CALLBACK_GUARD(((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data));
+        }
 
         // the last callback may already asked to stop emulation
         if (env->uc->stop_request)
@@ -2348,14 +2351,17 @@ void helper_sysenter(CPUX86State *env, int next_eip_addend)
 {
     // Unicorn: call registered SYSENTER hooks
     struct hook *hook;
+    uc_engine *uc = env->uc;
+
     HOOK_FOREACH_VAR_DECLARE;
     HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
         if (hook->to_delete)
             continue;
         if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
-        if (hook->insn == UC_X86_INS_SYSENTER)
-            ((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data);
+        if (hook->insn == UC_X86_INS_SYSENTER) {
+            JIT_CALLBACK_GUARD(((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data));
+        }
 
         // the last callback may already asked to stop emulation
         if (env->uc->stop_request)

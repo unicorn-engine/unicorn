@@ -38,6 +38,12 @@ jobs:
               os: ubuntu-latest, 
               arch: x64, 
               python-ver: '3.8', 
+              name: 'musllinux'
+            }
+          - { 
+              os: ubuntu-latest, 
+              arch: x64, 
+              python-ver: '3.8', 
               name: 'manylinux2014_x86_64'
             }
           - { 
@@ -59,22 +65,28 @@ jobs:
               name: 'sdist'
             }
           - { 
-             os: macos-latest,
-             arch: x64,
+             os: macos-12,
+             arch: x86_64,
              python-ver: '3.8',
              name: 'macos_x86_64'
             }
+          - {
+              os: macos-14,
+              arch: arm64,
+              python-ver: '3.10',
+              name: 'macos_arm64'
+            }
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: '🛠️ Set up Python'
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.config.python-ver }}
 
     - name: '🛠️ Add msbuild to PATH'
       if: contains(matrix.config.name, 'win')
-      uses: microsoft/setup-msbuild@v1.0.3
+      uses: microsoft/setup-msbuild@v2
       with:
         vs-version: '16.5'
     
@@ -96,9 +108,14 @@ jobs:
       run: |
         choco install ninja cmake
 
-    - name: '🛠️ Install dependencies'
+    - name: '🛠️ macOS dependencies'
+      if: contains(matrix.config.name, 'macos')
       run: |
-        pip install setuptools wheel
+        brew install ninja
+
+    - name: '🛠️ pip dependencies'
+      run: |
+        pip install --upgrade setuptools wheel
 
     - name: '🚧 Build distribution'
       shell: bash 
@@ -118,14 +135,19 @@ jobs:
               docker run --rm -v `pwd`/:/work dockcross/manylinux2014-x64 > ./dockcross
               chmod +x ./dockcross
               ./dockcross bindings/python/build_wheel.sh
+        elif [ ${{ matrix.config.name }} == 'musllinux' ]; then
+              docker run --rm -v `pwd`:/work -w /work python:3.7-alpine sh /work/bindings/python/musl_wheel.sh
         elif [ ${{ matrix.config.name }} == 'sdist' ]; then
               cd bindings/python && python setup.py sdist
+        elif [ ${{ matrix.config.name }} == 'macos_arm64' ]; then
+              cd bindings/python && _PYTHON_HOST_PLATFORM="macosx-11.0-arm64" ARCHFLAGS="-arch arm64" python setup.py bdist_wheel
         else
               cd bindings/python && python setup.py bdist_wheel
         fi
     - name: '📤 Upload artifact'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
+         name: ${{ matrix.config.name }}
          path: ${{ github.workspace }}/bindings/python/dist/*
 
   publish:
@@ -133,13 +155,13 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags')
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          merge-multiple: true
           path: dist
 
       - name: '📦 Publish distribution to PyPI'
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.pypi_pass }}

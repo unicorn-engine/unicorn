@@ -2,6 +2,7 @@
 #define QEMU_CPUS_H
 
 #include "qemu/timer.h"
+#include "hw/core/cpu.h"
 
 /* cpus.c */
 bool qemu_in_vcpu_thread(void);

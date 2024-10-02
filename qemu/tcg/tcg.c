@@ -406,6 +406,7 @@ static void tcg_region_assign(TCGContext *s, size_t curr_region)
     s->code_gen_buffer = start;
     s->code_gen_ptr = start;
     s->code_gen_buffer_size = (char *)end - (char *)start;
+
     memset(s->code_gen_buffer, 0x00, s->code_gen_buffer_size);
     s->code_gen_highwater = (char *)end - TCG_HIGHWATER;
 }
@@ -537,6 +538,7 @@ void tcg_region_init(TCGContext *tcg_ctx)
     }
 
     tcg_ctx->tree = g_tree_new(tb_tc_cmp);
+
 }
 
 /*
@@ -3726,7 +3728,7 @@ int tcg_gen_code(TCGContext *s, TranslationBlock *tb)
     TCGOp *op;
 
 #ifndef NDEBUG
-    if (getenv("UNICORN_DEBUG")) {
+    if (is_log_level_active(CPU_LOG_TB_IN_ASM)) {
         tcg_dump_ops(s, false, "TCG before optimization:");
     }
 #endif
@@ -3775,7 +3777,7 @@ int tcg_gen_code(TCGContext *s, TranslationBlock *tb)
 #endif
 
 #ifndef NDEBUG
-    if (getenv("UNICORN_DEBUG")) {
+    if (is_log_level_active(CPU_LOG_TB_IN_ASM)) {
         tcg_dump_ops(s, false, "TCG before codegen:");
     }
 #endif

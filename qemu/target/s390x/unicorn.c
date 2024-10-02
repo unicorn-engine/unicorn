@@ -43,7 +43,7 @@ static void s390_release(void *ctx)
     // TODO: Anymore to free?
 }
 
-void s390_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env = uc->cpu->env_ptr;
 
@@ -53,120 +53,67 @@ void s390_reg_reset(struct uc_struct *uc)
     env->psw.addr = 0;
 }
 
-static void reg_read(CPUS390XState *env, unsigned int regid, void *value)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
+    CPUS390XState *env = _env;
+    uc_err ret = UC_ERR_ARG;
+
     if (regid >= UC_S390X_REG_R0 && regid <= UC_S390X_REG_R15) {
+        CHECK_REG_TYPE(uint64_t);
         *(uint64_t *)value = env->regs[regid - UC_S390X_REG_R0];
-        return;
-    }
-
-    if (regid >= UC_S390X_REG_A0 && regid <= UC_S390X_REG_A15) {
+    } else if (regid >= UC_S390X_REG_A0 && regid <= UC_S390X_REG_A15) {
+        CHECK_REG_TYPE(uint32_t);
         *(uint32_t *)value = env->regs[regid - UC_S390X_REG_A0];
-        return;
-    }
-
-    switch (regid) {
-    default:
-        break;
-    case UC_S390X_REG_PC:
-        *(uint64_t *)value = env->psw.addr;
-        break;
-    case UC_S390X_REG_PSWM:
-        *(uint64_t *)value = get_psw_mask(env);
-        break;
-    }
-}
-
-static void reg_write(CPUS390XState *env, unsigned int regid, const void *value)
-{
-    if (regid >= UC_S390X_REG_R0 && regid <= UC_S390X_REG_R15) {
-        env->regs[regid - UC_S390X_REG_R0] = *(uint64_t *)value;
-        return;
-    }
-
-    if (regid >= UC_S390X_REG_A0 && regid <= UC_S390X_REG_A15) {
-        env->regs[regid - UC_S390X_REG_A0] = *(uint32_t *)value;
-        return;
-    }
-
-    switch (regid) {
-    default:
-        break;
-    case UC_S390X_REG_PC:
-        env->psw.addr = *(uint64_t *)value;
-        break;
-    case UC_S390X_REG_PSWM:
-        env->psw.mask = *(uint64_t *)value;
-        env->cc_op = (env->psw.mask >> 44) & 3;
-        break;
-    }
-}
-
-static int s390_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                         int count)
-{
-    CPUS390XState *env = &(S390_CPU(uc->cpu)->env);
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        reg_read(env, regid, value);
-    }
-
-    return 0;
-}
-
-static int s390_reg_write(struct uc_struct *uc, unsigned int *regs,
-                          void *const *vals, int count)
-{
-    CPUS390XState *env = &(S390_CPU(uc->cpu)->env);
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        reg_write(env, regid, value);
-        if (regid == UC_S390X_REG_PC) {
-            // force to quit execution and flush TB
-            uc->quit_request = true;
-            uc_emu_stop(uc);
+    } else {
+        switch (regid) {
+        default:
+            break;
+        case UC_S390X_REG_PC:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->psw.addr;
+            break;
+        case UC_S390X_REG_PSWM:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = get_psw_mask(env);
+            break;
         }
     }
 
-    return 0;
+    return ret;
 }
 
 DEFAULT_VISIBILITY
-int s390_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void **vals, int count)
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
-    CPUS390XState *env = (CPUS390XState *)ctx->data;
-    int i;
+    CPUS390XState *env = _env;
+    uc_err ret = UC_ERR_ARG;
 
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        reg_read(env, regid, value);
+    if (regid >= UC_S390X_REG_R0 && regid <= UC_S390X_REG_R15) {
+        CHECK_REG_TYPE(uint64_t);
+        env->regs[regid - UC_S390X_REG_R0] = *(uint64_t *)value;
+    } else if (regid >= UC_S390X_REG_A0 && regid <= UC_S390X_REG_A15) {
+        CHECK_REG_TYPE(uint32_t);
+        env->regs[regid - UC_S390X_REG_A0] = *(uint32_t *)value;
+    } else {
+        switch (regid) {
+        default:
+            break;
+        case UC_S390X_REG_PC:
+            CHECK_REG_TYPE(uint64_t);
+            env->psw.addr = *(uint64_t *)value;
+            *setpc = 1;
+            break;
+        case UC_S390X_REG_PSWM:
+            CHECK_REG_TYPE(uint64_t);
+            env->psw.mask = *(uint64_t *)value;
+            env->cc_op = (env->psw.mask >> 44) & 3;
+            break;
+        }
     }
-
-    return 0;
-}
-
-DEFAULT_VISIBILITY
-int s390_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, int count)
-{
-    CPUS390XState *env = (CPUS390XState *)ctx->data;
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        reg_write(env, regid, value);
-    }
-
-    return 0;
+    return ret;
 }
 
 static int s390_cpus_init(struct uc_struct *uc, const char *cpu_model)
@@ -181,12 +128,12 @@ static int s390_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-void s390_uc_init(struct uc_struct *uc)
+void uc_init(struct uc_struct *uc)
 {
     uc->release = s390_release;
-    uc->reg_read = s390_reg_read;
-    uc->reg_write = s390_reg_write;
-    uc->reg_reset = s390_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->set_pc = s390_set_pc;
     uc->get_pc = s390_get_pc;
     uc->cpus_init = s390_cpus_init;

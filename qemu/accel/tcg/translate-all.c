@@ -36,8 +36,8 @@
 #include "sysemu/tcg.h"
 #include "uc_priv.h"
 
-static bool tb_exec_is_locked(TCGContext*);
-static void tb_exec_change(TCGContext*, bool locked);
+static bool tb_exec_is_locked(struct uc_struct*);
+static void tb_exec_change(struct uc_struct*, bool locked);
 
 /* #define DEBUG_TB_INVALIDATE */
 /* #define DEBUG_TB_FLUSH */
@@ -522,6 +522,7 @@ static inline void page_unlock_tb(struct uc_struct *uc, const TranslationBlock *
     }
 }
 
+#if 0
 static inline struct page_entry *
 page_entry_new(PageDesc *pd, tb_page_addr_t index)
 {
@@ -542,7 +543,6 @@ static void page_entry_destroy(gpointer p)
     g_free(pe);
 }
 
-#if 0
 /* returns false on success */
 static bool page_entry_trylock(struct page_entry *pe)
 {
@@ -582,7 +582,6 @@ static gboolean page_entry_unlock(gpointer key, gpointer value, gpointer data)
     }
     return FALSE;
 }
-#endif
 
 /*
  * Trylock a page, and if successful, add the page to a collection.
@@ -613,20 +612,14 @@ static bool page_trylock_add(struct uc_struct *uc, struct page_collection *set, 
      */
     if (set->max == NULL || pe->index > set->max->index) {
         set->max = pe;
-#if 0
         do_page_entry_lock(pe);
-#endif
         return false;
     }
     /*
      * Try to acquire out-of-order lock; if busy, return busy so that we acquire
      * locks in order.
      */
-#if 0
     return page_entry_trylock(pe);
-#else
-    return 0;
-#endif
 }
 
 static gint tb_page_addr_cmp(gconstpointer ap, gconstpointer bp, gpointer udata)
@@ -641,6 +634,7 @@ static gint tb_page_addr_cmp(gconstpointer ap, gconstpointer bp, gpointer udata)
     }
     return 1;
 }
+#endif
 
 /*
  * Lock a range of pages ([@start,@end[) as well as the pages of all
@@ -650,6 +644,7 @@ static gint tb_page_addr_cmp(gconstpointer ap, gconstpointer bp, gpointer udata)
 struct page_collection *
 page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end)
 {
+#if 0
     struct page_collection *set = g_malloc(sizeof(*set));
     tb_page_addr_t index;
     PageDesc *pd;
@@ -664,9 +659,7 @@ page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t 
     assert_no_pages_locked();
 
  retry:
-#if 0
     g_tree_foreach(set->tree, page_entry_lock, NULL);
-#endif
 
     for (index = start; index <= end; index++) {
         TranslationBlock *tb;
@@ -677,9 +670,7 @@ page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t 
             continue;
         }
         if (page_trylock_add(uc, set, index << TARGET_PAGE_BITS)) {
-#if 0
             g_tree_foreach(set->tree, page_entry_unlock, NULL);
-#endif
             goto retry;
         }
         assert_page_locked(pd);
@@ -688,21 +679,24 @@ page_collection_lock(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t 
                 (tb->page_addr[1] != -1 &&
                  page_trylock_add(uc, set, tb->page_addr[1]))) {
                 /* drop all locks, and reacquire in order */
-#if 0
                 g_tree_foreach(set->tree, page_entry_unlock, NULL);
-#endif
                 goto retry;
             }
         }
     }
     return set;
+#else
+    return NULL;
+#endif
 }
 
 void page_collection_unlock(struct page_collection *set)
 {
+#if 0
     /* entries are unlocked and freed via page_entry_destroy */
     g_tree_destroy(set->tree);
     g_free(set);
+#endif
 }
 
 static void page_lock_pair(struct uc_struct *uc, PageDesc **ret_p1, tb_page_addr_t phys1,
@@ -869,17 +863,145 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     return buf;
 }
 #elif defined(_WIN32)
+#define COMMIT_COUNT (1024) // Commit 4MB per exception
+#define CLOSURE_SIZE (4096)
+
+#ifdef _WIN64
+static LONG code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct uc_struct *uc)
+#else
+/*
+The first two DWORD or smaller arguments that are found in the argument list
+from left to right are passed in ECX and EDX registers; all other arguments
+are passed on the stack from right to left.
+*/
+static LONG __fastcall code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct uc_struct* uc)
+#endif
+{
+    PEXCEPTION_RECORD record = ptr->ExceptionRecord;
+    if (record->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+        uint8_t* base = (uint8_t*)(record->ExceptionInformation[1]);
+        uint8_t* left = uc->tcg_ctx->initial_buffer;
+        uint8_t* right = left + uc->tcg_ctx->initial_buffer_size;
+        if (left && base >= left && base < right) {
+            // It's our region
+            uint8_t* base_end = base + COMMIT_COUNT * 4096;
+            uint32_t size = COMMIT_COUNT * 4096;
+            if (base_end >= right) {
+                size = base_end - base;
+                // whoops, we are almost run out of memory! Commit all instead
+            }
+            if (VirtualAlloc(base, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)) {
+                return EXCEPTION_CONTINUE_EXECUTION;
+            } else {
+                return EXCEPTION_CONTINUE_SEARCH;
+            }
+        }
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static inline void may_remove_handler(struct uc_struct *uc) {
+    if (uc->seh_closure) {
+        if (uc->seh_handle) {
+            RemoveVectoredExceptionHandler(uc->seh_handle);
+        }
+        VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
+    }
+}
+
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
     size_t size = tcg_ctx->code_gen_buffer_size;
-    return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT,
-                        PAGE_EXECUTE_READWRITE);
+    uint8_t *closure, *data;
+    uint8_t *ptr;
+    void* handler = code_gen_buffer_handler;
+
+    may_remove_handler(uc);    
+
+    // Naive trampoline implementation
+    closure = VirtualAlloc(NULL, CLOSURE_SIZE, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    if (!closure) {
+        return NULL;
+    }
+    uc->seh_closure = closure;
+    data = closure + CLOSURE_SIZE /2;
+    
+#ifdef _WIN64
+    ptr = closure;
+    *ptr = 0x48; // REX.w
+    ptr += 1;
+    *ptr = 0xb8; // mov rax
+    ptr += 1;
+    memcpy(ptr, &data, 8); // mov rax, &data
+    ptr += 8;
+    // ; rax = &data
+    // mov [rax], rdx ; save rdx
+    // mov rdx, [rax+0x8] ; move uc pointer to 2nd arg
+    // sub rsp, 0x10; reserve 2 slots as ms fastcall requires
+    // call [rax + 0x10] ; go to handler
+    const char tramp[] = "\x48\x89\x10\x48\x8b\x50\x08\x48\x83\xec\x10\xff\x50\x10";
+    memcpy(ptr, (void*)tramp, sizeof(tramp) - 1); // Note last zero!
+    ptr += sizeof(tramp) - 1;
+    *ptr = 0x48; // REX.w
+    ptr += 1;
+    *ptr = 0xba; // mov rdx
+    ptr += 1;
+    memcpy(ptr, &data, 8); // mov rdx, &data
+    ptr += 8;
+    // ; rdx = &data
+    // add rsp, 0x10 ; clean stack
+    // mov rdx, [rdx] ; restore rdx
+    // ret
+    const char tramp2[] = "\x48\x83\xc4\x10\x48\x8b\x12\xc3";
+    memcpy(ptr, (void*)tramp2, sizeof(tramp2) - 1);
+
+    memcpy(data + 0x8,  (void*)&uc, 8);
+    memcpy(data + 0x10, (void*)&handler, 8);
+#else
+    ptr = closure;
+    *ptr = 0xb8; // mov eax
+    ptr += 1;
+    memcpy(ptr, (void*)&data, 4); // mov eax, &data
+    ptr += 4;
+    // ; eax = &data
+    // mov [eax], edx; save edx
+    // mov [eax+0x4], ecx; save ecx
+    // mov ecx, [esp+4]; get ptr to exception because of cdecl
+    // mov edx, [eax+0x8]; get ptr to uc
+    // call [eax + 0xC]; get ptr to our handler, it's fastcall so we don't clean stac
+    const char tramp[] = "\x89\x10\x89\x48\x04\x8b\x4c\x24\x04\x8b\x50\x08\xff\x50\x0c";
+    memcpy(ptr, (void*)tramp, sizeof(tramp) - 1);
+    ptr += sizeof(tramp) - 1;
+    *ptr = 0xb9; // mov ecx
+    ptr += 1;
+    memcpy(ptr, (void*)&data, 4); // mov ecx, &data
+    ptr += 4;
+
+    // mov edx, [ecx] ; restore edx
+    // mov ecx, [ecx+4] ; restore ecx
+    // ret
+    const char tramp2[] = "\x8b\x11\x8b\x49\x04\xc3";
+    memcpy(ptr, (void*)tramp2, sizeof(tramp2) - 1);
+
+    memcpy(data + 0x8,  (void*)&uc, 4);
+    memcpy(data + 0xC, (void*)&handler, 4);
+#endif
+
+    uc->seh_handle = AddVectoredExceptionHandler(0, (PVECTORED_EXCEPTION_HANDLER)closure);
+    if (!uc->seh_handle) {
+        VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
+        uc->seh_closure = NULL;
+        return NULL;
+    }
+
+    return VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 }
 void free_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
     if (tcg_ctx->initial_buffer) {
+        may_remove_handler(uc);
         VirtualFree(tcg_ctx->initial_buffer, 0, MEM_RELEASE);
     }
 }
@@ -957,6 +1079,7 @@ static inline void code_gen_alloc(struct uc_struct *uc, size_t tb_size)
     tcg_ctx->code_gen_buffer = alloc_code_gen_buffer(uc);
     tcg_ctx->initial_buffer = tcg_ctx->code_gen_buffer;
     tcg_ctx->initial_buffer_size = tcg_ctx->code_gen_buffer_size;
+    uc->tcg_buffer_size = tcg_ctx->initial_buffer_size;
     if (tcg_ctx->code_gen_buffer == NULL) {
         fprintf(stderr, "Could not allocate dynamic translator buffer\n");
         exit(1);
@@ -986,7 +1109,9 @@ static void tb_htable_init(struct uc_struct *uc)
 
 
 static void uc_tb_flush(struct uc_struct *uc) {
+    tb_exec_unlock(uc);
     tb_flush(uc->cpu);
+    tb_exec_lock(uc);
 }
 
 static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t len) 
@@ -1000,11 +1125,13 @@ static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t l
         return;
     }
 
-    // GPA to GVA
+    // GPA to ram addr
+    // https://raw.githubusercontent.com/android/platform_external_qemu/master/docs/QEMU-MEMORY-MANAGEMENT.TXT
     // start_addr : GPA
-    // addr: GVA
+    // start (returned): ram addr
     // (GPA -> HVA via memory_region_get_ram_addr(mr) + GPA + block->host,
-    // HVA->HPA via host mmu)
+    // GVA -> GPA via tlb & softmmu
+    // HVA -> HPA via host mmu)
     start = get_page_addr_code(uc->cpu->env_ptr, start_addr) & (target_ulong)(-1);
 
     uc->nested_level--;
@@ -1079,7 +1206,7 @@ static uc_err uc_gen_tb(struct uc_struct *uc, uint64_t addr, uc_tb *out_tb)
 /* Must be called before using the QEMU cpus. 'tb_size' is the size
    (in bytes) allocated to the translation buffer. Zero means default
    size. */
-void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
+void tcg_exec_init(struct uc_struct *uc, uint32_t tb_size)
 {
     /* remove tcg object. init here. */
     /* tcg class init: tcg-all.c:tcg_accel_class_init(), skip all. */
@@ -1092,8 +1219,9 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
     page_init(uc);
     tb_htable_init(uc);
     code_gen_alloc(uc, tb_size);
-    tb_exec_unlock(uc->tcg_ctx);
+    tb_exec_unlock(uc);
     tcg_prologue_init(uc->tcg_ctx);
+    tb_exec_lock(uc);
     /* cpu_interrupt_handler is not used in uc1 */
     uc->l1_map = g_malloc0(sizeof(void *) * V_L1_MAX_SIZE);
     /* Invalidate / Cache TBs */
@@ -1366,8 +1494,8 @@ static void do_tb_phys_invalidate(TCGContext *tcg_ctx, TranslationBlock *tb, boo
     bool code_gen_locked;
 
     assert_memory_lock();
-    code_gen_locked = tb_exec_is_locked(tcg_ctx);
-    tb_exec_unlock(tcg_ctx);
+    code_gen_locked = tb_exec_is_locked(uc);
+    tb_exec_unlock(uc);
 
     /* make sure no further incoming jumps will be chained to this TB */
     tb->cflags = tb->cflags | CF_INVALID;
@@ -1378,7 +1506,7 @@ static void do_tb_phys_invalidate(TCGContext *tcg_ctx, TranslationBlock *tb, boo
                      tb->trace_vcpu_dstate);
     if (!(tb->cflags & CF_NOCACHE) &&
         !qht_remove(&tcg_ctx->tb_ctx.htable, tb, h)) {
-        tb_exec_change(tcg_ctx, code_gen_locked);
+        tb_exec_change(uc, code_gen_locked);
         return;
     }
 
@@ -1409,7 +1537,7 @@ static void do_tb_phys_invalidate(TCGContext *tcg_ctx, TranslationBlock *tb, boo
 
     tcg_ctx->tb_phys_invalidate_count = tcg_ctx->tb_phys_invalidate_count + 1;
 
-    tb_exec_change(tcg_ctx, code_gen_locked);
+    tb_exec_change(uc, code_gen_locked);
 }
 
 static void tb_phys_invalidate__locked(TCGContext *tcg_ctx, TranslationBlock *tb)
@@ -1579,7 +1707,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
 
     assert_memory_lock();
 #ifdef HAVE_PTHREAD_JIT_PROTECT
-    tb_exec_unlock(tcg_ctx);
+    tb_exec_unlock(cpu->uc);
 #endif
     phys_pc = get_page_addr_code(env, pc);
 
@@ -1709,6 +1837,13 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     if ((pc & TARGET_PAGE_MASK) != virt_page2) {
         phys_page2 = get_page_addr_code(env, virt_page2);
     }
+
+    /* Undoes tlb_set_dirty in notdirty_write. */
+    if (!(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE))) {
+        tlb_reset_dirty_by_vaddr(cpu, pc & TARGET_PAGE_MASK,
+                                (pc & ~TARGET_PAGE_MASK) + tb->size);
+    }
+
     /*
      * No explicit memory barrier is required -- tb_link_page() makes the
      * TB visible in a consistent state.
@@ -2037,33 +2172,39 @@ void tcg_flush_softmmu_tlb(struct uc_struct *uc)
 }
 
 
-#ifdef HAVE_PTHREAD_JIT_PROTECT
-static bool tb_exec_is_locked(TCGContext *tcg_ctx)
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && defined(HAVE_SPRR) && (defined(__arm__) || defined(__aarch64__))
+static bool tb_exec_is_locked(struct uc_struct *uc)
 {
-    return tcg_ctx->code_gen_locked;
+    return uc->current_executable;
 }
 
-static void tb_exec_change(TCGContext *tcg_ctx, bool locked)
+static void tb_exec_change(struct uc_struct *uc, bool executable)
 {
-    jit_write_protect(locked);
-    tcg_ctx->code_gen_locked = locked;
+    assert(uc->current_executable == thread_executable());
+    if (uc->current_executable != executable) {
+        jit_write_protect(executable);
+        uc->current_executable = executable;
+        assert(
+            executable == thread_executable()
+        );
+    }
 }
 #else /* not needed on non-Darwin platforms */
-static bool tb_exec_is_locked(TCGContext *tcg_ctx)
+static bool tb_exec_is_locked(struct uc_struct *uc)
 {
     return false;
 }
 
-static void tb_exec_change(TCGContext *tcg_ctx, bool locked) {}
+static void tb_exec_change(struct uc_struct *uc, bool locked) {}
 #endif
 
-void tb_exec_lock(TCGContext *tcg_ctx)
+void tb_exec_lock(struct uc_struct *uc)
 {
     /* assumes sys_icache_invalidate already called */
-    tb_exec_change(tcg_ctx, true);
+    tb_exec_change(uc, true);
 }
 
-void tb_exec_unlock(TCGContext *tcg_ctx)
+void tb_exec_unlock(struct uc_struct *uc)
 {
-    tb_exec_change(tcg_ctx, false);
+    tb_exec_change(uc, false);
 }

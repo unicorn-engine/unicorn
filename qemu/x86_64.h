@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _x86_64
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_x86_64
+#define reg_read reg_read_x86_64
+#define reg_write reg_write_x86_64
+#define uc_init uc_init_x86_64
 #define uc_add_inline_hook uc_add_inline_hook_x86_64
 #define uc_del_inline_hook uc_del_inline_hook_x86_64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_x86_64
@@ -119,7 +123,10 @@
 #define memory_map memory_map_x86_64
 #define memory_map_io memory_map_io_x86_64
 #define memory_map_ptr memory_map_ptr_x86_64
+#define memory_cow memory_cow_x86_64
 #define memory_unmap memory_unmap_x86_64
+#define memory_moveout memory_moveout_x86_64
+#define memory_movein memory_movein_x86_64
 #define memory_free memory_free_x86_64
 #define flatview_unref flatview_unref_x86_64
 #define address_space_get_flatview address_space_get_flatview_x86_64
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_x86_64
 #define memory_region_add_subregion memory_region_add_subregion_x86_64
 #define memory_region_del_subregion memory_region_del_subregion_x86_64
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_x86_64
 #define memory_region_find memory_region_find_x86_64
+#define memory_region_filter_subregions memory_region_filter_subregions_x86_64
 #define memory_listener_register memory_listener_register_x86_64
 #define memory_listener_unregister memory_listener_unregister_x86_64
 #define address_space_remove_listeners address_space_remove_listeners_x86_64
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_x86_64
 #define memory_region_init_ram memory_region_init_ram_x86_64
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_x86_64
+#define find_memory_mapping find_memory_mapping_x86_64
 #define exec_inline_op exec_inline_op_x86_64
 #define floatx80_default_nan floatx80_default_nan_x86_64
 #define float_raise float_raise_x86_64
@@ -1277,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_x86_64
 #define gen_helper_cpsr_read gen_helper_cpsr_read_x86_64
 #define gen_helper_cpsr_write gen_helper_cpsr_write_x86_64
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_x86_64
 #define cpu_get_tsc cpu_get_tsc_x86_64
 #define x86_cpu_get_memory_mapping x86_cpu_get_memory_mapping_x86_64
 #define cpu_x86_update_dr7 cpu_x86_update_dr7_x86_64
@@ -1878,7 +1889,4 @@
 #define x86_cpu_xrstor_all_areas x86_cpu_xrstor_all_areas_x86_64
 #define cpu_get_fp80 cpu_get_fp80_x86_64
 #define cpu_set_fp80 cpu_set_fp80_x86_64
-#define x86_reg_reset x86_reg_reset_x86_64
-#define x86_reg_read x86_reg_read_x86_64
-#define x86_reg_write x86_reg_write_x86_64
 #endif

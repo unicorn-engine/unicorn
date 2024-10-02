@@ -72,8 +72,8 @@ template = {
     'java': {
             'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\npackage unicorn;\n\npublic interface %sConst {\n",
             'footer': "\n}\n",
-            'line_format': '   public static final int UC_%s = %s;\n',
-            'out_file': './java/unicorn/%sConst.java',
+            'line_format': '    public static final int UC_%s = %s;\n',
+            'out_file': './java/src/main/java/unicorn/%sConst.java',
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
             'arm64.h': 'Arm64',
@@ -86,14 +86,14 @@ template = {
             's390x.h' : 'S390x',
             'tricore.h' : 'TriCore',
             'unicorn.h': 'Unicorn',
-            'comment_open': '//',
+            'comment_open': '    //',
             'comment_close': '',
         },
     'dotnet': {
-            'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\nnamespace UnicornManaged.Const\n\nopen System\n\n[<AutoOpen>]\nmodule %s =\n",
+            'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\nnamespace UnicornEngine.Const\n\nopen System\n\n[<AutoOpen>]\nmodule %s =\n",
             'footer': "\n",
             'line_format': '    let UC_%s = %s\n',
-            'out_file': os.path.join('dotnet', 'UnicornManaged', 'Const', '%s.fs'),
+            'out_file': os.path.join('dotnet', 'UnicornEngine', 'Const', '%s.fs'),
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
             'arm64.h': 'Arm64',
@@ -129,6 +129,26 @@ template = {
             'comment_open': '//',
             'comment_close': '',
         },
+    'zig': {
+           'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\npub const %sConst = enum(c_int) {\n",
+            'footer': "\n};\n",
+            'line_format': '\t%s = %s,\n',
+            'out_file': './zig/unicorn/%s_const.zig',
+            # prefixes for constant filenames of all archs - case sensitive
+            'arm.h': 'arm',
+            'arm64.h': 'arm64',
+            'mips.h': 'mips',
+            'x86.h': 'x86',
+            'sparc.h': 'sparc',
+            'm68k.h': 'm68k',
+            'ppc.h': 'ppc',
+            'riscv.h': 'riscv',
+            's390x.h' : 's390x',
+            'tricore.h' : 'tricore',
+            'unicorn.h': 'unicorn',
+            'comment_open': '//',
+            'comment_close': '',
+        },
 }
 
 # markup for comments to be added to autogen files
@@ -139,8 +159,9 @@ def gen(lang):
     templ = template[lang]
     for target in include:
         prefix = templ[target]
-        outfile = open(templ['out_file'] %(prefix), 'wb')   # open as binary prevents windows newlines
-        outfile.write((templ['header'] % (prefix)).encode("utf-8"))
+        outfn = templ['out_file'] % prefix
+        outfile = open(outfn + ".tmp", 'wb')   # open as binary prevents windows newlines
+        outfile.write((templ['header'] % prefix).encode("utf-8"))
         if target == 'unicorn.h':
             prefix = ''
         with open(os.path.join(INCL_DIR, target)) as f:
@@ -257,6 +278,19 @@ def gen(lang):
 
         outfile.write((templ['footer']).encode("utf-8"))
         outfile.close()
+
+        if os.path.isfile(outfn):
+            with open(outfn, "rb") as infile:
+                cur_data = infile.read()
+            with open(outfn + ".tmp", "rb") as infile:
+                new_data = infile.read()
+            if cur_data == new_data:
+                os.unlink(outfn + ".tmp")
+            else:
+                os.unlink(outfn)
+                os.rename(outfn + ".tmp", outfn)
+        else:
+            os.rename(outfn + ".tmp", outfn)
 
 def main():
     lang = sys.argv[1]

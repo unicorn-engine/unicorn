@@ -2080,7 +2080,7 @@ void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
     cc->get_phys_page_attrs_debug = arm_cpu_get_phys_page_attrs_debug;
     cc->asidx_from_attrs = arm_asidx_from_attrs;
     cc->tcg_initialize = arm_translate_init;
-    cc->tlb_fill = arm_cpu_tlb_fill;
+    cc->tlb_fill_cpu = arm_cpu_tlb_fill;
     cc->debug_excp_handler = arm_debug_excp_handler;
     cc->do_unaligned_access = arm_cpu_do_unaligned_access;
 }

@@ -388,8 +388,8 @@ TranslationBlock *tb_htable_lookup(CPUState *cpu, target_ulong pc,
                                    target_ulong cs_base, uint32_t flags,
                                    uint32_t cf_mask);
 void tb_set_jmp_target(TranslationBlock *tb, int n, uintptr_t addr);
-void tb_exec_lock(TCGContext*);
-void tb_exec_unlock(TCGContext*);
+void tb_exec_lock(struct uc_struct*);
+void tb_exec_unlock(struct uc_struct*);
 
 /* GETPC is the true target of the return instruction that we'll execute.  */
 #ifdef _MSC_VER
@@ -464,6 +464,7 @@ tb_page_addr_t get_page_addr_code_hostp(CPUArchState *env, target_ulong addr,
                                         void **hostp);
 
 void tlb_reset_dirty(CPUState *cpu, ram_addr_t start1, ram_addr_t length);
+void tlb_reset_dirty_by_vaddr(CPUState *cpu, target_ulong start1, target_ulong length);
 void tlb_set_dirty(CPUState *cpu, target_ulong vaddr);
 
 /* exec.c */

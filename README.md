@@ -15,7 +15,7 @@ Unicorn offers some unparalleled features:
 
 - Multi-architecture: ARM, ARM64 (ARMv8), M68K, MIPS, PowerPC, RISCV, SPARC, S390X, TriCore and X86 (16, 32, 64-bit)
 - Clean/simple/lightweight/intuitive architecture-neutral API
-- Implemented in pure C language, with bindings for Crystal, Clojure, Visual Basic, Perl, Rust, Ruby, Python, Java, .NET, Go, Delphi/Free Pascal, Haskell, Pharo, and Lua.
+- Implemented in pure C language, with bindings for Crystal, Clojure, Visual Basic, Perl, Rust, Ruby, Python, Java, .NET, Go, Delphi/Free Pascal, Haskell, Pharo, Lua and Zig.
 - Native support for Windows & *nix (with Mac OSX, Linux, Android, *BSD & Solaris confirmed)
 - High performance via Just-In-Time compilation
 - Support for fine-grained instrumentation at various levels
@@ -51,6 +51,8 @@ Contribute
 If you want to contribute, please pick up something from our [Github issues](https://github.com/unicorn-engine/unicorn/issues).
 
 We also maintain a list of more challenged problems in [milestones](https://github.com/unicorn-engine/unicorn/milestones) for our regular release.
+
+Please send pull request to our [dev branch](https://github.com/unicorn-engine/unicorn/tree/dev).
 
 [CREDITS.TXT](CREDITS.TXT) records important contributors of our project.
 

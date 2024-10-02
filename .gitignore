@@ -45,7 +45,6 @@ _*.txt
 _*.diff
 tmp/
 
-bindings/java/unicorn_Unicorn.h
 bindings/python/build/
 bindings/python/dist/
 bindings/python/src/
@@ -89,3 +88,6 @@ rust_build
 [Oo]bj/
 packages/
 cmocka/
+zig-cache/
+zig-out/
+.cache

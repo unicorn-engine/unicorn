@@ -1,0 +1,441 @@
+name: Nuget 📦 Distribution
+
+on:
+  push:
+    paths-ignore:
+      - ".gitignore"
+      - "docs/**"
+      - "README"
+      - "CREDITS.TXT"
+      - "COPYING_GLIB"
+      - "COPYING.LGPL2"
+      - "AUTHORS.TXT"
+      - "CHANGELOG"
+      - "COPYING"
+    branches:
+      - dev
+      - master
+
+permissions:
+  packages: write
+
+jobs:
+  Windows:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }}
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - {
+            os: windows-2019,
+            arch: x64,
+            python-arch: x64,
+            python-ver: '3.8',
+            name: 'windows-x64 MSVC 64bit shared',
+            msvc-arch: x64,
+            artifact: 'windows_msvc64_shared.7z',
+            shared: 'yes',
+            build_type: 'Release',
+            archiver: '7z a',
+            generators: 'Visual Studio 16 2019'
+          }
+          - {
+            os: windows-2019,
+            arch: x86,
+            python-arch: x86,
+            python-ver: '3.8',
+            name: 'windows-x86 MSVC 32bit shared',
+            msvc-arch: x86,
+            artifact: 'windows_msvc32_shared.7z',
+            shared: 'yes',
+            build_type: 'Release',
+            archiver: '7z a',
+            generators: 'Visual Studio 16 2019'
+          }
+        compiler: [ gcc ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: '🛠️ Win MSVC 64 setup'
+        if: contains(matrix.config.name, 'MSVC 64')
+        uses: microsoft/setup-msbuild@v2
+
+      - name: '🛠️ Win MSVC 64 dev cmd setup'
+        if: contains(matrix.config.name, 'MSVC 64')
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: '🚧 Win MSVC 64 build'
+        if: contains(matrix.config.name, 'MSVC 64')
+        shell: bash
+        run: |
+          choco install ninja cmake
+          ninja --version
+          cmake --version
+          mkdir build
+          cmake \
+            -S . \
+            -B . \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_C_FLAGS="//MT" \
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+            -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
+          cmake --build . --config ${{ matrix.config.build_type }}
+          cmake --install . --strip --config ${{ matrix.config.build_type }}
+          ctest -VV -C ${{ matrix.config.build_type }}
+          mv Release instdir
+
+      - name: '🛠️ Win MSVC 32 setup'
+        if: contains(matrix.config.name, 'MSVC 32')
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: '🚧 Win MSVC 32 build'
+        if: contains(matrix.config.name, 'MSVC 32')
+        shell: bash
+        run: |
+          choco install ninja cmake
+          ninja --version
+          cmake --version
+          mkdir build
+          cmake \
+            -S . \
+            -B . \
+            -A "win32" \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_C_FLAGS="//MT" \
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+            -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
+          cmake --build . --config ${{ matrix.config.build_type }}
+          cmake --install . --strip --config ${{ matrix.config.build_type }}
+          ctest -VV -C ${{ matrix.config.build_type }}
+          mv Release instdir
+
+      - name: '📦 Pack artifact'
+        if: always()
+        shell: bash
+        working-directory: instdir
+        run: |
+          ls -laR
+          ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} . ../test*
+
+      - name: '📤 Upload artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./${{ matrix.config.artifact }}
+          name: ${{ matrix.config.artifact }}
+
+  Macos:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }} - ${{ matrix.compiler }}
+    strategy:
+      fail-fast: true
+      matrix:
+        config:
+          - {
+            os: macos-latest,
+            arch: x64,
+            python-arch: x64,
+            python-ver: '3.8',
+            name: 'macos-x64 cmake shared',
+            shared: 'yes',
+            artifact: 'macos-cmake-shared-x64.7z',
+            build_type: 'Release',
+            archiver: '7za a',
+            generators: 'Ninja'
+          }
+        compiler: [ gcc ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: '🚧 Mac build'
+        if: contains(matrix.config.name, 'macos-x64')
+        shell: bash
+        run: |
+          brew install ninja
+          ninja --version
+          cmake --version
+          mkdir build
+          mkdir instdir
+          cmake \
+            -S . \
+            -B . \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+            -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
+          cmake --build . --config ${{ matrix.config.build_type }}
+          cmake --install . --strip
+          ctest -VV -C ${{ matrix.config.build_type }}
+
+      - name: '📦 Pack artifact'
+        if: always()
+        shell: bash
+        working-directory: instdir
+        run: |
+          ls -laR
+          ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} . ../test*
+
+      - name: '📤 Upload artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./${{ matrix.config.artifact }}
+          name: ${{ matrix.config.artifact }}
+
+  Linux:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }} - ${{ matrix.compiler }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+            os: ubuntu-latest,
+            arch: x64,
+            python-arch: x64,
+            python-ver: '3.8',
+            name: 'ubuntu-x64 cmake shared',
+            shared: 'yes',
+            artifact: 'ubuntu-cmake-shared-x64.7z',
+            build_type: 'Release',
+            archiver: '7z a',
+            generators: 'Ninja'
+          }
+          - {
+            os: ubuntu-latest,
+            arch: x86,
+            python-arch: x86,
+            python-ver: '3.8',
+            name: 'ubuntu-x86 cmake shared',
+            shared: 'yes',
+            artifact: 'ubuntu-cmake-shared-x86.7z',
+            build_type: 'Release',
+            archiver: '7z a',
+            generators: 'Ninja'
+          }
+          - {
+            os: ubuntu-latest,
+            arch: aarch64,
+            python-arch: aarch64,
+            python-ver: '3.8',
+            name: 'ubuntu-aarch64 cmake',
+            artifact: 'ubuntu-cmake-aarch64.7z',
+            build_type: 'Release',
+            archiver: '7z a',
+            generators: 'Ninja',
+            distro: ubuntu20.04
+          }
+          - {
+            os: ubuntu-latest,
+            arch: ppc64le,
+            python-arch: ppc,
+            python-ver: '3.8',
+            name: 'ubuntu-ppc64le cmake',
+            artifact: 'ubuntu-cmake-ppc64le.7z',
+            build_type: 'Release',
+            archiver: '7z a',
+            generators: 'Ninja',
+            distro: ubuntu20.04
+          }
+        compiler: [ gcc ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: '🚧 Linux x64/x86 build'
+        if: contains(matrix.config.arch, 'x64') || contains(matrix.config.arch, 'x86')
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          if [ ${{ matrix.config.arch }} == 'x64' ]; then
+                sudo apt install -q -y libcmocka-dev ninja-build
+          else
+                export CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
+                sudo dpkg --add-architecture i386
+                sudo apt update
+                sudo apt install -q -y lib32ncurses-dev lib32z1-dev lib32gcc-9-dev libc6-dev-i386 gcc-multilib \
+                  libcmocka-dev:i386 libcmocka0:i386 libc6:i386 libgcc-s1:i386 ninja-build
+          fi
+          mkdir build
+          mkdir instdir
+          cmake \
+            -S . \
+            -B . \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+            -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
+          cmake --build . --config ${{ matrix.config.build_type }}
+          cmake --install . --strip
+          ctest -VV -C ${{ matrix.config.build_type }}
+
+      - name: '🚧 Linux ppc64le/aarch64 build'
+        if: contains(matrix.config.arch, 'ppc64le') || contains(matrix.config.arch, 'aarch64')
+        uses: uraimo/run-on-arch-action@v2
+        with:
+          arch: ${{ matrix.config.arch }}
+          distro: ${{ matrix.config.distro }}
+          setup: |
+            mkdir -p "${PWD}/instdir"
+          dockerRunArgs: |
+            --volume "${PWD}/instdir:/instdir"
+          shell: /bin/sh
+          install: |
+            apt-get update -q -y
+            apt-get install -q -y git cmake build-essential automake libcmocka-dev pkg-config ${{ matrix.compiler }} ninja-build
+          run: |
+            mkdir build
+            cmake \
+              -S . \
+              -B . \
+              -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+              -G "${{ matrix.config.generators }}" \
+              -DCMAKE_INSTALL_PREFIX:PATH=/instdir
+            cmake --build . --config ${{ matrix.config.build_type }}
+            cmake --install . --strip
+            ctest -VV -C ${{ matrix.config.build_type }}
+
+      - name: '📦 Pack artifact'
+        if: always()
+        shell: bash
+        working-directory: instdir
+        run: |
+          ls -laR
+          ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} . ../test*
+
+      - name: '📤 Upload artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./${{ matrix.config.artifact }}
+          name: ${{ matrix.config.artifact }}
+
+  publish:
+    needs: ["Windows", "Macos", "Linux"]
+    if: ${{ needs.Windows.result == 'success' && needs.Macos.result == 'success' && needs.Linux.result == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🛠️ Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: 🛠️ Extract artifacts
+        shell: python
+        run: |
+          import subprocess
+          import os
+
+          artifactPath = os.path.join(os.getcwd(), "artifacts")
+          bindingsPath = os.path.join(os.getcwd(), "bindings", "dotnet", "UnicornEngine")
+
+          ARTIFACT_CONFIG = {
+            "ubuntu-cmake-aarch64.7z": {
+              "sourceDir": "lib/",
+              "sourceFile": "libunicorn.so.*",
+              "destDir": "runtimes/linux-arm64/native",
+              "destFile": "libunicorn.so"
+            },
+            "ubuntu-cmake-ppc64le.7z": {
+              "sourceDir": "lib/",
+              "sourceFile": "libunicorn.so.*",
+              "destDir": "runtimes/linux-ppc64le/native",
+              "destFile": "libunicorn.so"
+            },
+            "ubuntu-cmake-shared-x86.7z": {
+              "sourceDir": "lib/",
+              "sourceFile": "libunicorn.so.*",
+              "destDir": "runtimes/linux-x64/native",
+              "destFile": "libunicorn.so"
+            },
+            "macos-cmake-shared-x64.7z": {
+              "sourceDir": "lib/",
+              "sourceFile": "libunicorn.*.dylib",
+              "destDir": "runtimes/osx-x64/native",
+              "destFile": "libunicorn.dylib"
+            },
+            "windows_msvc64_shared.7z": {
+              "sourceDir": "",
+              "sourceFile": "unicorn.dll",
+              "destDir": "runtimes/win-x64/native",
+              "destFile": "unicorn.dll"
+            },
+            "windows_msvc32_shared.7z": {
+              "sourceDir": "",
+              "sourceFile": "unicorn.dll",
+              "destDir": "runtimes/win-x86/native",
+              "destFile": "unicorn.dll"
+            }
+          }
+
+          if len(os.listdir(artifactPath)) < len(ARTIFACT_CONFIG.keys()):
+            print("Some artifacts are missing. Aborting.")
+            exit(1)
+
+          for artifact in os.listdir(artifactPath):
+            if artifact in ARTIFACT_CONFIG.keys():
+              print("Working on:", artifact)
+              config = ARTIFACT_CONFIG[artifact]
+              destDir = os.path.join(bindingsPath, config["destDir"])
+              print("Creating dir:", destDir)
+              os.makedirs(destDir, exist_ok=True)
+
+              print(f"Extracting library from 7z file to: {config['destDir']}/{config['sourceFile']}")
+              result = subprocess.run(["7z", "e", f"-o{destDir}/", os.path.join(artifactPath, artifact), f"{config['sourceDir']}{config['sourceFile']}"])
+              result.check_returncode()
+
+              if config["sourceFile"] != config["destFile"]:
+                output = subprocess.run(["ls", destDir], stdout=subprocess.PIPE)
+                sourceFile = output.stdout.decode().strip()
+                print(f"Renaming {sourceFile} to {config['destFile']}")
+                os.rename(os.path.join(destDir, sourceFile), os.path.join(destDir, config["destFile"]))
+
+          print("Done!")
+
+      - name: 🛠️ Get short sha
+        id: git_short_sha
+        run: echo "result=$(git rev-parse --short "${{ github.sha }}")" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
+
+      - name: 🛠️ Authenticate to Github Packages
+        working-directory: bindings/dotnet/UnicornEngine
+        run: dotnet nuget add source --username "${{ github.repository_owner }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+      - name: 🛠️ List all native libraries
+        working-directory: bindings/dotnet/UnicornEngine
+        run: find ./runtimes -type f -print
+
+      - name: 🚧 Package .NET distribution
+        working-directory: bindings/dotnet/UnicornEngine
+        run: |
+          [[ "${{ github.ref_name }}" == "master" ]] \
+            && dotnet pack -c Release \
+            || dotnet pack -c Release --version-suffix="${{ steps.git_short_sha.outputs.result }}"
+
+      - name: '📤 Upload artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/bindings/dotnet/UnicornEngine/bin/Release/UnicornEngine.Unicorn.*.nupkg
+
+      - name: 📦 Publish to Github Packages
+        if: startsWith(github.ref, 'refs/tags')
+        working-directory: bindings/dotnet/UnicornEngine
+        run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" --source "github" --api-key "${{ secrets.GHPR_TOKEN }}"
+
+      - name: 📦 Publish Nuget package
+        if: startsWith(github.ref, 'refs/tags')
+        working-directory: bindings/dotnet/UnicornEngine
+        run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" -k "$NUGET_AUTH_TOKEN" -s https://api.nuget.org/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_KEY }}

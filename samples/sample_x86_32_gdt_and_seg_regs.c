@@ -163,7 +163,7 @@ static void hex_dump(unsigned char *ptr, unsigned int len)
 }
 */
 
-static void gdt_demo()
+static void gdt_demo(void)
 {
     uc_engine *uc;
     uc_hook hook1, hook2;

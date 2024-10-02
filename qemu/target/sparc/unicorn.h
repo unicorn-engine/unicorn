@@ -5,22 +5,15 @@
 #define UC_QEMU_TARGET_SPARC_H
 
 // functions to read & write registers
-int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                   int count);
-int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                    int count);
+uc_err reg_read_sparc(void *env, int mode, unsigned int regid, void *value,
+                      size_t *size);
+uc_err reg_read_sparc64(void *env, int mode, unsigned int regid, void *value,
+                        size_t *size);
+uc_err reg_write_sparc(void *env, int mode, unsigned int regid,
+                       const void *value, size_t *size, int *setpc);
+uc_err reg_write_sparc64(void *env, int mode, unsigned int regid,
+                         const void *value, size_t *size, int *setpc);
 
-int sparc_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                           void **vals, int count);
-int sparc_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                            void *const *vals, int count);
-int sparc64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                             void **vals, int count);
-int sparc64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                              void *const *vals, int count);
-
-void sparc_reg_reset(struct uc_struct *uc);
-
-void sparc_uc_init(struct uc_struct *uc);
-void sparc64_uc_init(struct uc_struct *uc);
+void uc_init_sparc(struct uc_struct *uc);
+void uc_init_sparc64(struct uc_struct *uc);
 #endif

@@ -651,15 +651,6 @@ struct TCGContext {
     /* Threshold to flush the translated code buffer.  */
     void *code_gen_highwater;
 
-#ifdef HAVE_PTHREAD_JIT_PROTECT
-    /*
-     * True for X, False for W.
-     * 
-     * Source: https://developer.apple.com/documentation/apple_silicon/porting_just-in-time_compilers_to_apple_silicon?language=objc
-     */
-    bool code_gen_locked;
-#endif
-
     size_t tb_phys_invalidate_count;
 
     /* Track which vCPU triggers events */

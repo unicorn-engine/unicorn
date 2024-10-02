@@ -2139,12 +2139,40 @@ fi
 if [ "$darwin" = "yes" ] ; then
   cat > $TMPC << EOF
 #include <pthread.h>
-int main() { pthread_jit_write_protect_np(0); return 0; }
+int main() { pthread_jit_write_protect_np(0); return 0;}
 EOF
   if ! compile_prog ""; then
     have_pthread_jit_protect='no'
   else
     have_pthread_jit_protect='yes'
+  fi
+
+  if test "$have_pthread_jit_protect" = "yes" ; then
+    cat > $TMPC << EOF
+#include "stdint.h"
+int main() {
+    uint64_t commpage_sprr = (*(uint64_t*)0xFFFFFC10C);
+
+    // In Apple Hypervisor, this value is not accessbile and
+    // pthread_jit_write_protect_np essentially is a no-op
+    if (!commpage_sprr) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+EOF
+    if ! compile_prog ""; then
+      have_sprr='no'
+      have_pthread_jit_protect='no'
+    else
+      $TMPE
+      if [ $? -eq 0 ]; then
+        have_sprr='yes'
+      else
+        have_sprr='no'
+      fi
+    fi
   fi
 fi
 
@@ -2524,6 +2552,10 @@ fi
 
 if test "$have_pthread_jit_protect" = "yes" ; then
   echo "HAVE_PTHREAD_JIT_PROTECT=y" >> $config_host_mak
+fi
+
+if test "$have_sprr" = "yes" ; then
+  echo "HAVE_SPRR=y" >> $config_host_mak
 fi
 
 # Hold two types of flag:

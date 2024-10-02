@@ -46,14 +46,10 @@ jobs:
              name: 'macOS x86_64'
             }
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: '🛠️ Set up Rust'
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-        default: true
+      uses: dtolnay/rust-toolchain@stable
 
     - name: '🛠️ Activate Developer Command Prompt'
       if: contains(matrix.config.os, 'win')
@@ -66,6 +62,12 @@ jobs:
       shell: bash
       run: |
         choco install ninja cmake
+
+    - name: '🛠️ macOS build dependencies'
+      if: contains(matrix.config.os, 'macOS')
+      shell: bash
+      run: |
+        brew install ninja
 
     - name: '🚧 Cargo test'
       if: "!startsWith(github.ref, 'refs/tags')"

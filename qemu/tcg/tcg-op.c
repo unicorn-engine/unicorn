@@ -3240,8 +3240,9 @@ static void do_nonatomic_op_i32(TCGContext *tcg_ctx, TCGv_i32 ret, TCGv addr, TC
 
     memop = tcg_canonicalize_memop(memop, 0, 0);
 
-    tcg_gen_qemu_ld_i32(tcg_ctx, t1, addr, idx, memop & ~MO_SIGN);
-    gen(tcg_ctx, t2, t1, val);
+    tcg_gen_qemu_ld_i32(tcg_ctx, t1, addr, idx, memop);
+    tcg_gen_ext_i32(tcg_ctx, t2, val, memop);
+    gen(tcg_ctx, t2, t1, t2);
     tcg_gen_qemu_st_i32(tcg_ctx, t2, addr, idx, memop);
 
     tcg_gen_ext_i32(tcg_ctx, ret, (new_val ? t2 : t1), memop);
@@ -3279,8 +3280,9 @@ static void do_nonatomic_op_i64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv addr, TC
 
     memop = tcg_canonicalize_memop(memop, 1, 0);
 
-    tcg_gen_qemu_ld_i64(tcg_ctx, t1, addr, idx, memop & ~MO_SIGN);
-    gen(tcg_ctx, t2, t1, val);
+    tcg_gen_qemu_ld_i64(tcg_ctx, t1, addr, idx, memop);
+    tcg_gen_ext_i64(tcg_ctx, t2, val, memop);
+    gen(tcg_ctx, t2, t1, t2);
     tcg_gen_qemu_st_i64(tcg_ctx, t2, addr, idx, memop);
 
     tcg_gen_ext_i64(tcg_ctx, ret, (new_val ? t2 : t1), memop);

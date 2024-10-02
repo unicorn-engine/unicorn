@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _m68k
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_m68k
+#define reg_read reg_read_m68k
+#define reg_write reg_write_m68k
+#define uc_init uc_init_m68k
 #define uc_add_inline_hook uc_add_inline_hook_m68k
 #define uc_del_inline_hook uc_del_inline_hook_m68k
 #define tb_invalidate_phys_range tb_invalidate_phys_range_m68k
@@ -119,7 +123,10 @@
 #define memory_map memory_map_m68k
 #define memory_map_io memory_map_io_m68k
 #define memory_map_ptr memory_map_ptr_m68k
+#define memory_cow memory_cow_m68k
 #define memory_unmap memory_unmap_m68k
+#define memory_moveout memory_moveout_m68k
+#define memory_movein memory_movein_m68k
 #define memory_free memory_free_m68k
 #define flatview_unref flatview_unref_m68k
 #define address_space_get_flatview address_space_get_flatview_m68k
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_m68k
 #define memory_region_add_subregion memory_region_add_subregion_m68k
 #define memory_region_del_subregion memory_region_del_subregion_m68k
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_m68k
 #define memory_region_find memory_region_find_m68k
+#define memory_region_filter_subregions memory_region_filter_subregions_m68k
 #define memory_listener_register memory_listener_register_m68k
 #define memory_listener_unregister memory_listener_unregister_m68k
 #define address_space_remove_listeners address_space_remove_listeners_m68k
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_m68k
 #define memory_region_init_ram memory_region_init_ram_m68k
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_m68k
+#define find_memory_mapping find_memory_mapping_m68k
 #define exec_inline_op exec_inline_op_m68k
 #define floatx80_default_nan floatx80_default_nan_m68k
 #define float_raise float_raise_m68k
@@ -1277,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_m68k
 #define gen_helper_cpsr_read gen_helper_cpsr_read_m68k
 #define gen_helper_cpsr_write gen_helper_cpsr_write_m68k
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_m68k
 #define cpu_m68k_init cpu_m68k_init_m68k
 #define helper_reds32 helper_reds32_m68k
 #define helper_redf32 helper_redf32_m68k
@@ -1432,7 +1443,4 @@
 #define register_m68k_insns register_m68k_insns_m68k
 #define gen_intermediate_code gen_intermediate_code_m68k
 #define restore_state_to_opc restore_state_to_opc_m68k
-#define m68k_reg_reset m68k_reg_reset_m68k
-#define m68k_reg_read m68k_reg_read_m68k
-#define m68k_reg_write m68k_reg_write_m68k
 #endif

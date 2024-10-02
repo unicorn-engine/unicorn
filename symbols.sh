@@ -4,6 +4,10 @@ CMD_PATH=$(realpath $0)
 SOURCE_DIR=$(dirname ${CMD_PATH})
 
 COMMON_SYMBOLS="
+unicorn_fill_tlb \
+reg_read \
+reg_write \
+uc_init \
 uc_add_inline_hook \
 uc_del_inline_hook \
 tb_invalidate_phys_range \
@@ -119,7 +123,10 @@ cpu_inl \
 memory_map \
 memory_map_io \
 memory_map_ptr \
+memory_cow \
 memory_unmap \
+memory_moveout \
+memory_movein \
 memory_free \
 flatview_unref \
 address_space_get_flatview \
@@ -138,7 +145,9 @@ memory_region_from_host \
 memory_region_get_ram_addr \
 memory_region_add_subregion \
 memory_region_del_subregion \
+memory_region_add_subregion_overlap \
 memory_region_find \
+memory_region_filter_subregions \
 memory_listener_register \
 memory_listener_unregister \
 address_space_remove_listeners \
@@ -146,6 +155,7 @@ address_space_init \
 address_space_destroy \
 memory_region_init_ram \
 memory_mapping_list_add_merge_sorted \
+find_memory_mapping \
 exec_inline_op \
 floatx80_default_nan \
 float_raise \
@@ -1277,6 +1287,7 @@ gen_helper_vfp_get_fpscr \
 gen_helper_vfp_set_fpscr \
 gen_helper_cpsr_read \
 gen_helper_cpsr_write \
+tlb_reset_dirty_by_vaddr \
 "
 
 x86_64_SYMBOLS="
@@ -1881,9 +1892,6 @@ x86_cpu_xsave_all_areas \
 x86_cpu_xrstor_all_areas \
 cpu_get_fp80 \
 cpu_set_fp80 \
-x86_reg_reset \
-x86_reg_read \
-x86_reg_write \
 "
 
 arm_SYMBOLS="
@@ -2579,9 +2587,6 @@ helper_frint64_s \
 helper_frint32_d \
 helper_frint64_d \
 helper_check_hcr_el2_trap \
-arm_reg_reset \
-arm_reg_read \
-arm_reg_write \
 mla_op \
 mls_op \
 sshl_op \
@@ -4279,9 +4284,6 @@ helper_frint64_s \
 helper_frint32_d \
 helper_frint64_d \
 helper_check_hcr_el2_trap \
-arm64_reg_reset \
-arm64_reg_read \
-arm64_reg_write \
 mla_op \
 mls_op \
 sshl_op \
@@ -4384,9 +4386,6 @@ gen_intermediate_code \
 riscv_translate_init \
 restore_state_to_opc \
 cpu_riscv_init \
-riscv_reg_reset \
-riscv_reg_read \
-riscv_reg_write \
 helper_fcvt_l_s \
 helper_fcvt_lu_s \
 helper_fcvt_s_l \
@@ -5510,9 +5509,6 @@ mips_tcg_init \
 cpu_mips_realize_env \
 cpu_state_reset \
 restore_state_to_opc \
-mips_reg_reset \
-mips_reg_read \
-mips_reg_write \
 ieee_rm \
 mips_defs \
 mips_defs_number \
@@ -5664,9 +5660,6 @@ helper_wrpstate \
 helper_wrpil \
 helper_done \
 helper_retry \
-sparc_reg_reset \
-sparc_reg_read \
-sparc_reg_write \
 "
 
 sparc64_SYMBOLS=${sparc_SYMBOLS}
@@ -5827,17 +5820,11 @@ m68k_tcg_init \
 register_m68k_insns \
 gen_intermediate_code \
 restore_state_to_opc \
-m68k_reg_reset \
-m68k_reg_read \
-m68k_reg_write \
 "
 
 ppc_SYMBOLS="
 ppc_cpu_unrealize \
 ppc_cpu_instance_finalize \
-ppc_reg_reset \
-ppc_reg_read \
-ppc_reg_write \
 ppc_cpu_do_interrupt \
 ppc_cpu_do_system_reset \
 ppc_cpu_do_fwnmi_machine_check \

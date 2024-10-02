@@ -10,7 +10,10 @@
 // codes for unicorns purposes.
 
 void vm_start(struct uc_struct*);
-void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size);
+void tcg_exec_init(struct uc_struct *uc, uint32_t tb_size);
+bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
+                      MMUAccessType rw, int mmu_idx,
+                      bool probe, uintptr_t retaddr);
 
 // return true on success, false on failure
 static inline bool cpu_physical_mem_read(AddressSpace *as, hwaddr addr,
@@ -91,6 +94,31 @@ static inline void target_page_init(struct uc_struct* uc)
     uc->target_page_align = TARGET_PAGE_SIZE - 1;
 }
 
+static uc_err uc_set_tlb(struct uc_struct *uc, int mode) {
+    switch (mode) {
+        case UC_TLB_VIRTUAL:
+            uc->cpu->cc->tlb_fill = unicorn_fill_tlb;
+            return UC_ERR_OK;
+        case UC_TLB_CPU:
+            uc->cpu->cc->tlb_fill = uc->cpu->cc->tlb_fill_cpu;
+            return UC_ERR_OK;
+        default:
+            return UC_ERR_ARG;
+    }
+}
+
+MemoryRegion *find_memory_mapping(struct uc_struct *uc, hwaddr address)
+{
+    hwaddr xlat = 0;
+    hwaddr len = 1;
+    MemoryRegion *mr = address_space_translate(&uc->address_space_memory, address, &xlat, &len, false, MEMTXATTRS_UNSPECIFIED);
+
+    if (mr == &uc->io_mem_unassigned) {
+        return NULL;
+    }
+    return mr;
+}
+
 void softfloat_init(void);
 static inline void uc_common_init(struct uc_struct* uc)
 {
@@ -102,13 +130,28 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->memory_map = memory_map;
     uc->memory_map_ptr = memory_map_ptr;
     uc->memory_unmap = memory_unmap;
+    uc->memory_moveout = memory_moveout;
+    uc->memory_movein = memory_movein;
     uc->readonly_mem = memory_region_set_readonly;
     uc->target_page = target_page_init;
     uc->softfloat_initialize = softfloat_init;
     uc->tcg_flush_tlb = tcg_flush_softmmu_tlb;
     uc->memory_map_io = memory_map_io;
+    uc->set_tlb = uc_set_tlb;
+    uc->memory_mapping = find_memory_mapping;
+    uc->memory_filter_subregions = memory_region_filter_subregions;
+    uc->memory_cow = memory_cow;
 
     if (!uc->release)
         uc->release = release_common;
 }
+
+#define CHECK_REG_TYPE(type) do {             \
+    if (unlikely(*size < sizeof(type))) {     \
+        return UC_ERR_OVERFLOW;               \
+    }                                         \
+    *size = sizeof(type);                     \
+    ret = UC_ERR_OK;                          \
+} while(0)
+
 #endif

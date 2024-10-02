@@ -304,6 +304,104 @@ static void test_uc_hook_cached_uaf(void)
 #endif
 }
 
+static void test_uc_emu_stop_set_ip_callback(uc_engine *uc, uint64_t address,
+                                             uint32_t size, void *userdata)
+{
+    uint64_t rip = code_start + 0xb;
+
+    if (address == code_start + 0x7) {
+        uc_emu_stop(uc);
+        uc_reg_write(uc, UC_X86_REG_RIP, &rip);
+    }
+}
+
+static void test_uc_emu_stop_set_ip(void)
+{
+    uc_engine *uc;
+    uc_hook h;
+    uint64_t rip;
+
+    char code[] =
+        "\x48\x31\xc0" // 0x0    xor rax, rax    : rax = 0
+        "\x90"         // 0x3    nop             :
+        "\x48\xff\xc0" // 0x4    inc rax         : rax++
+        "\x90"         // 0x7    nop             : <-- going to stop here
+        "\x48\xff\xc0" // 0x8    inc rax         : rax++
+        "\x90"         // 0xb    nop             :
+        "\x0f\x0b"     // 0xc    ud2             : <-- will raise
+                       // UC_ERR_INSN_INVALID, but should not never be reached
+        "\x90"         // 0xe    nop             :
+        "\x90";        // 0xf    nop             :
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, test_uc_emu_stop_set_ip_callback, NULL,
+                   1, 0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &rip));
+    TEST_CHECK(rip == code_start + 0xb);
+    OK(uc_close(uc));
+}
+
+static bool test_tlb_clear_tlb(uc_engine *uc, uint64_t addr, uc_mem_type type,
+                               uc_tlb_entry *result, void *user_data)
+{
+    size_t *tlbcount = (size_t *)user_data;
+    *tlbcount += 1;
+    result->paddr = addr;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+static void test_tlb_clear_syscall(uc_engine *uc, void *user_data)
+{
+    OK(uc_ctl_flush_tlb(uc));
+}
+
+static void test_tlb_clear(void)
+{
+    uc_engine *uc;
+    uc_hook hook1, hook2;
+    size_t tlbcount = 0;
+    char code[] =
+        "\xa3\x00\x00\x20\x00\x00\x00\x00\x00\x0f\x05\xa3\x00\x00\x20\x00\x00"
+        "\x00\x00\x00"; // movabs  dword ptr [0x200000], eax; syscall; movabs
+                        // dword ptr [0x200000], eax
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_mem_map(uc, 0x200000, 0x1000, UC_PROT_ALL));
+
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook1, UC_HOOK_TLB_FILL, test_tlb_clear_tlb, &tlbcount,
+                   1, 0));
+    OK(uc_hook_add(uc, &hook2, UC_HOOK_INSN, test_tlb_clear_syscall, NULL, 1, 0,
+                   UC_X86_INS_SYSCALL));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(tlbcount == 4);
+
+    OK(uc_close(uc));
+}
+
+static void test_noexec(void)
+{
+    uc_engine *uc;
+    /* mov al, byte ptr[rip]
+     * nop
+     */
+    char code[] = "\x8a\x05\x00\x00\x00\x00\x90";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_mem_protect(uc, code_start, code_start + 0x1000, UC_PROT_EXEC));
+
+    uc_assert_err(
+        UC_ERR_READ_PROT,
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_page_size", test_uc_ctl_page_size},
              {"test_uc_ctl_arch", test_uc_ctl_arch},
@@ -315,4 +413,7 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
 #endif
              {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
+             {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
+             {"test_tlb_clear", test_tlb_clear},
+             {"test_noexec", test_noexec},
              {NULL, NULL}};

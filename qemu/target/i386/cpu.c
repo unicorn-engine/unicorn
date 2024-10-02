@@ -5066,7 +5066,7 @@ static void x86_cpu_common_class_init(struct uc_struct *uc, CPUClass *oc, void *
     cc->cpu_exec_enter = x86_cpu_exec_enter;
     cc->cpu_exec_exit = x86_cpu_exec_exit;
     cc->tcg_initialize = tcg_x86_init;
-    cc->tlb_fill = x86_cpu_tlb_fill;
+    cc->tlb_fill_cpu = x86_cpu_tlb_fill;
 }
 
 X86CPU *cpu_x86_init(struct uc_struct *uc)

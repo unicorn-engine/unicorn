@@ -24,6 +24,10 @@
 
 #include "../tcg-pool.inc.c"
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
 #ifdef CONFIG_DEBUG_TCG
 static const char * const tcg_target_reg_names[TCG_TARGET_NB_REGS] = {
 #if TCG_TARGET_REG_BITS == 64
@@ -3768,11 +3772,6 @@ static void tcg_target_init(TCGContext *s)
         have_movbe = (c & bit_MOVBE) != 0;
         have_popcnt = (c & bit_POPCNT) != 0;
 
-#ifdef _MSC_VER
-        // FIXME: detect AVX1 & AVX2: https://gist.github.com/hi2p-perim/7855506
-        have_avx1 = true;
-        have_avx2 = true;
-#else
         /* There are a number of things we must check before we can be
            sure of not hitting invalid opcode.  */
         if (c & bit_OSXSAVE) {
@@ -3780,13 +3779,18 @@ static void tcg_target_init(TCGContext *s)
             /* The xgetbv instruction is not available to older versions of
              * the assembler, so we encode the instruction manually.
              */
+#ifndef _MSC_VER
             asm(".byte 0x0f, 0x01, 0xd0" : "=a" (xcrl), "=d" (xcrh) : "c" (0));
+#else
+            unsigned long long bv = _xgetbv(0);
+            xcrl = bv & 0xFFFFFFFF;
+            xcrh = (bv >> 32) & 0xFFFFFFFF;
+#endif
             if ((xcrl & 6) == 6) {
                 have_avx1 = (c & bit_AVX) != 0;
                 have_avx2 = (b7 & bit_AVX2) != 0;
             }
         }
-#endif
     }
 
 #ifdef _MSC_VER

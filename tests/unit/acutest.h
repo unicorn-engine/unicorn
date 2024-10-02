@@ -270,7 +270,8 @@
 #include <string.h>
 #include <setjmp.h>
 
-#if defined(unix) || defined(__unix__) || defined(__unix) || defined(__APPLE__)
+#if defined(unix) || defined(__unix__) || defined(__unix) ||                   \
+    defined(__APPLE__) || defined(__HAIKU__)
 #define ACUTEST_UNIX_ 1
 #include <errno.h>
 #include <libgen.h>

@@ -251,3 +251,36 @@ impl From<RegisterMIPS> for i32 {
         r as i32
     }
 }
+
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Mips32CpuModel {
+    UC_CPU_MIPS32_4KC = 0,
+    UC_CPU_MIPS32_4KM = 1,
+    UC_CPU_MIPS32_4KECR1 = 2,
+    UC_CPU_MIPS32_4KEMR1 = 3,
+    UC_CPU_MIPS32_4KEC = 4,
+    UC_CPU_MIPS32_4KEM = 5,
+    UC_CPU_MIPS32_24KC = 6,
+    UC_CPU_MIPS32_24KEC = 7,
+    UC_CPU_MIPS32_24KF = 8,
+    UC_CPU_MIPS32_34KF = 9,
+    UC_CPU_MIPS32_74KF = 10,
+    UC_CPU_MIPS32_M14K = 11,
+    UC_CPU_MIPS32_M14KC = 12,
+    UC_CPU_MIPS32_P5600 = 13,
+    UC_CPU_MIPS32_MIPS32R6_GENERIC = 14,
+    UC_CPU_MIPS32_I7200 = 15,
+}
+
+impl From<Mips32CpuModel> for i32 {
+    fn from(value: Mips32CpuModel) -> Self {
+        value as i32
+    }
+}
+
+impl From<&Mips32CpuModel> for i32 {
+    fn from(value: &Mips32CpuModel) -> Self {
+        *value as i32
+    }
+}

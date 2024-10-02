@@ -3,18 +3,21 @@
 
 from __future__ import print_function
 import glob
+import logging
 import os
 import subprocess
 import shutil
 import sys
 import platform
+import setuptools
 
-from distutils import log
-from distutils.core import setup
-from distutils.util import get_platform
-from distutils.command.build import build
-from distutils.command.sdist import sdist
+from setuptools import setup
+from sysconfig import get_platform
+from setuptools.command.build import build
+from setuptools.command.sdist import sdist
 from setuptools.command.bdist_egg import bdist_egg
+
+log = logging.getLogger(__name__)
 
 SYSTEM = sys.platform
 
@@ -29,7 +32,7 @@ SRC_DIR = os.path.join(ROOT_DIR, 'src')
 UC_DIR = SRC_DIR if os.path.exists(SRC_DIR) else os.path.join(ROOT_DIR, '../..')
 BUILD_DIR = os.path.join(UC_DIR, 'build_python')
 
-VERSION = "2.0.1.post1"
+VERSION = "2.1.1"
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.2.dylib"
@@ -72,7 +75,7 @@ def copy_sources():
 
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.[ch]")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.mk")))
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.cmake")))
+    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../cmake/*.cmake")))
 
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../LICENSE*")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../README.md")))
@@ -135,7 +138,7 @@ def build_libraries():
             os.mkdir(BUILD_DIR)
         conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
 
-        cmake_args = ["cmake", '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
+        cmake_args = ["cmake", '-B', BUILD_DIR, '-S', UC_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
         if os.getenv("TRACE", ""):
             cmake_args += ["-DUNICORN_TRACER=on"]
         subprocess.check_call(cmake_args)
@@ -231,7 +234,7 @@ Further information is available at http://www.unicorn-engine.org
 
 setup(
     provides=['unicorn'],
-    packages=['unicorn'],
+    packages=setuptools.find_packages(include=["unicorn", "unicorn.*"]),
     name='unicorn',
     version=VERSION,
     author='Nguyen Anh Quynh',
@@ -251,6 +254,6 @@ setup(
     include_package_data=True,
     is_pure=False,
     package_data={
-        'unicorn': ['lib/*', 'include/unicorn/*']
+        'unicorn': ['unicorn/py.typed', 'lib/*', 'include/unicorn/*']
     }
 )

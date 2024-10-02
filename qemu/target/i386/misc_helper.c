@@ -25,6 +25,7 @@
 #include "exec/ioport.h"
 
 #include "uc_priv.h"
+#include "tcg/tcg-apple-jit.h"
 
 void helper_outb(CPUX86State *env, uint32_t port, uint32_t data)
 {
@@ -105,6 +106,7 @@ void helper_into(CPUX86State *env, int next_eip_addend)
 void helper_cpuid(CPUX86State *env)
 {
     uint32_t eax, ebx, ecx, edx;
+    uc_engine *uc = env->uc;
     struct hook *hook;
     int skip_cpuid = 0;
 
@@ -120,8 +122,9 @@ void helper_cpuid(CPUX86State *env)
         
         // Multiple cpuid callbacks returning different values is undefined.
         // true -> skip the cpuid instruction
-        if (hook->insn == UC_X86_INS_CPUID)
-            skip_cpuid = ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data);
+        if (hook->insn == UC_X86_INS_CPUID) {
+            JIT_CALLBACK_GUARD_VAR(skip_cpuid, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
+        }
 
         // the last callback may already asked to stop emulation
         if (env->uc->stop_request)

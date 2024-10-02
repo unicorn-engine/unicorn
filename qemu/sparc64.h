@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _sparc64
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_sparc64
+#define reg_read reg_read_sparc64
+#define reg_write reg_write_sparc64
+#define uc_init uc_init_sparc64
 #define uc_add_inline_hook uc_add_inline_hook_sparc64
 #define uc_del_inline_hook uc_del_inline_hook_sparc64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_sparc64
@@ -119,7 +123,10 @@
 #define memory_map memory_map_sparc64
 #define memory_map_io memory_map_io_sparc64
 #define memory_map_ptr memory_map_ptr_sparc64
+#define memory_cow memory_cow_sparc64
 #define memory_unmap memory_unmap_sparc64
+#define memory_moveout memory_moveout_sparc64
+#define memory_movein memory_movein_sparc64
 #define memory_free memory_free_sparc64
 #define flatview_unref flatview_unref_sparc64
 #define address_space_get_flatview address_space_get_flatview_sparc64
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_sparc64
 #define memory_region_add_subregion memory_region_add_subregion_sparc64
 #define memory_region_del_subregion memory_region_del_subregion_sparc64
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_sparc64
 #define memory_region_find memory_region_find_sparc64
+#define memory_region_filter_subregions memory_region_filter_subregions_sparc64
 #define memory_listener_register memory_listener_register_sparc64
 #define memory_listener_unregister memory_listener_unregister_sparc64
 #define address_space_remove_listeners address_space_remove_listeners_sparc64
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_sparc64
 #define memory_region_init_ram memory_region_init_ram_sparc64
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_sparc64
+#define find_memory_mapping find_memory_mapping_sparc64
 #define exec_inline_op exec_inline_op_sparc64
 #define floatx80_default_nan floatx80_default_nan_sparc64
 #define float_raise float_raise_sparc64
@@ -1277,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_sparc64
 #define gen_helper_cpsr_read gen_helper_cpsr_read_sparc64
 #define gen_helper_cpsr_write gen_helper_cpsr_write_sparc64
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_sparc64
 #define helper_compute_psr helper_compute_psr_sparc64
 #define helper_compute_C_icc helper_compute_C_icc_sparc64
 #define cpu_sparc_set_id cpu_sparc_set_id_sparc64
@@ -1414,7 +1425,4 @@
 #define helper_wrpil helper_wrpil_sparc64
 #define helper_done helper_done_sparc64
 #define helper_retry helper_retry_sparc64
-#define sparc_reg_reset sparc_reg_reset_sparc64
-#define sparc_reg_read sparc_reg_read_sparc64
-#define sparc_reg_write sparc_reg_write_sparc64
 #endif

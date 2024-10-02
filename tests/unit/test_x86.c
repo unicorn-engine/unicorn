@@ -3,6 +3,11 @@
 const uint64_t code_start = 0x1000;
 const uint64_t code_len = 0x4000;
 
+#define MEM_BASE 0x40000000
+#define MEM_SIZE 1024 * 1024
+#define MEM_STACK MEM_BASE + (MEM_SIZE / 2)
+#define MEM_TEXT MEM_STACK + 4096
+
 static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
                             const char *code, uint64_t size)
 {
@@ -10,6 +15,90 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_map(*uc, code_start, code_len, UC_PROT_ALL));
     OK(uc_mem_write(*uc, code_start, code, size));
 }
+
+typedef struct RegInfo_t {
+    const char *file;
+    int line;
+    const char *name;
+    uc_x86_reg reg;
+    uint64_t value;
+} RegInfo;
+
+typedef struct QuickTest_t {
+    uc_mode mode;
+    uint8_t *code_data;
+    size_t code_size;
+    size_t in_count;
+    RegInfo in_regs[32];
+    size_t out_count;
+    RegInfo out_regs[32];
+} QuickTest;
+
+static void QuickTest_run(QuickTest *test)
+{
+    uc_engine *uc;
+
+    // initialize emulator in X86-64bit mode
+    OK(uc_open(UC_ARCH_X86, test->mode, &uc));
+
+    // map 1MB of memory for this emulation
+    OK(uc_mem_map(uc, MEM_BASE, MEM_SIZE, UC_PROT_ALL));
+    OK(uc_mem_write(uc, MEM_TEXT, test->code_data, test->code_size));
+    if (test->mode == UC_MODE_64) {
+        uint64_t stack_top = MEM_STACK;
+        OK(uc_reg_write(uc, UC_X86_REG_RSP, &stack_top));
+    } else {
+        uint32_t stack_top = MEM_STACK;
+        OK(uc_reg_write(uc, UC_X86_REG_ESP, &stack_top));
+    }
+    for (size_t i = 0; i < test->in_count; i++) {
+        OK(uc_reg_write(uc, test->in_regs[i].reg, &test->in_regs[i].value));
+    }
+    OK(uc_emu_start(uc, MEM_TEXT, MEM_TEXT + test->code_size, 0, 0));
+    for (size_t i = 0; i < test->out_count; i++) {
+        RegInfo *out = &test->out_regs[i];
+        if (test->mode == UC_MODE_64) {
+            uint64_t value = 0;
+            OK(uc_reg_read(uc, out->reg, &value));
+            acutest_check_(value == out->value, out->file, out->line,
+                           "OUT_REG(%s, 0x%llX) = 0x%llX", out->name,
+                           out->value, value);
+        } else {
+            uint32_t value = 0;
+            OK(uc_reg_read(uc, out->reg, &value));
+            acutest_check_(value == (uint32_t)out->value, out->file, out->line,
+                           "OUT_REG(%s, 0x%X) = 0x%X", out->name,
+                           (uint32_t)out->value, value);
+        }
+    }
+    OK(uc_mem_unmap(uc, MEM_BASE, MEM_SIZE));
+    OK(uc_close(uc));
+}
+
+#define TEST_CODE(MODE, CODE)                                                  \
+    QuickTest t;                                                               \
+    memset(&t, 0, sizeof(t));                                                  \
+    t.mode = MODE;                                                             \
+    t.code_data = CODE;                                                        \
+    t.code_size = sizeof(CODE)
+
+#define TEST_IN_REG(NAME, VALUE)                                               \
+    t.in_regs[t.in_count].file = __FILE__;                                     \
+    t.in_regs[t.in_count].line = __LINE__;                                     \
+    t.in_regs[t.in_count].name = #NAME;                                        \
+    t.in_regs[t.in_count].reg = UC_X86_REG_##NAME;                             \
+    t.in_regs[t.in_count].value = VALUE;                                       \
+    t.in_count++
+
+#define TEST_OUT_REG(NAME, VALUE)                                              \
+    t.out_regs[t.out_count].file = __FILE__;                                   \
+    t.out_regs[t.out_count].line = __LINE__;                                   \
+    t.out_regs[t.out_count].name = #NAME;                                      \
+    t.out_regs[t.out_count].reg = UC_X86_REG_##NAME;                           \
+    t.out_regs[t.out_count].value = VALUE;                                     \
+    t.out_count++
+
+#define TEST_RUN() QuickTest_run(&t)
 
 typedef struct _INSN_IN_RESULT {
     uint32_t port;
@@ -1090,6 +1179,7 @@ static void test_x86_correct_address_in_long_jump_hook(void)
     uc_hook hook;
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
     OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED,
                    test_x86_correct_address_in_long_jump_hook_callback, NULL, 1,
                    0));
@@ -1124,8 +1214,8 @@ static void test_x86_invalid_vex_l(void)
     OK(uc_close(uc));
 }
 
-// AARCH64 inline the read while s390x won't split the access. Though not tested on other hosts
-// but we restrict a bit more.
+// AARCH64 inline the read while s390x won't split the access. Though not tested
+// on other hosts but we restrict a bit more.
 #if !defined(TARGET_READ_INLINED) && defined(BOOST_LITTLE_ENDIAN)
 
 struct writelog_t {
@@ -1229,6 +1319,485 @@ static void test_x86_lazy_mapping(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_16_incorrect_ip_cb(uc_engine *uc, uint64_t address,
+                                        uint32_t size, void *data)
+{
+    uint16_t cs, ip;
+
+    OK(uc_reg_read(uc, UC_X86_REG_CS, &cs));
+    OK(uc_reg_read(uc, UC_X86_REG_IP, &ip));
+
+    TEST_CHECK(cs == 0x20);
+    TEST_CHECK(address == ((cs << 4) + ip));
+}
+
+static void test_x86_16_incorrect_ip(void)
+{
+    uc_engine *uc;
+    uc_hook hk1, hk2;
+    uint16_t cs = 0x20;
+    char code[] = "\x41"; // INC cx;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_16, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &hk1, UC_HOOK_BLOCK, test_x86_16_incorrect_ip_cb, NULL,
+                   1, 0));
+    OK(uc_hook_add(uc, &hk2, UC_HOOK_CODE, test_x86_16_incorrect_ip_cb, NULL, 1,
+                   0));
+
+    OK(uc_reg_write(uc, UC_X86_REG_CS, &cs));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr,
+                                     uint64_t tlb_base)
+{
+    uint64_t cr0;
+    uint64_t cr4;
+    uc_x86_msr msr = {.rid = 0x0c0000080, .value = 0};
+    uint64_t pml4o = ((vaddr & 0x00ff8000000000) >> 39) * 8;
+    uint64_t pdpo = ((vaddr & 0x00007fc0000000) >> 30) * 8;
+    uint64_t pdo = ((vaddr & 0x0000003fe00000) >> 21) * 8;
+    uint64_t pml4e = (tlb_base + 0x1000) | 1 | (1 << 2);
+    uint64_t pdpe = (tlb_base + 0x2000) | 1 | (1 << 2);
+    uint64_t pde = (tlb_base + 0x3000) | 1 | (1 << 2);
+    OK(uc_mem_write(uc, tlb_base + pml4o, &pml4e, sizeof(pml4o)));
+    OK(uc_mem_write(uc, tlb_base + 0x1000 + pdpo, &pdpe, sizeof(pdpe)));
+    OK(uc_mem_write(uc, tlb_base + 0x2000 + pdo, &pde, sizeof(pde)));
+    OK(uc_reg_write(uc, UC_X86_REG_CR3, &tlb_base));
+    OK(uc_reg_read(uc, UC_X86_REG_CR0, &cr0));
+    OK(uc_reg_read(uc, UC_X86_REG_CR4, &cr4));
+    OK(uc_reg_read(uc, UC_X86_REG_MSR, &msr));
+    cr0 |= 1;
+    cr0 |= 1l << 31;
+    cr4 |= 1l << 5;
+    msr.value |= 1l << 8;
+    OK(uc_reg_write(uc, UC_X86_REG_CR0, &cr0));
+    OK(uc_reg_write(uc, UC_X86_REG_CR4, &cr4));
+    OK(uc_reg_write(uc, UC_X86_REG_MSR, &msr));
+}
+
+static void test_x86_mmu_pt_set(uc_engine *uc, uint64_t vaddr, uint64_t paddr,
+                                uint64_t tlb_base)
+{
+    uint64_t pto = ((vaddr & 0x000000001ff000) >> 12) * 8;
+    uint32_t pte = (paddr) | 1 | (1 << 2);
+    uc_mem_write(uc, tlb_base + 0x3000 + pto, &pte, sizeof(pte));
+}
+
+static void test_x86_mmu_callback(uc_engine *uc, void *userdata)
+{
+    bool *parrent_done = userdata;
+    uint64_t rax;
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+    switch (rax) {
+    case 57:
+        /* fork */
+        break;
+    case 60:
+        /* exit */
+        uc_emu_stop(uc);
+        return;
+    default:
+        TEST_CHECK(false);
+    }
+
+    if (!(*parrent_done)) {
+        *parrent_done = true;
+        rax = 27;
+        OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+        uc_emu_stop(uc);
+    }
+}
+
+static void test_x86_mmu(void)
+{
+    bool parrent_done = false;
+    uint64_t tlb_base = 0x3000;
+    uint64_t parrent, child;
+    uint64_t rax, rip;
+    uc_context *context;
+    uc_engine *uc;
+    uc_hook h1;
+
+    /*
+     * mov rax, 57
+     * syscall
+     * test rax, rax
+     * jz child
+     * xor rax, rax
+     * mov rax, 60
+     * mov [0x4000], rax
+     * syscall
+     *
+     * child:
+     * xor rcx, rcx
+     * mov rcx, 42
+     * mov [0x4000], rcx
+     * mov rax, 60
+     * syscall
+     */
+    char code[] =
+        "\xB8\x39\x00\x00\x00\x0F\x05\x48\x85\xC0\x74\x0F\xB8\x3C\x00\x00\x00"
+        "\x48\x89\x04\x25\x00\x40\x00\x00\x0F\x05\xB9\x2A\x00\x00\x00\x48\x89"
+        "\x0C\x25\x00\x40\x00\x00\xB8\x3C\x00\x00\x00\x0F\x05";
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_CPU));
+    OK(uc_hook_add(uc, &h1, UC_HOOK_INSN, &test_x86_mmu_callback, &parrent_done,
+                   1, 0, UC_X86_INS_SYSCALL));
+    OK(uc_context_alloc(uc, &context));
+
+    OK(uc_mem_map(uc, 0x0, 0x1000, UC_PROT_ALL)); // Code
+    OK(uc_mem_write(uc, 0x0, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));   // Parrent
+    OK(uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_ALL));   // Child
+    OK(uc_mem_map(uc, tlb_base, 0x4000, UC_PROT_ALL)); // TLB
+
+    test_x86_mmu_prepare_tlb(uc, 0x0, tlb_base);
+    test_x86_mmu_pt_set(uc, 0x2000, 0x0, tlb_base);
+    test_x86_mmu_pt_set(uc, 0x4000, 0x1000, tlb_base);
+
+    OK(uc_ctl_flush_tlb(uc));
+    OK(uc_emu_start(uc, 0x2000, 0x0, 0, 0));
+
+    OK(uc_context_save(uc, context));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &rip));
+
+    OK(uc_emu_start(uc, rip, 0x0, 0, 0));
+
+    /* restore for child */
+    OK(uc_context_restore(uc, context));
+    test_x86_mmu_prepare_tlb(uc, 0x0, tlb_base);
+    test_x86_mmu_pt_set(uc, 0x4000, 0x2000, tlb_base);
+    rax = 0;
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_ctl_flush_tlb(uc));
+
+    OK(uc_emu_start(uc, rip, 0x0, 0, 0));
+    OK(uc_mem_read(uc, 0x1000, &parrent, sizeof(parrent)));
+    OK(uc_mem_read(uc, 0x2000, &child, sizeof(child)));
+    TEST_CHECK(parrent == 60);
+    TEST_CHECK(child == 42);
+}
+
+static bool test_x86_vtlb_callback(uc_engine *uc, uint64_t addr,
+                                   uc_mem_type type, uc_tlb_entry *result,
+                                   void *user_data)
+{
+    result->paddr = addr;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+static void test_x86_vtlb(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\xeb\x02\x90\x90\x90\x90\x90\x90"; // jmp 4; nop; nop; nop;
+                                                      // nop; nop; nop
+    uint64_t r_eip = 0;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_x86_vtlb_callback, NULL, 1,
+                   0));
+
+    OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_eip));
+
+    TEST_CHECK(r_eip == code_start + 4);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_segmentation(void)
+{
+    uc_engine *uc;
+    uint64_t fs = 0x53;
+    uc_x86_mmr gdtr = {0, 0xfffff8076d962000, 0x57, 0};
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_reg_write(uc, UC_X86_REG_GDTR, &gdtr));
+    uc_assert_err(UC_ERR_EXCEPTION, uc_reg_write(uc, UC_X86_REG_FS, &fs));
+}
+
+static void test_x86_0xff_lcall_callback(uc_engine *uc, uint64_t address,
+                                         uint32_t size, void *user_data)
+{
+    // do nothing
+    return;
+}
+
+// This aborts prior to a7a5d187e77f7853755eff4768658daf8095c3b7
+static void test_x86_0xff_lcall(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    const char code[] =
+        "\xB8\x01\x00\x00\x00\xBB\x01\x00\x00\x00\xB9\x01\x00\x00\x00\xFF\xDD"
+        "\xBA\x01\x00\x00\x00\xB8\x02\x00\x00\x00\xBB\x02\x00\x00\x00";
+    // Taken from #1842
+    // 0:  b8 01 00 00 00          mov    eax,0x1
+    // 5:  bb 01 00 00 00          mov    ebx,0x1
+    // a:  b9 01 00 00 00          mov    ecx,0x1
+    // f:  ff                      (bad)
+    // 10: dd ba 01 00 00 00       fnstsw WORD PTR [edx+0x1]
+    // 16: b8 02 00 00 00          mov    eax,0x2
+    // 1b: bb 02 00 00 00          mov    ebx,0x2
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_x86_0xff_lcall_callback, NULL, 1,
+                   0));
+
+    uc_assert_err(
+        UC_ERR_INSN_INVALID,
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
+static bool test_x86_64_not_overwriting_tmp0_for_pc_update_cb(
+    uc_engine *uc, uc_mem_type type, uint64_t address, int size, uint64_t value,
+    void *user_data)
+{
+    return true;
+}
+
+// https://github.com/unicorn-engine/unicorn/issues/1717
+// https://github.com/unicorn-engine/unicorn/issues/1862
+static void test_x86_64_not_overwriting_tmp0_for_pc_update(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    const char code[] = "\x48\xb9\xff\xff\xff\xff\xff\xff\xff\xff\x48\x89\x0c"
+                        "\x24\x48\xd3\x24\x24\x73\x0a";
+    uint64_t rsp, pc, eflags;
+
+    // 0x1000: movabs  rcx, 0xffffffffffffffff
+    // 0x100a: mov     qword ptr [rsp], rcx
+    // 0x100e: shl     qword ptr [rsp], cl ; (Shift to CF=1)
+    // 0x1012: jae     0xd ; this jump should not be taken! (CF=1 but jae
+    // expects CF=0)
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE,
+                   test_x86_64_not_overwriting_tmp0_for_pc_update_cb, NULL, 1,
+                   0));
+
+    rsp = 0x2000;
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, (void *)&rsp));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 4));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &pc));
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &eflags));
+
+    TEST_CHECK(pc == 0x1014);
+    TEST_CHECK((eflags & 0x1) == 1);
+
+    OK(uc_close(uc));
+}
+
+static void test_fxsave_fpip_x86(void)
+{
+    // note: fxsave was introduced in Pentium II
+    uint8_t code_x86[] = {
+        // help testing through NOP offset      [disassembly in at&t syntax]
+        0x90, 0x90, 0x90, 0x90, // nop nop nop nop
+        // run a floating point instruction
+        0xdb, 0xc9, // fcmovne %st(1), %st
+        // fxsave needs 512 bytes of storage space
+        0x81, 0xec, 0x00, 0x02, 0x00, 0x00, // subl $512, %esp
+        // fxsave needs a 16-byte aligned address for storage
+        0x83, 0xe4, 0xf0, // andl $0xfffffff0, %esp
+        // store fxsave data on the stack
+        0x0f, 0xae, 0x04, 0x24, // fxsave (%esp)
+        // fxsave stores FPIP at an 8-byte offset, move FPIP to eax register
+        0x8b, 0x44, 0x24, 0x08 // movl 0x8(%esp), %eax
+    };
+    uint32_t X86_NOP_OFFSET = 4;
+    uint32_t stack_top = (uint32_t)MEM_STACK;
+    uint32_t value;
+    uc_engine *uc;
+
+    // initialize emulator in X86-32bit mode
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+
+    // map 1MB of memory for this emulation
+    OK(uc_mem_map(uc, MEM_BASE, MEM_SIZE, UC_PROT_ALL));
+    OK(uc_mem_write(uc, MEM_TEXT, code_x86, sizeof(code_x86)));
+    OK(uc_reg_write(uc, UC_X86_REG_ESP, &stack_top));
+    OK(uc_emu_start(uc, MEM_TEXT, MEM_TEXT + sizeof(code_x86), 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &value));
+    TEST_CHECK(value == ((uint32_t)MEM_TEXT + X86_NOP_OFFSET));
+    OK(uc_mem_unmap(uc, MEM_BASE, MEM_SIZE));
+    OK(uc_close(uc));
+}
+
+static void test_fxsave_fpip_x64(void)
+{
+    uint8_t code_x64[] = {
+        // help testing through NOP offset     [disassembly in at&t]
+        0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, // nops
+        // run a floating point instruction
+        0xdb, 0xc9, // fcmovne %st(1), %st
+        // fxsave64 needs 512 bytes of storage space
+        0x48, 0x81, 0xec, 0x00, 0x02, 0x00, 0x00, // subq $512, %rsp
+        // fxsave needs a 16-byte aligned address for storage
+        0x48, 0x83, 0xe4, 0xf0, // andq 0xfffffffffffffff0, %rsp
+        // store fxsave64 data on the stack
+        0x48, 0x0f, 0xae, 0x04, 0x24, // fxsave64 (%rsp)
+        // fxsave64 stores FPIP at an 8-byte offset, move FPIP to rax register
+        0x48, 0x8b, 0x44, 0x24, 0x08, // movq 0x8(%rsp), %rax
+    };
+
+    uint64_t stack_top = (uint64_t)MEM_STACK;
+    uint64_t X64_NOP_OFFSET = 8;
+    uint64_t value;
+    uc_engine *uc;
+
+    // initialize emulator in X86-32bit mode
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+
+    // map 1MB of memory for this emulation
+    OK(uc_mem_map(uc, MEM_BASE, MEM_SIZE, UC_PROT_ALL));
+    OK(uc_mem_write(uc, MEM_TEXT, code_x64, sizeof(code_x64)));
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &stack_top));
+    OK(uc_emu_start(uc, MEM_TEXT, MEM_TEXT + sizeof(code_x64), 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &value));
+    TEST_CHECK(value == ((uint64_t)MEM_TEXT + X64_NOP_OFFSET));
+    OK(uc_mem_unmap(uc, MEM_BASE, MEM_SIZE));
+    OK(uc_close(uc));
+}
+
+static void test_bswap_ax(void)
+{
+    // References:
+    // - https://gynvael.coldwind.pl/?id=268
+    // - https://github.com/JonathanSalwan/Triton/issues/1131
+    {
+        uint8_t code[] = {
+            // bswap ax
+            0x66,
+            0x0F,
+            0xC8,
+        };
+        TEST_CODE(UC_MODE_32, code);
+        TEST_IN_REG(EAX, 0x44332211);
+        TEST_OUT_REG(EAX, 0x44330000);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // bswap ax
+            0x66,
+            0x0F,
+            0xC8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_OUT_REG(RAX, 0x8877665544330000);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // bswap rax (66h ignored)
+            0x66,
+            0x48,
+            0x0F,
+            0xC8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_OUT_REG(RAX, 0x1122334455667788);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // bswap ax (rex ignored)
+            0x48,
+            0x66,
+            0x0F,
+            0xC8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_OUT_REG(RAX, 0x8877665544330000);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // bswap eax
+            0x0F,
+            0xC8,
+        };
+        TEST_CODE(UC_MODE_32, code);
+        TEST_IN_REG(EAX, 0x44332211);
+        TEST_OUT_REG(EAX, 0x11223344);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // bswap eax
+            0x0F,
+            0xC8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_OUT_REG(RAX, 0x0000000011223344);
+        TEST_RUN();
+    }
+}
+
+static void test_rex_x64(void)
+{
+    {
+        uint8_t code[] = {
+            // mov ax, bx (rex.w ignored)
+            0x48,
+            0x66,
+            0x89,
+            0xD8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_IN_REG(RBX, 0x1122334455667788);
+        TEST_OUT_REG(RAX, 0x8877665544337788);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // mov rax, rbx (66h ignored)
+            0x66,
+            0x48,
+            0x89,
+            0xD8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_IN_REG(RBX, 0x1122334455667788);
+        TEST_OUT_REG(RAX, 0x1122334455667788);
+        TEST_RUN();
+    }
+    {
+        uint8_t code[] = {
+            // mov ax, bx (expected encoding)
+            0x66,
+            0x89,
+            0xD8,
+        };
+        TEST_CODE(UC_MODE_64, code);
+        TEST_IN_REG(RAX, 0x8877665544332211);
+        TEST_IN_REG(RBX, 0x1122334455667788);
+        TEST_OUT_REG(RAX, 0x8877665544337788);
+        TEST_RUN();
+    }
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1271,4 +1840,15 @@ TEST_LIST = {
     {"test_x86_unaligned_access", test_x86_unaligned_access},
 #endif
     {"test_x86_lazy_mapping", test_x86_lazy_mapping},
+    {"test_x86_16_incorrect_ip", test_x86_16_incorrect_ip},
+    {"test_x86_mmu", test_x86_mmu},
+    {"test_x86_vtlb", test_x86_vtlb},
+    {"test_x86_segmentation", test_x86_segmentation},
+    {"test_x86_0xff_lcall", test_x86_0xff_lcall},
+    {"test_x86_64_not_overwriting_tmp0_for_pc_update",
+     test_x86_64_not_overwriting_tmp0_for_pc_update},
+    {"test_fxsave_fpip_x86", test_fxsave_fpip_x86},
+    {"test_fxsave_fpip_x64", test_fxsave_fpip_x64},
+    {"test_bswap_x64", test_bswap_ax},
+    {"test_rex_x64", test_rex_x64},
     {NULL, NULL}};

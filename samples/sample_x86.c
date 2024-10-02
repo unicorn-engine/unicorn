@@ -13,7 +13,7 @@
     "\xeb\x02\x90\x90\x90\x90\x90\x90" // jmp 4; nop; nop; nop; nop; nop; nop
 // #define X86_CODE32_SELF
 // "\xeb\x1c\x5a\x89\xd6\x8b\x02\x66\x3d\xca\x7d\x75\x06\x66\x05\x03\x03\x89\x02\xfe\xc2\x3d\x41\x41\x41\x41\x75\xe9\xff\xe6\xe8\xdf\xff\xff\xff\x31\xd2\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x52\x53\x89\xe1\xca\x7d\x41\x41\x41\x41"
-//#define X86_CODE32 "\x51\x51\x51\x51" // PUSH ecx;
+// #define X86_CODE32 "\x51\x51\x51\x51" // PUSH ecx;
 #define X86_CODE32_LOOP "\x41\x4a\xeb\xfe" // INC ecx; DEC edx; JMP self-loop
 #define X86_CODE32_MEM_WRITE                                                   \
     "\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a" // mov [0xaaaaaaaa], ecx; INC ecx; DEC
@@ -30,7 +30,7 @@
                                    // AL; INC ebx
 #define X86_CODE32_INC "\x40"      // INC eax
 
-//#define X86_CODE64 "\x41\xBC\x3B\xB0\x28\x2A \x49\x0F\xC9 \x90
+// #define X86_CODE64 "\x41\xBC\x3B\xB0\x28\x2A \x49\x0F\xC9 \x90
 //\x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9" //
 //<== still crash #define X86_CODE64
 //"\x41\xBC\x3B\xB0\x28\x2A\x49\x0F\xC9\x90\x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9"
@@ -360,7 +360,6 @@ static void test_i386_map_ptr(void)
     int r_ecx = 0x1234; // ECX register
     int r_edx = 0x7890; // EDX register
 
-    printf("===================================\n");
     printf("Emulate i386 code - use uc_mem_map_ptr()\n");
 
     // Initialize emulator in X86-32bit mode
@@ -426,7 +425,6 @@ static void test_i386_jump(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    printf("===================================\n");
     printf("Emulate i386 code with jump\n");
 
     // Initialize emulator in X86-32bit mode
@@ -474,7 +472,6 @@ static void test_i386_loop(void)
     int r_ecx = 0x1234; // ECX register
     int r_edx = 0x7890; // EDX register
 
-    printf("===================================\n");
     printf("Emulate i386 code that loop forever\n");
 
     // Initialize emulator in X86-32bit mode
@@ -528,7 +525,6 @@ static void test_i386_invalid_mem_read(void)
     int r_ecx = 0x1234; // ECX register
     int r_edx = 0x7890; // EDX register
 
-    printf("===================================\n");
     printf("Emulate i386 code that read from invalid memory\n");
 
     // Initialize emulator in X86-32bit mode
@@ -588,7 +584,6 @@ static void test_i386_invalid_mem_write(void)
     int r_ecx = 0x1234; // ECX register
     int r_edx = 0x7890; // EDX register
 
-    printf("===================================\n");
     printf("Emulate i386 code that write to invalid memory\n");
 
     // Initialize emulator in X86-32bit mode
@@ -663,7 +658,6 @@ static void test_i386_jump_invalid(void)
     int r_ecx = 0x1234; // ECX register
     int r_edx = 0x7890; // EDX register
 
-    printf("===================================\n");
     printf("Emulate i386 code that jumps to invalid memory\n");
 
     // Initialize emulator in X86-32bit mode
@@ -721,7 +715,6 @@ static void test_i386_inout(void)
     int r_eax = 0x1234; // EAX register
     int r_ecx = 0x6789; // ECX register
 
-    printf("===================================\n");
     printf("Emulate i386 code with IN/OUT instructions\n");
 
     // Initialize emulator in X86-32bit mode
@@ -785,7 +778,6 @@ static void test_i386_context_save(void)
 
     int r_eax = 0x1; // EAX register
 
-    printf("===================================\n");
     printf("Save/restore CPU context in opaque blob\n");
 
     // initialize emulator in X86-32bit mode
@@ -908,7 +900,6 @@ static void test_i386_invalid_c6c7(void)
     };
     int i, j, k;
 
-    printf("===================================\n");
     printf("Emulate i386 C6/C7 opcodes\n");
 
     // Initialize emulator in X86-32bit mode
@@ -1077,7 +1068,6 @@ static void test_x86_64_syscall(void)
 
     int64_t rax = 0x100;
 
-    printf("===================================\n");
     printf("Emulate x86_64 code with 'syscall' instruction\n");
 
     // Initialize emulator in X86-64bit mode
@@ -1186,7 +1176,6 @@ static void test_i386_invalid_mem_read_in_tb(void)
     int r_edx = 0x7890; // EDX register
     int r_eip = 0;
 
-    printf("===================================\n");
     printf(
         "Emulate i386 code that read invalid memory in the middle of a TB\n");
 
@@ -1240,7 +1229,7 @@ static void test_i386_invalid_mem_read_in_tb(void)
     uc_close(uc);
 }
 
-static void test_i386_smc_xor()
+static void test_i386_smc_xor(void)
 {
     uc_engine *uc;
     uc_err err;
@@ -1249,7 +1238,6 @@ static void test_i386_smc_xor()
     uint32_t r_eax = 0xbc4177e6; // EDX register
     uint32_t result;
 
-    printf("===================================\n");
     printf("Emulate i386 code that modfies itself\n");
 
     // Initialize emulator in X86-32bit mode
@@ -1319,13 +1307,12 @@ static void mmio_write_callback(uc_engine *uc, uint64_t offset, unsigned size,
     return;
 }
 
-static void test_i386_mmio()
+static void test_i386_mmio(void)
 {
     uc_engine *uc;
     int r_ecx = 0xdeadbeef;
     uc_err err;
 
-    printf("===================================\n");
     printf("Emulate i386 code that uses MMIO\n");
 
     // Initialize emulator in X86-32bit mode
@@ -1392,7 +1379,7 @@ static bool test_i386_hook_mem_invalid_cb(uc_engine *uc, uc_mem_type type,
     return true;
 }
 
-static void test_i386_hook_mem_invalid()
+static void test_i386_hook_mem_invalid(void)
 {
     uc_engine *uc;
     uc_hook hook;
@@ -1403,7 +1390,6 @@ static void test_i386_hook_mem_invalid()
         "\xb8\xef\xbe\xad\xde\xa3\x00\x80\x00\x00\xa1\x00\x00\x01\x00";
     uc_err err;
 
-    printf("===================================\n");
     printf("Emulate i386 code that triggers invalid memory read/write.\n");
 
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
@@ -1448,40 +1434,66 @@ int main(int argc, char **argv, char **envp)
             test_x86_16();
         } else if (!strcmp(argv[1], "-32")) {
             test_miss_code();
+            printf("===================================\n");
             test_i386();
+            printf("===================================\n");
             test_i386_map_ptr();
+            printf("===================================\n");
             test_i386_inout();
+            printf("===================================\n");
             test_i386_context_save();
+            printf("===================================\n");
             test_i386_jump();
+            printf("===================================\n");
             test_i386_loop();
+            printf("===================================\n");
             test_i386_invalid_mem_read();
+            printf("===================================\n");
             test_i386_invalid_mem_write();
+            printf("===================================\n");
             test_i386_jump_invalid();
             // test_i386_invalid_c6c7();
         } else if (!strcmp(argv[1], "-64")) {
             test_x86_64();
+            printf("===================================\n");
             test_x86_64_syscall();
         } else if (!strcmp(argv[1], "-h")) {
             printf("Syntax: %s <-16|-32|-64>\n", argv[0]);
         }
     } else {
         test_x86_16();
+        printf("===================================\n");
         test_miss_code();
+        printf("===================================\n");
         test_i386();
+        printf("===================================\n");
         test_i386_map_ptr();
+        printf("===================================\n");
         test_i386_inout();
+        printf("===================================\n");
         test_i386_context_save();
+        printf("===================================\n");
         test_i386_jump();
+        printf("===================================\n");
         test_i386_loop();
+        printf("===================================\n");
         test_i386_invalid_mem_read();
+        printf("===================================\n");
         test_i386_invalid_mem_write();
+        printf("===================================\n");
         test_i386_jump_invalid();
         // test_i386_invalid_c6c7();
+        printf("===================================\n");
         test_x86_64();
+        printf("===================================\n");
         test_x86_64_syscall();
+        printf("===================================\n");
         test_i386_invalid_mem_read_in_tb();
+        printf("===================================\n");
         test_i386_smc_xor();
+        printf("===================================\n");
         test_i386_mmio();
+        printf("===================================\n");
         test_i386_hook_mem_invalid();
     }
 

@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _arm
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_arm
+#define reg_read reg_read_arm
+#define reg_write reg_write_arm
+#define uc_init uc_init_arm
 #define uc_add_inline_hook uc_add_inline_hook_arm
 #define uc_del_inline_hook uc_del_inline_hook_arm
 #define tb_invalidate_phys_range tb_invalidate_phys_range_arm
@@ -119,7 +123,10 @@
 #define memory_map memory_map_arm
 #define memory_map_io memory_map_io_arm
 #define memory_map_ptr memory_map_ptr_arm
+#define memory_cow memory_cow_arm
 #define memory_unmap memory_unmap_arm
+#define memory_moveout memory_moveout_arm
+#define memory_movein memory_movein_arm
 #define memory_free memory_free_arm
 #define flatview_unref flatview_unref_arm
 #define address_space_get_flatview address_space_get_flatview_arm
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_arm
 #define memory_region_add_subregion memory_region_add_subregion_arm
 #define memory_region_del_subregion memory_region_del_subregion_arm
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_arm
 #define memory_region_find memory_region_find_arm
+#define memory_region_filter_subregions memory_region_filter_subregions_arm
 #define memory_listener_register memory_listener_register_arm
 #define memory_listener_unregister memory_listener_unregister_arm
 #define address_space_remove_listeners address_space_remove_listeners_arm
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_arm
 #define memory_region_init_ram memory_region_init_ram_arm
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_arm
+#define find_memory_mapping find_memory_mapping_arm
 #define exec_inline_op exec_inline_op_arm
 #define floatx80_default_nan floatx80_default_nan_arm
 #define float_raise float_raise_arm
@@ -1277,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_arm
 #define gen_helper_cpsr_read gen_helper_cpsr_read_arm
 #define gen_helper_cpsr_write gen_helper_cpsr_write_arm
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_arm
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_arm
 #define arm_cpu_update_virq arm_cpu_update_virq_arm
 #define arm_cpu_update_vfiq arm_cpu_update_vfiq_arm
@@ -1969,9 +1980,6 @@
 #define helper_frint32_d helper_frint32_d_arm
 #define helper_frint64_d helper_frint64_d_arm
 #define helper_check_hcr_el2_trap helper_check_hcr_el2_trap_arm
-#define arm_reg_reset arm_reg_reset_arm
-#define arm_reg_read arm_reg_read_arm
-#define arm_reg_write arm_reg_write_arm
 #define mla_op mla_op_arm
 #define mls_op mls_op_arm
 #define sshl_op sshl_op_arm

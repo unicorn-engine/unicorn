@@ -77,21 +77,6 @@ static inline int uc_ppc_store_msr(CPUPPCState *env, target_ulong value,
     return 0;
 }
 
-static uint64_t ppc_mem_redirect(uint64_t address)
-{
-    /*    // kseg0 range masks off high address bit
-        if (address >= 0x80000000 && address <= 0x9fffffff)
-            return address & 0x7fffffff;
-
-        // kseg1 range masks off top 3 address bits
-        if (address >= 0xa0000000 && address <= 0xbfffffff) {
-            return address & 0x1fffffff;
-        }*/
-
-    // no redirect
-    return address;
-}
-
 static void ppc_set_pc(struct uc_struct *uc, uint64_t address)
 {
     ((CPUPPCState *)uc->cpu->env_ptr)->nip = address;
@@ -151,7 +136,7 @@ static void ppc_release(void *ctx)
     ppc_cpu_unrealize(tcg_ctx->uc->cpu);
 }
 
-void ppc_reg_reset(struct uc_struct *uc)
+static void reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env;
     env = uc->cpu->env_ptr;
@@ -161,253 +146,126 @@ void ppc_reg_reset(struct uc_struct *uc)
 }
 
 // http://www.csit-sun.pub.ro/~cpop/Documentatie_SMP/Motorola_PowerPC/PowerPc/GenInfo/pemch2.pdf
-static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
+DEFAULT_VISIBILITY
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
-    uint32_t val;
+    CPUPPCState *env = _env;
+    uc_err ret = UC_ERR_ARG;
 
-    if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31)
+    if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31) {
+        CHECK_REG_TYPE(ppcreg_t);
         *(ppcreg_t *)value = env->gpr[regid - UC_PPC_REG_0];
-    else {
+    } else if (regid >= UC_PPC_REG_FPR0 && regid <= UC_PPC_REG_FPR31) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->vsr[regid - UC_PPC_REG_FPR0].VsrD(0);
+    } else if (regid >= UC_PPC_REG_CR0 && regid <= UC_PPC_REG_CR7) {
+        CHECK_REG_TYPE(uint32_t);
+        *(uint32_t *)value = env->crf[regid - UC_PPC_REG_CR0];
+    } else {
         switch (regid) {
         default:
             break;
         case UC_PPC_REG_PC:
+            CHECK_REG_TYPE(ppcreg_t);
             *(ppcreg_t *)value = env->nip;
             break;
-        case UC_PPC_REG_FPR0:
-        case UC_PPC_REG_FPR1:
-        case UC_PPC_REG_FPR2:
-        case UC_PPC_REG_FPR3:
-        case UC_PPC_REG_FPR4:
-        case UC_PPC_REG_FPR5:
-        case UC_PPC_REG_FPR6:
-        case UC_PPC_REG_FPR7:
-        case UC_PPC_REG_FPR8:
-        case UC_PPC_REG_FPR9:
-        case UC_PPC_REG_FPR10:
-        case UC_PPC_REG_FPR11:
-        case UC_PPC_REG_FPR12:
-        case UC_PPC_REG_FPR13:
-        case UC_PPC_REG_FPR14:
-        case UC_PPC_REG_FPR15:
-        case UC_PPC_REG_FPR16:
-        case UC_PPC_REG_FPR17:
-        case UC_PPC_REG_FPR18:
-        case UC_PPC_REG_FPR19:
-        case UC_PPC_REG_FPR20:
-        case UC_PPC_REG_FPR21:
-        case UC_PPC_REG_FPR22:
-        case UC_PPC_REG_FPR23:
-        case UC_PPC_REG_FPR24:
-        case UC_PPC_REG_FPR25:
-        case UC_PPC_REG_FPR26:
-        case UC_PPC_REG_FPR27:
-        case UC_PPC_REG_FPR28:
-        case UC_PPC_REG_FPR29:
-        case UC_PPC_REG_FPR30:
-        case UC_PPC_REG_FPR31:
-            *(uint64_t *)value = env->vsr[regid - UC_PPC_REG_FPR0].VsrD(0);
-            break;
-        case UC_PPC_REG_CR0:
-        case UC_PPC_REG_CR1:
-        case UC_PPC_REG_CR2:
-        case UC_PPC_REG_CR3:
-        case UC_PPC_REG_CR4:
-        case UC_PPC_REG_CR5:
-        case UC_PPC_REG_CR6:
-        case UC_PPC_REG_CR7:
-            *(uint32_t *)value = env->crf[regid - UC_PPC_REG_CR0];
-            break;
-        case UC_PPC_REG_CR:
-            val = 0;
-            for (int i = 0; i < 8; i++) {
+        case UC_PPC_REG_CR: {
+            CHECK_REG_TYPE(uint32_t);
+            int i;
+            uint32_t val = 0;
+            for (i = 0; i < 8; i++) {
                 val <<= 4;
                 val |= env->crf[i];
             }
             *(uint32_t *)value = val;
             break;
+        }
         case UC_PPC_REG_LR:
+            CHECK_REG_TYPE(ppcreg_t);
             *(ppcreg_t *)value = env->lr;
             break;
         case UC_PPC_REG_CTR:
+            CHECK_REG_TYPE(ppcreg_t);
             *(ppcreg_t *)value = env->ctr;
             break;
         case UC_PPC_REG_MSR:
+            CHECK_REG_TYPE(ppcreg_t);
             *(ppcreg_t *)value = env->msr;
             break;
         case UC_PPC_REG_XER:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = env->xer;
             break;
         case UC_PPC_REG_FPSCR:
+            CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = env->fpscr;
             break;
         }
     }
 
-    return;
+    return ret;
 }
 
-static void reg_write(CPUPPCState *env, unsigned int regid, const void *value)
+DEFAULT_VISIBILITY
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
-    uint32_t val;
-    int i;
+    CPUPPCState *env = _env;
+    uc_err ret = UC_ERR_ARG;
 
-    if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31)
+    if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31) {
+        CHECK_REG_TYPE(ppcreg_t);
         env->gpr[regid - UC_PPC_REG_0] = *(ppcreg_t *)value;
-    else {
+    } else if (regid >= UC_PPC_REG_FPR0 && regid <= UC_PPC_REG_FPR31) {
+        CHECK_REG_TYPE(uint64_t);
+        env->vsr[regid - UC_PPC_REG_FPR0].VsrD(0) = *(uint64_t *)value;
+    } else if (regid >= UC_PPC_REG_CR0 && regid <= UC_PPC_REG_CR7) {
+        CHECK_REG_TYPE(uint32_t);
+        env->crf[regid - UC_PPC_REG_CR0] = (*(uint32_t *)value) & 0b1111;
+    } else {
         switch (regid) {
         default:
             break;
         case UC_PPC_REG_PC:
+            CHECK_REG_TYPE(ppcreg_t);
             env->nip = *(ppcreg_t *)value;
+            *setpc = 1;
             break;
-        case UC_PPC_REG_FPR0:
-        case UC_PPC_REG_FPR1:
-        case UC_PPC_REG_FPR2:
-        case UC_PPC_REG_FPR3:
-        case UC_PPC_REG_FPR4:
-        case UC_PPC_REG_FPR5:
-        case UC_PPC_REG_FPR6:
-        case UC_PPC_REG_FPR7:
-        case UC_PPC_REG_FPR8:
-        case UC_PPC_REG_FPR9:
-        case UC_PPC_REG_FPR10:
-        case UC_PPC_REG_FPR11:
-        case UC_PPC_REG_FPR12:
-        case UC_PPC_REG_FPR13:
-        case UC_PPC_REG_FPR14:
-        case UC_PPC_REG_FPR15:
-        case UC_PPC_REG_FPR16:
-        case UC_PPC_REG_FPR17:
-        case UC_PPC_REG_FPR18:
-        case UC_PPC_REG_FPR19:
-        case UC_PPC_REG_FPR20:
-        case UC_PPC_REG_FPR21:
-        case UC_PPC_REG_FPR22:
-        case UC_PPC_REG_FPR23:
-        case UC_PPC_REG_FPR24:
-        case UC_PPC_REG_FPR25:
-        case UC_PPC_REG_FPR26:
-        case UC_PPC_REG_FPR27:
-        case UC_PPC_REG_FPR28:
-        case UC_PPC_REG_FPR29:
-        case UC_PPC_REG_FPR30:
-        case UC_PPC_REG_FPR31:
-            env->vsr[regid - UC_PPC_REG_FPR0].VsrD(0) = *(uint64_t *)value;
-            break;
-        case UC_PPC_REG_CR0:
-        case UC_PPC_REG_CR1:
-        case UC_PPC_REG_CR2:
-        case UC_PPC_REG_CR3:
-        case UC_PPC_REG_CR4:
-        case UC_PPC_REG_CR5:
-        case UC_PPC_REG_CR6:
-        case UC_PPC_REG_CR7:
-            env->crf[regid - UC_PPC_REG_CR0] = (*(uint32_t *)value) & 0b1111;
-            break;
-        case UC_PPC_REG_CR:
-            val = *(uint32_t *)value;
+        case UC_PPC_REG_CR: {
+            CHECK_REG_TYPE(uint32_t);
+            int i;
+            uint32_t val = *(uint32_t *)value;
             for (i = 7; i >= 0; i--) {
                 env->crf[i] = val & 0b1111;
                 val >>= 4;
             }
             break;
+        }
         case UC_PPC_REG_LR:
+            CHECK_REG_TYPE(ppcreg_t);
             env->lr = *(ppcreg_t *)value;
             break;
         case UC_PPC_REG_CTR:
+            CHECK_REG_TYPE(ppcreg_t);
             env->ctr = *(ppcreg_t *)value;
             break;
         case UC_PPC_REG_MSR:
+            CHECK_REG_TYPE(ppcreg_t);
             uc_ppc_store_msr(env, *(ppcreg_t *)value, 0);
             break;
         case UC_PPC_REG_XER:
+            CHECK_REG_TYPE(uint32_t);
             env->xer = *(uint32_t *)value;
             break;
         case UC_PPC_REG_FPSCR:
+            CHECK_REG_TYPE(uint32_t);
             store_fpscr(env, *(uint32_t *)value, 0xffffffff);
             break;
         }
     }
 
-    return;
-}
-
-int ppc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                 int count)
-{
-    CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        reg_read(env, regid, value);
-    }
-
-    return 0;
-}
-
-int ppc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                  int count)
-{
-    CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        reg_write(env, regid, value);
-        if (regid == UC_PPC_REG_PC) {
-            // force to quit execution and flush TB
-            uc->quit_request = true;
-            uc_emu_stop(uc);
-        }
-    }
-
-    return 0;
-}
-
-DEFAULT_VISIBILITY
-#ifdef TARGET_PPC64
-int ppc64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                           void **vals, int count)
-#else
-int ppc_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                         void **vals, int count)
-#endif
-{
-    CPUPPCState *env = (CPUPPCState *)ctx->data;
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        void *value = vals[i];
-        reg_read(env, regid, value);
-    }
-
-    return 0;
-}
-
-DEFAULT_VISIBILITY
-#ifdef TARGET_PPC64
-int ppc64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                            void *const *vals, int count)
-#else
-int ppc_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                          void *const *vals, int count)
-#endif
-{
-    CPUPPCState *env = (CPUPPCState *)ctx->data;
-    int i;
-
-    for (i = 0; i < count; i++) {
-        unsigned int regid = regs[i];
-        const void *value = vals[i];
-        reg_write(env, regid, value);
-    }
-
-    return 0;
+    return ret;
 }
 
 PowerPCCPU *cpu_ppc_init(struct uc_struct *uc);
@@ -423,19 +281,14 @@ static int ppc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-#ifdef TARGET_PPC64
-void ppc64_uc_init(struct uc_struct *uc)
-#else
-void ppc_uc_init(struct uc_struct *uc)
-#endif
+void uc_init(struct uc_struct *uc)
 {
-    uc->reg_read = ppc_reg_read;
-    uc->reg_write = ppc_reg_write;
-    uc->reg_reset = ppc_reg_reset;
+    uc->reg_read = reg_read;
+    uc->reg_write = reg_write;
+    uc->reg_reset = reg_reset;
     uc->release = ppc_release;
     uc->set_pc = ppc_set_pc;
     uc->get_pc = ppc_get_pc;
-    uc->mem_redirect = ppc_mem_redirect;
     uc->cpus_init = ppc_cpus_init;
     uc->cpu_context_size = offsetof(CPUPPCState, uc);
     uc_common_init(uc);

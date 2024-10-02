@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _mips64
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_mips64
+#define reg_read reg_read_mips64
+#define reg_write reg_write_mips64
+#define uc_init uc_init_mips64
 #define uc_add_inline_hook uc_add_inline_hook_mips64
 #define uc_del_inline_hook uc_del_inline_hook_mips64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_mips64
@@ -119,7 +123,10 @@
 #define memory_map memory_map_mips64
 #define memory_map_io memory_map_io_mips64
 #define memory_map_ptr memory_map_ptr_mips64
+#define memory_cow memory_cow_mips64
 #define memory_unmap memory_unmap_mips64
+#define memory_moveout memory_moveout_mips64
+#define memory_movein memory_movein_mips64
 #define memory_free memory_free_mips64
 #define flatview_unref flatview_unref_mips64
 #define address_space_get_flatview address_space_get_flatview_mips64
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_mips64
 #define memory_region_add_subregion memory_region_add_subregion_mips64
 #define memory_region_del_subregion memory_region_del_subregion_mips64
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_mips64
 #define memory_region_find memory_region_find_mips64
+#define memory_region_filter_subregions memory_region_filter_subregions_mips64
 #define memory_listener_register memory_listener_register_mips64
 #define memory_listener_unregister memory_listener_unregister_mips64
 #define address_space_remove_listeners address_space_remove_listeners_mips64
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_mips64
 #define memory_region_init_ram memory_region_init_ram_mips64
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_mips64
+#define find_memory_mapping find_memory_mapping_mips64
 #define exec_inline_op exec_inline_op_mips64
 #define floatx80_default_nan floatx80_default_nan_mips64
 #define float_raise float_raise_mips64
@@ -1277,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_mips64
 #define gen_helper_cpsr_read gen_helper_cpsr_read_mips64
 #define gen_helper_cpsr_write gen_helper_cpsr_write_mips64
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_mips64
 #define helper_mfc0_mvpcontrol helper_mfc0_mvpcontrol_mips64
 #define helper_mfc0_mvpconf0 helper_mfc0_mvpconf0_mips64
 #define helper_mfc0_mvpconf1 helper_mfc0_mvpconf1_mips64
@@ -2384,9 +2395,6 @@
 #define cpu_mips_realize_env cpu_mips_realize_env_mips64
 #define cpu_state_reset cpu_state_reset_mips64
 #define restore_state_to_opc restore_state_to_opc_mips64
-#define mips_reg_reset mips_reg_reset_mips64
-#define mips_reg_read mips_reg_read_mips64
-#define mips_reg_write mips_reg_write_mips64
 #define ieee_rm ieee_rm_mips64
 #define mips_defs mips_defs_mips64
 #define mips_defs_number mips_defs_number_mips64

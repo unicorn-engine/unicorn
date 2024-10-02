@@ -14,7 +14,6 @@ on:
       - "COPYING"
   pull_request:
 
-
 env:
   CI: true
 
@@ -35,7 +34,7 @@ jobs:
               shared: 'yes',
               mingw: MINGW64,
               mingw-arch: x86_64,
-              artifact: 'windows_mingw64.7z',
+              artifact: 'windows_mingw64-shared.7z',
               build_type: 'Debug',
               archiver: '7z a',
               generators: 'Ninja'
@@ -49,7 +48,7 @@ jobs:
               shared: 'no',
               mingw: MINGW64,
               mingw-arch: x86_64,
-              artifact: 'windows_mingw64.7z',
+              artifact: 'windows_mingw64-static.7z',
               build_type: 'Debug',
               archiver: '7z a',
               generators: 'Ninja'
@@ -136,7 +135,7 @@ jobs:
             }
         compiler: [ gcc ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: '🛠️ Win MINGW setup'
       if: contains(matrix.config.mingw, 'MINGW')
@@ -153,7 +152,7 @@ jobs:
 
     - name: '🛠️ Win MSVC 64 setup'
       if: contains(matrix.config.name, 'MSVC 64')
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
     
     - name: '🛠️ Win MSVC 64 dev cmd setup'
       if: contains(matrix.config.name, 'MSVC 64')
@@ -217,7 +216,7 @@ jobs:
           #export CC=i686-w64-mingw32-gcc
           export AR=gcc-ar
           export RANLIB=gcc-ranlib
-          export CFLAGS="-m32"
+          export CFLAGS="-m32 -static"
           export LDFLAGS="-m32"
           export LDFLAGS_STATIC="-m32"
           export UNICORN_QEMU_FLAGS="--cpu=i386"
@@ -230,6 +229,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -G "${{ matrix.config.generators }}" \
           -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+          -DCMAKE_C_FLAGS:STRING="-static" \
           -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip
@@ -245,7 +245,7 @@ jobs:
 
     - name: '📤 Upload artifact'
       if: always()
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         path: ./${{ matrix.config.artifact }}
         name: ${{ matrix.config.artifact }}
@@ -258,31 +258,55 @@ jobs:
       matrix:
         config:
           - { 
-              os: macos-latest,
+              os: macos-12, # x64
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
               name: 'macos-x64 cmake shared',
               shared: 'yes',
-              artifact: 'macos-cmake-shared-x64.7z',
+              artifact: 'macos-x64-cmake-shared-x64.7z',
               build_type: 'Debug',
               archiver: '7za a',
               generators: 'Ninja'
             }
           - { 
-              os: macos-latest,
+              os: macos-12,
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
               name: 'macos-x64 cmake static',
               shared: 'no',
-              artifact: 'macos-cmake-static-x64.7z',
+              artifact: 'macos-x64-cmake-static-x64.7z',
               build_type: 'Debug',
               archiver: '7za a',
               generators: 'Ninja'
             }
           - { 
-              os: macos-11,
+              os: macos-14, # arm64
+              arch: arm64,
+              python-arch: arm64,
+              python-ver: '3.8',
+              name: 'macos-arm64 cmake shared',
+              shared: 'yes',
+              artifact: 'macos-arm64-cmake-shared-x64.7z',
+              build_type: 'Debug',
+              archiver: '7za a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: macos-14,
+              arch: arm64,
+              python-arch: arm64,
+              python-ver: '3.8',
+              name: 'macos-arm64 cmake static',
+              shared: 'no',
+              artifact: 'macos-arm64-cmake-static-x64.7z',
+              build_type: 'Debug',
+              archiver: '7za a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: macos-12,
               arch: x86_64,
               python-arch: x86_64,
               python-ver: '3.8',
@@ -294,18 +318,18 @@ jobs:
             }
         compiler: [ gcc ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # - name: '🛠️ Python setup'
-      # uses: actions/setup-python@v2
+      # uses: actions/setup-python@v5
       # with:
         # python-version: ${{ matrix.config.python-ver }}
 
     - name: '🚧 Mac build'
-      if: contains(matrix.config.name, 'macos-x64')
+      if: contains(matrix.config.name, 'macos')
       shell: bash
       run: |
-        brew install p7zip cmake ninja
+        brew install ninja
         ninja --version
         cmake --version
         mkdir build
@@ -320,12 +344,16 @@ jobs:
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip
         ctest -VV -C ${{ matrix.config.build_type }}
+    
+    # - name: Setup tmate session
+    #   if: ${{ failure() }}
+    #   uses: mxschmitt/action-tmate@v3
 
     - name: '🚧 Android x86_64 build'
       if: contains(matrix.config.name, 'android')
       shell: bash
       run: |
-        brew install p7zip cmake ninja
+        brew install ninja
         mkdir build
         mkdir instdir
         cmake . -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
@@ -344,7 +372,7 @@ jobs:
 
     - name: '🚧 AVD Cache'
       if: contains(matrix.config.name, 'android')
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       id: avd-cache
       with:
         path: |
@@ -388,7 +416,7 @@ jobs:
 
     - name: '📤 Upload artifact'
       if: always()
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         path: ./${{ matrix.config.artifact }}
         name: ${{ matrix.config.artifact }}
@@ -474,10 +502,10 @@ jobs:
             }
         compiler: [ gcc ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # - name: '🛠️ Python setup'
-      # uses: actions/setup-python@v2
+      # uses: actions/setup-python@v5
       # with:
         # python-version: ${{ matrix.config.python-ver }}
 
@@ -508,7 +536,7 @@ jobs:
     
     - name: '🚧 Linux ppc64le/aarch64 build'
       if: contains(matrix.config.arch, 'ppc64le') || contains(matrix.config.arch, 'aarch64')
-      uses: uraimo/run-on-arch-action@v2.0.5
+      uses: uraimo/run-on-arch-action@v2
       with:
         arch: ${{ matrix.config.arch }}
         distro: ${{ matrix.config.distro }}
@@ -542,7 +570,7 @@ jobs:
 
     - name: '📤 Upload artifact'
       if: always()
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         path: ./${{ matrix.config.artifact }}
         name: ${{ matrix.config.artifact }}

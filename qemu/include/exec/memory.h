@@ -688,6 +688,35 @@ void memory_region_add_subregion(MemoryRegion *mr,
                                  MemoryRegion *subregion);
 
 /**
+ * memory_region_add_subregion_overlap: Add a subregion to a container
+ *                                      with overlap.
+ *
+ * Adds a subregion at @offset.  The subregion may overlap with other
+ * subregions.  Conflicts are resolved by having a higher @priority hide a
+ * lower @priority. Subregions without priority are taken as @priority 0.
+ * A region may only be added once as a subregion (unless removed with
+ * memory_region_del_subregion()); use memory_region_init_alias() if you
+ * want a region to be a subregion in multiple locations.
+ *
+ * @mr: the region to contain the new subregion; must be a container
+ *      initialized with memory_region_init().
+ * @offset: the offset relative to @mr where @subregion is added.
+ * @subregion: the subregion to be added.
+ * @priority: used for resolving overlaps; highest priority wins.
+ */
+void memory_region_add_subregion_overlap(MemoryRegion *mr,
+                                         hwaddr offset,
+                                         MemoryRegion *subregion,
+                                         int priority);
+
+/**
+ * memory_region_filter_subregions: filter subregios by priority.
+ *
+ * remove all subregions beginning by a specified subregion
+ */
+void memory_region_filter_subregions(MemoryRegion *mr, int32_t level);
+
+/**
  * memory_region_get_ram_addr: Get the ram address associated with a memory
  *                             region
  *
@@ -1186,7 +1215,10 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
 MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms, void *ptr);
  MemoryRegion *memory_map_io(struct uc_struct *uc, ram_addr_t begin, size_t size, uc_cb_mmio_read_t read_cb,
                              uc_cb_mmio_write_t write_cb, void *user_data_read, void *user_data_write);
+MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *parrent, hwaddr begin, size_t size);
 void memory_unmap(struct uc_struct *uc, MemoryRegion *mr);
+void memory_moveout(struct uc_struct *uc, MemoryRegion *mr);
+void memory_movein(struct uc_struct *uc, MemoryRegion *mr);
 int memory_free(struct uc_struct *uc);
 
 #endif

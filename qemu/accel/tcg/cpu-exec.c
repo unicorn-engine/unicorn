@@ -56,9 +56,12 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
     uint8_t *tb_ptr = itb->tc.ptr;
 
     UC_TRACE_START(UC_TRACE_TB_EXEC);
-    tb_exec_lock(cpu->uc->tcg_ctx);
+    tb_exec_lock(cpu->uc);
     ret = tcg_qemu_tb_exec(env, tb_ptr);
-    tb_exec_unlock(cpu->uc->tcg_ctx);
+    if (cpu->uc->nested_level == 1) {
+        // Only unlock (allow writing to JIT area) if we are the outmost uc_emu_start
+        tb_exec_unlock(cpu->uc);
+    }
     UC_TRACE_END(UC_TRACE_TB_EXEC, "[uc] exec tb 0x%" PRIx64 ": ", itb->pc);
 
     cpu->can_do_io = 1;
@@ -271,7 +274,7 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
                 }
 
                 if (HOOK_BOUND_CHECK(hook, (uint64_t)tb->pc)) {
-                    ((uc_hook_edge_gen_t)hook->callback)(uc, &cur_tb, &prev_tb, hook->user_data);
+                    JIT_CALLBACK_GUARD(((uc_hook_edge_gen_t)hook->callback)(uc, &cur_tb, &prev_tb, hook->user_data));
                 }
             }
         }
@@ -344,18 +347,17 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
             if (hook->to_delete) {
                 continue;
             }
-            catched = ((uc_cb_hookinsn_invalid_t)hook->callback)(uc, hook->user_data);
+            JIT_CALLBACK_GUARD_VAR(catched, ((uc_cb_hookinsn_invalid_t)hook->callback)(uc, hook->user_data));
             if (catched) {
                 break;
             }
         }
         if (!catched) {
             uc->invalid_error = UC_ERR_INSN_INVALID;
+            // we want to stop emulation
+            *ret = EXCP_HLT;
+            return true;
         }
-
-        // we want to stop emulation
-        *ret = EXCP_HLT;
-        return true;
     }
 
     if (cpu->exception_index < 0) {
@@ -398,7 +400,7 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
             if (hook->to_delete) {
                 continue;
             }
-            ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
+            JIT_CALLBACK_GUARD(((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data));
             catched = true;
         }
         // Unicorn: If un-catched interrupt, stop executions.

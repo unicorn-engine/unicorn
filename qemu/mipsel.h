@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _mipsel
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_mipsel
+#define reg_read reg_read_mipsel
+#define reg_write reg_write_mipsel
+#define uc_init uc_init_mipsel
 #define uc_add_inline_hook uc_add_inline_hook_mipsel
 #define uc_del_inline_hook uc_del_inline_hook_mipsel
 #define tb_invalidate_phys_range tb_invalidate_phys_range_mipsel
@@ -119,7 +123,10 @@
 #define memory_map memory_map_mipsel
 #define memory_map_io memory_map_io_mipsel
 #define memory_map_ptr memory_map_ptr_mipsel
+#define memory_cow memory_cow_mipsel
 #define memory_unmap memory_unmap_mipsel
+#define memory_moveout memory_moveout_mipsel
+#define memory_movein memory_movein_mipsel
 #define memory_free memory_free_mipsel
 #define flatview_unref flatview_unref_mipsel
 #define address_space_get_flatview address_space_get_flatview_mipsel
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_mipsel
 #define memory_region_add_subregion memory_region_add_subregion_mipsel
 #define memory_region_del_subregion memory_region_del_subregion_mipsel
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_mipsel
 #define memory_region_find memory_region_find_mipsel
+#define memory_region_filter_subregions memory_region_filter_subregions_mipsel
 #define memory_listener_register memory_listener_register_mipsel
 #define memory_listener_unregister memory_listener_unregister_mipsel
 #define address_space_remove_listeners address_space_remove_listeners_mipsel
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_mipsel
 #define memory_region_init_ram memory_region_init_ram_mipsel
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_mipsel
+#define find_memory_mapping find_memory_mapping_mipsel
 #define exec_inline_op exec_inline_op_mipsel
 #define floatx80_default_nan floatx80_default_nan_mipsel
 #define float_raise float_raise_mipsel
@@ -1277,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_mipsel
 #define gen_helper_cpsr_read gen_helper_cpsr_read_mipsel
 #define gen_helper_cpsr_write gen_helper_cpsr_write_mipsel
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_mipsel
 #define helper_mfc0_mvpcontrol helper_mfc0_mvpcontrol_mipsel
 #define helper_mfc0_mvpconf0 helper_mfc0_mvpconf0_mipsel
 #define helper_mfc0_mvpconf1 helper_mfc0_mvpconf1_mipsel
@@ -2384,9 +2395,6 @@
 #define cpu_mips_realize_env cpu_mips_realize_env_mipsel
 #define cpu_state_reset cpu_state_reset_mipsel
 #define restore_state_to_opc restore_state_to_opc_mipsel
-#define mips_reg_reset mips_reg_reset_mipsel
-#define mips_reg_read mips_reg_read_mipsel
-#define mips_reg_write mips_reg_write_mipsel
 #define ieee_rm ieee_rm_mipsel
 #define mips_defs mips_defs_mipsel
 #define mips_defs_number mips_defs_number_mipsel

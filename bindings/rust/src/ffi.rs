@@ -1,13 +1,16 @@
 #![allow(non_camel_case_types)]
 #![allow(dead_code)]
 
-use crate::Unicorn;
+use crate::{Unicorn, UnicornInner};
 
-use super::unicorn_const::{uc_error, Arch, HookType, MemRegion, MemType, Mode, Query};
+use super::unicorn_const::{uc_error, Arch, HookType, MemRegion, MemType, Mode, Query, TlbEntry};
+use alloc::rc::Weak;
+use core::cell::UnsafeCell;
 use core::ffi::c_void;
 use libc::{c_char, c_int};
 
 pub type uc_handle = *mut c_void;
+// TODO: Use c_size_t as soon as it is stable. The c api exposes uc_hook as size_t
 pub type uc_hook = *mut c_void;
 pub type uc_context = *mut c_void;
 
@@ -85,18 +88,19 @@ extern "C" {
     pub fn uc_context_alloc(engine: uc_handle, context: *mut uc_context) -> uc_error;
     pub fn uc_context_save(engine: uc_handle, context: uc_context) -> uc_error;
     pub fn uc_context_restore(engine: uc_handle, context: uc_context) -> uc_error;
+    pub fn uc_ctl(engine: uc_handle, control: u32, ...) -> uc_error;
 }
 
 pub struct UcHook<'a, D: 'a, F: 'a> {
     pub callback: F,
-    pub uc: Unicorn<'a, D>,
+    pub uc: Weak<UnsafeCell<UnicornInner<'a, D>>>,
 }
 
 pub trait IsUcHook<'a> {}
 
 impl<'a, D, F> IsUcHook<'a> for UcHook<'a, D, F> {}
 
-pub extern "C" fn mmio_read_callback_proxy<D, F>(
+pub unsafe extern "C" fn mmio_read_callback_proxy<D, F>(
     uc: uc_handle,
     offset: u64,
     size: usize,
@@ -105,12 +109,15 @@ pub extern "C" fn mmio_read_callback_proxy<D, F>(
 where
     F: FnMut(&mut crate::Unicorn<D>, u64, usize) -> u64,
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, offset, size)
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc, offset, size)
 }
 
-pub extern "C" fn mmio_write_callback_proxy<D, F>(
+pub unsafe extern "C" fn mmio_write_callback_proxy<D, F>(
     uc: uc_handle,
     offset: u64,
     size: usize,
@@ -119,12 +126,15 @@ pub extern "C" fn mmio_write_callback_proxy<D, F>(
 ) where
     F: FnMut(&mut crate::Unicorn<D>, u64, usize, u64),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, offset, size, value);
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc, offset, size, value);
 }
 
-pub extern "C" fn code_hook_proxy<D, F>(
+pub unsafe extern "C" fn code_hook_proxy<D, F>(
     uc: uc_handle,
     address: u64,
     size: u32,
@@ -132,12 +142,15 @@ pub extern "C" fn code_hook_proxy<D, F>(
 ) where
     F: FnMut(&mut crate::Unicorn<D>, u64, u32),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, address, size);
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc, address, size);
 }
 
-pub extern "C" fn block_hook_proxy<D, F>(
+pub unsafe extern "C" fn block_hook_proxy<D, F>(
     uc: uc_handle,
     address: u64,
     size: u32,
@@ -145,12 +158,15 @@ pub extern "C" fn block_hook_proxy<D, F>(
 ) where
     F: FnMut(&mut crate::Unicorn<D>, u64, u32),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, address, size);
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc, address, size);
 }
 
-pub extern "C" fn mem_hook_proxy<D, F>(
+pub unsafe extern "C" fn mem_hook_proxy<D, F>(
     uc: uc_handle,
     mem_type: MemType,
     address: u64,
@@ -161,43 +177,62 @@ pub extern "C" fn mem_hook_proxy<D, F>(
 where
     F: FnMut(&mut crate::Unicorn<D>, MemType, u64, usize, i64) -> bool,
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, mem_type, address, size as usize, value)
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc, mem_type, address, size as usize, value)
 }
 
-pub extern "C" fn intr_hook_proxy<D, F>(uc: uc_handle, value: u32, user_data: *mut UcHook<D, F>)
-where
+pub unsafe extern "C" fn intr_hook_proxy<D, F>(
+    uc: uc_handle,
+    value: u32,
+    user_data: *mut UcHook<D, F>,
+) where
     F: FnMut(&mut crate::Unicorn<D>, u32),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, value);
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc, value);
 }
 
-pub extern "C" fn insn_in_hook_proxy<D, F>(
+pub unsafe extern "C" fn insn_in_hook_proxy<D, F>(
     uc: uc_handle,
     port: u32,
     size: usize,
     user_data: *mut UcHook<D, F>,
-) where
+) -> u32
+where
     F: FnMut(&mut crate::Unicorn<D>, u32, usize) -> u32,
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, port, size);
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc, port, size)
 }
 
-pub extern "C" fn insn_invalid_hook_proxy<D, F>(uc: uc_handle, user_data: *mut UcHook<D, F>) -> bool
+pub unsafe extern "C" fn insn_invalid_hook_proxy<D, F>(
+    uc: uc_handle,
+    user_data: *mut UcHook<D, F>,
+) -> bool
 where
     F: FnMut(&mut crate::Unicorn<D>) -> bool,
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc)
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc)
 }
 
-pub extern "C" fn insn_out_hook_proxy<D, F>(
+pub unsafe extern "C" fn insn_out_hook_proxy<D, F>(
     uc: uc_handle,
     port: u32,
     size: usize,
@@ -206,16 +241,45 @@ pub extern "C" fn insn_out_hook_proxy<D, F>(
 ) where
     F: FnMut(&mut crate::Unicorn<D>, u32, usize, u32),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, port, size, value);
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc, port, size, value);
 }
 
-pub extern "C" fn insn_sys_hook_proxy<D, F>(uc: uc_handle, user_data: *mut UcHook<D, F>)
+pub unsafe extern "C" fn insn_sys_hook_proxy<D, F>(uc: uc_handle, user_data: *mut UcHook<D, F>)
 where
     F: FnMut(&mut crate::Unicorn<D>),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc);
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc);
+}
+
+pub unsafe extern "C" fn tlb_lookup_hook_proxy<D, F>(
+    uc: uc_handle,
+    vaddr: u64,
+    mem_type: MemType,
+    result: *mut TlbEntry,
+    user_data: *mut UcHook<D, F>,
+) -> bool
+where
+    F: FnMut(&mut crate::Unicorn<D>, u64, MemType) -> Option<TlbEntry>,
+{
+    let user_data = &mut *user_data;
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    let r = (user_data.callback)(&mut user_data_uc, vaddr, mem_type);
+    if let Some(ref e) = r {
+        let ref_result: &mut TlbEntry = &mut *result;
+        *ref_result = *e;
+    };
+    r.is_some()
 }

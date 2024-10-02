@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _s390x
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_s390x
+#define reg_read reg_read_s390x
+#define reg_write reg_write_s390x
+#define uc_init uc_init_s390x
 #define uc_add_inline_hook uc_add_inline_hook_s390x
 #define uc_del_inline_hook uc_del_inline_hook_s390x
 #define tb_invalidate_phys_range tb_invalidate_phys_range_s390x
@@ -119,7 +123,10 @@
 #define memory_map memory_map_s390x
 #define memory_map_io memory_map_io_s390x
 #define memory_map_ptr memory_map_ptr_s390x
+#define memory_cow memory_cow_s390x
 #define memory_unmap memory_unmap_s390x
+#define memory_moveout memory_moveout_s390x
+#define memory_movein memory_movein_s390x
 #define memory_free memory_free_s390x
 #define flatview_unref flatview_unref_s390x
 #define address_space_get_flatview address_space_get_flatview_s390x
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_s390x
 #define memory_region_add_subregion memory_region_add_subregion_s390x
 #define memory_region_del_subregion memory_region_del_subregion_s390x
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_s390x
 #define memory_region_find memory_region_find_s390x
+#define memory_region_filter_subregions memory_region_filter_subregions_s390x
 #define memory_listener_register memory_listener_register_s390x
 #define memory_listener_unregister memory_listener_unregister_s390x
 #define address_space_remove_listeners address_space_remove_listeners_s390x
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_s390x
 #define memory_region_init_ram memory_region_init_ram_s390x
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_s390x
+#define find_memory_mapping find_memory_mapping_s390x
 #define exec_inline_op exec_inline_op_s390x
 #define floatx80_default_nan floatx80_default_nan_s390x
 #define float_raise float_raise_s390x
@@ -1277,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_s390x
 #define gen_helper_cpsr_read gen_helper_cpsr_read_s390x
 #define gen_helper_cpsr_write gen_helper_cpsr_write_s390x
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_s390x
 #define helper_uc_s390x_exit helper_uc_s390x_exit_s390x
 #define tcg_s390_tod_updated tcg_s390_tod_updated_s390x
 #define tcg_s390_program_interrupt tcg_s390_program_interrupt_s390x

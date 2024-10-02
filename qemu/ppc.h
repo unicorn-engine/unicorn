@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _ppc
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_ppc
+#define reg_read reg_read_ppc
+#define reg_write reg_write_ppc
+#define uc_init uc_init_ppc
 #define uc_add_inline_hook uc_add_inline_hook_ppc
 #define uc_del_inline_hook uc_del_inline_hook_ppc
 #define tb_invalidate_phys_range tb_invalidate_phys_range_ppc
@@ -119,7 +123,10 @@
 #define memory_map memory_map_ppc
 #define memory_map_io memory_map_io_ppc
 #define memory_map_ptr memory_map_ptr_ppc
+#define memory_cow memory_cow_ppc
 #define memory_unmap memory_unmap_ppc
+#define memory_moveout memory_moveout_ppc
+#define memory_movein memory_movein_ppc
 #define memory_free memory_free_ppc
 #define flatview_unref flatview_unref_ppc
 #define address_space_get_flatview address_space_get_flatview_ppc
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_ppc
 #define memory_region_add_subregion memory_region_add_subregion_ppc
 #define memory_region_del_subregion memory_region_del_subregion_ppc
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_ppc
 #define memory_region_find memory_region_find_ppc
+#define memory_region_filter_subregions memory_region_filter_subregions_ppc
 #define memory_listener_register memory_listener_register_ppc
 #define memory_listener_unregister memory_listener_unregister_ppc
 #define address_space_remove_listeners address_space_remove_listeners_ppc
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_ppc
 #define memory_region_init_ram memory_region_init_ram_ppc
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_ppc
+#define find_memory_mapping find_memory_mapping_ppc
 #define exec_inline_op exec_inline_op_ppc
 #define floatx80_default_nan floatx80_default_nan_ppc
 #define float_raise float_raise_ppc
@@ -1277,11 +1287,9 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_ppc
 #define gen_helper_cpsr_read gen_helper_cpsr_read_ppc
 #define gen_helper_cpsr_write gen_helper_cpsr_write_ppc
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_ppc
 #define ppc_cpu_unrealize ppc_cpu_unrealize_ppc
 #define ppc_cpu_instance_finalize ppc_cpu_instance_finalize_ppc
-#define ppc_reg_reset ppc_reg_reset_ppc
-#define ppc_reg_read ppc_reg_read_ppc
-#define ppc_reg_write ppc_reg_write_ppc
 #define ppc_cpu_do_interrupt ppc_cpu_do_interrupt_ppc
 #define ppc_cpu_do_system_reset ppc_cpu_do_system_reset_ppc
 #define ppc_cpu_do_fwnmi_machine_check ppc_cpu_do_fwnmi_machine_check_ppc

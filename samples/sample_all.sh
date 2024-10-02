@@ -57,3 +57,8 @@ if test -e $DIR/sample_x86_32_gdt_and_seg_regs; then
   echo "=========================="
   $DIR/sample_x86_32_gdt_and_seg_regs
 fi
+
+if test -e $DIR/sample_mmu; then
+  echo "=========================="
+  $DIR/sample_mmu
+fi

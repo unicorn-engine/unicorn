@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <PackageId>UnicornEngine.Unicorn</PackageId>
+    <Authors>UnicornEngine</Authors>
+    <Copyright>Copyright © Antonio Parata 2016</Copyright>
+    <RepositoryUrl>https://github.com/unicorn-engine/unicorn</RepositoryUrl>
+    <PackageDescription>.NET bindings for unicorn</PackageDescription>
+    <VersionPrefix>2.1.1</VersionPrefix>
+    <VersionSuffix>$(VersionSuffix)</VersionSuffix>
+    <ProjectGuid>0c21f1c1-2725-4a46-9022-1905f85822a5</ProjectGuid>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Const\Arm.fs" />
+    <Compile Include="Const\Arm64.fs" />
+    <Compile Include="Const\Common.fs" />
+    <Compile Include="Const\M68k.fs" />
+    <Compile Include="Const\Mips.fs" />
+    <Compile Include="Const\Ppc.fs" />
+    <Compile Include="Const\Riscv.fs" />
+    <Compile Include="Const\S390x.fs" />
+    <Compile Include="Const\Sparc.fs" />
+    <Compile Include="Const\TriCore.fs" />
+    <Compile Include="Const\X86.fs" />
+    <Compile Include="Binding\IBinding.fs" />
+    <Compile Include="Binding\MockBinding.fs" />
+    <Compile Include="Binding\NativeBinding.fs" />
+    <Compile Include="Binding\BindingFactory.fs" />
+    <Compile Include="UnicornEngineException.fs" />
+    <Compile Include="InternalHooks.fs" />
+    <Compile Include="ConvertUtility.fs" />
+    <Compile Include="Unicorn.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="runtimes\**" PackagePath="runtimes" Visible="false" />
+  </ItemGroup>
+</Project>

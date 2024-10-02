@@ -4,6 +4,10 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _aarch64
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_aarch64
+#define reg_read reg_read_aarch64
+#define reg_write reg_write_aarch64
+#define uc_init uc_init_aarch64
 #define uc_add_inline_hook uc_add_inline_hook_aarch64
 #define uc_del_inline_hook uc_del_inline_hook_aarch64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_aarch64
@@ -119,7 +123,10 @@
 #define memory_map memory_map_aarch64
 #define memory_map_io memory_map_io_aarch64
 #define memory_map_ptr memory_map_ptr_aarch64
+#define memory_cow memory_cow_aarch64
 #define memory_unmap memory_unmap_aarch64
+#define memory_moveout memory_moveout_aarch64
+#define memory_movein memory_movein_aarch64
 #define memory_free memory_free_aarch64
 #define flatview_unref flatview_unref_aarch64
 #define address_space_get_flatview address_space_get_flatview_aarch64
@@ -138,7 +145,9 @@
 #define memory_region_get_ram_addr memory_region_get_ram_addr_aarch64
 #define memory_region_add_subregion memory_region_add_subregion_aarch64
 #define memory_region_del_subregion memory_region_del_subregion_aarch64
+#define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_aarch64
 #define memory_region_find memory_region_find_aarch64
+#define memory_region_filter_subregions memory_region_filter_subregions_aarch64
 #define memory_listener_register memory_listener_register_aarch64
 #define memory_listener_unregister memory_listener_unregister_aarch64
 #define address_space_remove_listeners address_space_remove_listeners_aarch64
@@ -146,6 +155,7 @@
 #define address_space_destroy address_space_destroy_aarch64
 #define memory_region_init_ram memory_region_init_ram_aarch64
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_aarch64
+#define find_memory_mapping find_memory_mapping_aarch64
 #define exec_inline_op exec_inline_op_aarch64
 #define floatx80_default_nan floatx80_default_nan_aarch64
 #define float_raise float_raise_aarch64
@@ -1277,6 +1287,7 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_aarch64
 #define gen_helper_cpsr_read gen_helper_cpsr_read_aarch64
 #define gen_helper_cpsr_write gen_helper_cpsr_write_aarch64
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_aarch64
 #define cpu_aarch64_init cpu_aarch64_init_aarch64
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_aarch64
 #define arm_cpu_update_virq arm_cpu_update_virq_aarch64
@@ -2958,9 +2969,6 @@
 #define helper_frint32_d helper_frint32_d_aarch64
 #define helper_frint64_d helper_frint64_d_aarch64
 #define helper_check_hcr_el2_trap helper_check_hcr_el2_trap_aarch64
-#define arm64_reg_reset arm64_reg_reset_aarch64
-#define arm64_reg_read arm64_reg_read_aarch64
-#define arm64_reg_write arm64_reg_write_aarch64
 #define mla_op mla_op_aarch64
 #define mls_op mls_op_aarch64
 #define sshl_op sshl_op_aarch64

@@ -1,7 +1,7 @@
 # CMake setup for Unicorn 2.
 # By Huitao Chen & Nguyen Anh Quynh, 2019-2020
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 
 # Only required for MSVC, but we can't know the compiler at this point because we haven't
 # called enable_language() or project(), and if we did that it would lock in the old
@@ -15,6 +15,14 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
     cmake_policy(SET CMP0091 NEW)
     # CMP0092: prevent warning flags being added to default CMAKE_<LANG>_FLAGS for MSVC
     cmake_policy(SET CMP0092 NEW)
+endif()
+
+# Honor visibility properties for all target types.
+cmake_policy(SET CMP0063 NEW)
+
+option(ZIG_BUILD "Enable zig build" OFF)
+if(ZIG_BUILD)
+    include(cmake/zig.cmake)
 endif()
 
 # Workaround to fix wrong compiler on macos.
@@ -44,10 +52,10 @@ endif()
 set(CMAKE_C_STANDARD 11)
 
 set(UNICORN_VERSION_MAJOR 2)
-set(UNICORN_VERSION_MINOR 0)
+set(UNICORN_VERSION_MINOR 1)
 set(UNICORN_VERSION_PATCH 1)
 
-include(bundle_static.cmake)
+include(cmake/bundle_static.cmake)
 
 # Even though we generate shared lib and static archive at the same time, we still support
 # using unicorn as a subdirectory so we have to respect BUILD_SHARED_LIBS.
@@ -56,6 +64,7 @@ include(bundle_static.cmake)
 # compatability.
 option(BUILD_SHARED_LIBS "Build shared instead of static library" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_FUZZ "Enable fuzzing" OFF)
+option(UNICORN_LOGGING "Enable logging" OFF)
 option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
 set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x;tricore" CACHE STRING "Enabled unicorn architectures")
@@ -84,6 +93,14 @@ include_directories(
     qemu/tcg
 )
 
+# QEMU logging facility
+if (UNICORN_LOGGING)
+    add_compile_options(-DUNICORN_LOGGING)
+endif()
+
+# Some distributions on some rare architecures don't auto link atomic for us and
+# we do this manually by adding flags.
+set(ATOMIC_LINKAGE_FIX FALSE)
 if(MSVC)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         set(MSVC_FLAG  -D__x86_64__)
@@ -109,22 +126,25 @@ if(MSVC)
     add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4267>)
 
     # handle msvcrt setting being passed in CMAKE_C_FLAGS
-    if(DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
-        # do not support other methods of setting this (it would be more conformant, tho)
-        message(FATAL_ERROR "please set msvcrt via CMAKE_C_FLAGS")
-    endif()
-    if(CMAKE_C_FLAGS MATCHES "[/-]MTd")
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug")
-    elseif(CMAKE_C_FLAGS MATCHES "[/-]MDd")
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL")
-    elseif(CMAKE_C_FLAGS MATCHES "[/-]MT")
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
-    elseif(CMAKE_C_FLAGS MATCHES "[/-]MD")
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
-    endif()
+    if(CMAKE_C_FLAGS MATCHES "[/-]M[TD]d?")
+        # ensure CMAKE_MSVC_RUNTIME_LIBRARY is not already defined
+        if(DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+            message(FATAL_ERROR "please set the runtime library via either CMAKE_C_FLAGS or CMAKE_MSVC_RUNTIME_LIBRARY, not both")
+        endif()
 
-    # prevent the arg from occurring more than once (not a big deal, just to keep tidy)
-    string(REGEX REPLACE "[/-]M[TD]d?" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+        if(CMAKE_C_FLAGS MATCHES "[/-]MTd")
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug")
+        elseif(CMAKE_C_FLAGS MATCHES "[/-]MDd")
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL")
+        elseif(CMAKE_C_FLAGS MATCHES "[/-]MT")
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+        elseif(CMAKE_C_FLAGS MATCHES "[/-]MD")
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+        endif()
+
+        # prevent the arg from occurring more than once (not a big deal, just to keep tidy)
+        string(REGEX REPLACE "[/-]M[TD]d?" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+    endif()
 else()
     if(MINGW)
         execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine
@@ -186,6 +206,7 @@ else()
             string(FIND "${UC_COMPILER_MACRO}" "__arm__" UC_RET)
             if(${UC_RET} GREATER_EQUAL "0")
                 set(UNICORN_TARGET_ARCH "arm")
+                set(ATOMIC_LINKAGE_FIX TRUE)
                 break()
             endif()
             string(FIND "${UC_COMPILER_MACRO}" "__aarch64__" UC_RET)
@@ -196,11 +217,13 @@ else()
             string(FIND "${UC_COMPILER_MACRO}" "__mips__" UC_RET)
             if(${UC_RET} GREATER_EQUAL "0")
                 set(UNICORN_TARGET_ARCH "mips")
+                set(ATOMIC_LINKAGE_FIX TRUE)
                 break()
             endif()
             string(FIND "${UC_COMPILER_MACRO}" "__sparc__" UC_RET)
             if(${UC_RET} GREATER_EQUAL "0")
                 set(UNICORN_TARGET_ARCH "sparc")
+                set(ATOMIC_LINKAGE_FIX TRUE)
                 break()
             endif()
             string(FIND "${UC_COMPILER_MACRO}" "__ia64__" UC_RET)
@@ -211,16 +234,19 @@ else()
             string(FIND "${UC_COMPILER_MACRO}" "_ARCH_PPC" UC_RET)
             if(${UC_RET} GREATER_EQUAL "0")
                 set(UNICORN_TARGET_ARCH "ppc")
+                set(ATOMIC_LINKAGE_FIX TRUE)
                 break()
             endif()
             string(FIND "${UC_COMPILER_MACRO}" "__riscv" UC_RET)
             if(${UC_RET} GREATER_EQUAL "0")
                 set(UNICORN_TARGET_ARCH "riscv")
+                set(ATOMIC_LINKAGE_FIX TRUE)
                 break()
             endif()
             string(FIND "${UC_COMPILER_MACRO}" "__s390__" UC_RET)
             if(${UC_RET} GREATER_EQUAL "0")
                 set(UNICORN_TARGET_ARCH "s390")
+                set(ATOMIC_LINKAGE_FIX TRUE)
                 break()
             endif()
             string(FIND ${UC_COMPILER_MACRO} "__tricore__" UC_RET)
@@ -274,6 +300,13 @@ else()
     endif()
     if(UNICORN_TRACER)
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS} -DUNICORN_TRACER")
+    endif()
+    if (ATOMIC_LINKAGE_FIX)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS} -latomic")
+    endif()
+    if (CMAKE_OSX_SYSROOT)
+        # https://github.com/unicorn-engine/unicorn/issues/1917
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS} -isysroot ${CMAKE_OSX_SYSROOT} ")
     endif()
 
     set(TARGET_LIST "--target-list=")
@@ -413,6 +446,11 @@ else()
         -Wall
         -fPIC
     )
+    if (ATOMIC_LINKAGE_FIX)
+        add_compile_options(
+            -latomic
+        )
+    endif()
     if(APPLE)
         # This warning is disabled by default for gcc and doesn't cause any bug.
         add_compile_options(
@@ -446,6 +484,8 @@ set(UNICORN_ARCH_COMMON
     qemu/accel/tcg/tcg-runtime-gvec.c
     qemu/accel/tcg/translate-all.c
     qemu/accel/tcg/translator.c
+
+    qemu/softmmu/unicorn_vtlb.c
 )
 
 if(UNICORN_HAS_X86)
@@ -1168,6 +1208,11 @@ add_library(unicorn-common STATIC
     ${UNICORN_COMMON_SRCS}
 )
 
+set_target_properties(unicorn-common
+                      PROPERTIES
+                      C_VISIBILITY_PRESET
+                      hidden)
+
 if(NOT MSVC AND NOT ANDROID_ABI)
     target_link_libraries(unicorn-common PRIVATE pthread)
 endif()
@@ -1185,10 +1230,13 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} unicorn-common)
+if (ATOMIC_LINKAGE_FIX)
+    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -latomic)
+endif()
 if(UNICORN_HAS_X86)
     set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_X86)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} x86_64-softmmu)
-    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_x86 sample_x86_32_gdt_and_seg_regs sample_batch_reg mem_apis shellcode)
+    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_x86 sample_x86_32_gdt_and_seg_regs sample_batch_reg mem_apis shellcode sample_mmu)
     target_link_libraries(x86_64-softmmu PRIVATE unicorn-common)
     set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_x86)
 endif()
@@ -1291,7 +1339,7 @@ if(MINGW)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} pthread)
 endif()
 
-if(UNICORN_TARGET_ARCH STREQUAL "riscv")
+if(ATOMIC_LINKAGE_FIX)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} atomic)
 endif()
 
@@ -1354,6 +1402,13 @@ elseif(NOT ANDROID_ABI)
 else()
     set(SAMPLES_LIB
         unicorn
+    )
+endif()
+
+if(ATOMIC_LINKAGE_FIX)
+    set(SAMPLES_LIB
+        ${SAMPLES_LIB}
+        atomic
     )
 endif()
 
@@ -1443,13 +1498,18 @@ if(UNICORN_INSTALL AND NOT MSVC)
     endif()
     install(FILES $<TARGET_FILE:unicorn_archive> DESTINATION ${CMAKE_INSTALL_LIBDIR})
     install(FILES ${UNICORN_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unicorn)
+    if (ATOMIC_LINKAGE_FIX)
+        set(ATOMIC_LINK_PKG_CONFIG " -latomic")
+    else()
+        set(ATOMIC_LINK_PKG_CONFIG "")
+    endif()
     file(WRITE ${CMAKE_BINARY_DIR}/unicorn.pc "Name: unicorn\n\
 Description: Unicorn emulator engine\n\
 Version: ${UNICORN_VERSION_MAJOR}.${UNICORN_VERSION_MINOR}.${UNICORN_VERSION_PATCH}\n\
 libdir=${CMAKE_INSTALL_FULL_LIBDIR}\n\
 includedir=${CMAKE_INSTALL_FULL_INCLUDEDIR}\n\
 Libs: -L\$\{libdir\} -lunicorn\n\
-Libs.private: -lpthread -lm\n\
+Libs.private: -lpthread -lm${ATOMIC_LINK_PKG_CONFIG}\n\
 Cflags: -I\$\{includedir\}\n"
     )
     install(FILES ${CMAKE_BINARY_DIR}/unicorn.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)

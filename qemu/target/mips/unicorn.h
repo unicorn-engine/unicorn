@@ -5,32 +5,26 @@
 #define UC_QEMU_TARGET_MIPS_H
 
 // functions to read & write registers
-int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
-                  int count);
-int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
-                   int count);
+uc_err reg_read_mips(void *env, int mode, unsigned int regid, void *value,
+                     size_t *size);
+uc_err reg_read_mipsel(void *env, int mode, unsigned int regid, void *value,
+                       size_t *size);
+uc_err reg_read_mips64(void *env, int mode, unsigned int regid, void *value,
+                       size_t *size);
+uc_err reg_read_mips64el(void *env, int mode, unsigned int regid, void *value,
+                         size_t *size);
 
-int mips_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                          void **vals, int count);
-int mips_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                           void *const *vals, int count);
-int mipsel_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                            void **vals, int count);
-int mipsel_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                             void *const *vals, int count);
-int mips64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                            void **vals, int count);
-int mips64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                             void *const *vals, int count);
-int mips64el_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                              void **vals, int count);
-int mips64el_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                               void *const *vals, int count);
+uc_err reg_write_mips(void *env, int mode, unsigned int regid,
+                      const void *value, size_t *size, int *setpc);
+uc_err reg_write_mipsel(void *env, int mode, unsigned int regid,
+                        const void *value, size_t *size, int *setpc);
+uc_err reg_write_mips64(void *env, int mode, unsigned int regid,
+                        const void *value, size_t *size, int *setpc);
+uc_err reg_write_mips64el(void *env, int mode, unsigned int regid,
+                          const void *value, size_t *size, int *setpc);
 
-void mips_reg_reset(struct uc_struct *uc);
-
-void mips_uc_init(struct uc_struct *uc);
-void mipsel_uc_init(struct uc_struct *uc);
-void mips64_uc_init(struct uc_struct *uc);
-void mips64el_uc_init(struct uc_struct *uc);
+void uc_init_mips(struct uc_struct *uc);
+void uc_init_mipsel(struct uc_struct *uc);
+void uc_init_mips64(struct uc_struct *uc);
+void uc_init_mips64el(struct uc_struct *uc);
 #endif

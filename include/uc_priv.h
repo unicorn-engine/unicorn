@@ -62,19 +62,14 @@ typedef struct _mmio_cbs {
 typedef uc_err (*query_t)(struct uc_struct *uc, uc_query_type type,
                           size_t *result);
 
-// return 0 on success, -1 on failure
-typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int *regs, void **vals,
-                          int count);
-typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int *regs,
-                           void *const *vals, int count);
+typedef uc_err (*reg_read_t)(void *env, int mode, unsigned int regid,
+                             void *value, size_t *size);
+typedef uc_err (*reg_write_t)(void *env, int mode, unsigned int regid,
+                              const void *value, size_t *size, int *setpc);
 
-typedef int (*context_reg_read_t)(struct uc_context *ctx, unsigned int *regs,
-                                  void **vals, int count);
-typedef int (*context_reg_write_t)(struct uc_context *ctx, unsigned int *regs,
-                                   void *const *vals, int count);
 typedef struct {
-    context_reg_read_t context_reg_read;
-    context_reg_write_t context_reg_write;
+    reg_read_t read;
+    reg_write_t write;
 } context_reg_rw_t;
 
 typedef void (*reg_reset_t)(struct uc_struct *uc);
@@ -85,12 +80,16 @@ typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr,
 typedef bool (*uc_read_mem_t)(AddressSpace *as, hwaddr addr, uint8_t *buf,
                               int len);
 
+typedef MemoryRegion *(*uc_mem_cow_t)(struct uc_struct *uc,
+                                      MemoryRegion *current, hwaddr begin,
+                                      size_t size);
+
 typedef void (*uc_args_void_t)(void *);
 
 typedef void (*uc_args_uc_t)(struct uc_struct *);
 typedef void (*uc_args_int_uc_t)(struct uc_struct *);
 
-typedef void (*uc_args_uc_long_t)(struct uc_struct *, unsigned long);
+typedef void (*uc_args_uc_long_t)(struct uc_struct *, uint32_t);
 
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
@@ -105,6 +104,10 @@ typedef MemoryRegion *(*uc_args_uc_ram_size_ptr_t)(struct uc_struct *,
 
 typedef void (*uc_mem_unmap_t)(struct uc_struct *, MemoryRegion *mr);
 
+typedef MemoryRegion *(*uc_memory_mapping_t)(struct uc_struct *, hwaddr addr);
+
+typedef void (*uc_memory_filter_t)(MemoryRegion *, int32_t);
+
 typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
 typedef int (*uc_cpus_init)(struct uc_struct *, const char *);
@@ -118,9 +121,6 @@ typedef MemoryRegion *(*uc_memory_map_io_t)(struct uc_struct *uc,
 
 // which interrupt should make emulation stop?
 typedef bool (*uc_args_int_t)(struct uc_struct *uc, int intno);
-
-// some architecture redirect virtual memory to physical memory like Mips
-typedef uint64_t (*uc_mem_redirect_t)(uint64_t address);
 
 // validate if Unicorn supports hooking a given instruction
 typedef bool (*uc_insn_hook_validate)(uint32_t insn_enum);
@@ -145,6 +145,8 @@ typedef uc_err (*uc_gen_tb_t)(struct uc_struct *uc, uint64_t pc, uc_tb *out_tb);
 
 // tb flush
 typedef uc_tcg_flush_tlb uc_tb_flush_t;
+
+typedef uc_err (*uc_set_tlb_t)(struct uc_struct *uc, int mode);
 
 struct hook {
     int type;       // UC_HOOK_*
@@ -202,6 +204,7 @@ typedef enum uc_hook_idx {
     UC_HOOK_INSN_INVALID_IDX,
     UC_HOOK_EDGE_GENERATED_IDX,
     UC_HOOK_TCG_OPCODE_IDX,
+    UC_HOOK_TLB_FILL_IDX,
 
     UC_HOOK_MAX,
 } uc_hook_idx;
@@ -270,6 +273,7 @@ struct uc_struct {
 
     uc_write_mem_t write_mem;
     uc_read_mem_t read_mem;
+    uc_mem_cow_t memory_cow;
     uc_args_void_t release;  // release resource when uc_close()
     uc_args_uc_u64_t set_pc; // set PC for tracecode
     uc_get_pc_t get_pc;
@@ -282,9 +286,12 @@ struct uc_struct {
     uc_args_uc_long_t tcg_exec_init;
     uc_args_uc_ram_size_t memory_map;
     uc_args_uc_ram_size_ptr_t memory_map_ptr;
+    uc_memory_mapping_t memory_mapping;
+    uc_memory_filter_t memory_filter_subregions;
     uc_mem_unmap_t memory_unmap;
+    uc_mem_unmap_t memory_moveout;
+    uc_mem_unmap_t memory_movein;
     uc_readonly_mem_t readonly_mem;
-    uc_mem_redirect_t mem_redirect;
     uc_cpus_init cpus_init;
     uc_target_page_init target_page;
     uc_softfloat_initialize softfloat_initialize;
@@ -337,6 +344,8 @@ struct uc_struct {
     GHashTable *flat_views;
     bool memory_region_update_pending;
 
+    uc_set_tlb_t set_tlb;
+
     // linked lists containing hooks per type
     struct list hook[UC_HOOK_MAX];
     struct list hooks_to_del;
@@ -382,6 +391,7 @@ struct uc_struct {
     uint64_t qemu_real_host_page_size;
     int qemu_icache_linesize;
     /* ARCH_REGS_STORAGE_SIZE */
+    uc_context_content context_content;
     int cpu_context_size;
     uint64_t next_pc; // save next PC for some special cases
     bool hook_insert; // insert new hook at begin of the hook list (append by
@@ -398,6 +408,17 @@ struct uc_struct {
     struct TranslationBlock *last_tb; // The real last tb we executed.
 
     FlatView *empty_view; // Static function variable moved from flatviews_init
+
+    uint32_t tcg_buffer_size; // The buffer size we are going to use
+#ifdef WIN32
+    PVOID seh_handle;
+    void *seh_closure;
+#endif
+    GArray *unmapped_regions;
+    int32_t snapshot_level;
+    uint64_t nested; // the nested level of all exposed API
+    bool thread_executable_entry;
+    bool current_executable;
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
@@ -405,11 +426,9 @@ struct uc_context {
     size_t context_size; // size of the real internal context structure
     uc_mode mode;        // the mode of this context
     uc_arch arch;        // the arch of this context
+    int snapshot_level;  // the memory snapshot level to restore
     char data[0];        // context
 };
-
-// check if this address is mapped in (via uc_mem_map())
-MemoryRegion *memory_mapping(struct uc_struct *uc, uint64_t address);
 
 // We have to support 32bit system so we can't hold uint64_t on void*
 static inline void uc_add_exit(uc_engine *uc, uint64_t addr)
@@ -484,6 +503,28 @@ static inline void hooked_regions_check(uc_engine *uc, uint64_t start,
     hooked_regions_check_single(uc->hook[UC_HOOK_CODE_IDX].head, start, length);
     hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_IDX].head, start,
                                 length);
+}
+
+/*
+ break translation loop:
+ This is done in two cases:
+ 1. the user wants to stop the emulation.
+ 2. the user has set it IP. This requires to restart the internal
+ CPU emulation and rebuild some translation blocks
+*/
+static inline uc_err break_translation_loop(uc_engine *uc)
+{
+    if (uc->emulation_done) {
+        return UC_ERR_OK;
+    }
+
+    // TODO: make this atomic somehow?
+    if (uc->cpu) {
+        // exit the current TB
+        cpu_exit(uc->cpu);
+    }
+
+    return UC_ERR_OK;
 }
 
 #ifdef UNICORN_TRACER

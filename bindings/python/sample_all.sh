@@ -1,15 +1,31 @@
 #!/bin/sh
 
-./sample_x86.py
+python3 ./sample_arm.py
 echo "=========================="
-./shellcode.py
+python3 ./sample_armeb.py
 echo "=========================="
-./sample_arm.py
+python3 ./sample_arm64.py
 echo "=========================="
-./sample_arm64.py
+python3 ./sample_arm64eb.py
 echo "=========================="
-./sample_mips.py
+python3 ./sample_m68k.py
 echo "=========================="
-./sample_sparc.py
+python3 ./sample_mips.py
 echo "=========================="
-./sample_m68k.py
+python3 ./sample_ppc.py
+echo "=========================="
+python3 ./sample_riscv.py
+echo "=========================="
+python3 ./sample_s390x.py
+echo "=========================="
+python3 ./sample_sparc.py
+echo "=========================="
+python3 ./sample_tricore.py
+echo "=========================="
+python3 ./sample_x86.py
+echo "=========================="
+python3 ./shellcode.py
+echo "=========================="
+python3 ./sample_ctl.py
+echo "=========================="
+python3 ./sample_network_auditing.py

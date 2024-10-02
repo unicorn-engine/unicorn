@@ -504,7 +504,7 @@ static void sparc_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
     cc->cpu_exec_interrupt = sparc_cpu_exec_interrupt;
     cc->set_pc = sparc_cpu_set_pc;
     cc->synchronize_from_tb = sparc_cpu_synchronize_from_tb;
-    cc->tlb_fill = sparc_cpu_tlb_fill;
+    cc->tlb_fill_cpu = sparc_cpu_tlb_fill;
     cc->do_unaligned_access = sparc_cpu_do_unaligned_access;
     cc->get_phys_page_debug = sparc_cpu_get_phys_page_debug;
     cc->tcg_initialize = sparc_tcg_init;

@@ -231,7 +231,7 @@ static void m68k_cpu_class_init(CPUClass *c)
     cc->do_interrupt = m68k_cpu_do_interrupt;
     cc->cpu_exec_interrupt = m68k_cpu_exec_interrupt;
     cc->set_pc = m68k_cpu_set_pc;
-    cc->tlb_fill = m68k_cpu_tlb_fill;
+    cc->tlb_fill_cpu = m68k_cpu_tlb_fill;
     cc->get_phys_page_debug = m68k_cpu_get_phys_page_debug;
     cc->tcg_initialize = m68k_tcg_init;
 }
