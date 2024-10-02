@@ -105,7 +105,7 @@ bool avr_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                       bool probe, uintptr_t retaddr)
 {
     int prot = 0;
-    MemTxAttrs attrs = {};
+    MemTxAttrs attrs = {0};
     uint32_t paddr;
 
     address &= TARGET_PAGE_MASK;
