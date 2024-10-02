@@ -126,6 +126,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         }
     }
 
+    CHECK_RET_DEPRECATE(ret, regid);
     return ret;
 }
 
@@ -176,6 +177,7 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         }
     }
 
+    CHECK_RET_DEPRECATE(ret, regid);
     return ret;
 }
 
