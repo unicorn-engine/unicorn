@@ -21,7 +21,6 @@
 #include "qemu/osdep.h"
 #include "exec/exec-all.h"
 #include "cpu.h"
-#include "disas/dis-asm.h"
 #include "unicorn_helper.h"
 
 static void avr_cpu_set_pc(CPUState *cs, vaddr value)
