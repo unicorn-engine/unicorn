@@ -2,7 +2,7 @@
 """
 # @author elicn
 
-from typing import Any, Callable, Sequence, Tuple
+from typing import Any, Callable, Tuple, Type
 
 import ctypes
 
@@ -63,6 +63,8 @@ class UcRegFPR(UcTupledReg[X86FPReg]):
 class UcIntel(Uc):
     """Unicorn subclass for Intel architecture.
     """
+
+    REG_RANGE_MSR = (const.UC_X86_REG_MSR,)
 
     REG_RANGE_MMR = (
         const.UC_X86_REG_IDTR,
@@ -127,12 +129,13 @@ class UcIntel(Uc):
 
         return getattr(self, '_Uc__do_hook_add')(htype, fptr, begin, end, insn)
 
-    @staticmethod
-    def __select_reg_class(reg_id: int):
-        """Select class for special architectural registers.
+    @classmethod
+    def _select_reg_class(cls, reg_id: int) -> Type:
+        """Select the appropriate class for the specified architectural register.
         """
 
         reg_class = (
+            (UcIntel.REG_RANGE_MSR, UcRegMSR),
             (UcIntel.REG_RANGE_MMR, UcRegMMR),
             (UcIntel.REG_RANGE_FP,  UcRegFPR),
             (UcIntel.REG_RANGE_XMM, UcReg128),
@@ -140,54 +143,28 @@ class UcIntel(Uc):
             (UcIntel.REG_RANGE_ZMM, UcReg512)
         )
 
-        return next((cls for rng, cls in reg_class if reg_id in rng), None)
-
-    def reg_read(self, reg_id: int, aux: Any = None):
-        # select register class for special cases
-        reg_cls = UcIntel.__select_reg_class(reg_id)
-
-        if reg_cls is None:
-            # backward compatibility: msr read through reg_read
-            if reg_id == const.UC_X86_REG_MSR:
-                if type(aux) is not int:
-                    raise UcError(UC_ERR_ARG)
-
-                value = self.msr_read(aux)
-
-            else:
-                value = super().reg_read(reg_id, aux)
-        else:
-            value = self._reg_read(reg_id, reg_cls)
-
-        return value
-
-    def reg_write(self, reg_id: int, value) -> None:
-        # select register class for special cases
-        reg_cls = UcIntel.__select_reg_class(reg_id)
-
-        if reg_cls is None:
-            # backward compatibility: msr write through reg_write
-            if reg_id == const.UC_X86_REG_MSR:
-                if type(value) is not tuple or len(value) != 2:
-                    raise UcError(UC_ERR_ARG)
-
-                self.msr_write(*value)
-                return
-
-            super().reg_write(reg_id, value)
-        else:
-            self._reg_write(reg_id, reg_cls, value)
+        return next((c for rng, c in reg_class if reg_id in rng), cls._DEFAULT_REGTYPE)
 
     def msr_read(self, msr_id: int) -> int:
-        return self._reg_read(const.UC_X86_REG_MSR, UcRegMSR, msr_id)
+        """Read a model-specific register.
+
+        Args:
+            msr_id: MSR index
+
+        Returns: MSR value
+        """
+
+        return self.reg_read(const.UC_X86_REG_MSR, msr_id)
 
     def msr_write(self, msr_id: int, value: int) -> None:
-        self._reg_write(const.UC_X86_REG_MSR, UcRegMSR, (msr_id, value))
+        """Write to a model-specific register.
 
-    def reg_read_batch(self, reg_ids: Sequence[int]) -> Tuple:
-        reg_types = [UcIntel.__select_reg_class(rid) or self._DEFAULT_REGTYPE for rid in reg_ids]
+        Args:
+            msr_id: MSR index
+            value: new MSR value
+        """
 
-        return self._reg_read_batch(reg_ids, reg_types)
+        self.reg_write(const.UC_X86_REG_MSR, (msr_id, value))
 
 
 __all__ = ['UcRegMMR', 'UcRegMSR', 'UcRegFPR', 'UcIntel']
