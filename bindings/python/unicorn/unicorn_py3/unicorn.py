@@ -43,7 +43,6 @@ def __load_uc_lib() -> ctypes.CDLL:
 
     import inspect
     import os
-        
     import sys
 
     loaded_dlls = set()
@@ -207,6 +206,19 @@ HOOK_TCG_OPCODE_CFUNC   = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, cty
 # mmio callback signatures
 MMIO_READ_CFUNC  = ctypes.CFUNCTYPE(ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_uint, ctypes.c_void_p)
 MMIO_WRITE_CFUNC = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_uint, ctypes.c_uint64, ctypes.c_void_p)
+
+
+def check_maxbits(value: int, nbits: int) -> bool:
+    """Verify that a certain value may be represented with at most `nbits` bits.
+
+    Args:
+        value : numeric value to check
+        nbits : max number of bits allowed
+
+    Returns: `True` if `value` is represented by at most `nbits` bits, `False` otherwise
+    """
+
+    return value & ~((1 << nbits) - 1) == 0
 
 
 class UcError(Exception):
@@ -1160,8 +1172,8 @@ class Uc(RegStateManager):
 
     @staticmethod
     def __ctl_encode(ctl: int, op: int, nargs: int) -> int:
-        assert nargs and (nargs & ~0b1111) == 0, f'nargs must not exceed value of 15 (got {nargs})'
-        assert op and (op & ~0b11) == 0, f'op must not exceed value of 3 (got {op})'
+        assert nargs and check_maxbits(nargs, 4), f'nargs must not exceed value of 15 (got {nargs})'
+        assert op and check_maxbits(op, 2), f'op must not exceed value of 3 (got {op})'
 
         return (op << 30) | (nargs << 26) | ctl
 

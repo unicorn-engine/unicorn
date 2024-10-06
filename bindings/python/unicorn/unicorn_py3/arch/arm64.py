@@ -11,7 +11,7 @@ from unicorn import arm64_const as const
 from unicorn.unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
 
 # newly introduced unicorn imports
-from ..unicorn import Uc, UcError, uccallback
+from ..unicorn import Uc, UcError, uccallback, check_maxbits
 from .types import uc_engine, UcTupledReg, UcReg128
 
 ARM64CPReg = Tuple[int, int, int, int, int, int]
@@ -99,6 +99,50 @@ class UcAArch64(Uc):
         )
 
         return next((c for rng, c in reg_class if reg_id in rng), cls._DEFAULT_REGTYPE)
+
+    # to learn more about accessing aarch64 coprocessor registers, refer to:
+    # https://developer.arm.com/documentation/ddi0601/latest/AArch64-Registers
+
+    def cpr_read(self, op0: int, op1: int, crn: int, crm: int, op2: int) -> int:
+        """Read a coprocessor register value.
+
+        Args:
+            op0		: opcode 0, value varies between 0 and 3
+            op1 	: opcode 1, value varies between 0 and 7
+            crn 	: coprocessor register to access (CRn), value varies between 0 and 15
+            crm 	: additional coprocessor register to access (CRm), value varies between 0 and 15
+            op2 	: opcode 2, value varies between 0 and 7
+
+        Returns: value of coprocessor register
+        """
+
+        assert check_maxbits(op0, 2)
+        assert check_maxbits(op1, 3)
+        assert check_maxbits(crn, 4)
+        assert check_maxbits(crm, 4)
+        assert check_maxbits(op2, 3)
+
+        return self.reg_read(const.UC_ARM64_REG_CP_REG, (crn, crm, op0, op1, op2))
+
+    def cpr_write(self, op0: int, op1: int, crn: int, crm: int, op2: int, value: int) -> None:
+        """Write a coprocessor register value.
+
+        Args:
+            op0		: opcode 0, value varies between 0 and 3
+            op1 	: opcode 1, value varies between 0 and 7
+            crn 	: coprocessor register to access (CRn), value varies between 0 and 15
+            crm 	: additional coprocessor register to access (CRm), value varies between 0 and 15
+            op2 	: opcode 2, value varies between 0 and 7
+            value	: value to write
+        """
+
+        assert check_maxbits(op0, 2)
+        assert check_maxbits(op1, 3)
+        assert check_maxbits(crn, 4)
+        assert check_maxbits(crm, 4)
+        assert check_maxbits(op2, 3)
+
+        self.reg_write(const.UC_ARM64_REG_CP_REG, (crn, crm, op0, op1, op2, value))
 
 
 __all__ = ['UcRegCP64', 'UcAArch64']
