@@ -2,7 +2,7 @@
 """
 # @author elicn
 
-from typing import Any, Tuple
+from typing import Tuple, Type
 
 import ctypes
 
@@ -10,7 +10,7 @@ import ctypes
 from unicorn import arm_const as const
 
 # newly introduced unicorn imports
-from ..unicorn import Uc
+from ..unicorn import Uc, check_maxbits
 from .types import UcTupledReg, UcReg128
 
 ARMCPReg = Tuple[int, int, int, int, int, int, int, int]
@@ -40,46 +40,71 @@ class UcAArch32(Uc):
     """Unicorn subclass for ARM architecture.
     """
 
+    REG_RANGE_CP = (const.UC_ARM_REG_CP_REG,)
+
     REG_RANGE_Q = range(const.UC_ARM_REG_Q0, const.UC_ARM_REG_Q15 + 1)
 
-    @staticmethod
-    def __select_reg_class(reg_id: int):
-        """Select class for special architectural registers.
+    @classmethod
+    def _select_reg_class(cls, reg_id: int) -> Type:
+        """Select the appropriate class for the specified architectural register.
         """
 
         reg_class = (
-            (UcAArch32.REG_RANGE_Q, UcReg128),
+            (UcAArch32.REG_RANGE_CP, UcRegCP),
+            (UcAArch32.REG_RANGE_Q, UcReg128)
         )
 
-        return next((cls for rng, cls in reg_class if reg_id in rng), None)
+        return next((c for rng, c in reg_class if reg_id in rng), cls._DEFAULT_REGTYPE)
 
-    def reg_read(self, reg_id: int, aux: Any = None):
-        # select register class for special cases
-        reg_cls = UcAArch32.__select_reg_class(reg_id)
+    # to learn more about accessing aarch32 coprocessor registers, refer to:
+    # https://developer.arm.com/documentation/ddi0601/latest/AArch32-Registers
 
-        if reg_cls is None:
-            if reg_id == const.UC_ARM_REG_CP_REG:
-                return self._reg_read(reg_id, UcRegCP, *aux)
+    def cpr_read(self, coproc: int, opc1: int, crn: int, crm: int, opc2: int, el: int, is_64: bool) -> int:
+        """Read a coprocessor register value.
 
-            else:
-                # fallback to default reading method
-                return super().reg_read(reg_id, aux)
+        Args:
+            coproc  : coprocessor to access, value varies between 0 and 15
+            opc1    : opcode 1, value varies between 0 and 7
+            crn     : coprocessor register to access (CRn), value varies between 0 and 15
+            crm     : additional coprocessor register to access (CRm), value varies between 0 and 15
+            opc2    : opcode 2, value varies between 0 and 7
+            el      : the exception level the coprocessor register belongs to, value varies between 0 and 3
+            is_64   : indicates whether this is a 64-bit register
 
-        return self._reg_read(reg_id, reg_cls)
+        Returns: value of coprocessor register
+        """
 
-    def reg_write(self, reg_id: int, value) -> None:
-        # select register class for special cases
-        reg_cls = UcAArch32.__select_reg_class(reg_id)
+        assert check_maxbits(coproc, 4)
+        assert check_maxbits(opc1,   3)
+        assert check_maxbits(crn,    4)
+        assert check_maxbits(crm,    4)
+        assert check_maxbits(opc2,   3)
+        assert check_maxbits(el,     2)  # note that unicorn currently supports only EL0 and EL1
 
-        if reg_cls is None:
-            if reg_id == const.UC_ARM_REG_CP_REG:
-                self._reg_write(reg_id, UcRegCP, value)
+        return self.reg_read(const.UC_ARM_REG_CP_REG, (coproc, int(is_64), el, crn, crm, opc1, opc2))
 
-            else:
-                # fallback to default writing method
-                super().reg_write(reg_id, value)
+    def cpr_write(self, coproc: int, opc1: int, crn: int, crm: int, opc2: int, el: int, is_64: bool, value: int) -> None:
+        """Write a coprocessor register value.
 
-        else:
-            self._reg_write(reg_id, reg_cls, value)
+        Args:
+            coproc  : coprocessor to access, value varies between 0 and 15
+            opc1    : opcode 1, value varies between 0 and 7
+            crn     : coprocessor register to access (CRn), value varies between 0 and 15
+            crm     : additional coprocessor register to access (CRm), value varies between 0 and 15
+            opc2    : opcode 2, value varies between 0 and 7
+            el      : the exception level the coprocessor register belongs to, value varies between 0 and 3
+            is_64   : indicates whether this is a 64-bit register
+            value   : value to write
+        """
+
+        assert check_maxbits(coproc, 4)
+        assert check_maxbits(opc1,   3)
+        assert check_maxbits(crn,    4)
+        assert check_maxbits(crm,    4)
+        assert check_maxbits(opc2,   3)
+        assert check_maxbits(el,     2)  # note that unicorn currently supports only EL0 and EL1
+
+        self.reg_write(const.UC_ARM_REG_CP_REG, (coproc, int(is_64), el, crn, crm, opc1, opc2, value))
+
 
 __all__ = ['UcRegCP', 'UcAArch32']

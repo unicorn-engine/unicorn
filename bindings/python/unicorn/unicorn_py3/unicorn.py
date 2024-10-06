@@ -3,7 +3,7 @@ based on Nguyen Anh Quynnh's work
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Mapping, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import ctypes
 import functools
@@ -43,7 +43,6 @@ def __load_uc_lib() -> ctypes.CDLL:
 
     import inspect
     import os
-        
     import sys
 
     loaded_dlls = set()
@@ -91,26 +90,19 @@ def __load_uc_lib() -> ctypes.CDLL:
     # - we can get the path to the local libraries by parsing our filename
     # - global load
     # - python's lib directory
-    canonicals = []
-    
-    try:
+
+    if sys.version_info.minor >= 12:
         from importlib import resources
-        canonicals.append(
-            resources.files("unicorn") / 'lib'
-        )
-    except:
-        try:
-            import pkg_resources
-            canonicals.append(
-                pkg_resources.resource_filename("unicorn", 'lib')
-            )
-        except:
-            # maybe importlib_resources, but ignore for now
-            pass
-    
+
+        canonicals = resources.files('unicorn') / 'lib'
+    else:
+        import pkg_resources
+
+        canonicals = pkg_resources.resource_filename('unicorn', 'lib')
+
     lib_locations = [
         os.getenv('LIBUNICORN_PATH'),
-    ] + canonicals + [
+        canonicals,
         PurePath(inspect.getfile(__load_uc_lib)).parent / 'lib',
         '',
         r'/usr/local/lib' if sys.platform == 'darwin' else r'/usr/lib64',
@@ -171,6 +163,7 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
     __set_prototype('uc_reg_read', uc_err, uc_engine, ctypes.c_int, ctypes.c_void_p)
     __set_prototype('uc_reg_write', uc_err, uc_engine, ctypes.c_int, ctypes.c_void_p)
     __set_prototype('uc_reg_read_batch', uc_err, uc_engine, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_void_p), ctypes.c_int)
+    __set_prototype('uc_reg_write_batch', uc_err, uc_engine, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_void_p), ctypes.c_int)
     __set_prototype('uc_mem_read', uc_err, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
     __set_prototype('uc_mem_write', uc_err, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
     __set_prototype('uc_emu_start', uc_err, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
@@ -213,6 +206,19 @@ HOOK_TCG_OPCODE_CFUNC   = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, cty
 # mmio callback signatures
 MMIO_READ_CFUNC  = ctypes.CFUNCTYPE(ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_uint, ctypes.c_void_p)
 MMIO_WRITE_CFUNC = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_uint, ctypes.c_uint64, ctypes.c_void_p)
+
+
+def check_maxbits(value: int, nbits: int) -> bool:
+    """Verify that a certain value may be represented with at most `nbits` bits.
+
+    Args:
+        value : numeric value to check
+        nbits : max number of bits allowed
+
+    Returns: `True` if `value` is represented by at most `nbits` bits, `False` otherwise
+    """
+
+    return value & ~((1 << nbits) - 1) == 0
 
 
 class UcError(Exception):
@@ -310,7 +316,7 @@ def uccallback(uc: Uc, functype: Type[_CFP]):
     def decorate(func) -> _CFP:
 
         @functools.wraps(func)
-        def wrapper(handle: Uc, *args, **kwargs):
+        def wrapper(handle: int, *args, **kwargs):
             try:
                 return func(uc, *args, **kwargs)
             except Exception as e:
@@ -334,47 +340,62 @@ class RegStateManager:
 
     _DEFAULT_REGTYPE = ctypes.c_uint64
 
+    @classmethod
+    def _select_reg_class(cls, reg_id: int) -> Type:
+        """An architecture-specific method that returns the appropriate
+        value type for a specified reg identifier. All rich `Uc` subclasses
+        are expected to implement their own
+        """
+
+        return cls._DEFAULT_REGTYPE
+
     def _do_reg_read(self, reg_id: int, reg_obj) -> int:
-        """Private register read implementation.
+        """Low level register read implementation.
         Must be implemented by the mixin object
         """
 
         raise NotImplementedError
 
     def _do_reg_write(self, reg_id: int, reg_obj) -> int:
-        """Private register write implementation.
+        """Low level register write implementation.
         Must be implemented by the mixin object
         """
 
         raise NotImplementedError
 
     def _do_reg_read_batch(self, reglist, vallist, count) -> int:
-        """Private batch register read implementation.
+        """Low level batch register read implementation.
         Must be implemented by the mixin object
         """
 
         raise NotImplementedError
 
-    def _do_reg_write_batch(self, reglist, count) -> int:
-        """Private batch register write implementation.
+    def _do_reg_write_batch(self, reglist, vallist, count) -> int:
+        """Low level batch register write implementation.
         Must be implemented by the mixin object
         """
 
         raise NotImplementedError
 
     @staticmethod
-    def __get_reg_read_arg(regtype: Type, *args):
-        return regtype(*args)
+    def __get_reg_read_arg(reg_type: Type, aux: Any):
+        if aux is None:
+            return reg_type()
+
+        if isinstance(aux, tuple):
+            return reg_type(*aux)
+
+        return reg_type(aux)
 
     @staticmethod
-    def __get_reg_write_arg(regtype: Type, value):
-        return regtype.from_value(value) if issubclass(regtype, UcReg) else regtype(value)
+    def __get_reg_write_arg(reg_type: Type, value: Any):
+        return reg_type.from_value(value) if issubclass(reg_type, UcReg) else reg_type(value)
 
-    def _reg_read(self, reg_id: int, regtype: Type, *args):
+    def _reg_read(self, reg_id: int, reg_type: Type, aux: Any):
         """Register read helper method.
         """
 
-        reg = self.__get_reg_read_arg(regtype, *args)
+        reg = self.__get_reg_read_arg(reg_type, aux)
         status = self._do_reg_read(reg_id, ctypes.byref(reg))
 
         if status != uc.UC_ERR_OK:
@@ -382,25 +403,32 @@ class RegStateManager:
 
         return reg.value
 
-    def _reg_write(self, reg_id: int, regtype: Type, value) -> None:
+    def _reg_write(self, reg_id: int, reg_type: Type, value: Any) -> None:
         """Register write helper method.
         """
 
-        reg = self.__get_reg_write_arg(regtype, value)
+        reg = self.__get_reg_write_arg(reg_type, value)
         status = self._do_reg_write(reg_id, ctypes.byref(reg))
 
         if status != uc.UC_ERR_OK:
             raise UcError(status, reg_id)
 
-    def _reg_read_batch(self, reg_ids: Sequence[int], reg_types: Sequence[Type]) -> Tuple:
+    def _reg_read_batch(self, read_seq: Sequence[Tuple[int, Type, Any]]) -> Tuple:
         """Batch register read helper method.
+
+        Args:
+            read_seq: a sequence of 3-tuples containing register identifier, returned
+                      value type and auxiliary data (or `None` if aux is not required)
+
+        Returns: a tuple of values
         """
 
-        assert len(reg_ids) == len(reg_types)
+        count = len(read_seq)
+        reg_ids = (rid for rid, _, _ in read_seq)
+        reg_info = ((rtype, aux) for _, rtype, aux in read_seq)
 
-        count = len(reg_ids)
         reg_list = (ctypes.c_int * count)(*reg_ids)
-        val_list = [rtype() for rtype in reg_types]
+        val_list = [self.__get_reg_read_arg(rtype, aux) for rtype, aux in reg_info]
         ptr_list = (ctypes.c_void_p * count)(*(ctypes.c_void_p(ctypes.addressof(elem)) for elem in val_list))
 
         status = self._do_reg_read_batch(reg_list, ptr_list, ctypes.c_int(count))
@@ -409,6 +437,30 @@ class RegStateManager:
             raise UcError(status)
 
         return tuple(v.value for v in val_list)
+
+    def _reg_write_batch(self, write_seq: Sequence[Tuple[int, Type, Any]]) -> None:
+        """Batch register write helper method.
+
+        Args:
+            write_seq: a sequence of 3-tuples containing register identifier, value type and value
+        """
+
+        count = len(write_seq)
+        reg_ids = (rid for rid, _, _ in write_seq)
+        reg_info = ((rtype, aux) for _, rtype, aux in write_seq)
+
+        reg_list = (ctypes.c_int * count)(*reg_ids)
+        val_list = [self.__get_reg_write_arg(rtype, rval) for rtype, rval in reg_info]
+        ptr_list = (ctypes.c_void_p * count)(*(ctypes.c_void_p(ctypes.addressof(elem)) for elem in val_list))
+
+        status = self._do_reg_write_batch(reg_list, ptr_list, ctypes.c_int(count))
+
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+
+    #########################
+    #  External facing API  #
+    #########################
 
     def reg_read(self, reg_id: int, aux: Any = None):
         """Read architectural register value.
@@ -422,7 +474,9 @@ class RegStateManager:
         Raises: `UcError` in case of invalid register id or auxiliary data
         """
 
-        return self._reg_read(reg_id, self._DEFAULT_REGTYPE)
+        reg_type = self._select_reg_class(reg_id)
+
+        return self._reg_read(reg_id, reg_type, aux)
 
     def reg_write(self, reg_id: int, value) -> None:
         """Write to architectural register.
@@ -434,34 +488,50 @@ class RegStateManager:
         Raises: `UcError` in case of invalid register id or value format
         """
 
-        self._reg_write(reg_id, self._DEFAULT_REGTYPE, value)
+        reg_type = self._select_reg_class(reg_id)
 
-    def reg_read_batch(self, reg_ids: Sequence[int]) -> Tuple:
-        """Read a sequence of architectural registers.
+        self._reg_write(reg_id, reg_type, value)
+
+    def reg_read_batch(self, reg_data: Sequence[Union[int, Tuple[int, Any]]]) -> Tuple:
+        """Read a sequence of architectural registers. This provides with faster means to
+        read multiple registers.
 
         Args:
-            reg_ids: a sequence of register identifiers (architecture-specific enumeration)
+            reg_ids : a sequence of register identifiers (architecture-specific enumeration)
+            aux     : a mapping of reg identifiers and auxiliary data, in case it is required
 
         Returns: a tuple of registers values (register-specific format)
 
-        Raises: `UcError` in case of invalid register id
+        Raises: `UcError` in case of an invalid register id, or an invalid aux data for a
+        register that requires it
         """
 
-        reg_types = [self._DEFAULT_REGTYPE for _ in range(len(reg_ids))]
+        def __seq_tuple(elem: Union[int, Tuple[int, Any]]) -> Tuple[int, Type, Any]:
+            reg_id, reg_aux = elem if isinstance(elem, tuple) else (elem, None)
+            reg_type = self._select_reg_class(reg_id)
 
-        return self._reg_read_batch(reg_ids, reg_types)
+            return (reg_id, reg_type, reg_aux)
 
-    def reg_write_batch(self, reg_info: Sequence[Tuple[int, Any]]) -> None:
-        """Write a sequece of architectural registers.
+        return self._reg_read_batch([__seq_tuple(elem) for elem in reg_data])
+
+    def reg_write_batch(self, reg_data: Sequence[Tuple[int, Any]]) -> None:
+        """Write a sequece of architectural registers. This provides with faster means to
+        write multiple registers.
 
         Args:
-            regs_info: a sequence of tuples consisting of register identifiers and values
+            reg_data: a sequence of register identifiers matched with their designated values
 
         Raises: `UcError` in case of invalid register id or value format
         """
 
-        # TODO
-        ...
+        def __seq_tuple(elem: Tuple[int, Any]) -> Tuple[int, Type, Any]:
+            reg_id, reg_val = elem
+            reg_type = self._select_reg_class(reg_id)
+
+            return (reg_id, reg_type, reg_val)
+
+        self._reg_write_batch([__seq_tuple(elem) for elem in reg_data])
+
 
 def ucsubclass(cls):
     """Uc subclass decorator.
@@ -591,8 +661,8 @@ class Uc(RegStateManager):
 
         # we have to keep a reference to the callbacks so they do not get gc-ed
         # see: https://docs.python.org/3/library/ctypes.html#callback-functions
-        self._callbacks: MutableMapping[int, ctypes._FuncPointer] = {}
-        self._mmio_callbacks: MutableMapping[Tuple[int, int], Tuple[Optional[MMIO_READ_CFUNC], Optional[MMIO_WRITE_CFUNC]]] = {}
+        self._callbacks: Dict[int, ctypes._FuncPointer] = {}
+        self._mmio_callbacks: Dict[Tuple[int, int], Tuple[Optional[MMIO_READ_CFUNC], Optional[MMIO_WRITE_CFUNC]]] = {}
 
         self._hook_exception: Optional[Exception] = None
 
@@ -616,6 +686,15 @@ class Uc(RegStateManager):
             else:
                 if status != uc.UC_ERR_OK:
                     raise UcError(status)
+
+    @property
+    def errno(self) -> int:
+        """Get last error number.
+
+        Returns: error number (see: UC_ERR_*)
+        """
+
+        return uclib.uc_errno(self._uch)
 
     ###########################
     #  Emulation controllers  #
@@ -679,6 +758,13 @@ class Uc(RegStateManager):
         """
 
         return uclib.uc_reg_read_batch(self._uch, reglist, vallist, count)
+
+    def _do_reg_write_batch(self, reglist, vallist, count) -> int:
+        """Private batch register write implementation.
+        Do not call directly.
+        """
+
+        return uclib.uc_reg_write_batch(self._uch, reglist, vallist, count)
 
     ###########################
     #  Memory management      #
@@ -767,20 +853,33 @@ class Uc(RegStateManager):
             raise UcError(status)
 
     def mmio_map(self, address: int, size: int,
-            read_cb: Optional[UC_MMIO_READ_TYPE], user_data_read: Any,
-            write_cb: Optional[UC_MMIO_WRITE_TYPE], user_data_write: Any) -> None:
+            read_cb: Optional[UC_MMIO_READ_TYPE], read_ud: Any,
+            write_cb: Optional[UC_MMIO_WRITE_TYPE], write_ud: Any) -> None:
+        """Map an MMIO range. This method binds a memory range to read and write accessors
+        to simulate a hardware device. Unicorn does not allocate memory to back this range.
+
+        Args:
+            address  : range base address
+            size     : range size (in bytes)
+            read_cb  : read callback to invoke upon read access. if not specified, reads \
+                       from the mmio range will be silently dropped
+            read_ud  : optinal context object to pass on to the read callback
+            write_cb : write callback to invoke unpon a write access. if not specified, writes \
+                       to the mmio range will be silently dropped
+            write_ud : optinal context object to pass on to the write callback
+        """
 
         @uccallback(self, MMIO_READ_CFUNC)
         def __mmio_map_read_cb(uc: Uc, offset: int, size: int, key: int) -> int:
             assert read_cb is not None
 
-            return read_cb(uc, offset, size, user_data_read)
+            return read_cb(uc, offset, size, read_ud)
 
         @uccallback(self, MMIO_WRITE_CFUNC)
         def __mmio_map_write_cb(uc: Uc, offset: int, size: int, value: int, key: int) -> None:
             assert write_cb is not None
 
-            write_cb(uc, offset, size, value, user_data_write)
+            write_cb(uc, offset, size, value, write_ud)
 
         read_cb_fptr = read_cb and __mmio_map_read_cb
         write_cb_fptr = write_cb and __mmio_map_write_cb
@@ -860,7 +959,7 @@ class Uc(RegStateManager):
     def __do_hook_add(self, htype: int, fptr: ctypes._FuncPointer, begin: int, end: int, *args: ctypes.c_int) -> int:
         handle = uc_hook_h()
 
-        # TODO: we do not need a callback counter to reference the callback and user data anymore,
+        # we do not need a callback counter to reference the callback and user data anymore,
         # so just pass a dummy value. that value will become the unused 'key' argument
         dummy = 0
 
@@ -905,7 +1004,7 @@ class Uc(RegStateManager):
             def __hook_intr_cb(uc: Uc, intno: int, key: int):
                 callback(uc, intno, user_data)
 
-            return __hook_intr_cb,
+            return (__hook_intr_cb,)
 
         def __hook_insn():
             # each arch is expected to overload hook_add and implement this handler on their own.
@@ -918,35 +1017,35 @@ class Uc(RegStateManager):
             def __hook_code_cb(uc: Uc, address: int, size: int, key: int):
                 callback(uc, address, size, user_data)
 
-            return __hook_code_cb,
+            return (__hook_code_cb,)
 
         def __hook_invalid_mem():
             @uccallback(self, HOOK_MEM_INVALID_CFUNC)
             def __hook_mem_invalid_cb(uc: Uc, access: int, address: int, size: int, value: int, key: int) -> bool:
                 return callback(uc, access, address, size, value, user_data)
 
-            return __hook_mem_invalid_cb,
+            return (__hook_mem_invalid_cb,)
 
         def __hook_mem():
             @uccallback(self, HOOK_MEM_ACCESS_CFUNC)
             def __hook_mem_access_cb(uc: Uc, access: int, address: int, size: int, value: int, key: int) -> None:
                 callback(uc, access, address, size, value, user_data)
 
-            return __hook_mem_access_cb,
+            return (__hook_mem_access_cb,)
 
         def __hook_invalid_insn():
             @uccallback(self, HOOK_INSN_INVALID_CFUNC)
             def __hook_insn_invalid_cb(uc: Uc, key: int) -> bool:
                 return callback(uc, user_data)
 
-            return __hook_insn_invalid_cb,
+            return (__hook_insn_invalid_cb,)
 
         def __hook_edge_gen():
             @uccallback(self, HOOK_EDGE_GEN_CFUNC)
             def __hook_edge_gen_cb(uc: Uc, cur: ctypes._Pointer[uc_tb], prev: ctypes._Pointer[uc_tb], key: int):
                 callback(uc, cur.contents, prev.contents, user_data)
 
-            return __hook_edge_gen_cb,
+            return (__hook_edge_gen_cb,)
 
         def __hook_tcg_opcode():
             @uccallback(self, HOOK_TCG_OPCODE_CFUNC)
@@ -956,9 +1055,9 @@ class Uc(RegStateManager):
             opcode = ctypes.c_uint64(aux1)
             flags = ctypes.c_uint64(aux2)
 
-            return __hook_tcg_op_cb, opcode, flags
+            return (__hook_tcg_op_cb, opcode, flags)
 
-        handlers: Mapping[int, Callable[[], Tuple]] = {
+        handlers: Dict[int, Callable[[], Tuple]] = {
             uc.UC_HOOK_INTR               : __hook_intr,
             uc.UC_HOOK_INSN               : __hook_insn,
             uc.UC_HOOK_CODE               : __hook_code,
@@ -1034,6 +1133,11 @@ class Uc(RegStateManager):
         return result.value
 
     def context_save(self) -> UcContext:
+        """Save Unicorn instance internal context.
+
+        Returns: unicorn context instance
+        """
+
         context = UcContext(self._uch, self._arch, self._mode)
         status = uclib.uc_context_save(self._uch, context.context)
 
@@ -1043,12 +1147,24 @@ class Uc(RegStateManager):
         return context
 
     def context_update(self, context: UcContext) -> None:
+        """Update Unicorn instance internal context.
+
+        Args:
+            context : unicorn context instance to copy data from
+        """
+
         status = uclib.uc_context_save(self._uch, context.context)
 
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
     def context_restore(self, context: UcContext) -> None:
+        """Overwrite Unicorn instance internal context.
+
+        Args:
+            context : unicorn context instance to copy data from
+        """
+
         status = uclib.uc_context_restore(self._uch, context.context)
 
         if status != uc.UC_ERR_OK:
@@ -1056,8 +1172,8 @@ class Uc(RegStateManager):
 
     @staticmethod
     def __ctl_encode(ctl: int, op: int, nargs: int) -> int:
-        assert nargs and (nargs & ~0b1111) == 0, f'nargs must not exceed value of 15 (got {nargs})'
-        assert op and (op & ~0b11) == 0, f'op must not exceed value of 3 (got {op})'
+        assert nargs and check_maxbits(nargs, 4), f'nargs must not exceed value of 15 (got {nargs})'
+        assert op and check_maxbits(op, 2), f'op must not exceed value of 3 (got {op})'
 
         return (op << 30) | (nargs << 26) | ctl
 
@@ -1178,6 +1294,9 @@ class Uc(RegStateManager):
 
 
 class UcContext(RegStateManager):
+    """Unicorn internal context.
+    """
+
     def __init__(self, h, arch: int, mode: int):
         self._context = uc_context()
         self._size = uclib.uc_context_size(h)
@@ -1193,18 +1312,31 @@ class UcContext(RegStateManager):
 
     @property
     def context(self):
+        """Underlying context data.
+        Normally this property should not be accessed directly.
+        """
+
         return self._context
 
     @property
     def size(self) -> int:
+        """Underlying context data size.
+        """
+
         return self._size
 
     @property
     def arch(self) -> int:
+        """Get emulated architecture (see UC_ARCH_* constants).
+        """
+
         return self._arch
 
     @property
     def mode(self) -> int:
+        """Get emulated processor mode (see UC_MODE_* constants).
+        """
+
         return self._mode
 
     # RegStateManager mixin method implementation
@@ -1227,11 +1359,17 @@ class UcContext(RegStateManager):
 
         return uclib.uc_context_reg_read_batch(self._context, reglist, vallist, count)
 
+    def _do_reg_write_batch(self, reglist, vallist, count) -> int:
+        """Private batch register write implementation.
+        """
+
+        return uclib.uc_context_reg_write_batch(self._context, reglist, vallist, count)
+
     # Make UcContext picklable
-    def __getstate__(self):
+    def __getstate__(self) -> Tuple[bytes, int, int, int]:
         return bytes(self), self.size, self.arch, self.mode
 
-    def __setstate__(self, state) -> None:
+    def __setstate__(self, state: Tuple[bytes, int, int, int]) -> None:
         context, size, arch, mode = state
 
         self._context = ctypes.cast(ctypes.create_string_buffer(context, size), uc_context)
@@ -1243,7 +1381,7 @@ class UcContext(RegStateManager):
         self._to_free = False
 
     def __bytes__(self) -> bytes:
-        return ctypes.string_at(self.context, self.size)
+        return ctypes.string_at(self._context, self._size)
 
     def __del__(self) -> None:
         # We need this property since we shouldn't free it if the object is constructed from pickled bytes.
@@ -1256,5 +1394,4 @@ UC_MMIO_WRITE_TYPE = Callable[[Uc, int, int, int, Any], None]
 
 
 __all__ = ['Uc', 'UcContext', 'ucsubclass', 'UcError', 'uc_version', 'version_bind', 'uc_arch_supported', 'debug']
-
 
