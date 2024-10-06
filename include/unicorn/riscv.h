@@ -235,6 +235,8 @@ typedef enum uc_riscv_reg {
 
     UC_RISCV_REG_PC, // PC register
 
+    UC_RISCV_REG_PRIV, // Virtual register for the current privilege level
+
     UC_RISCV_REG_ENDING, // <-- mark the end of the list or registers
 
     //> Alias registers
