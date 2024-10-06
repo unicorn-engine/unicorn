@@ -1798,6 +1798,39 @@ static void test_rex_x64(void)
     }
 }
 
+static bool test_x86_ro_segfault_cb(uc_engine *uc, uc_mem_type type,
+                                              uint64_t address, int size,
+                                              uint64_t value, void *user_data)
+{
+    const char code[] =
+        "\xA1\x00\x10\x00\x00\xA1\x00\x10\x00\x00";
+    OK(uc_mem_write(uc, address, code, sizeof(code) - 1));
+    return true;
+}
+
+static void test_x86_ro_segfault(void)
+{
+    uc_engine* uc;
+    // mov eax, [0x1000]
+    // mov eax, [0x1000]
+    const char code[] =
+        "\xA1\x00\x10\x00\x00\xA1\x00\x10\x00\x00";
+    uint32_t out;
+    uc_hook hh;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_READ));
+    
+    OK(uc_hook_add(uc, &hh, UC_HOOK_MEM_READ, test_x86_ro_segfault_cb, NULL, 1, 0));
+    OK(uc_emu_start(uc, 0, sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, (void*)&out));
+    TEST_CHECK(out == 0x001000a1);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1851,4 +1884,5 @@ TEST_LIST = {
     {"test_fxsave_fpip_x64", test_fxsave_fpip_x64},
     {"test_bswap_x64", test_bswap_ax},
     {"test_rex_x64", test_rex_x64},
+    {"test_x86_ro_segfault", test_x86_ro_segfault},
     {NULL, NULL}};

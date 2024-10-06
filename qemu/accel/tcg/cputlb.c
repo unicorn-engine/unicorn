@@ -1600,10 +1600,23 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
             JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, paddr, size, 0, hook->user_data));
-
             // the last callback may already asked to stop emulation
             if (uc->stop_request)
                 break;
+        }
+
+        /* Unicorn: Previous callbacks may invalidate TLB, reload everything.
+                    This may have impact on performance but generally fine.
+                    A better approach is not always invalidating tlb but this
+                    might cause more chaos regarding re-entry (nested uc_emu_start).
+        */
+        if (tlb_entry_is_empty(entry)) {
+            tlb_fill(env_cpu(env), addr, size,
+                        access_type, mmu_idx, retaddr);
+            index = tlb_index(env, mmu_idx, addr);
+            entry = tlb_entry(env, mmu_idx, addr);
+            tlb_addr = code_read ? entry->addr_code : entry->addr_read;
+            tlb_addr &= ~TLB_INVALID_MASK;
         }
 
         // callback on non-readable memory
