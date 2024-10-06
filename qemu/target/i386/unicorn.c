@@ -287,7 +287,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
     case UC_X86_REG_XMM7: {
         CHECK_REG_TYPE(uint64_t[2]);
         uint64_t *dst = (uint64_t *)value;
-        const ZMMReg* const reg = &env->xmm_regs[regid - UC_X86_REG_XMM0];
+        const ZMMReg *const reg = &env->xmm_regs[regid - UC_X86_REG_XMM0];
         dst[0] = reg->ZMM_Q(0);
         dst[1] = reg->ZMM_Q(1);
         return ret;
@@ -314,7 +314,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
     case UC_X86_REG_YMM7: {
         CHECK_REG_TYPE(uint64_t[4]);
         uint64_t *dst = (uint64_t *)value;
-        const ZMMReg* const reg = &env->xmm_regs[regid - UC_X86_REG_YMM0];
+        const ZMMReg *const reg = &env->xmm_regs[regid - UC_X86_REG_YMM0];
         dst[0] = reg->ZMM_Q(0);
         dst[1] = reg->ZMM_Q(1);
         dst[2] = reg->ZMM_Q(2);
@@ -978,7 +978,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         case UC_X86_REG_XMM31: {
             CHECK_REG_TYPE(uint64_t[2]);
             uint64_t *dst = (uint64_t *)value;
-            const ZMMReg* const reg = &env->xmm_regs[regid - UC_X86_REG_XMM0];
+            const ZMMReg *const reg = &env->xmm_regs[regid - UC_X86_REG_XMM0];
             dst[0] = reg->ZMM_Q(0);
             dst[1] = reg->ZMM_Q(1);
             break;
@@ -1009,7 +1009,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         case UC_X86_REG_YMM31: {
             CHECK_REG_TYPE(uint64_t[4]);
             uint64_t *dst = (uint64_t *)value;
-            const ZMMReg* const reg = &env->xmm_regs[regid - UC_X86_REG_YMM0];
+            const ZMMReg *const reg = &env->xmm_regs[regid - UC_X86_REG_YMM0];
             dst[0] = reg->ZMM_Q(0);
             dst[1] = reg->ZMM_Q(1);
             dst[2] = reg->ZMM_Q(2);
@@ -1050,7 +1050,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         case UC_X86_REG_ZMM31: {
             CHECK_REG_TYPE(uint64_t[8]);
             uint64_t *dst = (uint64_t *)value;
-            const ZMMReg* const reg = &env->xmm_regs[regid - UC_X86_REG_ZMM0];
+            const ZMMReg *const reg = &env->xmm_regs[regid - UC_X86_REG_ZMM0];
             dst[0] = reg->ZMM_Q(0);
             dst[1] = reg->ZMM_Q(1);
             dst[2] = reg->ZMM_Q(2);
