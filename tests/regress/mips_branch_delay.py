@@ -6,33 +6,38 @@ from capstone import *
 from unicorn import *
 
 
+CODE = (
+	b'\x00\x00\xa4\x12'     #  beq $a0, $s5, 0x4008a0
+    b'\x6a\x00\x82\x28'     #  slti $v0, $a0, 0x6a
+    b'\x00\x00\x00\x00'     #  nop
+)
+
+BASE = 0x400000
+
+
 class MipsBranchDelay(regress.RegressTest):
 
     def runTest(self):
         md = Cs(CS_ARCH_MIPS, CS_MODE_MIPS32 + CS_MODE_LITTLE_ENDIAN)
 
         def disas(code, addr):
-            for i in md.disasm(code, addr):
-                regress.logger.info('0x%x: %s %-6s %s', i.address, str(i.bytes).encode('hex'), i.mnemonic, i.op_str)
+            for insn in md.disasm(code, addr):
+                regress.logger.debug('%#x: %-8s %s', insn.address, insn.mnemonic, insn.op_str)
 
         def hook_code(uc, addr, size, _):
-            mem = str(uc.mem_read(addr, size))
-            disas(mem, addr)
+            disas(uc.mem_read(addr, size), addr)
 
-        CODE = 0x400000
-        asm = '0000a4126a00822800000000'.decode('hex') # beq $a0, $s5, 0x4008a0; slti   $v0, $a0, 0x6a; nop
+        regress.logger.debug('Input instructions:')
+        disas(CODE, BASE)
 
-        regress.logger.info('Input instructions:')
-        disas(asm, CODE)
-
-        regress.logger.info('Hooked instructions:')
+        regress.logger.debug('Hooked instructions:')
 
         uc = Uc(UC_ARCH_MIPS, UC_MODE_MIPS32 + UC_MODE_LITTLE_ENDIAN)
         uc.hook_add(UC_HOOK_CODE, hook_code)
-        uc.mem_map(CODE, 0x1000)
-        uc.mem_write(CODE, asm)
+        uc.mem_map(BASE, 0x1000)
+        uc.mem_write(BASE, CODE)
 
-        self.assertEqual(None, uc.emu_start(CODE, CODE + len(asm)))
+        self.assertEqual(None, uc.emu_start(BASE, BASE + len(CODE)))
 
 
 if __name__ == '__main__':

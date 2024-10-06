@@ -13,7 +13,7 @@ def hook_code(uc, address, size, user_data):
     if size == 0xf1f1f1f1:
         return
 
-    regress.logger.info("[0x%x] = %s" , address, binascii.hexlify(uc.mem_read(address, size)))
+    regress.logger.debug("[%#x] = %s" , address, binascii.hexlify(uc.mem_read(address, size)))
 
 
 # callback for tracing Linux interrupt
@@ -21,11 +21,11 @@ def hook_intr(uc, intno, user_data):
     # only handle Linux syscall
     rip = uc.reg_read(UC_X86_REG_RIP)
 
-    regress.logger.info("[0x%x]: got interrupt 0x%x", rip, intno)
-    regress.logger.info("  EAX = 0x%08x", uc.reg_read(UC_X86_REG_EAX))
-    regress.logger.info("  EBX = 0x%08x", uc.reg_read(UC_X86_REG_EBX))
-    regress.logger.info("  ECX = 0x%08x", uc.reg_read(UC_X86_REG_ECX))
-    regress.logger.info("  EDX = 0x%08x", uc.reg_read(UC_X86_REG_EDX))
+    regress.logger.debug("[%#x]: got interrupt %#x", rip, intno)
+    regress.logger.debug("  EAX = %#010x", uc.reg_read(UC_X86_REG_EAX))
+    regress.logger.debug("  EBX = %#010x", uc.reg_read(UC_X86_REG_EBX))
+    regress.logger.debug("  ECX = %#010x", uc.reg_read(UC_X86_REG_ECX))
+    regress.logger.debug("  EDX = %#010x", uc.reg_read(UC_X86_REG_EDX))
 
     uc.emu_stop()
 
@@ -79,13 +79,9 @@ class Hang(regress.RegressTest):
         # write machine code to be emulated to memory
         mu.mem_write(address, shellcode)
 
-        regress.logger.info('Starting emulation')
+        regress.logger.debug('Starting emulation')
 
-        try:
-            mu.emu_start(address, address + len(shellcode))
-        except UcError as ex:
-            raise ex
-            self.fail(ex)
+        mu.emu_start(address, address + len(shellcode))
 
 
 if __name__ == '__main__':

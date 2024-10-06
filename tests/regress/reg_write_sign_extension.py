@@ -10,7 +10,7 @@ ADDR = 0xffaabbcc
 
 
 def hook_mem_invalid(mu, access, address, size, value, user_data):
-    regress.logger.info(">>> Access type: %u, expected value: 0x%x, actual value: 0x%x", access, ADDR, address)
+    regress.logger.debug(">>> Access type: %u, expected value: 0x%x, actual value: 0x%x", access, ADDR, address)
 
     assert(address == ADDR)
 

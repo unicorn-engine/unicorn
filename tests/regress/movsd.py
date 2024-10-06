@@ -12,15 +12,15 @@ CODE = b'\xf2\x0f\x10\x05\xaa\x12\x00\x00'
 
 
 def dis(md, mem, addr):
-    return '\n'.join(('%s %s' % (insn.mnemonic, insn.op_str) for insn in md.disasm(str(mem), addr)))
+    return '\n'.join(('%-16s %s' % (insn.mnemonic, insn.op_str) for insn in md.disasm(mem, addr)))
 
 
 def hook_code(uc, addr, size, md):
     mem = uc.mem_read(addr, size)
 
-    regress.logger.info('instruction size: %d', size)
-    regress.logger.info('instruction: %s %s', str(mem).encode('hex'), dis(md, mem, addr))
-    regress.logger.info('reference:  %s %s', CODE, dis(md, CODE, addr))
+    regress.logger.debug('instruction size: %d', size)
+    regress.logger.debug('instruction: %s %s', mem, dis(md, mem, addr))
+    regress.logger.debug('reference:  %s %s', CODE, dis(md, CODE, addr))
 
 
 class Movsd(regress.RegressTest):

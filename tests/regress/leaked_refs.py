@@ -38,7 +38,7 @@ def create_instance(key, *args, **kwargs):
 
 
 def hook_code(mu, address, size, user_data):
-    regress.logger.info(">>> Tracing instruction at 0x%x, instruction size = %u", address, size)
+    regress.logger.debug(">>> Tracing instruction at %#x, instruction size = %u", address, size)
 
 
 def emu_loop(key):
@@ -53,7 +53,7 @@ def emu_loop(key):
     emu.hook_del(i)
 
     emu.emu_start(EP, EP + len(CODE), count = 3)
-    regress.logger.info("EIP: 0x%x", emu.reg_read(UC_X86_REG_EIP))
+    regress.logger.debug("EIP: %#x", emu.reg_read(UC_X86_REG_EIP))
 
 
 def debugMem():

@@ -57,7 +57,7 @@ def create_gdt_entry(base, limit, access, flags):
 
 
 def hook_mem_read(uc, type, addr,*args):
-    regress.logger.info("0x%x", addr)
+    regress.logger.debug("%#x", addr)
 
     return False
 
@@ -83,7 +83,7 @@ class GdtRead(regress.RegressTest):
         uc.mem_map(CODE_ADDR, CODE_SIZE)
 
         uc.mem_write(CODE_ADDR, CODE)
-        uc.mem_write(SEGMENT_ADDR+0x18, 'AAAA')
+        uc.mem_write(SEGMENT_ADDR + 0x18, b'AAAA')
 
         gdt_entry = create_gdt_entry(SEGMENT_ADDR, SEGMENT_SIZE, A_PRESENT | A_DATA | A_DATA_WRITABLE | A_PRIV_3 | A_DIR_CON_BIT, F_PROT_32)
         uc.mem_write(GDT_ADDR + 8, gdt_entry)

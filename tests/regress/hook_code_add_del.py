@@ -27,7 +27,7 @@ CODE = (
 EP = ADDRESS + 0x54
 
 def hook_code(mu, address, size, user_data):
-    regress.logger.info(">>> Tracing instruction at 0x%x, instruction size = %u", address, size)
+    regress.logger.debug(">>> Tracing instruction at %#x, instruction size = %u", address, size)
 
 
 class HookCodeAddDelTest(regress.RegressTest):
@@ -44,7 +44,7 @@ class HookCodeAddDelTest(regress.RegressTest):
         emu.hook_del(i)
 
         emu.emu_start(EP, EP + len(CODE), count = 3)
-        regress.logger.info("EIP: 0x%x", emu.reg_read(UC_X86_REG_EIP))
+        regress.logger.debug("EIP: %#x", emu.reg_read(UC_X86_REG_EIP))
 
 
 if __name__ == '__main__':

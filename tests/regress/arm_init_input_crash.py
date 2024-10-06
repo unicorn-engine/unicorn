@@ -10,97 +10,95 @@ from unicorn.arm_const import *
 
 
 # code to be emulated
-ARM_CODE   = "\x37\x00\xa0\xe3\x03\x10\x42\xe0" # mov r0, #0x37; sub r1, r2, r3
-THUMB_CODE = "\x83\xb0" # sub    sp, #0xc
+ARM_CODE = (
+    b"\x37\x00\xa0\xe3"		#  mov      r0, #0x37
+    b"\x03\x10\x42\xe0"		#  sub      r1, r2, r3
+)
+
+THUMB_CODE = b"\x83\xb0"    #  sub      sp, #0xc
+
 # memory address where emulation starts
-ADDRESS    = 0xF0000000
+ADDRESS = 0xF0000000
 
 
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
-    regress.logger.info(">>> Tracing basic block at 0x%x, block size = 0x%x", address, size)
+    regress.logger.debug(">>> Tracing basic block at %#x, block size = %#x", address, size)
 
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
-    regress.logger.info(">>> Tracing instruction at 0x%x, instruction size = %u", address, size)
+    regress.logger.debug(">>> Tracing instruction at %#x, instruction size = %u", address, size)
 
 
 class TestInitInputCrash(regress.RegressTest):
     def test_arm(self):
-        regress.logger.info("Emulate ARM code")
+        regress.logger.debug("Emulate ARM code")
 
-        try:
-            # Initialize emulator in ARM mode
-            mu = Uc(UC_ARCH_ARM, UC_MODE_ARM)
+        # Initialize emulator in ARM mode
+        mu = Uc(UC_ARCH_ARM, UC_MODE_ARM)
 
-            mem_size = 2 * (1024 * 1024)
-            mu.mem_map(ADDRESS, mem_size)
+        mem_size = 2 * (1024 * 1024)
+        mu.mem_map(ADDRESS, mem_size)
 
-            stack_address = ADDRESS + mem_size
-            stack_size =  stack_address         # >>> here huge memory size
-            mu.mem_map(stack_address, stack_size)
+        stack_address = ADDRESS + mem_size
+        stack_size =  stack_address         # >>> here huge memory size
+        mu.mem_map(stack_address, stack_size)
 
-            # write machine code to be emulated to memory
-            mu.mem_write(ADDRESS, ARM_CODE)
+        # write machine code to be emulated to memory
+        mu.mem_write(ADDRESS, ARM_CODE)
 
-            # initialize machine registers
-            mu.reg_write(UC_ARM_REG_R0, 0x1234)
-            mu.reg_write(UC_ARM_REG_R2, 0x6789)
-            mu.reg_write(UC_ARM_REG_R3, 0x3333)
+        # initialize machine registers
+        mu.reg_write(UC_ARM_REG_R0, 0x1234)
+        mu.reg_write(UC_ARM_REG_R2, 0x6789)
+        mu.reg_write(UC_ARM_REG_R3, 0x3333)
 
-            # tracing all basic blocks with customized callback
-            mu.hook_add(UC_HOOK_BLOCK, hook_block)
+        # tracing all basic blocks with customized callback
+        mu.hook_add(UC_HOOK_BLOCK, hook_block)
 
-            # tracing all instructions with customized callback
-            mu.hook_add(UC_HOOK_CODE, hook_code)
+        # tracing all instructions with customized callback
+        mu.hook_add(UC_HOOK_CODE, hook_code)
 
-            # emulate machine code in infinite time
-            mu.emu_start(ADDRESS, ADDRESS + len(ARM_CODE))
+        # emulate machine code in infinite time
+        mu.emu_start(ADDRESS, ADDRESS + len(ARM_CODE))
 
-            # now print out some registers
-            regress.logger.info(">>> Emulation done. Below is the CPU context")
+        # now print out some registers
+        regress.logger.debug(">>> Emulation done. Below is the CPU context")
 
-            r0 = mu.reg_read(UC_ARM_REG_R0)
-            r1 = mu.reg_read(UC_ARM_REG_R1)
-            regress.logger.info(">>> R0 = 0x%x", r0)
-            regress.logger.info(">>> R1 = 0x%x", r1)
-
-        except UcError as ex:
-            self.fail("ERROR: %s" % ex)
+        r0 = mu.reg_read(UC_ARM_REG_R0)
+        r1 = mu.reg_read(UC_ARM_REG_R1)
+        regress.logger.debug(">>> R0 = %#x", r0)
+        regress.logger.debug(">>> R1 = %#x", r1)
 
     def test_thumb(self):
-        regress.logger.info("Emulate THUMB code")
-        try:
-            # Initialize emulator in thumb mode
-            mu = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
+        regress.logger.debug("Emulate THUMB code")
 
-            # map 2MB memory for this emulation
-            mu.mem_map(ADDRESS, 2 * 1024 * 1024)
+        # Initialize emulator in thumb mode
+        mu = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
 
-            # write machine code to be emulated to memory
-            mu.mem_write(ADDRESS, THUMB_CODE)
+        # map 2MB memory for this emulation
+        mu.mem_map(ADDRESS, 2 * 1024 * 1024)
 
-            # initialize machine registers
-            mu.reg_write(UC_ARM_REG_SP, 0x1234)
+        # write machine code to be emulated to memory
+        mu.mem_write(ADDRESS, THUMB_CODE)
 
-            # tracing all basic blocks with customized callback
-            mu.hook_add(UC_HOOK_BLOCK, hook_block)
+        # initialize machine registers
+        mu.reg_write(UC_ARM_REG_SP, 0x1234)
 
-            # tracing all instructions with customized callback
-            mu.hook_add(UC_HOOK_CODE, hook_code)
+        # tracing all basic blocks with customized callback
+        mu.hook_add(UC_HOOK_BLOCK, hook_block)
 
-            # emulate machine code in infinite time
-            mu.emu_start(ADDRESS, ADDRESS + len(THUMB_CODE))
+        # tracing all instructions with customized callback
+        mu.hook_add(UC_HOOK_CODE, hook_code)
 
-            # now print out some registers
-            regress.logger.info(">>> Emulation done. Below is the CPU context")
+        # emulate machine code in infinite time
+        mu.emu_start(ADDRESS | 0b1, ADDRESS + len(THUMB_CODE))
 
-            sp = mu.reg_read(UC_ARM_REG_SP)
-            regress.logger.info(">>> SP = 0x%x", sp)
+        # now print out some registers
+        regress.logger.debug(">>> Emulation done. Below is the CPU context")
 
-        except UcError as ex:
-            self.fail("ERROR: %s" % ex)
+        sp = mu.reg_read(UC_ARM_REG_SP)
+        regress.logger.debug(">>> SP = %#x", sp)
 
 
 if __name__ == '__main__':

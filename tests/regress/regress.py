@@ -1,6 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
-import inspect
 import glob
 import logging
 import os
@@ -13,11 +12,10 @@ class RegressTest(unittest.TestCase):
 
 
 def __setup_logger(name):
-    """Set up a unifued logger for all tests.
+    """Set up a unified logger for all tests.
     """
 
-    instance = logging.getLogger()
-    instance.setLevel(logging.INFO)
+    instance = logging.getLogger(name)
     instance.propagate = False
 
     handler = logging.StreamHandler()
@@ -31,6 +29,7 @@ def __setup_logger(name):
 
 
 logger = __setup_logger('UnicornRegress')
+logger.setLevel(logging.INFO)
 
 
 def main():
@@ -40,17 +39,26 @@ def main():
 if __name__ == '__main__':
     suite = unittest.TestSuite()
 
+    logger.info('starting discovery')
+
     # Find all unittest type in this directory and run it.
     directory = os.path.dirname(__file__) or '.'
     pyfiles = glob.glob(directory + '/*.py')
-    modules = (os.path.splitext(os.path.basename(f))[0] for f in pyfiles if os.path.isfile(f) and f != __file__)
+    modules = [os.path.splitext(os.path.basename(f))[0] for f in pyfiles if os.path.isfile(f) and f != __file__]
+
+    logger.info('%d test modules found', len(modules))
 
     for mname in modules:
-        module = __import__(mname)
+        try:
+            module = __import__(mname)
+        except ImportError as ex:
+            logger.error('could not load %s: %s is missing', mname, ex.name)
+        else:
+            tests = unittest.defaultTestLoader.loadTestsFromModule(module)
+            suite.addTests(tests)
 
-        tests = unittest.defaultTestLoader.loadTestsFromModule(module)
-        suite.addTests(tests)
+            logger.debug('found %d test cases in %s', tests.countTestCases(), mname)
 
-        logger.info('added %d tests from %s', tests.countTestCases(), mname)
+    logger.info('%d test cases were added', suite.countTestCases())
 
     unittest.TextTestRunner().run(suite)
