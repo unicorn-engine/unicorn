@@ -1444,7 +1444,7 @@ class Uc(RegStateManager):
         """
 
         self.__ctl_w(uc.UC_CTL_TCG_BUFFER_SIZE,
-            (ctypes.c_int32, size)
+            (ctypes.c_uint32, size)
         )
 
 
