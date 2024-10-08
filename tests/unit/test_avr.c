@@ -117,7 +117,9 @@ static void uc_common_setup(uc_engine **uc, uc_cpu_avr cpu_model,
 static void test_avr_basic_alu(void)
 {
     uc_engine *uc = NULL;
+
     uint8_t r[32] = {0,};
+    uint32_t r_pc;
     uint16_t r_func_arg0 = 1, r_func_arg1 = 2, r_func_ret;
     r[24] = 1;
     r[22] = 2;
@@ -129,7 +131,6 @@ static void test_avr_basic_alu(void)
     const uint64_t code_start = ADDR[ADDR_test_func] + 8;
     OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
 
-    uint32_t r_pc;
     OK(uc_reg_read(uc, UC_AVR_REG_PC, &r_pc));
     OK(uc_reg_read(uc, UC_AVR_REG_R25, &r[25]));
     OK(uc_reg_read(uc, UC_AVR_REG_R24, &r[24]));
@@ -185,6 +186,14 @@ static void test_avr_basic_mem(void)
     uc_hook eventmem_hook;
     MEM_HOOK_RESULTS eventmem_trace = {0};
 
+    const uint16_t DATA_BASE = ADDR[ADDR__data__];
+    const uint16_t DATA_SIZE = ADDR[ADDR__data__+1] - DATA_BASE;
+    const uint8_t *const DATA = &FLASH[ADDR[ADDR__data__]];
+    uint8_t mem[DATA_SIZE];
+
+    uint32_t r_pc;
+    int i;
+
     uc_common_setup(&uc, 0, FLASH, FLASH_SIZE);
     OK(uc_hook_add(uc, &eventmem_hook, UC_HOOK_MEM_VALID,
            test_avr_basic_mem_cb_eventmem, &eventmem_trace, 1, 0));
@@ -192,21 +201,15 @@ static void test_avr_basic_mem(void)
     const uint64_t code_start = ADDR[ADDR__init__];
     OK(uc_emu_start(uc, code_start, ADDR[ADDR__init__+1], 0, 0));
 
-    uint32_t r_pc;
     OK(uc_reg_read(uc, UC_AVR_REG_PC, &r_pc));
     TEST_CHECK(r_pc == ADDR[ADDR__init__+1]);
 
-    const uint16_t DATA_BASE = ADDR[ADDR__data__];
-    const uint16_t DATA_SIZE = ADDR[ADDR__data__+1] - DATA_BASE;
-    const uint8_t *const DATA = &FLASH[ADDR[ADDR__data__]];
-
     // Check SRAM was correctly initialized with data from Flash program memory
-    uint8_t mem[DATA_SIZE];
     OK(uc_mem_read(uc, MEM_BASE, mem, sizeof(mem)));
     TEST_CHECK(memcmp(mem, DATA, DATA_SIZE) == 0);
 
     TEST_CHECK(eventmem_trace.count == 2*DATA_SIZE);
-    for (unsigned i = 0; i < DATA_SIZE; i++) {
+    for (i = 0; i < DATA_SIZE; i++) {
         const MEM_HOOK_RESULT *const mr = &eventmem_trace.results[2*i];
         TEST_CHECK(mr->type == UC_MEM_READ);
         TEST_CHECK(mr->address == (UC_AVR_MEM_FLASH|(DATA_BASE+i)));
@@ -227,16 +230,19 @@ static void test_avr_full_exec(void)
 {
     uc_engine *uc = NULL;
 
+    uint8_t r[32] = {0,};
+    uint32_t r_pc;
+    uint32_t r_sp;
+
     uc_common_setup(&uc, 0, FLASH, FLASH_SIZE);
 
     const uint64_t code_start = ADDR[ADDR__init__];
     OK(uc_emu_start(uc, code_start, ADDR[ADDR__init__+1], 0, 0));
 
-    uint32_t r_pc;
     OK(uc_reg_read(uc, UC_AVR_REG_PC, &r_pc));
     TEST_CHECK(r_pc == ADDR[ADDR__init__+1]);
 
-    uint32_t r_sp = MEM_BASE + MEM_SIZE - 1;
+    r_sp = MEM_BASE + MEM_SIZE - 1;
     OK(uc_reg_write(uc, UC_AVR_REG_SP, &r_sp));
 
     const uint64_t exits[] = {
@@ -249,7 +255,6 @@ static void test_avr_full_exec(void)
     const uint64_t code_main = ADDR[ADDR_main];
     OK(uc_emu_start(uc, code_main, 0, 0, 0));
 
-    uint8_t r[32] = {0,};
     OK(uc_reg_read(uc, UC_AVR_REG_R25, &r[25]));
     OK(uc_reg_read(uc, UC_AVR_REG_R24, &r[24]));
     TEST_CHECK(r[25] == 0 && r[24] == 0);
