@@ -52,6 +52,11 @@ static bool test_avr(void)
     uc_hook trace1, trace2;
     bool success = false;
 
+    uint8_t regs[32];
+    int reg_ids[32];
+    void *reg_vals[32];
+    int i;
+
     printf("Emulate AVR code\n");
     do {
         // Initialize emulator in AVR mode
@@ -81,14 +86,11 @@ static bool test_avr(void)
             break;
 
         // Initialize registers
-        uint8_t regs[32];
         memset(regs, 0, sizeof(regs));
         regs[25] = 0; regs[24] = 1;
         regs[23] = 0; regs[22] = 2;
 
-        int reg_ids[32];
-        void *reg_vals[32];
-        for (unsigned i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++) {
             reg_ids[i] = UC_AVR_REG_R0 + 22 + i;
             reg_vals[i] = &regs[22 + i];
         }
