@@ -7,26 +7,26 @@
 #define PAGE_ALIGN(x)   (((x) + PAGE_SIZE - 1) & -PAGE_SIZE)
 
 enum {
-    ADDR__init__,
-    ADDR_test_func,
-    ADDR_test_1,
-    ADDR_main,
-    ADDR_abort,
-    ADDR_exit,
-    ADDR__stop_program,
-    ADDR__data__,
+    ADDR__init__        = 0x0000, // __init__
+    ADDR_test_func      = 0x001a, // test_func()
+    ADDR_test_1         = 0x0030, // test_1()
+    ADDR_main           = 0x0058, // main()
+    ADDR_abort          = 0x0062, // abort()
+    ADDR_exit           = 0x006c, // _exit()
+    ADDR__stop_program  = 0x006e, // __stop_program()
+    ADDR__data__        = 0x0070, // __data__
+    ADDR__data__end     = 0x0072,
 };
 
-static const uint16_t ADDR[] = {
-    0x0000, // __init__
-    0x001a, // test_func()
-    0x0030, // test_1()
-    0x0058, // main()
-    0x0062, // abort()
-    0x006c, // _exit()
-    0x006e, // __stop_program()
-    0x0070, // __data__
-    0x0072, // __size__
+enum {
+    SIZE__init__        = ADDR_test_func - ADDR__init__,
+    SIZE_test_func      = ADDR_test_1 - ADDR_test_func,
+    SIZE_test_1         = ADDR_main - ADDR_test_1,
+    SIZE_main           = ADDR_abort - ADDR_main,
+    SIZE_abort          = ADDR_exit - ADDR_abort,
+    SIZE_exit           = ADDR__stop_program - ADDR_exit,
+    SIZE__stop_program  = ADDR__data__ - ADDR__stop_program,
+    SIZE__data__        = ADDR__data__end - ADDR__data__,
 };
 
 static const uint8_t FLASH[] =
@@ -128,7 +128,7 @@ static void test_avr_basic_alu(void)
     OK(uc_reg_write(uc, UC_AVR_REG_R24W, &r_func_arg0));
     OK(uc_reg_write(uc, UC_AVR_REG_R22W, &r_func_arg1));
 
-    const uint64_t code_start = ADDR[ADDR_test_func] + 8;
+    const uint64_t code_start = ADDR_test_func + 8;
     OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
 
     OK(uc_reg_read(uc, UC_AVR_REG_PC, &r_pc));
@@ -186,10 +186,8 @@ static void test_avr_basic_mem(void)
     uc_hook eventmem_hook;
     MEM_HOOK_RESULTS eventmem_trace = {0};
 
-    const uint16_t DATA_BASE = ADDR[ADDR__data__];
-    const uint16_t DATA_SIZE = ADDR[ADDR__data__+1] - DATA_BASE;
-    const uint8_t *const DATA = &FLASH[ADDR[ADDR__data__]];
-    uint8_t mem[DATA_SIZE];
+    const uint8_t *const DATA = &FLASH[ADDR__data__];
+    uint8_t mem[SIZE__data__];
 
     uint32_t r_pc;
     int i;
@@ -198,21 +196,21 @@ static void test_avr_basic_mem(void)
     OK(uc_hook_add(uc, &eventmem_hook, UC_HOOK_MEM_VALID,
            test_avr_basic_mem_cb_eventmem, &eventmem_trace, 1, 0));
 
-    const uint64_t code_start = ADDR[ADDR__init__];
-    OK(uc_emu_start(uc, code_start, ADDR[ADDR__init__+1], 0, 0));
+    const uint64_t code_start = ADDR__init__;
+    OK(uc_emu_start(uc, code_start, ADDR__init__ + SIZE__init__, 0, 0));
 
     OK(uc_reg_read(uc, UC_AVR_REG_PC, &r_pc));
-    TEST_CHECK(r_pc == ADDR[ADDR__init__+1]);
+    TEST_CHECK(r_pc == ADDR__init__ + SIZE__init__);
 
     // Check SRAM was correctly initialized with data from Flash program memory
     OK(uc_mem_read(uc, MEM_BASE, mem, sizeof(mem)));
-    TEST_CHECK(memcmp(mem, DATA, DATA_SIZE) == 0);
+    TEST_CHECK(memcmp(mem, DATA, SIZE__data__) == 0);
 
-    TEST_CHECK(eventmem_trace.count == 2*DATA_SIZE);
-    for (i = 0; i < DATA_SIZE; i++) {
+    TEST_CHECK(eventmem_trace.count == 2*SIZE__data__);
+    for (i = 0; i < SIZE__data__; i++) {
         const MEM_HOOK_RESULT *const mr = &eventmem_trace.results[2*i];
         TEST_CHECK(mr->type == UC_MEM_READ);
-        TEST_CHECK(mr->address == (UC_AVR_MEM_FLASH|(DATA_BASE+i)));
+        TEST_CHECK(mr->address == (UC_AVR_MEM_FLASH|(ADDR__data__+i)));
         TEST_CHECK(mr->size == 1);
         TEST_CHECK(mr->value == 0);
 
@@ -236,23 +234,23 @@ static void test_avr_full_exec(void)
 
     uc_common_setup(&uc, 0, FLASH, FLASH_SIZE);
 
-    const uint64_t code_start = ADDR[ADDR__init__];
-    OK(uc_emu_start(uc, code_start, ADDR[ADDR__init__+1], 0, 0));
+    const uint64_t code_start = ADDR__init__;
+    OK(uc_emu_start(uc, code_start, ADDR__init__ + SIZE__init__, 0, 0));
 
     OK(uc_reg_read(uc, UC_AVR_REG_PC, &r_pc));
-    TEST_CHECK(r_pc == ADDR[ADDR__init__+1]);
+    TEST_CHECK(r_pc == ADDR__init__ + SIZE__init__);
 
     r_sp = MEM_BASE + MEM_SIZE - 1;
     OK(uc_reg_write(uc, UC_AVR_REG_SP, &r_sp));
 
     const uint64_t exits[] = {
-        ADDR[ADDR_main],
-        ADDR[ADDR__stop_program]
+        ADDR_main,
+        ADDR__stop_program
     };
     OK(uc_ctl_exits_enable(uc));
     OK(uc_ctl_set_exits(uc, exits, ARRAY_ELEMS(exits)));
 
-    const uint64_t code_main = ADDR[ADDR_main];
+    const uint64_t code_main = ADDR_main;
     OK(uc_emu_start(uc, code_main, 0, 0, 0));
 
     OK(uc_reg_read(uc, UC_AVR_REG_R25, &r[25]));

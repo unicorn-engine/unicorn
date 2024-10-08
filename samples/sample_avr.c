@@ -18,8 +18,10 @@ static const uint8_t CODE[] =
     "\x01\x96"          // adiw r24, 0x01
     "\x08\x95"          // ret
     ;
-static const uint32_t CODE_SIZE = sizeof(CODE) - 1;
-static const uint32_t CODE_SIZE_ALIGNED = (CODE_SIZE + 0xff) & -0x100;
+enum {
+    CODE_SIZE = sizeof(CODE) - 1,
+    CODE_SIZE_ALIGNED = (CODE_SIZE + 0xff) & -0x100,
+};
 
 static void hook_block(uc_engine *uc, uint64_t address, uint32_t size,
                        void *user_data)
