@@ -183,6 +183,7 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
     __set_prototype('uc_context_reg_read', uc_err, uc_context, ctypes.c_int, ctypes.c_void_p)
     __set_prototype('uc_context_reg_write', uc_err, uc_context, ctypes.c_int, ctypes.c_void_p)
     __set_prototype('uc_context_reg_read_batch', uc_err, uc_context, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_void_p), ctypes.c_int)
+    __set_prototype('uc_context_reg_write_batch', uc_err, uc_context, ctypes.POINTER(ctypes.c_int), ctypes.c_void_p, ctypes.c_int)
     __set_prototype('uc_context_free', uc_err, uc_context)
     __set_prototype('uc_mem_regions', uc_err, uc_engine, ctypes.POINTER(ctypes.POINTER(_uc_mem_region)), ctypes.POINTER(ctypes.c_uint32))
     # https://bugs.python.org/issue42880
