@@ -1172,7 +1172,7 @@ class Uc(RegStateManager):
 
     @staticmethod
     def __ctl_encode(ctl: int, op: int, nargs: int) -> int:
-        assert nargs and check_maxbits(nargs, 4), f'nargs must not exceed value of 15 (got {nargs})'
+        assert check_maxbits(nargs, 4), f'nargs must not exceed value of 15 (got {nargs})'
         assert op and check_maxbits(op, 2), f'op must not exceed value of 3 (got {op})'
 
         return (op << 30) | (nargs << 26) | ctl
