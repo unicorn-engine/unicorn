@@ -1247,82 +1247,181 @@ class Uc(RegStateManager):
         return carg1.value
 
     def ctl_get_mode(self) -> int:
+        """Retrieve current processor mode.
+
+        Returns: current mode (see UC_MODE_* constants)
+        """
+
         return self.__ctl_r(uc.UC_CTL_UC_MODE,
             (ctypes.c_int, None)
         )
 
     def ctl_get_page_size(self) -> int:
+        """Retrieve target page size.
+
+        Returns: page size in bytes
+        """
+
         return self.__ctl_r(uc.UC_CTL_UC_PAGE_SIZE,
             (ctypes.c_uint32, None)
         )
 
     def ctl_set_page_size(self, val: int) -> None:
+        """Set target page size.
+
+        Args:
+            val: page size to set (in bytes)
+
+        Raises: `UcError` in any of the following cases:
+          - Unicorn architecture is not ARM
+          - Unicorn has already completed its initialization
+          - Page size is not a power of 2
+        """
+
         self.__ctl_w(uc.UC_CTL_UC_PAGE_SIZE,
             (ctypes.c_uint32, val)
         )
 
     def ctl_get_arch(self) -> int:
+        """Retrieve target architecture.
+
+        Returns: current architecture (see UC_ARCH_* constants)
+        """
+
         return self.__ctl_r(uc.UC_CTL_UC_ARCH,
             (ctypes.c_int, None)
         )
 
     def ctl_get_timeout(self) -> int:
+        """Retrieve emulation timeout.
+
+        Returns: timeout value set on emulation start
+        """
+
         return self.__ctl_r(uc.UC_CTL_UC_TIMEOUT,
             (ctypes.c_uint64, None)
         )
 
-    def ctl_exits_enabled(self, val: bool) -> None:
+    def ctl_exits_enabled(self, enable: bool) -> None:
+        """Instruct Unicorn whether to respect emulation exit points or ignore them.
+
+        Args:
+            enable: `True` to enable exit points, `False` to ignore them
+        """
+
         self.__ctl_w(uc.UC_CTL_UC_USE_EXITS,
-            (ctypes.c_int, val)
+            (ctypes.c_int, enable)
         )
 
     def ctl_get_exits_cnt(self) -> int:
+        """Retrieve emulation exit points count.
+
+        Returns: number of emulation exit points
+
+        Raises: `UcErro` if Unicorn is set to ignore exits
+        """
+
         return self.__ctl_r(uc.UC_CTL_UC_EXITS_CNT,
             (ctypes.c_size_t, None)
         )
 
     def ctl_get_exits(self) -> Sequence[int]:
+        """Retrieve emulation exit points.
+
+        Returns: a tuple of all emulation exit points
+
+        Raises: `UcErro` if Unicorn is set to ignore exits
+        """
+
         count = self.ctl_get_exits_cnt()
         arr = (ctypes.c_uint64 * count)()
 
         self.ctl(uc.UC_CTL_UC_EXITS, uc.UC_CTL_IO_READ, ctypes.cast(arr, ctypes.c_void_p), ctypes.c_size_t(count))
 
-        return tuple(i for i in arr)
+        return tuple(arr)
 
     def ctl_set_exits(self, exits: Sequence[int]) -> None:
-        arr = (ctypes.c_uint64 * len(exits))()
+        """Set emulation exit points.
 
-        for idx, exit in enumerate(exits):
-            arr[idx] = exit
+        Args:
+            exits: a list of emulation exit points to set
 
-        self.ctl(uc.UC_CTL_UC_EXITS, uc.UC_CTL_IO_WRITE, ctypes.cast(arr, ctypes.c_void_p), ctypes.c_size_t(len(exits)))
+        Raises: `UcErro` if Unicorn is set to ignore exits
+        """
+
+        arr = (ctypes.c_uint64 * len(exits))(*exits)
+
+        self.ctl(uc.UC_CTL_UC_EXITS, uc.UC_CTL_IO_WRITE, ctypes.cast(arr, ctypes.c_void_p), ctypes.c_size_t(len(arr)))
 
     def ctl_get_cpu_model(self) -> int:
+        """Retrieve target processor model.
+
+        Returns: target cpu model (see UC_CPU_* constants)
+        """
+
         return self.__ctl_r(uc.UC_CTL_CPU_MODEL,
             (ctypes.c_int, None)
         )
 
-    def ctl_set_cpu_model(self, val: int) -> None:
+    def ctl_set_cpu_model(self, model: int) -> None:
+        """Set target processor model.
+
+        Args:
+            model: cpu model to set (see UC_CPU_* constants)
+
+        Raises: `UcError` in any of the following cases:
+          - `model` is not a valid cpu model
+          - Requested cpu model is incompatible with current mode
+          - Unicorn has already completed its initialization
+        """
+
         self.__ctl_w(uc.UC_CTL_CPU_MODEL,
-            (ctypes.c_int, val)
+            (ctypes.c_int, model)
         )
 
-    def ctl_remove_cache(self, addr: int, end: int) -> None:
+    def ctl_remove_cache(self, lbound: int, ubound: int) -> None:
+        """Invalidate translation cache for a specified region.
+
+        Args:
+            lbound: region lower bound
+            ubound: region upper bound
+
+        Raises: `UcError` in case the provided range bounds are invalid
+        """
+
         self.__ctl_w(uc.UC_CTL_TB_REMOVE_CACHE,
-            (ctypes.c_uint64, addr),
-            (ctypes.c_uint64, end)
+            (ctypes.c_uint64, lbound),
+            (ctypes.c_uint64, ubound)
         )
 
     def ctl_request_cache(self, addr: int) -> TBStruct:
+        """Get translation cache info for a specified address.
+
+        Args:
+            addr: address to get its translation cache info
+
+        Returns: a 3-tuple containing the base address, instructions count and
+                size of the translation block containing the specified address
+        """
+
         return self.__ctl_wr(uc.UC_CTL_TB_REQUEST_CACHE,
             (ctypes.c_uint64, addr),
             (uc_tb, None)
         )
 
     def ctl_flush_tb(self) -> None:
+        """Flush the entire translation cache.
+        """
+
         self.__ctl_w(uc.UC_CTL_TB_FLUSH)
 
-    def ctl_tlb_mode(self, mode: int) -> None:
+    def ctl_set_tlb_mode(self, mode: int) -> None:
+        """Set TLB mode.
+
+        Args:
+            mode: tlb mode to use (see UC_TLB_* constants)
+        """
+
         self.__ctl_w(uc.UC_CTL_TLB_TYPE,
             (ctypes.c_uint, mode)
         )
