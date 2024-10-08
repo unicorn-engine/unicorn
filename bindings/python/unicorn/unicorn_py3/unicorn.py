@@ -1426,6 +1426,27 @@ class Uc(RegStateManager):
             (ctypes.c_uint, mode)
         )
 
+    def ctl_get_tcg_buffer_size(self) -> int:
+        """Retrieve TCG buffer size.
+
+        Returns: buffer size (in bytes)
+        """
+
+        return self.__ctl_r(uc.UC_CTL_TCG_BUFFER_SIZE,
+            (ctypes.c_uint32, None)
+        )
+
+    def ctl_set_tcg_buffer_size(self, size: int) -> None:
+        """Set TCG buffer size.
+
+        Args:
+            size: new size to set
+        """
+
+        self.__ctl_w(uc.UC_CTL_TCG_BUFFER_SIZE,
+            (ctypes.c_int32, size)
+        )
+
 
 class UcContext(RegStateManager):
     """Unicorn internal context.
