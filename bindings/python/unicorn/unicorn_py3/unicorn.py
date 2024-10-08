@@ -3,32 +3,45 @@ based on Nguyen Anh Quynnh's work
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import ctypes
 import functools
 import weakref
 
 from unicorn import unicorn_const as uc
-from .arch.types import uc_err, uc_engine, uc_context, uc_hook_h, UcReg
+from .arch.types import uc_err, uc_engine, uc_context, uc_hook_h, UcReg, VT
 
 # __version__ = f'{uc.UC_VERSION_MAJOR}.{uc.UC_VERSION_MINOR}.{uc.UC_VERSION_PATCH}'
 
+MemRegionStruct = Tuple[int, int, int]
+TBStruct = Tuple[int, int, int]
 
-class _uc_mem_region(ctypes.Structure):
+
+class UcTupledStruct(ctypes.Structure, Generic[VT]):
+    """A base class for structures that may be converted to tuples representing
+    their fields values.
+    """
+
+    @property
+    def value(self) -> VT:
+        """Convert structure into a tuple containing its fields values. This method
+        name is used to maintain consistency with other ctypes types.
+        """
+
+        return tuple(getattr(self, fname) for fname, *_ in self.__class__._fields_)  # type: ignore
+
+
+class _uc_mem_region(UcTupledStruct[MemRegionStruct]):
     _fields_ = (
         ('begin', ctypes.c_uint64),
         ('end',   ctypes.c_uint64),
         ('perms', ctypes.c_uint32),
     )
 
-    @property
-    def value(self) -> Tuple[int, int, int]:
-        return tuple(getattr(self, fname) for fname, *_ in self._fields_)
 
-
-class uc_tb(ctypes.Structure):
-    """"TranslationBlock
+class uc_tb(UcTupledStruct[TBStruct]):
+    """"Translation Block
     """
 
     _fields_ = (
@@ -1222,7 +1235,7 @@ class Uc(RegStateManager):
 
         self.ctl(ctl, uc.UC_CTL_IO_READ_WRITE, carg0, ctypes.byref(carg1))
 
-        return carg1
+        return carg1.value
 
     def ctl_get_mode(self) -> int:
         return self.__ctl_r(uc.UC_CTL_UC_MODE,
@@ -1291,7 +1304,7 @@ class Uc(RegStateManager):
             (ctypes.c_uint64, end)
         )
 
-    def ctl_request_cache(self, addr: int):
+    def ctl_request_cache(self, addr: int) -> TBStruct:
         return self.__ctl_wr(uc.UC_CTL_TB_REQUEST_CACHE,
             (ctypes.c_uint64, addr),
             (uc_tb, None)
