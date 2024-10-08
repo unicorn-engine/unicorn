@@ -175,7 +175,8 @@ pub enum Arch {
     RISCV = 8,
     S390X = 9,
     TRICORE = 10,
-    MAX = 11,
+    AVR = 11,
+    MAX = 12,
 }
 
 impl TryFrom<usize> for Arch {
