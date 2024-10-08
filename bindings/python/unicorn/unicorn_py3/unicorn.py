@@ -566,7 +566,10 @@ def ucsubclass(cls):
 
         return seq[:i] + tuple([repl]) + seq[i + 1:]
 
-    def __new_uc_subclass(cls, arch: int, mode: int):
+    def __new_uc_subclass(cls, arch: int, mode: int, *args, **kwargs):
+        # this method has to contain *args and **kwargs to allow Uc subclasses
+        # to use additional arguments in their constructors
+
         # resolve the appropriate Uc subclass
         subcls = Uc.__new__(cls, arch, mode)
 
