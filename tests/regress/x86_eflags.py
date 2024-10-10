@@ -1,16 +1,21 @@
 #!/usr/bin/python
+
 import regress
-import unicorn as U
+
+from unicorn import *
+from unicorn.x86_const import *
+
 
 class WrongEFLAGS2(regress.RegressTest):
     def test_eflags(self):
         # imul eax, ebx
-        CODE = '\x0f\xaf\xc3'
+        CODE = b'\x0f\xaf\xc3'
 
-        uc = U.Uc(U.UC_ARCH_X86, U.UC_MODE_32)
-        uc.reg_write(U.x86_const.UC_X86_REG_EAX, 16)
-        uc.reg_write(U.x86_const.UC_X86_REG_EBX, 1)
-        uc.reg_write(U.x86_const.UC_X86_REG_EFLAGS, 0x292)
+        uc = Uc(UC_ARCH_X86, UC_MODE_32)
+
+        uc.reg_write(UC_X86_REG_EAX, 16)
+        uc.reg_write(UC_X86_REG_EBX, 1)
+        uc.reg_write(UC_X86_REG_EFLAGS, 0x292)
 
         uc.mem_map(0x600000, 0x1000)
         uc.mem_write(0x6000b0, CODE)
@@ -32,7 +37,7 @@ class WrongEFLAGS2(regress.RegressTest):
         # (gdb) p/x $eflags
         # $4 = 0x202
 
-        self.assertEqual(0x202, uc.reg_read(U.x86_const.UC_X86_REG_EFLAGS))
+        self.assertEqual(0x202, uc.reg_read(UC_X86_REG_EFLAGS))
 
 if __name__ == '__main__':
     regress.main()

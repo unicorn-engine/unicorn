@@ -1,3 +1,6 @@
+
+import regress
+
 from unicorn import *
 from unicorn.arm_const import *
 
@@ -32,37 +35,42 @@ BASE = 0x1F894
 COPY_SRC = 0x1000
 COPY_DST = 0x2000
 COPY_LEN = 8
-bs = b'c8' * COPY_LEN
+DATA = b'c8' * COPY_LEN
 
-uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
+class ArmMemcpy(regress.RegressTest):
 
-uc.mem_map(COPY_SRC, 0x1000)
-uc.mem_map(COPY_DST, 0x1000)
-uc.mem_map(BASE & ~(0x1000 - 1), 0x1000)
-uc.mem_write(COPY_SRC, bs)
-uc.mem_write(BASE, bytes(SHELLCODE))
+    def test_arm_memcpy(self):
+        uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
 
-uc.reg_write_batch((
-	(UC_ARM_REG_R12, COPY_DST),
-	(UC_ARM_REG_R1, COPY_SRC),
-	(UC_ARM_REG_R2, COPY_LEN),
-	(UC_ARM_REG_R3, 0x24)
-))
+        uc.mem_map(COPY_SRC, 0x1000)
+        uc.mem_map(COPY_DST, 0x1000)
+        uc.mem_map(BASE & ~(0x1000 - 1), 0x1000)
+        uc.mem_write(COPY_SRC, DATA)
+        uc.mem_write(BASE, bytes(SHELLCODE))
 
-# enable_vfp
+        uc.reg_write_batch((
+            (UC_ARM_REG_R12, COPY_DST),
+            (UC_ARM_REG_R1, COPY_SRC),
+            (UC_ARM_REG_R2, COPY_LEN),
+            (UC_ARM_REG_R3, 0x24)
+        ))
 
-# coproc=15, is64=0, sec=0, CRn=1, CRm=0, opc1=0, opc2=2
-CPACR = (15, 0, 0, 1, 0, 0, 2)
+        # enable_vfp
 
-cpacr = uc.reg_read(UC_ARM_REG_CP_REG, CPACR)
-uc.reg_write(UC_ARM_REG_CP_REG, CPACR + (cpacr | (0b11 << 20) | (0b11 << 22),))
-uc.reg_write(UC_ARM_REG_FPEXC, (0b1 << 30))
+        # coproc=15, is64=0, sec=0, CRn=1, CRm=0, opc1=0, opc2=2
+        CPACR = (15, 0, 0, 1, 0, 0, 2)
 
-uc.emu_start(BASE, BASE + len(SHELLCODE))
-src = uc.mem_read(COPY_SRC, len(bs))
-dst = uc.mem_read(COPY_DST, len(bs))
+        cpacr = uc.reg_read(UC_ARM_REG_CP_REG, CPACR)
+        uc.reg_write(UC_ARM_REG_CP_REG, CPACR + (cpacr | (0b11 << 20) | (0b11 << 22),))
+        uc.reg_write(UC_ARM_REG_FPEXC, (0b1 << 30))
 
-print(f'''memcpy result:
-  from: {bytes(src)}
-  to:   {bytes(dst)}
-''')
+        uc.emu_start(BASE, BASE + len(SHELLCODE))
+        src = uc.mem_read(COPY_SRC, len(DATA))
+        dst = uc.mem_read(COPY_DST, len(DATA))
+
+        self.assertEqual(DATA, src)
+        self.assertEqual(DATA, dst)
+
+
+if __name__ == '__main__':
+    regress.main()

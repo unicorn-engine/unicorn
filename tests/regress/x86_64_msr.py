@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-from unicorn import *
-from unicorn.x86_const import *
-from struct import pack
 
 import regress
+
+from unicorn import *
+from unicorn.x86_const import *
 
 
 CODE_ADDR = 0x40000
@@ -32,7 +32,7 @@ def set_msr(uc, msr, value, scratch=SCRATCH_ADDR):
     orip = uc.reg_read(UC_X86_REG_RIP)
 
     # x86: wrmsr
-    buf = '\x0f\x30'
+    buf = b'\x0f\x30'
     uc.mem_write(scratch, buf)
     uc.reg_write(UC_X86_REG_RAX, value & 0xFFFFFFFF)
     uc.reg_write(UC_X86_REG_RDX, (value >> 32) & 0xFFFFFFFF)
@@ -58,7 +58,7 @@ def get_msr(uc, msr, scratch=SCRATCH_ADDR):
     orip = uc.reg_read(UC_X86_REG_RIP)
 
     # x86: rdmsr
-    buf = '\x0f\x32'
+    buf = b'\x0f\x32'
     uc.mem_write(scratch, buf)
     uc.reg_write(UC_X86_REG_RCX, msr & 0xFFFFFFFF)
     uc.emu_start(scratch, scratch+len(buf), count=1)
@@ -122,9 +122,9 @@ class TestGetSetMSR(regress.RegressTest):
         uc.mem_map(CODE_ADDR, CODE_SIZE)
         uc.mem_map(SCRATCH_ADDR, SCRATCH_SIZE)
 
-        code = '6548330C2518000000'.decode('hex')  # x86-64: xor rcx, qword ptr gs:[0x18]
+        code = b'\x65\x48\x33\x0C\x25\x18\x00\x00\x00'  # xor rcx, qword ptr gs:[0x18]
         uc.mem_write(CODE_ADDR, code)
-        uc.mem_write(SEGMENT_ADDR+0x18, 'AAAAAAAA')
+        uc.mem_write(SEGMENT_ADDR+0x18, b'AAAAAAAA')
 
         set_gs(uc, SEGMENT_ADDR)
         self.assertEqual(SEGMENT_ADDR, get_gs(uc))
@@ -140,9 +140,9 @@ class TestGetSetMSR(regress.RegressTest):
         uc.mem_map(CODE_ADDR, CODE_SIZE)
         uc.mem_map(SCRATCH_ADDR, SCRATCH_SIZE)
 
-        code = '6448330C2518000000'.decode('hex')  # x86-64: xor rcx, qword ptr fs:[0x18]
+        code = b'\x64\x48\x33\x0C\x25\x18\x00\x00\x00'  # xor rcx, qword ptr fs:[0x18]
         uc.mem_write(CODE_ADDR, code)
-        uc.mem_write(SEGMENT_ADDR+0x18, 'AAAAAAAA')
+        uc.mem_write(SEGMENT_ADDR+0x18, b'AAAAAAAA')
 
         set_fs(uc, SEGMENT_ADDR)
         self.assertEqual(SEGMENT_ADDR, get_fs(uc))
@@ -150,6 +150,7 @@ class TestGetSetMSR(regress.RegressTest):
         uc.emu_start(CODE_ADDR, CODE_ADDR+len(code))
 
         self.assertEqual(uc.reg_read(UC_X86_REG_RCX), 0x4141414141414141)
+
 
 if __name__ == '__main__':
     regress.main()
