@@ -1,0 +1,332 @@
+name: Build wheels with cibuildwheel
+
+on:
+  push:
+    paths-ignore:
+      - ".gitignore"
+      - "AUTHORS.TXT"
+      - "COPYING"
+      - "COPYING.LGPL2"
+      - "COPYING_GLIB"
+      - "CREDITS.TXT"
+      - "ChangeLog"
+      - "README.md"
+      - "docs/**"
+  pull_request:
+
+jobs:
+  # job to be executed for every push - testing purpose
+  build_wheels_python38_only:
+    name: Building on ${{ matrix.os }} - ${{ matrix.arch }} ${{ matrix.cibw_build }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # NOTE: aarch64 builds are super slow due to QEMU emulation. Making this to parallelize and speed up workflow
+          # TODO: Check wheels for i686. Segfault error during pytest execution...
+          # - { os: ubuntu-latest, arch: i686 }
+          # x86_64 - manylinux
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp38-manylinux' }
+          # x86_64 - musllinux
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp38-musllinux' }
+          # aarch64 - manylinux
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp38-manylinux' }
+          # aarch64 - musllinux
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp38-musllinux' }
+          - { os: macos-12, arch: x86_64, cibw_build: '' }
+          - { os: macos-14, arch: arm64, cibw_build: '' }
+          - { os: windows-2019, arch: AMD64, cibw_build: '' }
+          - { os: windows-2019, arch: x86, cibw_build: '' }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: '🛠️ Add msbuild to PATH'
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '16.5'
+
+      - name: '🛠️ Win build dependencies'
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install ninja cmake
+
+      - name: '🛠️ macOS dependencies'
+        if: runner.os == 'macOS'
+        run: |
+          brew install ninja
+
+      # https://cibuildwheel.pypa.io/en/stable/faq/#macos-building-cpython-38-wheels-on-arm64
+      - uses: actions/setup-python@v5
+        if: runner.os == 'macOS' && runner.arch == 'ARM64'
+        with:
+          python-version: 3.8
+
+      - name: '🛠️ Win MSVC 32 dev cmd setup'
+        if: runner.os == 'Windows' && matrix.arch == 'x86'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: '🛠️ Win MSVC 64 dev cmd setup'
+        if: runner.os == 'Windows' && matrix.arch == 'AMD64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: '🛠️ Set up QEMU'
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+
+      - name: '🚧 cibuildwheel run - Linux'
+        if: matrix.os == 'ubuntu-latest'
+        uses: pypa/cibuildwheel@v2.21.2
+        env:
+          CIBW_BUILD_FRONTEND: build
+          CIBW_BUILD: ${{ matrix.cibw_build }}*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {package}/tests
+        with:
+          package-dir: bindings/python
+          output-dir: wheelhouse
+
+      - name: '🚧 cibuildwheel run - Windows'
+        if: matrix.os == 'windows-2019'
+        uses: pypa/cibuildwheel@v2.21.2
+        env:
+          CIBW_BUILD_FRONTEND: build
+          CIBW_BUILD: 'cp38*'
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {package}/tests
+        with:
+          package-dir: bindings/python
+          output-dir: wheelhouse
+
+      - name: '🚧 cibuildwheel run - MacOS x86_84'
+        if: matrix.os == 'macos-12'
+        uses: pypa/cibuildwheel@v2.21.2
+        env:
+          CIBW_BUILD_FRONTEND: build
+          CIBW_BUILD: 'cp38*'
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {package}/tests
+        with:
+          package-dir: bindings/python
+          output-dir: wheelhouse
+
+      - name: '🚧 cibuildwheel run - MacOS arm64'
+        if: matrix.os == 'macos-14'
+        uses: pypa/cibuildwheel@v2.21.2
+        env:
+          CIBW_BUILD_FRONTEND: build
+          CIBW_BUILD: 'cp38*'
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {package}/tests
+          # https://github.com/pypa/cibuildwheel/pull/1169
+          CIBW_TEST_SKIP: "cp38-macosx_*:arm64"
+        with:
+          package-dir: bindings/python
+          output-dir: wheelhouse
+
+      # we re-tag cp38 wheel (just an old one) with py2 tag. Hacky but it works...
+      - name: '🚧 Python 2.7 wheels re-tagging - Windows'
+        if: matrix.os == 'windows-2019'
+        run: |
+          python -m pip install -U pip wheel && Get-ChildItem -Path wheelhouse/ -Filter *cp38*.whl | Foreach-Object {
+            python -m wheel tags --python-tag='py2' --abi-tag=none $_.FullName
+          }
+      - name: '🚧 Python 2.7 wheels re-tagging - Non-Windows'
+        if: matrix.os != 'windows-2019'
+        env:
+          PIP_BREAK_SYSTEM_PACKAGES: 1
+        run: |
+          python3 -m pip install -U pip wheel && python3 -m wheel tags --python-tag='py2' --abi-tag=none wheelhouse/*cp38*.whl
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
+  # Job to be executed to build all wheels for all platforms/architectures/python versions only for tag release
+  build_wheels_all_versions:
+    name: Building on ${{ matrix.os }} - ${{ matrix.arch }} ${{ matrix.cibw_build }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # NOTE: aarch64 builds are super slow due to QEMU emulation. Making this to parallelize and speed up workflow
+          # TODO: Check wheels for i686. Segfault error during pytest execution...
+          # - { os: ubuntu-latest, arch: i686 }
+          # x86_64 - manylinux
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp37-manylinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp39-manylinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp310-manylinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp311-manylinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp312-manylinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp313-manylinux' }
+          # x86_64 - musllinux
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp37-musllinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp39-musllinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp310-musllinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp311-musllinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp312-musllinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp313-musllinux' }
+          # aarch64 - manylinux
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp37-manylinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp39-manylinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp310-manylinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp311-manylinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp312-manylinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp313-manylinux' }
+          # aarch64 - musllinux
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp37-musllinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp39-musllinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp310-musllinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp311-musllinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp312-musllinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp313-musllinux' }
+          - { os: macos-12, arch: x86_64, cibw_build: '' }
+          - { os: macos-14, arch: arm64, cibw_build: '' }
+          - { os: windows-2019, arch: AMD64, cibw_build: '' }
+          - { os: windows-2019, arch: x86, cibw_build: '' }
+    if: startsWith(github.ref, 'refs/tags')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: '🛠️ Add msbuild to PATH'
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '16.5'
+
+      - name: '🛠️ Win build dependencies'
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install ninja cmake
+
+      - name: '🛠️ macOS dependencies'
+        if: runner.os == 'macOS'
+        run: |
+          brew install ninja
+
+      - name: '🛠️ Win MSVC 32 dev cmd setup'
+        if: runner.os == 'Windows' && matrix.arch == 'x86'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: '🛠️ Win MSVC 64 dev cmd setup'
+        if: runner.os == 'Windows' && matrix.arch == 'AMD64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: '🛠️ Set up QEMU'
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+
+      - name: '🚧 cibuildwheel run - Linux'
+        if: matrix.os == 'ubuntu-latest'
+        uses: pypa/cibuildwheel@v2.21.2
+        env:
+          CIBW_BUILD_FRONTEND: build
+          CIBW_BUILD: ${{ matrix.cibw_build }}*
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {package}/tests
+        with:
+          package-dir: bindings/python
+          output-dir: wheelhouse
+
+      - name: '🚧 cibuildwheel run - Windows'
+        if: matrix.os == 'windows-2019'
+        uses: pypa/cibuildwheel@v2.21.2
+        env:
+          CIBW_BUILD_FRONTEND: build
+          CIBW_SKIP: '*36* *38*'
+          CIBW_BUILD: 'cp*'
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {package}/tests
+        with:
+          package-dir: bindings/python
+          output-dir: wheelhouse
+
+      - name: '🚧 cibuildwheel run - MacOS x86_84'
+        if: matrix.os == 'macos-12'
+        uses: pypa/cibuildwheel@v2.21.2
+        env:
+          CIBW_BUILD_FRONTEND: build
+          CIBW_SKIP: '*36* *38*'
+          CIBW_BUILD: 'cp*'
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {package}/tests
+        with:
+          package-dir: bindings/python
+          output-dir: wheelhouse
+
+      - name: '🚧 cibuildwheel run - MacOS arm64'
+        if: matrix.os == 'macos-14'
+        uses: pypa/cibuildwheel@v2.21.2
+        env:
+          CIBW_BUILD_FRONTEND: build
+          CIBW_SKIP: '*36* *37* *38*'
+          CIBW_BUILD: 'cp*'
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: pytest {package}/tests
+        with:
+          package-dir: bindings/python
+          output-dir: wheelhouse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
+  make_sdist:
+    name: Make SDist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Optional, use if you use setuptools_scm
+          submodules: true  # Optional, use if you have submodules
+
+      - name: Build SDist
+        run: |
+          cd bindings/python
+          python3 -m pip install -U pip build
+          python3 -m build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: bindings/python/dist/*.tar.gz
+
+  publish:
+    needs: [ build_wheels_python38_only, build_wheels_all_versions, make_sdist ]
+    environment: pypi
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: dist
+
+      - name: Show downloaded artifacts
+        run: ls -laR dist
+
+      - name: '📦 Publish distribution to PyPI'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_pass }}
