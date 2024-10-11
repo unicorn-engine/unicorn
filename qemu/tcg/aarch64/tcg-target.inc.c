@@ -1581,13 +1581,20 @@ static inline void tcg_out_adr(TCGContext *s, TCGReg rd, void *target)
     tcg_out_insn(s, 3406, ADR, rd, offset);
 }
 
+static inline bool has_hookmem(TCGContext *s)
+{
+    return HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ) ||
+        HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE);
+}
+
 static bool tcg_out_qemu_ld_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
 {
     TCGMemOpIdx oi = lb->oi;
     MemOp opc = get_memop(oi);
     MemOp size = opc & MO_SIZE;
 
-    if (!reloc_pc19(lb->label_ptr[0], s->code_ptr)) {
+    const int type = has_hookmem(s) ? R_AARCH64_JUMP26 : R_AARCH64_CONDBR19;
+    if (!patch_reloc(lb->label_ptr[0], type, (intptr_t)s->code_ptr, 0)) {
         return false;
     }
 
@@ -1612,7 +1619,8 @@ static bool tcg_out_qemu_st_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
     MemOp opc = get_memop(oi);
     MemOp size = opc & MO_SIZE;
 
-    if (!reloc_pc19(lb->label_ptr[0], s->code_ptr)) {
+    const int type = has_hookmem(s) ? R_AARCH64_JUMP26 : R_AARCH64_CONDBR19;
+    if (!patch_reloc(lb->label_ptr[0], type, (intptr_t)s->code_ptr, 0)) {
         return false;
     }
 
@@ -1711,7 +1719,11 @@ static void tcg_out_tlb_read(TCGContext *s, TCGReg addr_reg, MemOp opc,
 
     /* If not equal, we jump to the slow path. */
     *label_ptr = s->code_ptr;
-    tcg_out_insn(s, 3202, B_C, TCG_COND_NE, 0);
+    // Unicorn: fast path if hookmem is not enabled
+    if (!has_hookmem(s))
+        tcg_out_insn(s, 3202, B_C, TCG_COND_NE, 0);
+    else
+        tcg_out_insn(s, 3206, B, 0);
 }
 
 #endif /* CONFIG_SOFTMMU */
