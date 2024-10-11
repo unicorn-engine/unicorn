@@ -258,7 +258,7 @@ jobs:
       matrix:
         config:
           - { 
-              os: macos-12, # x64
+              os: macos-13, # x64
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
@@ -270,7 +270,7 @@ jobs:
               generators: 'Ninja'
             }
           - { 
-              os: macos-12,
+              os: macos-13,
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
@@ -306,7 +306,7 @@ jobs:
               generators: 'Ninja'
             }
           - { 
-              os: macos-12,
+              os: macos-13,
               arch: x86_64,
               python-arch: x86_64,
               python-ver: '3.8',
