@@ -30,6 +30,24 @@ if(APPLE AND NOT CMAKE_C_COMPILER)
     set(CMAKE_C_COMPILER "/usr/bin/cc")
 endif()
 
+# Source: https://github.com/capstone-engine/capstone/blob/next/CMakeLists.txt
+# If building for OSX it's best to allow CMake to handle building both architectures
+if(APPLE)
+    # The cibuildwheel on Github Actions sets this env variable
+    # with the architecture flags it wants to build for.
+    if(DEFINED ENV{ARCHFLAGS})
+        if("$ENV{ARCHFLAGS}" STREQUAL "-arch arm64 -arch x86_64")
+            set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+        elseif("$ENV{ARCHFLAGS}" STREQUAL "-arch arm64")
+            set(CMAKE_OSX_ARCHITECTURES "arm64")
+        elseif("$ENV{ARCHFLAGS}" STREQUAL "-arch x86_64")
+            set(CMAKE_OSX_ARCHITECTURES "x86_64")
+        endif()
+    else()
+        set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+    endif()
+endif()
+
 # Detect if unicorn is compiled as the top-level project
 set(PROJECT_IS_TOP_LEVEL OFF)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
