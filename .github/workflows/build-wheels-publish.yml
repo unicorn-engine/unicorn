@@ -113,6 +113,7 @@ jobs:
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_BUILD: 'cp38*'
+          CIBW_ENVIRONMENT: SYSTEM_VERSION_COMPAT=0
           CIBW_TEST_REQUIRES: pytest
           CIBW_TEST_COMMAND: pytest {package}/tests
         with:
