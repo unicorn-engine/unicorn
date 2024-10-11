@@ -91,3 +91,9 @@ cmocka/
 zig-cache/
 zig-out/
 .cache
+
+##################
+## PyCharm Project
+##################
+
+.idea/
