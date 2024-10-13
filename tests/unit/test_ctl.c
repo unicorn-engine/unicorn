@@ -181,11 +181,14 @@ static void test_uc_ctl_change_page_size(void)
 {
     uc_engine *uc;
     uc_engine *uc2;
+    uint32_t pg = 0;
 
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc2));
 
     OK(uc_ctl_set_page_size(uc, 4096));
+    OK(uc_ctl_get_page_size(uc, &pg));
+    TEST_CHECK(pg == 4096);
 
     OK(uc_mem_map(uc2, 1 << 10, 1 << 10, UC_PROT_ALL));
     uc_assert_err(UC_ERR_ARG, uc_mem_map(uc, 1 << 10, 1 << 10, UC_PROT_ALL));

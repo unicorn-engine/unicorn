@@ -2523,7 +2523,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 break;
             }
 
-            while (page_size) {
+            // Bits is used to calculate the mask
+            while (page_size > 1) {
                 bits++;
                 page_size >>= 1;
             }
