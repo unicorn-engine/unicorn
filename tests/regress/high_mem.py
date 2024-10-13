@@ -30,7 +30,7 @@ class TestMem(regress.RegressTest):
 
         base = 0x0010000000000000
 
-        self.uc.ctl_tlb_mode(UC_TLB_VIRTUAL)
+        self.uc.ctl_set_tlb_mode(UC_TLB_VIRTUAL)
 
         for i in range(12):
             code = base << i
@@ -49,7 +49,7 @@ class TestMem(regress.RegressTest):
 
         base = 0x0010000000000000
 
-        self.uc.ctl_tlb_mode(UC_TLB_CPU)
+        self.uc.ctl_set_tlb_mode(UC_TLB_CPU)
 
         for i in range(12):
             code = base << i

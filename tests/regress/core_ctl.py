@@ -156,7 +156,7 @@ class TestCtl(regress.RegressTest):
         uc.mem_write(MAPPING_HI, NOPSLED)
 
         # this should prevents us from mapping to high addresses
-        uc.ctl_tlb_mode(UC_TLB_CPU)
+        uc.ctl_set_tlb_mode(UC_TLB_CPU)
 
         # this should fail
         with self.assertRaises(UcError) as ex:
@@ -167,7 +167,7 @@ class TestCtl(regress.RegressTest):
         # ------------------------------------------------------
 
         # this should allow us mapping to high addresses
-        uc.ctl_tlb_mode(UC_TLB_VIRTUAL)
+        uc.ctl_set_tlb_mode(UC_TLB_VIRTUAL)
 
         # this should ok now
         uc.emu_start(MAPPING_HI, MAPPING_HI + len(NOPSLED))
