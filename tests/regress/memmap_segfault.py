@@ -31,8 +31,6 @@ class MmapSeg2(regress.RegressTest):
         uc.mem_map(0x2000, 0x4000)
         uc.mem_write(0x1000, b' ' * 0x1004)
 
-        self.assertTrue(True, 'If not reached, then we have BUG (crash on x86_64 Linux).')
-
 
 if __name__ == '__main__':
     regress.main()

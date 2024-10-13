@@ -23,7 +23,6 @@ def hook_mem_read(uc, access, address, size, value, data):
 
 
 class REP(regress.RegressTest):
-    @regress.unittest.skip('writing to a UC_PROT_READ area will segfault Unicorn')
     def runTest(self):
         mu = Uc(UC_ARCH_X86, UC_MODE_32)
 
