@@ -53,8 +53,8 @@ class TestCtl(regress.RegressTest):
         # set page size to 2 MiB; this should work
         uc.ctl_set_page_size(SIZE_2MB)
 
-        # BUG! was it set properly?
-        # self.assertEqual(SIZE_2MB, uc.ctl_get_page_size())
+        # was it set properly?
+        self.assertEqual(SIZE_2MB, uc.ctl_get_page_size())
 
         # set a page size which is not a power of 2
         with self.assertRaises(UcError) as ex:
@@ -62,8 +62,8 @@ class TestCtl(regress.RegressTest):
 
         self.assertEqual(UC_ERR_ARG, ex.exception.errno)
 
-        # BUG! are we still with the valid value?
-        # self.assertEqual(SIZE_2MB, uc.ctl_get_page_size())
+        # are we still with the valid value?
+        self.assertEqual(SIZE_2MB, uc.ctl_get_page_size())
 
         # force uc to complete its initialization by triggering a random api
         uc.ctl_flush_tb()
@@ -74,8 +74,8 @@ class TestCtl(regress.RegressTest):
 
         self.assertEqual(UC_ERR_ARG, ex.exception.errno)
 
-        # BUG! are we still with the valid value?
-        # self.assertEqual(SIZE_2MB, uc.ctl_get_page_size())
+        # are we still with the valid value?
+        self.assertEqual(SIZE_2MB, uc.ctl_get_page_size())
 
     def test_timeout(self):
         MILLIS_1S = 1000

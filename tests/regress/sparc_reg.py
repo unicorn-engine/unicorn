@@ -100,7 +100,7 @@ class TestSparcRegRead(regress.RegressTest):
         self.assertEqual(1, uc.reg_read(UC_SPARC_REG_I7))
 
         # BUG: PC seems to get reset to 4 when done executing
-        # self.assertEqual(4 * 32, uc.reg_read(UC_SPARC_REG_PC))  # make sure we executed all instructions
+        self.assertEqual(4 * 32, uc.reg_read(UC_SPARC_REG_PC))  # make sure we executed all instructions
         self.assertEqual(101, uc.reg_read(UC_SPARC_REG_SP))
         self.assertEqual(201, uc.reg_read(UC_SPARC_REG_FP))
 
