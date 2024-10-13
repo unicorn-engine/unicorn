@@ -25,7 +25,8 @@ jobs:
         include:
           # NOTE: aarch64 builds are super slow due to QEMU emulation. Making this to parallelize and speed up workflow
           # TODO: Check wheels for i686. Segfault error during pytest execution...
-          # - { os: ubuntu-latest, arch: i686 }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp38-manylinux' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp38-musllinux' }
           # x86_64 - manylinux
           - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp38-manylinux' }
           # x86_64 - musllinux
