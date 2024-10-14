@@ -41,7 +41,7 @@ jobs:
           # aarch64 - musllinux
           - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp38-musllinux' }
           - { os: macos-13, arch: x86_64, cibw_build: '' }
-          - { os: macos-14, arch: arm64, cibw_build: '' }
+          - { os: macos-latest, arch: arm64, cibw_build: '' }
           - { os: windows-2019, arch: AMD64, cibw_build: '' }
           - { os: windows-2019, arch: x86, cibw_build: '' }
 
@@ -89,7 +89,7 @@ jobs:
 
       - name: '🚧 cibuildwheel run - Linux'
         if: matrix.os == 'ubuntu-latest'
-        uses: pypa/cibuildwheel@v2.21.2
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_BUILD: ${{ matrix.cibw_build }}*
@@ -104,7 +104,7 @@ jobs:
 
       - name: '🚧 cibuildwheel run - Windows'
         if: matrix.os == 'windows-2019'
-        uses: pypa/cibuildwheel@v2.21.2
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_BUILD: 'cp38*'
@@ -118,7 +118,7 @@ jobs:
 
       - name: '🚧 cibuildwheel run - MacOS x86_84'
         if: matrix.os == 'macos-13'
-        uses: pypa/cibuildwheel@v2.21.2
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_BUILD: 'cp38*'
@@ -130,8 +130,8 @@ jobs:
           output-dir: wheelhouse
 
       - name: '🚧 cibuildwheel run - MacOS arm64'
-        if: matrix.os == 'macos-14'
-        uses: pypa/cibuildwheel@v2.21.2
+        if: matrix.os == 'macos-latest'
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_BUILD: 'cp38*'
@@ -215,7 +215,7 @@ jobs:
           - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp312-musllinux' }
           - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp313-musllinux' }
           - { os: macos-13, arch: x86_64, cibw_build: '' }
-          - { os: macos-14, arch: arm64, cibw_build: '' }
+          - { os: macos-latest, arch: arm64, cibw_build: '' }
           - { os: windows-2019, arch: AMD64, cibw_build: '' }
           - { os: windows-2019, arch: x86, cibw_build: '' }
     if: startsWith(github.ref, 'refs/tags')
@@ -257,7 +257,7 @@ jobs:
 
       - name: '🚧 cibuildwheel run - Linux'
         if: matrix.os == 'ubuntu-latest'
-        uses: pypa/cibuildwheel@v2.21.2
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_BUILD: ${{ matrix.cibw_build }}*
@@ -272,7 +272,7 @@ jobs:
 
       - name: '🚧 cibuildwheel run - Windows'
         if: matrix.os == 'windows-2019'
-        uses: pypa/cibuildwheel@v2.21.2
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_SKIP: '*36* *38*'
@@ -287,7 +287,7 @@ jobs:
 
       - name: '🚧 cibuildwheel run - MacOS x86_84'
         if: matrix.os == 'macos-13'
-        uses: pypa/cibuildwheel@v2.21.2
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_SKIP: '*36* *38*'
@@ -300,8 +300,8 @@ jobs:
           output-dir: wheelhouse
 
       - name: '🚧 cibuildwheel run - MacOS arm64'
-        if: matrix.os == 'macos-14'
-        uses: pypa/cibuildwheel@v2.21.2
+        if: matrix.os == 'macos-latest'
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_SKIP: '*36* *37* *38*'
