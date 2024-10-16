@@ -39,7 +39,7 @@ def test_uc_ctl_tb_cache():
     # Fill the code buffer with NOP.
     code = b"\x90" * 8 * 512
 
-    print("Controling the TB cache in a finer granularity by uc_ctl.")
+    print("Controlling the TB cache in a finer granularity by uc_ctl.")
 
     uc.mem_map(addr, 0x10000)
 
@@ -52,7 +52,7 @@ def test_uc_ctl_tb_cache():
     # Now we request cache for all TBs.
     for i in range(8):
         tb = uc.ctl_request_cache(addr + i * 512)
-        print(f">>> TB is cached at {hex(tb.pc)} which has {tb.icount} instructions with {tb.size} bytes")
+        print(f">>> TB is cached at {hex(tb[0])} which has {tb[1]} instructions with {tb[2]} bytes")
 
     # Do emulation with all TB cached.
     cached = time_emulation(uc, addr, addr + len(code))
@@ -104,7 +104,7 @@ def test_uc_ctl_exits():
 
     uc.ctl_set_exits(exits)
 
-    # This should stop at ADDRESS + 6 and increase eax, even thouhg we don't provide an exit.
+    # This should stop at ADDRESS + 6 and increase eax, even though we don't provide an exit.
     uc.emu_start(addr, 0)
 
     eax = uc.reg_read(UC_X86_REG_EAX)
@@ -112,7 +112,7 @@ def test_uc_ctl_exits():
 
     print(f">>> eax = {hex(eax)} and ebx = {hex(ebx)} after the first emulation")
 
-    # This should stop at ADDRESS + 8, even thouhg we don't provide an exit.
+    # This should stop at ADDRESS + 8, even though we don't provide an exit.
     uc.emu_start(addr, 0)
 
     eax = uc.reg_read(UC_X86_REG_EAX)

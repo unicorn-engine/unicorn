@@ -55,7 +55,7 @@ def copy_sources():
     shutil.copytree(os.path.join(ROOT_DIR, '../../samples'), os.path.join(SRC_DIR, 'samples/'))
     shutil.copytree(os.path.join(ROOT_DIR, '../../glib_compat'), os.path.join(SRC_DIR, 'glib_compat/'))
     shutil.copytree(os.path.join(ROOT_DIR, '../../cmake'), os.path.join(SRC_DIR, 'cmake/'))
-    
+
     try:
         # remove site-specific configuration file, might not exist
         os.remove(os.path.join(SRC_DIR, 'qemu/config-host.mak'))
@@ -65,7 +65,6 @@ def copy_sources():
     src = []
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.[ch]")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.mk")))
-
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../LICENSE*")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../README.md")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.TXT")))
