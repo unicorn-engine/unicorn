@@ -1018,6 +1018,16 @@ struct uc_tlb_entry {
     uc_prot perms;
 };
 
+/*
+ Variables to control which state should be stored in the context.
+ Defaults to UC_CTL_CONTEXT_CPU. The options are used in a bitfield
+ so to enable more then one content the binary or of the required
+ contents can be use.
+ The UC_CTL_CONTEXT_MEMORY stores some pointers to internal allocated
+ memory. Therefor it's not possible to use this context with another
+ unicorn object.
+*/
+
 typedef enum uc_context_content {
     UC_CTL_CONTEXT_CPU = 1,
     UC_CTL_CONTEXT_MEMORY = 2,
