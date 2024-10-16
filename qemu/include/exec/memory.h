@@ -1220,5 +1220,6 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr);
 void memory_moveout(struct uc_struct *uc, MemoryRegion *mr);
 void memory_movein(struct uc_struct *uc, MemoryRegion *mr);
 int memory_free(struct uc_struct *uc);
+bool flatview_copy(struct uc_struct *uc, FlatView *dst, FlatView *src, bool update_dispatcher);
 
 #endif
