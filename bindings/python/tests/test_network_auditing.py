@@ -3,10 +3,11 @@
 # Nguyen Tan Cong <shenlongbk@gmail.com>
 
 from __future__ import print_function
-from unicorn import *
-from unicorn.x86_const import *
+import pytest
 import struct
 import uuid
+from unicorn import *
+from unicorn.x86_const import *
 
 SIZE_REG = 4
 SOCKETCALL_MAX_ARGS = 3
@@ -360,6 +361,7 @@ def hook_intr(uc, intno, user_data):
             print_sockcall(msg)
 
 
+@pytest.mark.parametrize("code", [X86_SEND_ETCPASSWD, X86_BIND_TCP, X86_REVERSE_TCP, X86_REVERSE_TCP_2])
 # Test X86 32 bit
 def test_i386(code):
     global fd_chains
