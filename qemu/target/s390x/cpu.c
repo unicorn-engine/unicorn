@@ -245,7 +245,8 @@ S390CPU *cpu_s390_init(struct uc_struct *uc, const char *cpu_model)
     CPUClass *cc;
     // int i;
 
-    cpu = qemu_memalign(8, sizeof(*cpu));
+    // vregs
+    cpu = qemu_memalign(16, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }

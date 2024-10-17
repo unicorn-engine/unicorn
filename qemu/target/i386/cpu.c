@@ -5076,7 +5076,8 @@ X86CPU *cpu_x86_init(struct uc_struct *uc)
     CPUClass *cc;
     X86CPUClass *xcc;
 
-    cpu = qemu_memalign(8, sizeof(*cpu));
+    // env->fpregs
+    cpu = qemu_memalign(16, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
