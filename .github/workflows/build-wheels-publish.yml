@@ -160,7 +160,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}-py38
           path: ./wheelhouse/*.whl
 
   # Job to be executed to build all wheels for all platforms/architectures/python versions only for tag release
@@ -315,7 +315,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}-all
           path: ./wheelhouse/*.whl
 
   make_sdist:
@@ -335,6 +335,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          name: sdist-archive
           path: bindings/python/dist/*.tar.gz
 
   publish:
