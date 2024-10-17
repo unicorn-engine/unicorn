@@ -1,6 +1,16 @@
 name: Build wheels with cibuildwheel
 
 on:
+  workflow_dispatch:
+    inputs:
+      debugMode:
+        description: 'Debug Mode'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - '0'
+          - '1'
   push:
     paths-ignore:
       - ".gitignore"
@@ -15,8 +25,8 @@ on:
   pull_request:
 
 env:
-  # Enable DEBUG flag if not tag release
-  UNICORN_DEBUG: ${{ startsWith(github.ref, 'refs/tags') && '0' || '1' }}
+  # Enable DEBUG flag either according to the tag release or manual override
+  UNICORN_DEBUG: ${{ inputs.debugMode != '' && inputs.debugMode || startsWith(github.ref, 'refs/tags') && '0' || '1' }}
 
 jobs:
   # job to be executed for every push - testing purpose
