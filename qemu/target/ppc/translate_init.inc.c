@@ -11016,7 +11016,7 @@ PowerPCCPU *cpu_ppc_init(struct uc_struct *uc)
     CPUClass *cc;
     PowerPCCPUClass *pcc;
 
-    cpu = malloc(sizeof(*cpu));
+    cpu = qemu_memalign(8, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }

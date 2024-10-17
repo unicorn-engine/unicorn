@@ -515,7 +515,7 @@ uc_err uc_close(uc_engine *uc)
     g_free(uc->cpu->thread);
 
     /* cpu */
-    free(uc->cpu);
+    qemu_vfree(uc->cpu);
 
     /* flatviews */
     g_hash_table_destroy(uc->flat_views);
