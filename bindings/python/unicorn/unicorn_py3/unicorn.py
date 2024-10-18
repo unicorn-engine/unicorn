@@ -16,6 +16,7 @@ from .arch.types import uc_err, uc_engine, uc_context, uc_hook_h, UcReg, VT
 
 MemRegionStruct = Tuple[int, int, int]
 TBStruct = Tuple[int, int, int]
+TLBEntryStruct = Tuple[int, int]
 
 
 class UcTupledStruct(ctypes.Structure, Generic[VT]):
@@ -48,6 +49,16 @@ class uc_tb(UcTupledStruct[TBStruct]):
         ('pc',     ctypes.c_uint64),
         ('icount', ctypes.c_uint16),
         ('size',   ctypes.c_uint16)
+    )
+
+
+class uc_tlb_entry(UcTupledStruct[TLBEntryStruct]):
+    """TLB entry.
+    """
+
+    _fields_ = (
+        ('paddr', ctypes.c_uint64),
+        ('perms', ctypes.c_uint32)
     )
 
 
@@ -234,6 +245,7 @@ HOOK_MEM_ACCESS_CFUNC   = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_int, ctypes
 HOOK_INSN_INVALID_CFUNC = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_void_p)
 HOOK_EDGE_GEN_CFUNC     = ctypes.CFUNCTYPE(None, uc_engine, ctypes.POINTER(uc_tb), ctypes.POINTER(uc_tb), ctypes.c_void_p)
 HOOK_TCG_OPCODE_CFUNC   = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_void_p)
+HOOK_TLB_FILL_CFUNC     = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.POINTER(uc_tlb_entry), ctypes.c_void_p)
 
 # mmio callback signatures
 MMIO_READ_CFUNC  = ctypes.CFUNCTYPE(ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_uint, ctypes.c_void_p)
@@ -1092,6 +1104,13 @@ class Uc(RegStateManager):
 
             return (__hook_tcg_op_cb, opcode, flags)
 
+        def __hok_tlb_fill():
+            @uccallback(self, HOOK_TLB_FILL_CFUNC)
+            def __hook_tlb_fill_cb(uc: Uc, vaddr: int, access: int, entry: ctypes._Pointer[uc_tlb_entry], key: int):
+                callback(uc, vaddr, access, entry.contents, user_data)
+
+            return (__hook_tlb_fill_cb,)
+
         handlers: Dict[int, Callable[[], Tuple]] = {
             uc.UC_HOOK_INTR               : __hook_intr,
             uc.UC_HOOK_INSN               : __hook_insn,
@@ -1109,7 +1128,8 @@ class Uc(RegStateManager):
             # uc.UC_HOOK_MEM_READ_AFTER
             uc.UC_HOOK_INSN_INVALID       : __hook_invalid_insn,
             uc.UC_HOOK_EDGE_GENERATED     : __hook_edge_gen,
-            uc.UC_HOOK_TCG_OPCODE         : __hook_tcg_opcode
+            uc.UC_HOOK_TCG_OPCODE         : __hook_tcg_opcode,
+            uc.UC_HOOK_TLB_FILL           : __hok_tlb_fill
         }
 
         # the same callback may be registered for multiple hook types if they
