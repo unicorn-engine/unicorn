@@ -16,6 +16,7 @@ from .arch.types import uc_err, uc_engine, uc_context, uc_hook_h, UcReg, VT
 
 MemRegionStruct = Tuple[int, int, int]
 TBStruct = Tuple[int, int, int]
+TLBEntryStruct = Tuple[int, int]
 
 
 class UcTupledStruct(ctypes.Structure, Generic[VT]):
@@ -32,11 +33,11 @@ class UcTupledStruct(ctypes.Structure, Generic[VT]):
         return tuple(getattr(self, fname) for fname, *_ in self.__class__._fields_)  # type: ignore
 
 
-class _uc_mem_region(UcTupledStruct[MemRegionStruct]):
+class uc_mem_region(UcTupledStruct[MemRegionStruct]):
     _fields_ = (
         ('begin', ctypes.c_uint64),
         ('end',   ctypes.c_uint64),
-        ('perms', ctypes.c_uint32),
+        ('perms', ctypes.c_uint32)
     )
 
 
@@ -48,6 +49,16 @@ class uc_tb(UcTupledStruct[TBStruct]):
         ('pc',     ctypes.c_uint64),
         ('icount', ctypes.c_uint16),
         ('size',   ctypes.c_uint16)
+    )
+
+
+class uc_tlb_entry(UcTupledStruct[TLBEntryStruct]):
+    """TLB entry.
+    """
+
+    _fields_ = (
+        ('paddr', ctypes.c_uint64),
+        ('perms', ctypes.c_uint32)
     )
 
 
@@ -198,7 +209,7 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
     __set_prototype('uc_mem_map_ptr', uc_err, uc_engine, u64, size_t, u32, void_p)
     __set_prototype('uc_mem_protect', uc_err, uc_engine, u64, size_t, u32)
     __set_prototype('uc_mem_read', uc_err, uc_engine, u64, PTR(char), size_t)
-    __set_prototype('uc_mem_regions', uc_err, uc_engine, PTR(PTR(_uc_mem_region)), PTR(u32))
+    __set_prototype('uc_mem_regions', uc_err, uc_engine, PTR(PTR(uc_mem_region)), PTR(u32))
     __set_prototype('uc_mem_unmap', uc_err, uc_engine, u64, size_t)
     __set_prototype('uc_mem_write', uc_err, uc_engine, u64, PTR(char), size_t)
     __set_prototype('uc_mmio_map', uc_err, uc_engine, u64, size_t, void_p, void_p, void_p, void_p)
@@ -234,6 +245,7 @@ HOOK_MEM_ACCESS_CFUNC   = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_int, ctypes
 HOOK_INSN_INVALID_CFUNC = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_void_p)
 HOOK_EDGE_GEN_CFUNC     = ctypes.CFUNCTYPE(None, uc_engine, ctypes.POINTER(uc_tb), ctypes.POINTER(uc_tb), ctypes.c_void_p)
 HOOK_TCG_OPCODE_CFUNC   = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_void_p)
+HOOK_TLB_FILL_CFUNC     = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.POINTER(uc_tlb_entry), ctypes.c_void_p)
 
 # mmio callback signatures
 MMIO_READ_CFUNC  = ctypes.CFUNCTYPE(ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_uint, ctypes.c_void_p)
@@ -937,7 +949,7 @@ class Uc(RegStateManager):
         Raises: `UcError` in case an itnernal error has been encountered
         """
 
-        regions = ctypes.POINTER(_uc_mem_region)()
+        regions = ctypes.POINTER(uc_mem_region)()
         count = ctypes.c_uint32()
         status = uclib.uc_mem_regions(self._uch, ctypes.byref(regions), ctypes.byref(count))
 
@@ -1092,6 +1104,13 @@ class Uc(RegStateManager):
 
             return (__hook_tcg_op_cb, opcode, flags)
 
+        def __hok_tlb_fill():
+            @uccallback(self, HOOK_TLB_FILL_CFUNC)
+            def __hook_tlb_fill_cb(uc: Uc, vaddr: int, access: int, entry: ctypes._Pointer[uc_tlb_entry], key: int):
+                callback(uc, vaddr, access, entry.contents, user_data)
+
+            return (__hook_tlb_fill_cb,)
+
         handlers: Dict[int, Callable[[], Tuple]] = {
             uc.UC_HOOK_INTR               : __hook_intr,
             uc.UC_HOOK_INSN               : __hook_insn,
@@ -1109,7 +1128,8 @@ class Uc(RegStateManager):
             # uc.UC_HOOK_MEM_READ_AFTER
             uc.UC_HOOK_INSN_INVALID       : __hook_invalid_insn,
             uc.UC_HOOK_EDGE_GENERATED     : __hook_edge_gen,
-            uc.UC_HOOK_TCG_OPCODE         : __hook_tcg_opcode
+            uc.UC_HOOK_TCG_OPCODE         : __hook_tcg_opcode,
+            uc.UC_HOOK_TLB_FILL           : __hok_tlb_fill
         }
 
         # the same callback may be registered for multiple hook types if they
