@@ -33,11 +33,11 @@ class UcTupledStruct(ctypes.Structure, Generic[VT]):
         return tuple(getattr(self, fname) for fname, *_ in self.__class__._fields_)  # type: ignore
 
 
-class _uc_mem_region(UcTupledStruct[MemRegionStruct]):
+class uc_mem_region(UcTupledStruct[MemRegionStruct]):
     _fields_ = (
         ('begin', ctypes.c_uint64),
         ('end',   ctypes.c_uint64),
-        ('perms', ctypes.c_uint32),
+        ('perms', ctypes.c_uint32)
     )
 
 
@@ -209,7 +209,7 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
     __set_prototype('uc_mem_map_ptr', uc_err, uc_engine, u64, size_t, u32, void_p)
     __set_prototype('uc_mem_protect', uc_err, uc_engine, u64, size_t, u32)
     __set_prototype('uc_mem_read', uc_err, uc_engine, u64, PTR(char), size_t)
-    __set_prototype('uc_mem_regions', uc_err, uc_engine, PTR(PTR(_uc_mem_region)), PTR(u32))
+    __set_prototype('uc_mem_regions', uc_err, uc_engine, PTR(PTR(uc_mem_region)), PTR(u32))
     __set_prototype('uc_mem_unmap', uc_err, uc_engine, u64, size_t)
     __set_prototype('uc_mem_write', uc_err, uc_engine, u64, PTR(char), size_t)
     __set_prototype('uc_mmio_map', uc_err, uc_engine, u64, size_t, void_p, void_p, void_p, void_p)
@@ -949,7 +949,7 @@ class Uc(RegStateManager):
         Raises: `UcError` in case an itnernal error has been encountered
         """
 
-        regions = ctypes.POINTER(_uc_mem_region)()
+        regions = ctypes.POINTER(uc_mem_region)()
         count = ctypes.c_uint32()
         status = uclib.uc_mem_regions(self._uch, ctypes.byref(regions), ctypes.byref(count))
 
