@@ -1104,7 +1104,7 @@ class Uc(RegStateManager):
 
             return (__hook_tcg_op_cb, opcode, flags)
 
-        def __hok_tlb_fill():
+        def __hook_tlb_fill():
             @uccallback(self, HOOK_TLB_FILL_CFUNC)
             def __hook_tlb_fill_cb(uc: Uc, vaddr: int, access: int, entry: ctypes._Pointer[uc_tlb_entry], key: int):
                 callback(uc, vaddr, access, entry.contents, user_data)
@@ -1129,7 +1129,7 @@ class Uc(RegStateManager):
             uc.UC_HOOK_INSN_INVALID       : __hook_invalid_insn,
             uc.UC_HOOK_EDGE_GENERATED     : __hook_edge_gen,
             uc.UC_HOOK_TCG_OPCODE         : __hook_tcg_opcode,
-            uc.UC_HOOK_TLB_FILL           : __hok_tlb_fill
+            uc.UC_HOOK_TLB_FILL           : __hook_tlb_fill
         }
 
         # the same callback may be registered for multiple hook types if they
