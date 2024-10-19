@@ -720,6 +720,76 @@ static void test_riscv_mmu(void)
     TEST_CHECK(data_value == data_result);
 }
 
+static void test_riscv_priv(void)
+{
+    uc_engine *uc;
+    uc_err err;
+    uint32_t m_entry_address = 0x1000;
+    uint32_t main_address = 0x3000;
+    uint64_t priv_value = ~0;
+    uint64_t pc = ~0;
+    uint64_t reg_value;
+
+    /*
+    li        t0, 0
+    csrw      mstatus, t0
+    li        t1, 0x3000
+    csrw      mepc, t1
+    mret
+    */
+    char code_m_entry[] = "\x93\x02\x00\x00"
+                          "\x73\x90\x02\x30"
+                          "\x37\x33\x00\x00"
+                          "\x73\x10\x13\x34"
+                          "\x73\x00\x20\x30";
+
+    /*
+    csrw    sscratch, t0
+    nop
+    */
+    char code_main[] = "\x73\x90\x02\x14"
+                       "\x13\x00\x00\x00";
+    int main_end_address = main_address + sizeof(code_main) - 1;
+
+    OK(uc_open(UC_ARCH_RISCV, UC_MODE_RISCV64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_CPU));
+    OK(uc_mem_map(uc, m_entry_address, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, main_address, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, m_entry_address, &code_m_entry, sizeof(code_m_entry)));
+    OK(uc_mem_write(uc, main_address, &code_main, sizeof(code_main)));
+
+    // Before anything executes we should be in M-Mode
+    OK(uc_reg_read(uc, UC_RISCV_REG_PRIV, &priv_value));
+    TEST_ASSERT(priv_value == 3);
+
+    // We'll put a sentinel value in sscratch so we can determine whether we've
+    // successfully written to it below.
+    reg_value = 0xffff;
+    OK(uc_reg_write(uc, UC_RISCV_REG_SSCRATCH, &reg_value));
+
+    // Run until we reach the "csrw" at the start of code_main, at which
+    // point we should be in U-Mode due to the mret instruction.
+    OK(uc_emu_start(uc, m_entry_address, main_address, 0, 10));
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &pc));
+    TEST_ASSERT(pc == main_address);
+    OK(uc_reg_read(uc, UC_RISCV_REG_PRIV, &priv_value));
+    TEST_ASSERT(priv_value == 0); // Now in U-Mode
+
+    // U-Mode can't write to sscratch, so execution at this point should
+    // cause an invalid instruction exception.
+    err = uc_emu_start(uc, main_address, main_end_address, 0, 0);
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &pc));
+    TEST_ASSERT(err == UC_ERR_EXCEPTION);
+
+    // ...but if we force S-Mode then we should be able to set it successfully.
+    priv_value = 1;
+    OK(uc_reg_write(uc, UC_RISCV_REG_PRIV, &priv_value));
+    OK(uc_emu_start(uc, main_address, main_end_address, 0, 0));
+    OK(uc_reg_read(uc, UC_RISCV_REG_SSCRATCH, &reg_value));
+    TEST_ASSERT(reg_value == 0);
+}
+
 TEST_LIST = {
     {"test_riscv32_nop", test_riscv32_nop},
     {"test_riscv64_nop", test_riscv64_nop},
@@ -744,4 +814,5 @@ TEST_LIST = {
     {"test_riscv_correct_address_in_long_jump_hook",
      test_riscv_correct_address_in_long_jump_hook},
     {"test_riscv_mmu", test_riscv_mmu},
+    {"test_riscv_priv", test_riscv_priv},
     {NULL, NULL}};
