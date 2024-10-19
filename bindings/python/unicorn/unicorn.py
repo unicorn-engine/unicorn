@@ -8,7 +8,7 @@ from .unicorn_const import (
 
 __version__ = "%u.%u.%u" % (__MAJOR, __MINOR, __PATCH)
 
-if _sys.version_info.major == 2:
-    from .unicorn_py2 import *
-else:
+if _sys.version_info >= (3,):
     from .unicorn_py3 import *
+else:
+    from .unicorn_py2 import *
