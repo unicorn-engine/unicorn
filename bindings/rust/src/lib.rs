@@ -61,6 +61,12 @@ mod arm64;
 #[cfg(feature = "arch_arm")]
 pub use crate::arm64::*;
 
+// include avr support if conditionally compiled in
+#[cfg(feature = "arch_avr")]
+mod avr;
+#[cfg(feature = "arch_avr")]
+pub use crate::avr::*;
+
 // include m68k support if conditionally compiled in
 #[cfg(feature = "arch_m68k")]
 mod m68k;
@@ -1005,6 +1011,8 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::S390X => Ok(RegisterS390X::PC as i32),
             #[cfg(feature = "arch_tricore")]
             Arch::TRICORE => Ok(RegisterTRICORE::PC as i32),
+            #[cfg(feature = "arch_avr")]
+            Arch::AVR => Ok(RegisterAVR::PC as i32),
             // returns `uc_error::ARCH` for `Arch::MAX`, and any
             // other architecture that are not compiled in
             _ => Err(uc_error::ARCH),

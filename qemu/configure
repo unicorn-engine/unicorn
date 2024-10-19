@@ -491,6 +491,8 @@ elif check_define __aarch64__ ; then
   cpu="aarch64"
 elif check_define __tricore__ ; then
   cpu="tricore"
+elif check_define __AVR__ ; then
+  cpu="avr"
 else
   cpu=$(uname -m)
 fi
@@ -532,6 +534,10 @@ case "$cpu" in
   ;;
   tricore)
     cpu="tricore"
+    supported_cpu="yes"
+  ;;
+  avr)
+    cpu="avr"
     supported_cpu="yes"
   ;;
   *)
@@ -859,7 +865,7 @@ default_target_list="aarch64-softmmu \
     arm-softmmu m68k-softmmu mips64el-softmmu mips64-softmmu mipsel-softmmu \
     mips-softmmu ppc64-softmmu ppc-softmmu sparc64-softmmu sparc-softmmu \
     x86_64-softmmu riscv32-softmmu riscv64-softmmu s390x-softmmu \
-    tricore-softmmu"
+    tricore-softmmu avr-softmmu"
 
 if test x"$show_help" = x"yes" ; then
 cat << EOF
@@ -2788,6 +2794,10 @@ case "$target_name" in
   tricore)
     TARGET_ARCH=tricore
     TARGET_BASE_ARCH=tricore
+  ;;
+  avr)
+    TARGET_ARCH=avr
+    TARGET_BASE_ARCH=avr
   ;;
   unicore32)
   ;;
