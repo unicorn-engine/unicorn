@@ -1199,13 +1199,15 @@ static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
         page_collection_unlock(pages);
     }
 
+    cpu_physical_memory_set_dirty_range(ram_addr, size, DIRTY_CLIENTS_NOCODE);
     /* For exec pages, this is cleared in tb_gen_code. */
     // If we:
     // - have memory hooks installed
     // - or doing snapshot
     // , then never clean the tlb
     if (!(!mr || mr->priority < cpu->uc->snapshot_level) &&
-            !(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE))) {
+            !(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE)) &&
+            !cpu_physical_memory_is_clean(ram_addr)) {
         tlb_set_dirty(cpu, mem_vaddr);
     }
 }
