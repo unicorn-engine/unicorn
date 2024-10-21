@@ -624,6 +624,26 @@ static void test_x86_smc_xor(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_smc_add(void)
+{
+    uc_engine *uc;
+    uint64_t stack_base = 0x20000;
+    int r_rsp;
+    /*
+     * mov qword ptr [rip+0x10], rax
+     * mov word ptr [rip], 0x0548
+     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412 add rax, 0x12345678
+     * hlt
+     */
+    char code[] = "\x48\x89\x05\x10\x00\x00\x00\x66\xc7\x05\x00\x00\x00\x00\x48\x05\x8b\x80\x78\x56\x34\x12\xf4";
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+
+    OK(uc_mem_map(uc, stack_base, 0x2000, UC_PROT_ALL));
+    r_rsp = stack_base + 0x1800;
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &r_rsp));
+    OK(uc_emu_start(uc, code_start, -1, 0, 0));
+}
+
 static uint64_t test_x86_mmio_uc_mem_rw_read_callback(uc_engine *uc,
                                                       uint64_t offset,
                                                       unsigned size,
@@ -1849,6 +1869,7 @@ TEST_LIST = {
     {"test_x86_mmio", test_x86_mmio},
     {"test_x86_missing_code", test_x86_missing_code},
     {"test_x86_smc_xor", test_x86_smc_xor},
+    {"test_x86_smc_add", test_x86_smc_add},
     {"test_x86_mmio_uc_mem_rw", test_x86_mmio_uc_mem_rw},
     {"test_x86_sysenter", test_x86_sysenter},
     {"test_x86_hook_cpuid", test_x86_hook_cpuid},
