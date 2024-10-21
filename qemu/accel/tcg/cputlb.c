@@ -1188,9 +1188,13 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
 
 static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
                            CPUIOTLBEntry *iotlbentry, uintptr_t retaddr,
-                           MemoryRegion *mr)
+                           CPUTLBEntry *tlbe)
 {
+#ifdef TARGET_ARM
+    struct uc_struct *uc = cpu->uc;
+#endif
     ram_addr_t ram_addr = mem_vaddr + iotlbentry->addr;
+    MemoryRegion *mr = cpu->uc->memory_mapping(cpu->uc, tlbe->paddr | (mem_vaddr & ~TARGET_PAGE_MASK));
 
     if (mr && (mr->perms & UC_PROT_EXEC) != 0) {
         struct page_collection *pages
@@ -1205,7 +1209,8 @@ static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
     // - or doing snapshot
     // , then never clean the tlb
     if (!(!mr || mr->priority < cpu->uc->snapshot_level) &&
-            !(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE))) {
+            !(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE)) &&
+            !(tlbe->addr_code != -1)) {
         tlb_set_dirty(cpu, mem_vaddr);
     }
 }
@@ -1228,8 +1233,6 @@ void *probe_access(CPUArchState *env, target_ulong addr, int size,
     target_ulong tlb_addr;
     size_t elt_ofs = 0;
     int wp_access = 0;
-    MemoryRegion *mr = NULL;
-    target_ulong paddr;
 
 #ifdef _MSC_VER
     g_assert(((target_ulong)0 - (addr | TARGET_PAGE_MASK)) >= size);
@@ -1286,9 +1289,7 @@ void *probe_access(CPUArchState *env, target_ulong addr, int size,
 
         /* Handle clean RAM pages.  */
         if (tlb_addr & TLB_NOTDIRTY) {
-            paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-            mr = env->uc->memory_mapping(env->uc, paddr);
-            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, mr);
+            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, entry);
         }
     }
 
@@ -1362,8 +1363,6 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
     int a_bits = get_alignment_bits(mop);
     int s_bits = mop & MO_SIZE;
     void *hostaddr;
-    MemoryRegion *mr;
-    target_ulong paddr;
 
     /* Adjust the given return address.  */
     retaddr -= GETPC_ADJ;
@@ -1415,10 +1414,8 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
     hostaddr = (void *)((uintptr_t)addr + tlbe->addend);
 
     if (unlikely(tlb_addr & TLB_NOTDIRTY)) {
-        paddr = tlbe->paddr | (addr & ~TARGET_PAGE_MASK);
-        mr = env->uc->memory_mapping(env->uc, paddr);
         notdirty_write(env_cpu(env), addr, 1 << s_bits,
-                       &env_tlb(env)->d[mmu_idx].iotlb[index], retaddr, mr);
+                       &env_tlb(env)->d[mmu_idx].iotlb[index], retaddr, tlbe);
     }
 
     return hostaddr;
@@ -2277,7 +2274,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
 
         /* Handle clean RAM pages.  */
         if (tlb_addr & TLB_NOTDIRTY) {
-            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, mr);
+            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, entry);
         }
 
         haddr = (void *)((uintptr_t)addr + entry->addend);
