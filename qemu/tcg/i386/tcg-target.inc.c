@@ -1679,13 +1679,6 @@ static void * const qemu_st_helpers[16] = {
     [MO_BEQ]  = helper_be_stq_mmu,
 };
 
-static inline bool has_hookmem(TCGContext *s)
-{
-    return HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ) ||
-        HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ_AFTER) ||
-        HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE);
-}
-
 /* Perform the TLB load and compare.
 
    Inputs:
@@ -1770,7 +1763,7 @@ static inline void tcg_out_tlb_load(TCGContext *s, TCGReg addrlo, TCGReg addrhi,
     tcg_out_mov(s, ttype, r1, addrlo);
 
     // Unicorn: fast path if hookmem is not enable
-    if (!has_hookmem(s))
+    if (!tcg_uc_has_hookmem(s))
         tcg_out_opc(s, OPC_JCC_long + JCC_JNE, 0, 0, 0);
     else
         /* slow_path, so data access will go via load_helper() */

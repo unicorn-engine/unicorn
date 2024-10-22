@@ -2008,20 +2008,13 @@ static void add_qemu_ldst_label(TCGContext *s, bool is_ld, TCGMemOpIdx oi,
     label->label_ptr[0] = lptr;
 }
 
-static inline bool has_hookmem(TCGContext *s)
-{
-    return HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ) ||
-        HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ_AFTER) ||
-        HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE);
-}
-
 static bool tcg_out_qemu_ld_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
 {
     TCGMemOpIdx oi = lb->oi;
     MemOp opc = get_memop(oi);
     TCGReg hi, lo, arg = TCG_REG_R3;
 
-    const int type = has_hookmem(s) ? R_PPC_REL24 : R_PPC_REL14;
+    const int type = tcg_uc_has_hookmem(s) ? R_PPC_REL24 : R_PPC_REL14;
     if (!patch_reloc(lb->label_ptr[0], type, (intptr_t)s->code_ptr, 0)) {
         return false;
     }
@@ -2070,7 +2063,7 @@ static bool tcg_out_qemu_st_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
     MemOp s_bits = opc & MO_SIZE;
     TCGReg hi, lo, arg = TCG_REG_R3;
 
-    const int type = has_hookmem(s) ? R_PPC_REL24 : R_PPC_REL14;
+    const int type = tcg_uc_has_hookmem(s) ? R_PPC_REL24 : R_PPC_REL14;
     if (!patch_reloc(lb->label_ptr[0], type, (intptr_t)s->code_ptr, 0)) {
         return false;
     }
@@ -2152,7 +2145,7 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, bool is_64)
     /* Load a pointer into the current opcode w/conditional branch-link. */
     label_ptr = s->code_ptr;
     // Unicorn: fast path if hookmem is not enabled
-    if (!has_hookmem(s))
+    if (!tcg_uc_has_hookmem(s))
         tcg_out32(s, BC | BI(7, CR_EQ) | BO_COND_FALSE | LK);
     else
         tcg_out32(s, B | LK);
@@ -2231,7 +2224,7 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, bool is_64)
     /* Load a pointer into the current opcode w/conditional branch-link. */
     label_ptr = s->code_ptr;
     // Unicorn: fast path if hookmem is not enabled
-    if (!has_hookmem(s))
+    if (!tcg_uc_has_hookmem(s))
         tcg_out32(s, BC | BI(7, CR_EQ) | BO_COND_FALSE | LK);
     else
         tcg_out32(s, B | LK);
