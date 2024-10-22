@@ -1209,8 +1209,8 @@ static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
     // - or doing snapshot
     // , then never clean the tlb
     if (!(!mr || mr->priority < cpu->uc->snapshot_level) &&
-            !(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE)) &&
-            !(tlbe->addr_code != -1)) {
+            !(tlbe->addr_code != -1) &&
+            !uc_mem_hook_installed(cpu->uc, tlbe->paddr | (mem_vaddr & ~TARGET_PAGE_MASK))) {
         tlb_set_dirty(cpu, mem_vaddr);
     }
 }
