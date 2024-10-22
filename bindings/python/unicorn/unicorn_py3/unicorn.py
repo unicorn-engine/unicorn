@@ -1106,8 +1106,8 @@ class Uc(RegStateManager):
 
         def __hook_tlb_fill():
             @uccallback(self, HOOK_TLB_FILL_CFUNC)
-            def __hook_tlb_fill_cb(uc: Uc, vaddr: int, access: int, entry: ctypes._Pointer[uc_tlb_entry], key: int):
-                callback(uc, vaddr, access, entry.contents, user_data)
+            def __hook_tlb_fill_cb(uc: Uc, vaddr: int, access: int, entry: ctypes._Pointer[uc_tlb_entry], key: int) -> bool:
+                return callback(uc, vaddr, access, entry.contents, user_data)
 
             return (__hook_tlb_fill_cb,)
 
