@@ -1048,7 +1048,7 @@ class Uc(RegStateManager):
 
         def __hook_intr():
             @uccallback(self, HOOK_INTR_CFUNC)
-            def __hook_intr_cb(uc: Uc, intno: int, key: int):
+            def __hook_intr_cb(uc: Uc, intno: int, key: int) -> None:
                 callback(uc, intno, user_data)
 
             return (__hook_intr_cb,)
@@ -1061,7 +1061,7 @@ class Uc(RegStateManager):
 
         def __hook_code():
             @uccallback(self, HOOK_CODE_CFUNC)
-            def __hook_code_cb(uc: Uc, address: int, size: int, key: int):
+            def __hook_code_cb(uc: Uc, address: int, size: int, key: int) -> None:
                 callback(uc, address, size, user_data)
 
             return (__hook_code_cb,)
@@ -1089,14 +1089,14 @@ class Uc(RegStateManager):
 
         def __hook_edge_gen():
             @uccallback(self, HOOK_EDGE_GEN_CFUNC)
-            def __hook_edge_gen_cb(uc: Uc, cur: ctypes._Pointer[uc_tb], prev: ctypes._Pointer[uc_tb], key: int):
+            def __hook_edge_gen_cb(uc: Uc, cur: ctypes._Pointer[uc_tb], prev: ctypes._Pointer[uc_tb], key: int) -> None:
                 callback(uc, cur.contents, prev.contents, user_data)
 
             return (__hook_edge_gen_cb,)
 
         def __hook_tcg_opcode():
             @uccallback(self, HOOK_TCG_OPCODE_CFUNC)
-            def __hook_tcg_op_cb(uc: Uc, address: int, arg1: int, arg2: int, size: int, key: int):
+            def __hook_tcg_op_cb(uc: Uc, address: int, arg1: int, arg2: int, size: int, key: int) -> None:
                 callback(uc, address, arg1, arg2, size, user_data)
 
             opcode = ctypes.c_uint64(aux1)
