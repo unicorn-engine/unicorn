@@ -871,14 +871,14 @@ static void tcg_target_init(TCGContext *s)
 #endif
 
     /* The current code uses uint8_t for tcg operations. */
-    tcg_debug_assert(tcg_op_defs_max <= UINT8_MAX);
+    tcg_debug_assert(s->tcg_op_defs_max <= UINT8_MAX);
 
     /* Registers available for 32 bit operations. */
-    tcg_target_available_regs[TCG_TYPE_I32] = BIT(TCG_TARGET_NB_REGS) - 1;
+    s->tcg_target_available_regs[TCG_TYPE_I32] = BIT(TCG_TARGET_NB_REGS) - 1;
     /* Registers available for 64 bit operations. */
-    tcg_target_available_regs[TCG_TYPE_I64] = BIT(TCG_TARGET_NB_REGS) - 1;
+    s->tcg_target_available_regs[TCG_TYPE_I64] = BIT(TCG_TARGET_NB_REGS) - 1;
     /* TODO: Which registers should be set here? */
-    tcg_target_call_clobber_regs = BIT(TCG_TARGET_NB_REGS) - 1;
+    s->tcg_target_call_clobber_regs = BIT(TCG_TARGET_NB_REGS) - 1;
 
     s->reserved_regs = 0;
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_CALL_STACK);

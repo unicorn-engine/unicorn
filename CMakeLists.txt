@@ -277,6 +277,10 @@ else()
         endwhile(TRUE)
     endif()
 
+    if(UNICORN_INTERPRETER)
+        set(UNICORN_TARGET_ARCH "tci")
+    endif()
+
     set(EXTRA_CFLAGS "--extra-cflags=")
     if(UNICORN_HAS_X86)
         set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_X86 ")
@@ -513,6 +517,10 @@ set(UNICORN_ARCH_COMMON
 
     qemu/softmmu/unicorn_vtlb.c
 )
+
+if(UNICORN_INTERPRETER)
+    list(APPEND UNICORN_ARCH_COMMON qemu/tcg/tci.c)
+endif()
 
 if(UNICORN_HAS_X86)
 add_library(x86_64-softmmu STATIC
