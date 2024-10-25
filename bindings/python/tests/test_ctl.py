@@ -58,8 +58,7 @@ def test_uc_ctl_tb_cache():
     # Now we request cache for all TBs.
     for i in range(8):
         tb = uc.ctl_request_cache(addr + i * 512)
-        print(">>> TB is cached at {0} which has {1} instructions with {2} bytes".format(hex(tb[0]), hex(tb[1]),
-                                                                                         hex(tb[2])))
+        print(">>> TB is cached at {:#x} which has {} instructions with {} bytes".format(tb[0], tb[1], tb[2]))
 
     # Do emulation with all TB cached.
     cached = time_emulation(uc, addr, addr + len(code))
@@ -76,12 +75,12 @@ def test_uc_ctl_tb_cache():
 
 
 def trace_new_edge(uc, cur, prev, data):
-    print(">>> Getting a new edge from {0} to {1}".format(hex(prev.pc + prev.size - 1), hex(cur.pc)))
+    print(">>> Getting a new edge from {:#x} to {:#x}".format(prev.pc + prev.size - 1, cur.pc))
 
 
 def trace_tcg_sub(uc, address, arg1, arg2, size, data):
-    print(">>> Get a tcg sub opcode at {address} with args: {arg1} and {arg2}".format(address=hex(address), arg1=arg1,
-                                                                                      arg2=arg2))
+    print(">>> Get a tcg sub opcode at {address:#x} with args: {arg1} and {arg2}".format(address=address, arg1=arg1,
+                                                                                         arg2=arg2))
 
 
 # TODO: Check if worth adapting the hook_add method for py2 bindings
@@ -122,7 +121,7 @@ def test_uc_ctl_exits():
     eax = uc.reg_read(UC_X86_REG_EAX)
     ebx = uc.reg_read(UC_X86_REG_EBX)
 
-    print(">>> eax = {0} and ebx = {1} after the first emulation".format(hex(eax), hex(ebx)))
+    print(">>> eax = {eax:#x} and ebx = {ebx:#x} after the first emulation".format(eax=eax, ebx=ebx))
 
     # This should stop at ADDRESS + 8, even though we don't provide an exit.
     uc.emu_start(addr, 0)
@@ -130,7 +129,7 @@ def test_uc_ctl_exits():
     eax = uc.reg_read(UC_X86_REG_EAX)
     ebx = uc.reg_read(UC_X86_REG_EBX)
 
-    print(">>> eax = {0} and ebx = {1} after the first emulation".format(hex(eax), hex(ebx)))
+    print(">>> eax = {eax:#x} and ebx = {ebx:#x} after the first emulation".format(eax=eax, ebx=ebx))
 
 
 if __name__ == "__main__":
