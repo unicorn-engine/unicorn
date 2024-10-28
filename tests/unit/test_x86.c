@@ -644,6 +644,47 @@ static void test_x86_smc_add(void)
     OK(uc_emu_start(uc, code_start, -1, 0, 0));
 }
 
+static void test_x86_smc_mem_hook_callback(uc_engine *uc, uc_mem_type t,
+                                           uint64_t addr, int size,
+                                           uint64_t value, void *user_data)
+{
+    uint64_t write_addresses[] = { 0x1030, 0x1010, 0x1010, 0x1018, 0x1018, 0x1029, 0x1029 };
+    unsigned int *i = user_data;
+
+    TEST_CHECK(*i < (sizeof(write_addresses)/sizeof(write_addresses[0])));
+    TEST_CHECK(write_addresses[*i] == addr);
+    (*i)++;
+}
+
+static void test_x86_smc_mem_hook(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t stack_base = 0x20000;
+    int r_rsp;
+    unsigned int i = 0;
+    /*
+     * mov qword ptr [rip+0x29], rax
+     * mov word ptr [rip], 0x0548
+     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412 add rax, 0x12345678
+     * nop
+     * nop
+     * nop
+     * mov qword ptr [rip-0x08], rax
+     * mov word ptr [rip], 0x0548
+     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412 add rax, 0x12345678
+     * hlt
+     */
+    char code[] = "\x48\x89\x05\x29\x00\x00\x00\x66\xC7\x05\x00\x00\x00\x00\x48\x05\x8B\x80\x78\x56\x34\x12\x90\x90\x90\x48\x89\x05\xF8\xFF\xFF\xFF\x66\xC7\x05\x00\x00\x00\x00\x48\x05\x8B\x80\x78\x56\x34\x12\xF4";
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE, test_x86_smc_mem_hook_callback, &i, 1, 0));
+    OK(uc_mem_map(uc, stack_base, 0x2000, UC_PROT_ALL));
+    r_rsp = stack_base + 0x1800;
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &r_rsp));
+    OK(uc_emu_start(uc, code_start, -1, 0, 0));
+}
+
 static uint64_t test_x86_mmio_uc_mem_rw_read_callback(uc_engine *uc,
                                                       uint64_t offset,
                                                       unsigned size,
@@ -1870,6 +1911,7 @@ TEST_LIST = {
     {"test_x86_missing_code", test_x86_missing_code},
     {"test_x86_smc_xor", test_x86_smc_xor},
     {"test_x86_smc_add", test_x86_smc_add},
+    {"test_x86_smc_mem_hook", test_x86_smc_mem_hook},
     {"test_x86_mmio_uc_mem_rw", test_x86_mmio_uc_mem_rw},
     {"test_x86_sysenter", test_x86_sysenter},
     {"test_x86_hook_cpuid", test_x86_hook_cpuid},
