@@ -93,6 +93,7 @@ static int tcg_cpu_exec(struct uc_struct *uc)
         //                  (cpu->singlestep_enabled & SSTEP_NOTIMER) == 0);
         if (cpu_can_run(cpu)) {
             uc->quit_request = false;
+            uc->size_recur_mem = 0;
             r = cpu_exec(uc, cpu);
 
             // quit current TB but continue emulating?
