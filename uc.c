@@ -2428,6 +2428,7 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
         uc->snapshot_level = context->snapshot_level;
         ret = uc_restore_latest_snapshot(uc);
         if (ret != UC_ERR_OK) {
+            restore_jit_state(uc);
             return ret;
         }
         uc_snapshot(uc);
@@ -2441,9 +2442,12 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
     if (uc->context_content & UC_CTL_CONTEXT_CPU) {
         if (!uc->context_restore) {
             memcpy(uc->cpu->env_ptr, context->data, context->context_size);
+            restore_jit_state(uc);
             return UC_ERR_OK;
         } else {
-            return uc->context_restore(uc, context);
+            ret = uc->context_restore(uc, context);
+            restore_jit_state(uc);
+            return ret;
         }
     }
     return UC_ERR_OK;
