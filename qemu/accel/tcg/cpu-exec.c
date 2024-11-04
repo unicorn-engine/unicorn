@@ -288,7 +288,9 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
     }
     /* See if we can patch the calling TB. */
     if (last_tb) {
+        tb_exec_unlock(cpu->uc);
         tb_add_jump(last_tb, tb_exit, tb);
+        tb_exec_lock(cpu->uc);
     }
 
     return tb;
