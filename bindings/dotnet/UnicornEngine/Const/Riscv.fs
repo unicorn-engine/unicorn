@@ -222,7 +222,8 @@ module Riscv =
     let UC_RISCV_REG_F30 = 188
     let UC_RISCV_REG_F31 = 189
     let UC_RISCV_REG_PC = 190
-    let UC_RISCV_REG_ENDING = 191
+    let UC_RISCV_REG_PRIV = 191
+    let UC_RISCV_REG_ENDING = 192
 
     // Alias registers
     let UC_RISCV_REG_ZERO = 1

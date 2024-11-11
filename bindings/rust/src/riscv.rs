@@ -201,7 +201,8 @@ pub enum RegisterRISCV {
     F30 = 188,
     F31 = 189,
     PC = 190,
-    ENDING = 191,
+    PRIV = 191,
+    ENDING = 192,
 }
 
 impl RegisterRISCV {
