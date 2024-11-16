@@ -257,7 +257,7 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
     struct hook *hook;
 
     tb = tb_lookup__cpu_state(cpu, &pc, &cs_base, &flags, cf_mask);
-    if (tb == NULL) {
+    if (tb == NULL||tb->cflags&CF_NOCACHE) {
         mmap_lock();
         tb = tb_gen_code(cpu, pc, cs_base, flags, cf_mask);
         mmap_unlock();
