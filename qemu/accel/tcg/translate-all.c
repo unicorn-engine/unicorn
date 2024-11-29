@@ -903,7 +903,7 @@ static LONG __fastcall code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct u
 static inline void may_remove_handler(struct uc_struct *uc) {
     if (uc->seh_closure) {
         if (uc->seh_handle) {
-            RemoveVectoredExceptionHandler(uc->seh_handle);
+            RemoveVectoredContinueHandler(uc->seh_handle);
         }
         VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
     }
@@ -988,7 +988,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     memcpy(data + 0xC, (void*)&handler, 4);
 #endif
 
-    uc->seh_handle = AddVectoredExceptionHandler(0, (PVECTORED_EXCEPTION_HANDLER)closure);
+    uc->seh_handle = AddVectoredContinueHandler(1, (PVECTORED_EXCEPTION_HANDLER)closure);
     if (!uc->seh_handle) {
         VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
         uc->seh_closure = NULL;
