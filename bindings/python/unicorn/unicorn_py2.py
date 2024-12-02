@@ -23,8 +23,7 @@ ucsubclass = 0
 if not hasattr(sys.modules[__name__], "__file__"):
     __file__ = inspect.getfile(inspect.currentframe())
 
-_python2 = sys.version_info[0] < 3
-if _python2:
+if sys.version_info < (3,):
     range = xrange
 
 _lib = { 'darwin': 'libunicorn.2.dylib',
@@ -55,7 +54,7 @@ def _load_win_support(path):
                 ctypes.cdll.LoadLibrary(lib_file)
                 #print('SUCCESS')
                 _loaded_windows_dlls.add(dll)
-            except OSError as e:
+            except OSError:
                 #print('FAIL to load %s' %lib_file, e)
                 continue
 
@@ -72,7 +71,7 @@ def _load_lib(path):
         dll = ctypes.cdll.LoadLibrary(lib_file)
         #print('SUCCESS')
         return dll
-    except OSError as e:
+    except OSError:
         #print('FAIL to load %s' %lib_file, e)
         return None
 
