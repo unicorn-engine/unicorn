@@ -530,11 +530,15 @@ impl<'a, D> Unicorn<'a, D> {
         values: &[u64],
         count: i32,
     ) -> Result<(), uc_error> {
+        let mut values_ptrs: Vec<*const u64> = vec![0 as *const u64; count as usize];
+        for i in 0..values.len() {
+            values_ptrs[i as usize] = &values[i] as *const u64;
+        }
         unsafe {
             ffi::uc_reg_write_batch(
                 self.get_handle(),
                 regids.as_ptr() as *const i32,
-                values.as_ptr() as *const *const c_void,
+                values_ptrs.as_ptr() as *const *const c_void,
                 count,
             )
         }
@@ -567,7 +571,7 @@ impl<'a, D> Unicorn<'a, D> {
         count: i32,
     ) -> Result<Vec<u64>, uc_error> {
         unsafe {
-            let mut addrs_vec = Vec::with_capacity(count as usize);
+            let mut addrs_vec = vec![0u64; count as usize];
             let addrs = addrs_vec.as_mut_slice();
             for i in 0..count {
                 addrs[i as usize] = &mut addrs[i as usize] as *mut u64 as u64;
