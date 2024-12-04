@@ -815,3 +815,35 @@ fn x86_tlb_callback() {
     assert_eq!(emu.remove_hook(tlb_hook), Ok(()));
     assert_eq!(emu.remove_hook(syscall_hook), Ok(()));
 }
+
+#[test]
+fn x86_reg_rw_batch() {
+    // mov rax, 0x10, mov rbx, 0x20, mov rcx, 0x30, mov rdx, 0x40
+    let code: Vec<u8> = vec![0x48, 0xC7, 0xC0, 0x10, 0x00, 0x00, 0x00, 0x48, 0xC7, 0xC3, 0x20, 0x00, 0x00, 0x00, 0x48, 0xC7, 0xC1, 0x30, 0x00, 0x00, 0x00, 0x48, 0xC7, 0xC2, 0x40, 0x00, 0x00, 0x00];
+    let expect: Vec<u64> = vec![0x10, 0x20, 0x30, 0x40];
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_64)
+        .expect("failed to initialize unicorn instance");
+    assert_eq!(emu.mem_map(0x1000, 0x1000, Permission::ALL), Ok(()));
+    assert_eq!(emu.mem_write(0x1000, &code), Ok(()));
+
+    assert_eq!(
+        emu.emu_start(0x1000, (0x1000 + code.len()) as u64, 0, 0),
+        Ok(())
+    );
+
+    let regids = vec![RegisterX86::RAX, RegisterX86::RBX, RegisterX86::RCX, RegisterX86::RDX];
+    assert_eq!(
+        emu.reg_read_batch(&regids, 4),
+        Ok(expect)
+    );
+    let regvals = vec![0x50, 0x60, 0x70, 0x80];
+    assert_eq!(
+        emu.reg_write_batch(&regids, &regvals, 4),
+        Ok(())
+    );
+    assert_eq!(
+        emu.reg_read_batch(&regids, 4),
+        Ok(vec![0x50, 0x60, 0x70, 0x80])
+    );
+
+}
