@@ -356,7 +356,7 @@ def hook_intr(uc, intno, user_data):
             fd = args[0]
             how = args[1]
 
-            msg = "fd(%d) is shutted down because of %d" % (fd, how)
+            msg = "fd(%d) is shut down because of %d" % (fd, how)
             fd_chains.add_log(fd, msg)
             print_sockcall(msg)
 

@@ -639,13 +639,16 @@ def test_x86_16():
 
 
 def mmio_read_cb(uc, offset, size, data):
-    print(f">>> Read IO memory at offset {hex(offset)} with {hex(size)} bytes and return 0x19260817")
+    print(">>> Read IO memory at offset {offset:#x} with {size:#x} bytes and return 0x19260817".format(offset=offset,
+                                                                                                       size=size))
 
     return 0x19260817
 
 
 def mmio_write_cb(uc, offset, size, value, data):
-    print(f">>> Write value {hex(value)} to IO memory at offset {hex(offset)} with {hex(size)} bytes")
+    print(">>> Write value {value:#x} to IO memory at offset {offset:#x} with {size:#x} bytes".format(value=value,
+                                                                                                      offset=offset,
+                                                                                                      size=size))
 
 
 def test_i386_mmio():
@@ -668,7 +671,7 @@ def test_i386_mmio():
         mu.emu_start(0x10000, 0x10000 + len(X86_MMIO_CODE))
 
         # now print out some registers
-        print(f">>> Emulation done. ECX={hex(mu.reg_read(UC_X86_REG_ECX))}")
+        print(">>> Emulation done. ECX={reg:#x}".format(reg=mu.reg_read(UC_X86_REG_ECX)))
 
     except UcError as e:
         print("ERROR: %s" % e)

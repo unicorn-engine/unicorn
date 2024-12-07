@@ -160,13 +160,35 @@ jobs:
         run: |
           python -m pip install -U pip wheel && Get-ChildItem -Path wheelhouse/ -Filter *cp38*.whl | Foreach-Object {
             python -m wheel tags --python-tag='py2' --abi-tag=none $_.FullName
+            break
           }
+
       - name: '🚧 Python 2.7 wheels re-tagging - Non-Windows'
         if: matrix.os != 'windows-2019'
         env:
           PIP_BREAK_SYSTEM_PACKAGES: 1
         run: |
           python3 -m pip install -U pip wheel && python3 -m wheel tags --python-tag='py2' --abi-tag=none wheelhouse/*cp38*.whl
+
+      - uses: LizardByte/setup-python-action@master
+        if: (matrix.os == 'ubuntu-latest' && matrix.arch == 'x86_64' && matrix.cibw_build == 'cp38-manylinux') || matrix.os == 'macos-latest' || (matrix.os == 'windows-2019' && matrix.arch == 'AMD64')
+        with:
+          python-version: 2.7
+
+      - name: 'Python 2.7 tests - Windows'
+        if: matrix.os == 'windows-2019' && matrix.arch == 'AMD64'
+        run: |
+          C:\Python27\python.exe -m pip install -U pip pytest && Get-ChildItem -Path wheelhouse/ -Filter *py2*.whl | Foreach-Object {
+            C:\Python27\python.exe -m pip install $_.FullName
+            C:\Python27\python.exe -m pytest bindings/python/tests
+            break
+          }
+
+      # we install and test python2.7 wheels only on native arch
+      # NOTE: no python2.7 support for macos-13: https://github.com/LizardByte/setup-python-action/issues/2
+      - name: 'Python 2.7 tests - Non-Windows'
+        if: (matrix.os == 'ubuntu-latest' && matrix.arch == 'x86_64' && matrix.cibw_build == 'cp38-manylinux') || matrix.os == 'macos-latest'
+        run: python2 -m pip install wheelhouse/*py2*.whl && python2 -m pip install -U pip pytest && python2 -m pytest bindings/python/tests
 
       - uses: actions/upload-artifact@v4
         with:

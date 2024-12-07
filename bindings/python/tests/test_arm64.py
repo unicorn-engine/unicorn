@@ -87,7 +87,8 @@ def test_arm64_read_sctlr():
 
 def test_arm64_hook_mrs():
     def _hook_mrs(uc, reg, cp_reg, _):
-        print(f">>> Hook MRS instruction: reg = 0x{reg:x}(UC_ARM64_REG_X2) cp_reg = {cp_reg}")
+        print(">>> Hook MRS instruction: reg = {reg:#x}(UC_ARM64_REG_X2) cp_reg = {cp_reg}".format(reg=reg,
+                                                                                                   cp_reg=cp_reg))
         uc.reg_write(reg, 0x114514)
         print(">>> Write 0x114514 to X")
 
@@ -111,7 +112,7 @@ def test_arm64_hook_mrs():
         # Start emulation
         mu.emu_start(0x1000, 0x1000 + len(ARM64_MRS_CODE))
 
-        print(f">>> X2 = {mu.reg_read(UC_ARM64_REG_X2):x}")
+        print(">>> X2 = {reg:#x}".format(reg=mu.reg_read(UC_ARM64_REG_X2)))
 
     except UcError as e:
         print("ERROR: %s" % e)

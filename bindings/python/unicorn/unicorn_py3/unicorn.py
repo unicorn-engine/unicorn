@@ -283,7 +283,7 @@ class UcError(Exception):
 def uc_version() -> Tuple[int, int, int]:
     """Retrieve Unicorn library version.
 
-    Returns: a tuple containing major, minor and a combined verion number
+    Returns: a tuple containing major, minor and a combined version number
     """
 
     major = ctypes.c_int()
@@ -300,7 +300,7 @@ def uc_version() -> Tuple[int, int, int]:
 def version_bind() -> Tuple[int, int, int]:
     """Retrieve Unicorn bindings version.
 
-    Returns: a tuple containing major, minor and a combined verion number
+    Returns: a tuple containing major, minor and a combined version number
     """
 
     major = uc.UC_API_MAJOR
@@ -319,7 +319,7 @@ def uc_arch_supported(atype: int) -> bool:
 
 
 def debug() -> str:
-    """Get verbose verion string.
+    """Get verbose version string.
     """
 
     archs = (
@@ -559,7 +559,7 @@ class RegStateManager:
         return self._reg_read_batch([__seq_tuple(elem) for elem in reg_data])
 
     def reg_write_batch(self, reg_data: Sequence[Tuple[int, Any]]) -> None:
-        """Write a sequece of architectural registers. This provides with faster means to
+        """Write a sequence of architectural registers. This provides with faster means to
         write multiple registers.
 
         Args:
@@ -599,7 +599,7 @@ def ucsubclass(cls):
     # inherit from UcIntel and only then Uc, instead of Uc directly. that is:
     # Pegasus -> UcIntel -> Uc -> RegStateManager -> object
     #
-    # note that all Pegasus subclasses will have the same inheritence chain,
+    # note that all Pegasus subclasses will have the same inheritance chain,
     # regardless of the arch and mode the might use to initialize.
 
     def __replace(seq: Tuple, item, repl) -> Tuple:
@@ -713,7 +713,7 @@ class Uc(RegStateManager):
 
         self._hook_exception: Optional[Exception] = None
 
-        # create a finalizer object that will apropriately free up resources when
+        # create a finalizer object that will appropriately free up resources when
         # this instance undergoes garbage collection.
         self.__finalizer = weakref.finalize(self, Uc.release_handle, self._uch)
 
@@ -871,7 +871,7 @@ class Uc(RegStateManager):
 
         # TODO: this is where mmio callbacks need to be released from cache,
         # but we cannot tell whether this is an mmio range. also, memory ranges
-        # might be splitted by 'map_protect' after they were mapped, so the
+        # might be split by 'map_protect' after they were mapped, so the
         # (start, end) tuple may not be suitable for retrieving the callbacks.
         #
         # here we try to do that on a best-effort basis:
@@ -910,10 +910,10 @@ class Uc(RegStateManager):
             size     : range size (in bytes)
             read_cb  : read callback to invoke upon read access. if not specified, reads \
                        from the mmio range will be silently dropped
-            read_ud  : optinal context object to pass on to the read callback
-            write_cb : write callback to invoke unpon a write access. if not specified, writes \
+            read_ud  : optional context object to pass on to the read callback
+            write_cb : write callback to invoke upon a write access. if not specified, writes \
                        to the mmio range will be silently dropped
-            write_ud : optinal context object to pass on to the write callback
+            write_ud : optional context object to pass on to the write callback
         """
 
         @uccallback(self, MMIO_READ_CFUNC)
@@ -946,7 +946,7 @@ class Uc(RegStateManager):
 
         Returns: an iterator whose elements contain begin, end and perms  properties of each range
 
-        Raises: `UcError` in case an itnernal error has been encountered
+        Raises: `UcError` in case an internal error has been encountered
         """
 
         regions = ctypes.POINTER(uc_mem_region)()
@@ -1024,7 +1024,7 @@ class Uc(RegStateManager):
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-        # hold a reference to the funcion pointer to prevent it from being gc-ed
+        # hold a reference to the function pointer to prevent it from being gc-ed
         self._callbacks[handle.value] = fptr
 
         return handle.value
@@ -1056,7 +1056,7 @@ class Uc(RegStateManager):
         def __hook_insn():
             # each arch is expected to overload hook_add and implement this handler on their own.
             # if we got here, it means this particular architecture does not support hooking any
-            # instruction and so we fail
+            # instruction, and so we fail
             raise UcError(uc.UC_ERR_ARG)
 
         def __hook_code():

@@ -8,9 +8,8 @@ import shutil
 import subprocess
 import sys
 from setuptools import setup
-from setuptools.command.build import build
+from setuptools.command.build_py import build_py
 from setuptools.command.sdist import sdist
-from setuptools.command.bdist_egg import bdist_egg
 
 log = logging.getLogger(__name__)
 
@@ -134,7 +133,7 @@ class CustomSDist(sdist):
         return super().run()
 
 
-class CustomBuild(build):
+class CustomBuild(build_py):
     def run(self):
         if 'LIBUNICORN_PATH' in os.environ:
             log.info("Skipping building C extensions since LIBUNICORN_PATH is set")
@@ -144,30 +143,7 @@ class CustomBuild(build):
         return super().run()
 
 
-class CustomBDistEgg(bdist_egg):
-    def run(self):
-        self.run_command('build')
-        return super().run()
-
-
-cmdclass = {'build': CustomBuild, 'sdist': CustomSDist, 'bdist_egg': CustomBDistEgg}
-
-try:
-    from setuptools.command.develop import develop
-
-
-    class CustomDevelop(develop):
-        def run(self):
-            log.info("Building C extensions")
-            build_libraries()
-            return super().run()
-
-
-    cmdclass['develop'] = CustomDevelop
-except ImportError:
-    print("Proper 'develop' support unavailable.")
-
 setup(
-    cmdclass=cmdclass,
+    cmdclass={'build_py': CustomBuild, 'sdist': CustomSDist},
     has_ext_modules=lambda: True,  # It's not a Pure Python wheel
 )
