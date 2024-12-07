@@ -2155,11 +2155,17 @@ int main() {
 
     // In Apple Hypervisor, this value is not accessbile and
     // pthread_jit_write_protect_np essentially is a no-op
+    
+    /*
     if (!commpage_sprr) {
         return 1;
     } else {
         return 0;
     }
+    */
+
+    // Now it is accessible but always zero, let's probe it runtime.
+    return 0;
 }
 EOF
     if ! compile_prog ""; then
@@ -2171,7 +2177,6 @@ EOF
         have_sprr='yes'
       else
         have_sprr='no'
-        have_pthread_jit_protect='no'
       fi
     fi
   fi

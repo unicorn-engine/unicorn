@@ -35,8 +35,7 @@ static void clear_deleted_hooks(uc_engine *uc);
 static uc_err uc_snapshot(uc_engine *uc);
 static uc_err uc_restore_latest_snapshot(uc_engine *uc);
 
-#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) &&                 \
-    defined(HAVE_SPRR) && (defined(__arm__) || defined(__aarch64__))
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 static void save_jit_state(uc_engine *uc)
 {
     if (!uc->nested) {
@@ -51,7 +50,7 @@ static void restore_jit_state(uc_engine *uc)
 {
     assert(uc->nested > 0);
     if (uc->nested == 1) {
-        assert(uc->current_executable == thread_executable());
+        assert_executable(uc->current_executable);
         if (uc->current_executable != uc->thread_executable_entry) {
             if (uc->thread_executable_entry) {
                 jit_write_protect(true);
