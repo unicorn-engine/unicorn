@@ -5964,6 +5964,7 @@ static void sparc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
 
         // Sync PC in advance
         tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, dc->pc);
+        tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_npc, dc->npc);
 
         gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, uc, dc->pc);
         // the callback might want to stop emulation immediately
