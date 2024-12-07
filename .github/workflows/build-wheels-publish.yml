@@ -68,7 +68,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          choco install ninja cmake
+          choco install ninja
 
       - name: '🛠️ macOS dependencies'
         if: runner.os == 'macOS'
@@ -264,7 +264,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          choco install ninja cmake
+          choco install ninja
 
       - name: '🛠️ macOS dependencies'
         if: runner.os == 'macOS'

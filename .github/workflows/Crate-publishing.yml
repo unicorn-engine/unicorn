@@ -61,7 +61,7 @@ jobs:
       if: contains(matrix.config.os, 'win')
       shell: bash
       run: |
-        choco install ninja cmake
+        choco install ninja
 
     - name: '🛠️ macOS build dependencies'
       if: contains(matrix.config.os, 'macOS')
