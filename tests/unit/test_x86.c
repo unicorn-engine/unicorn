@@ -1316,7 +1316,7 @@ static void test_x86_64_unaligned_access(void){
     TEST_CHECK(read_log[0].size == 8);
     TEST_CHECK(read_log[1].size == 0);
 
-    u_int64_t b;
+    uint64_t b;
     OK(uc_mem_read(uc, 0x2fffff, &b, 8));
     TEST_CHECK(b == 0x2fffff);
 
