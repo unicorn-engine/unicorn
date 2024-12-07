@@ -359,6 +359,9 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
             // we want to stop emulation
             *ret = EXCP_HLT;
             return true;
+        } else {
+            // Continue execution because user hints us it has been handled
+            cpu->exception_index = -1;
         }
     }
 
