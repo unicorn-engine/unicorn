@@ -4834,6 +4834,9 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         gen_uc_tracecode(tcg_ctx, 0xf1f1f1f1, UC_HOOK_CODE_IDX, env->uc, pc_start);
 
         check_exit_request(tcg_ctx);
+
+        // Unicorn: Previous hook might change eflags to any state, let's sync it
+        gen_compute_eflags(s);
     }
 
     s->override = -1;
