@@ -118,6 +118,8 @@ def build_libraries():
         cmake_args = ["cmake", '-B', BUILD_DIR, '-S', UC_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
         if os.getenv("TRACE"):
             cmake_args += ["-DUNICORN_TRACER=on"]
+        if conf == "Debug":
+            cmake_args += ["-DUNICORN_LOGGING=on"]
         subprocess.check_call(cmake_args, cwd=UC_DIR)
         threads = os.getenv("THREADS", "4")
         subprocess.check_call(["cmake", "--build", ".", "-j" + threads], cwd=BUILD_DIR)

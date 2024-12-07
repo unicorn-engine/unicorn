@@ -12,9 +12,9 @@ from unicorn.x86_const import *
 # rdx would never be set to 0xbabe unless we set zf to 1
 CODE = (
     b"\x48\x31\xc0"                                 #       xor       rax, rax
-    b"\x48\xb8\x04\x00\x00\x00\x00\x00\x00\x00"     #       movabs    rax, 0x4
-    b"\x48\x3d\x05\x00\x00\x00"                     #       cmp       rax, 0x5      <-- never true, zf is cleared
-    b"\x74\x05"                                     #       je        0x1a
+    b"\x48\xb8\x04\x00\x00\x00\x00\x00\x00\x00"     #  03:  movabs    rax, 0x4
+    b"\x48\x3d\x05\x00\x00\x00"                     #  0d:  cmp       rax, 0x5      <-- never true, zf is cleared
+    b"\x74\x05"                                     #  13:  je        0x1a
     b"\xe9\x0f\x00\x00\x00"                         #       jmp       0x29
     b"\x48\xba\xbe\xba\x00\x00\x00\x00\x00\x00"     #  1a:  movabs    rdx, 0xbabe   <-- never reached unless we set zf
     b"\xe9\x0f\x00\x00\x00"                         #       jmp       0x38

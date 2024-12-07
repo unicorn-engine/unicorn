@@ -29,7 +29,7 @@ def __setup_logger(name):
 
 
 logger = __setup_logger('UnicornRegress')
-logger.setLevel(logging.INFO)
+logger.setLevel(os.environ.get("UNICORN_DEBUG", "INFO").upper())
 
 
 def main():
