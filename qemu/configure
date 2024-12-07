@@ -2171,6 +2171,7 @@ EOF
         have_sprr='yes'
       else
         have_sprr='no'
+        have_pthread_jit_protect='no'
       fi
     fi
   fi
