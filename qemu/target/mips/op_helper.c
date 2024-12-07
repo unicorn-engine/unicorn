@@ -1098,6 +1098,15 @@ void mips_cpu_do_unaligned_access(CPUState *cs, vaddr addr,
         }
     }
 
+    switch (excp) {
+        case EXCP_AdEL:
+            env->uc->invalid_error = UC_ERR_READ_UNALIGNED;
+            break;
+        case EXCP_AdES:
+            env->uc->invalid_error = UC_ERR_WRITE_UNALIGNED;
+            break;
+    }
+
     do_raise_exception_err(env, excp, error_code, retaddr);
 }
 
