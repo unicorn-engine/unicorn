@@ -30,13 +30,12 @@
 #include "stdlib.h"
 #include "stdbool.h"
 
-#if defined(__APPLE__) && defined(HAVE_SPRR) && (defined(__arm__) || defined(__aarch64__))
-
 // Returns the S3_6_c15_c1_5 register's value
 // Taken from 
 // https://stackoverflow.com/questions/70019553/lldb-how-to-read-the-permissions-of-a-memory-region-for-a-thread
 // https://blog.svenpeter.dev/posts/m1_sprr_gxf/
 // On Github Action (Virtualized environment), this shall always returns 0
+#if defined(HAVE_SPRR_MRS)
 static inline uint64_t read_sprr_perm(void)
 {
     uint64_t v;
@@ -45,6 +44,14 @@ static inline uint64_t read_sprr_perm(void)
                          : "=r"(v)::"memory");
     return v;
 }
+#else
+static inline uint64_t read_sprr_perm(void)
+{
+    return 0;
+}
+#endif
+
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 
 __attribute__((unused)) static inline uint8_t thread_mask() 
 {
@@ -77,15 +84,6 @@ static inline void assert_executable(bool executable) {
 
 #else
 
-// Returns the S3_6_c15_c1_5 register's value
-// Taken from 
-// https://stackoverflow.com/questions/70019553/lldb-how-to-read-the-permissions-of-a-memory-region-for-a-thread
-// https://blog.svenpeter.dev/posts/m1_sprr_gxf/
-static inline uint64_t read_sprr_perm(void)
-{
-    return 0;
-}
-
 __attribute__((unused)) static inline uint8_t thread_mask() 
 {
     return 0;
@@ -107,7 +105,7 @@ static inline void assert_executable(bool executable) {
 #endif
 
 
-#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && defined(HAVE_SPRR) && (defined(__arm__) || defined(__aarch64__))
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 
 /* write protect enable = write disable */
 static inline void jit_write_protect(int enabled)
