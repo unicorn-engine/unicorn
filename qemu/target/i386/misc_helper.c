@@ -209,21 +209,79 @@ void helper_invlpg(CPUX86State *env, target_ulong addr)
 void helper_rdtsc(CPUX86State *env)
 {
     uint64_t val;
+    uc_engine *uc = env->uc;
+    struct hook *hook;
+    int skip_rdtsc = 0;
 
     if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
         raise_exception_ra(env, EXCP0D_GPF, GETPC());
     }
     cpu_svm_check_intercept_param(env, SVM_EXIT_RDTSC, 0, GETPC());
 
-    val = cpu_get_tsc(env) + env->tsc_offset;
-    env->regs[R_EAX] = (uint32_t)(val);
-    env->regs[R_EDX] = (uint32_t)(val >> 32);
+    // Unicorn: call registered RDTSC hooks
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->eip))
+            continue;
+        
+        // Multiple rdtsc callbacks returning different values is undefined.
+        // true -> skip the rdtsc instruction
+        if (hook->insn == UC_X86_INS_RDTSC) {
+            JIT_CALLBACK_GUARD_VAR(skip_rdtsc, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
+        }
+
+        // the last callback may already asked to stop emulation
+        if (env->uc->stop_request)
+            break;
+    }
+
+    if (!skip_rdtsc) {
+        val = cpu_get_tsc(env) + env->tsc_offset;
+        env->regs[R_EAX] = (uint32_t)(val);
+        env->regs[R_EDX] = (uint32_t)(val >> 32);
+    }
 }
 
 void helper_rdtscp(CPUX86State *env)
 {
-    helper_rdtsc(env);
-    env->regs[R_ECX] = (uint32_t)(env->tsc_aux);
+    uint64_t val;
+    uc_engine *uc = env->uc;
+    struct hook *hook;
+    int skip_rdtscp = 0;
+
+    if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
+        raise_exception_ra(env, EXCP0D_GPF, GETPC());
+    }
+    cpu_svm_check_intercept_param(env, SVM_EXIT_RDTSC, 0, GETPC());
+
+    // Unicorn: call registered RDTSCP hooks
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->eip))
+            continue;
+        
+        // Multiple rdtscp callbacks returning different values is undefined.
+        // true -> skip the rdtscp instruction
+        if (hook->insn == UC_X86_INS_RDTSCP) {
+            JIT_CALLBACK_GUARD_VAR(skip_rdtscp, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
+        }
+
+        // the last callback may already asked to stop emulation
+        if (env->uc->stop_request)
+            break;
+    }
+
+    if (!skip_rdtscp) {
+        val = cpu_get_tsc(env) + env->tsc_offset;
+        env->regs[R_EAX] = (uint32_t)(val);
+        env->regs[R_EDX] = (uint32_t)(val >> 32);
+
+        env->regs[R_ECX] = (uint32_t)(env->tsc_aux);
+    }
 }
 
 void helper_rdpmc(CPUX86State *env)
