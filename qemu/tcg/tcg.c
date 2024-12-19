@@ -808,6 +808,7 @@ TranslationBlock *tcg_tb_alloc(TCGContext *s)
         if (tcg_region_alloc(s)) {
             return NULL;
         }
+        tb_flush(s->uc->cpu);
         goto retry;
     }
     s->code_gen_ptr = next;
