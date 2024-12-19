@@ -27,8 +27,8 @@
 
 #include "assert.h"
 #include "stdint.h"
-#include "stdlib.h"
 #include "stdbool.h"
+#include "qemu/compiler.h"
 
 // Returns the S3_6_c15_c1_5 register's value
 // Taken from 
@@ -53,7 +53,7 @@ static inline uint64_t read_sprr_perm(void)
 
 #if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 
-__attribute__((unused)) static inline uint8_t thread_mask() 
+QEMU_UNUSED_FUNC static inline uint8_t thread_mask() 
 {
     uint64_t v = read_sprr_perm();
 
@@ -64,12 +64,12 @@ __attribute__((unused)) static inline uint8_t thread_mask()
     }
 }
 
-__attribute__((unused)) static inline bool thread_writeable()
+QEMU_UNUSED_FUNC static inline bool thread_writeable()
 {
     return thread_mask() == 3;
 }
 
-__attribute__((unused)) static inline bool thread_executable()
+QEMU_UNUSED_FUNC static inline bool thread_executable()
 {
     return thread_mask() == 1;
 }
@@ -84,17 +84,17 @@ static inline void assert_executable(bool executable) {
 
 #else
 
-__attribute__((unused)) static inline uint8_t thread_mask() 
+QEMU_UNUSED_FUNC static inline uint8_t thread_mask() 
 {
     return 0;
 }
 
-__attribute__((unused)) static inline bool thread_writeable()
+QEMU_UNUSED_FUNC static inline bool thread_writeable()
 {
     return false;
 }
 
-__attribute__((unused)) static inline bool thread_executable()
+QEMU_UNUSED_FUNC static inline bool thread_executable()
 {
     return false;
 }
