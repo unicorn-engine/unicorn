@@ -51,7 +51,7 @@ static inline uint64_t read_sprr_perm(void)
 }
 #endif
 
-#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
+#if defined(__APPLE__) && defined(HAVE_SPRR_MRS) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 
 QEMU_UNUSED_FUNC static inline uint8_t thread_mask() 
 {
