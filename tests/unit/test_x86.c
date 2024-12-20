@@ -1891,6 +1891,92 @@ static void test_x86_ro_segfault(void)
     OK(uc_close(uc));
 }
 
+static bool test_x86_hook_insn_rdtsc_cb(uc_engine *uc, void *user_data)
+{
+    uint64_t h = 0x00000000FEDCBA98;
+    OK(uc_reg_write(uc, UC_X86_REG_RDX, &h));
+
+    uint64_t l = 0x0000000076543210;
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &l));
+
+    return true;
+}
+
+static void test_x86_hook_insn_rdtsc(void)
+{
+    char code[] = "\x0F\x31"; // RDTSC
+
+    uc_engine *uc;
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof code - 1);
+
+    uc_hook hook;
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_x86_hook_insn_rdtsc_cb, NULL,
+                   1, 0, UC_X86_INS_RDTSC));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof code - 1, 0, 0));
+
+    OK(uc_hook_del(uc, hook));
+
+    uint64_t h = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RDX, &h));
+    TEST_CHECK(h == 0x00000000FEDCBA98);
+
+    uint64_t l = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &l));
+    TEST_CHECK(l == 0x0000000076543210);
+
+    OK(uc_close(uc));
+}
+
+static bool test_x86_hook_insn_rdtscp_cb(uc_engine *uc, void *user_data)
+{
+    uint64_t h = 0x0000000001234567;
+    OK(uc_reg_write(uc, UC_X86_REG_RDX, &h));
+
+    uint64_t l = 0x0000000089ABCDEF;
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &l));
+
+    uint64_t i = 0x00000000DEADBEEF;
+    OK(uc_reg_write(uc, UC_X86_REG_RCX, &i));
+
+    return true;
+}
+
+static void test_x86_hook_insn_rdtscp(void)
+{
+    uc_engine *uc;
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_HASWELL));
+
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+
+    char code[] = "\x0F\x01\xF9"; // RDTSCP
+    OK(uc_mem_write(uc, code_start, code, sizeof code - 1));
+
+    uc_hook hook;
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_x86_hook_insn_rdtscp_cb, NULL,
+                   1, 0, UC_X86_INS_RDTSCP));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof code - 1, 0, 0));
+
+    OK(uc_hook_del(uc, hook));
+
+    uint64_t h = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RDX, &h));
+    TEST_CHECK(h == 0x0000000001234567);
+
+    uint64_t l = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &l));
+    TEST_CHECK(l == 0x0000000089ABCDEF);
+
+    uint64_t i = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RCX, &i));
+    TEST_CHECK(i == 0x00000000DEADBEEF);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1947,4 +2033,6 @@ TEST_LIST = {
     {"test_bswap_x64", test_bswap_ax},
     {"test_rex_x64", test_rex_x64},
     {"test_x86_ro_segfault", test_x86_ro_segfault},
+    {"test_x86_hook_insn_rdtsc", test_x86_hook_insn_rdtsc},
+    {"test_x86_hook_insn_rdtscp", test_x86_hook_insn_rdtscp},
     {NULL, NULL}};
