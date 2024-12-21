@@ -113,7 +113,7 @@ def build_libraries():
 
         obj_dir = os.path.join(BUILD_DIR, conf)
         shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
-        shutil.copy(os.path.join(BUILD_DIR, STATIC_LIBRARY_FILE), LIBS_DIR)
+        shutil.copy(os.path.join(obj_dir, STATIC_LIBRARY_FILE), LIBS_DIR)
     else:
         cmake_args = ["cmake", '-B', BUILD_DIR, '-S', UC_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
         if os.getenv("TRACE"):

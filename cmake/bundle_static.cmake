@@ -40,76 +40,18 @@ function(bundle_static_library tgt_name bundled_tgt_name library_name)
   list(REMOVE_DUPLICATES static_libs)
   list(REMOVE_DUPLICATES dep_libs)
 
-  set(bundled_tgt_full_name 
-    ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${library_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
-  
-  if (APPLE)
-    find_program(lib_tool libtool REQUIRED)
+  foreach(tgt IN LISTS static_libs)
+    list(APPEND static_libs_objects $<TARGET_OBJECTS:${tgt}>)
+  endforeach()
 
-    foreach(tgt IN LISTS static_libs)
-      list(APPEND static_libs_full_names $<TARGET_FILE:${tgt}>)
-    endforeach()
-
-    add_custom_command(
-      COMMAND ${lib_tool} -static -o ${bundled_tgt_full_name} ${static_libs_full_names}
-      OUTPUT ${bundled_tgt_full_name}
-      COMMENT "Bundling ${bundled_tgt_name}"
-      VERBATIM)
-  elseif(UNIX OR MINGW)
-    file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
-    "CREATE ${bundled_tgt_full_name}\n" )
-        
-    foreach(tgt IN LISTS static_libs)
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
-        "ADDLIB $<TARGET_FILE:${tgt}>\n")
-    endforeach()
-
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
-
-    file(GENERATE
-         OUTPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
-         INPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
-
-    set(ar_tool ${CMAKE_AR})
-    if (CMAKE_INTERPROCEDURAL_OPTIMIZATION)
-        set(ar_tool ${CMAKE_CXX_COMPILER_AR})
-    endif()
-
-    add_custom_command(
-        COMMAND ${ar_tool} -M < ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
-        OUTPUT ${bundled_tgt_full_name}
-        COMMENT "Bundling ${bundled_tgt_name}"
-        VERBATIM)
-  elseif(WIN32)
-    # https://stackoverflow.com/a/38096930/1806760
-    get_filename_component(vs_bin_path "${CMAKE_LINKER}" DIRECTORY)
-
-    find_program(lib_tool lib HINTS "${vs_bin_path}" REQUIRED)
-
-    foreach(tgt IN LISTS static_libs)
-      list(APPEND static_libs_full_names $<TARGET_FILE:${tgt}>)
-    endforeach()
-
-    add_custom_command(
-      COMMAND ${lib_tool} /NOLOGO /OUT:${bundled_tgt_full_name} ${static_libs_full_names}
-      OUTPUT ${bundled_tgt_full_name}
-      COMMENT "Bundling ${bundled_tgt_name}"
-      VERBATIM)
-  else()
-    message(FATAL_ERROR "Unknown bundle scenario!")
-  endif()
-
-  add_custom_target(bundling_target ALL DEPENDS ${bundled_tgt_full_name})
-  add_dependencies(bundling_target ${tgt_name})
-
-  add_library(${bundled_tgt_name} STATIC IMPORTED)
-  set_target_properties(${bundled_tgt_name} 
-    PROPERTIES 
-      IMPORTED_LOCATION ${bundled_tgt_full_name}
-      INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${tgt_name},INTERFACE_INCLUDE_DIRECTORIES>
-      INTERFACE_LINK_LIBRARIES "${dep_libs}")
-      #IMPORTED_LINK_INTERFACE_LIBRARIES "${dep_libs}") # Deprecated
-  add_dependencies(${bundled_tgt_name} bundling_target)
-
+  add_library(${bundled_tgt_name} STATIC ${static_libs_objects})
+  set_target_properties(${bundled_tgt_name} PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${tgt_name},INTERFACE_INCLUDE_DIRECTORIES>
+    INTERFACE_LINK_LIBRARIES "${dep_libs}"
+    OUTPUT_NAME "${library_name}"
+    SYMLINK_NAME "${library_name}.o"
+  )
+  add_custom_command(TARGET ${bundled_tgt_name} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink "$<TARGET_FILE_NAME:${bundled_tgt_name}>" "$<TARGET_FILE_DIR:${bundled_tgt_name}>/$<TARGET_PROPERTY:${bundled_tgt_name},SYMLINK_NAME>"
+  )
 endfunction()
