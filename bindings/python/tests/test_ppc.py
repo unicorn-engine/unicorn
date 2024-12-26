@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # Sample code for PPC of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 
-from __future__ import print_function
 from unicorn import *
 from unicorn.ppc_const import *
 

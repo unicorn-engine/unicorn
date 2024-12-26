@@ -1,12 +1,8 @@
-#!/usr/bin/python
-
 import gc
 import regress
 import weakref
-
 from unicorn import *
 from unicorn.x86_const import *
-
 
 ADDRESS = 0x8048000
 STACK_ADDRESS = 0xffff000
@@ -26,9 +22,9 @@ CODE = (
 
 EP = ADDRESS + 0x54
 
-
 # Dictionary to keep weak references to instances
 instances = weakref.WeakValueDictionary()
+
 
 def create_instance(key, *args, **kwargs):
     obj = Uc(*args, **kwargs)
@@ -52,22 +48,22 @@ def emu_loop(key):
     i = emu.hook_add(UC_HOOK_CODE, hook_code, None)
     emu.hook_del(i)
 
-    emu.emu_start(EP, EP + len(CODE), count = 3)
+    emu.emu_start(EP, EP + len(CODE), count=3)
     regress.logger.debug("EIP: %#x", emu.reg_read(UC_X86_REG_EIP))
 
 
-def debugMem():
-    gc.collect()  # don't care about stuff that would be garbage collected properly
-
-    assert(len(instances) == 0)
-
 
 class EmuLoopReferenceTest(regress.RegressTest):
+    def debug_mem(self):
+        gc.collect()  # don't care about stuff that would be garbage collected properly
+
+        self.assertEqual(len(instances), 0)
+
     def runTest(self):
         for i in range(5):
             emu_loop('obj%d' % i)
 
-        debugMem()
+        self.debug_mem()
 
 
 if __name__ == '__main__':

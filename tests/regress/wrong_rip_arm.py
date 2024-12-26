@@ -1,22 +1,17 @@
-#!/usr/bin/python
-
 import regress
-
 from unicorn import *
-from unicorn.x86_const import *
 from unicorn.arm_const import *
 
-
 CODE = (
-    b'\x48\x31'     #  adds    r1, #0x48
-    b'\xff\x57'     #  ldrsb   r7, [r7, r7]
-    b'\x57\x5e'     #  ldrsh   r7, [r2, r1]
-    b'\x5a\x48'     #  ldr     r0, [pc, #0x168]
-    b'\xbf\x2f'     #  cmp     r7, #0xbf
-    b'\x2f\x62'     #  str     r7, [r5, #0x20]
-    b'\x69\x6e'     #  ldr     r1, [r5, #0x64]
-    b'\x2f\x73'     #  strb    r7, [r5, #0xc]
-    b'\x68\x48'     #  ldr     r0, [pc, #0x1a0]
+    b'\x48\x31'  # adds    r1, #0x48
+    b'\xff\x57'  # ldrsb   r7, [r7, r7]
+    b'\x57\x5e'  # ldrsh   r7, [r2, r1]
+    b'\x5a\x48'  # ldr     r0, [pc, #0x168]
+    b'\xbf\x2f'  # cmp     r7, #0xbf
+    b'\x2f\x62'  # str     r7, [r5, #0x20]
+    b'\x69\x6e'  # ldr     r1, [r5, #0x64]
+    b'\x2f\x73'  # strb    r7, [r5, #0xc]
+    b'\x68\x48'  # ldr     r0, [pc, #0x1a0]
 
     b'\xc1\xef\x08\x57\x54\x5f\x6a\x3b\x58\x0f\x05'  # data?
 )

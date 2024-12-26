@@ -1,9 +1,6 @@
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
-
 
 NOPSLED = b"\x90" * 5
 

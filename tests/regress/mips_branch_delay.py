@@ -1,15 +1,13 @@
-#!/usr/bin/python
-
 import regress
-
+import sys
+import unittest
 from capstone import *
 from unicorn import *
 
-
 CODE = (
-	b'\x00\x00\xa4\x12'     #  beq $a0, $s5, 0x4008a0
-    b'\x6a\x00\x82\x28'     #  slti $v0, $a0, 0x6a
-    b'\x00\x00\x00\x00'     #  nop
+    b'\x00\x00\xa4\x12'  # beq $a0, $s5, 0x4008a0
+    b'\x6a\x00\x82\x28'  # slti $v0, $a0, 0x6a
+    b'\x00\x00\x00\x00'  # nop
 )
 
 BASE = 0x400000
@@ -17,6 +15,7 @@ BASE = 0x400000
 
 class MipsBranchDelay(regress.RegressTest):
 
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
     def runTest(self):
         md = Cs(CS_ARCH_MIPS, CS_MODE_MIPS32 + CS_MODE_LITTLE_ENDIAN)
 

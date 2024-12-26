@@ -1,14 +1,10 @@
-#!/usr/bin/python
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
-
 CODE = (
     b'\x9b\xd9\x3c\x24'     #  fstcw  WORD PTR [esp]
-    b'\x59'                 #  pop    ecx 
+    b'\x59'                 #  pop    ecx
 )
 
 BASE = 0x00000000
@@ -17,7 +13,6 @@ STACK = 0x00000f00
 
 def hook_mem_write(uc, access, address, size, value, user_data):
     regress.logger.debug("mem WRITE to: %#x, size = %u, value = %#x", address, size, value)
-
     return True
 
 

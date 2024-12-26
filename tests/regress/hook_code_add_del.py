@@ -1,10 +1,6 @@
-#!/usr/bin/python
+""" https://github.com/unicorn-engine/unicorn/issues/334 """
 
-'''https://github.com/unicorn-engine/unicorn/issues/334'''
-
-from __future__ import print_function
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
@@ -26,6 +22,7 @@ CODE = (
 
 EP = ADDRESS + 0x54
 
+
 def hook_code(mu, address, size, user_data):
     regress.logger.debug(">>> Tracing instruction at %#x, instruction size = %u", address, size)
 
@@ -43,7 +40,7 @@ class HookCodeAddDelTest(regress.RegressTest):
         i = emu.hook_add(UC_HOOK_CODE, hook_code, None)
         emu.hook_del(i)
 
-        emu.emu_start(EP, EP + len(CODE), count = 3)
+        emu.emu_start(EP, EP + len(CODE), count=3)
         regress.logger.debug("EIP: %#x", emu.reg_read(UC_X86_REG_EIP))
 
 

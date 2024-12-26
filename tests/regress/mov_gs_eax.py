@@ -1,10 +1,6 @@
-#!/usr/bin/python
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
-
 
 CODE = (
     b'\x8e\xe8'              #  mov     gs, eax
@@ -14,7 +10,7 @@ CODE = (
 BASE = 0x1000
 
 
-class VldrPcInsn(regress.RegressTest):
+class MovGsEax(regress.RegressTest):
 
     def runTest(self):
         uc = Uc(UC_ARCH_X86, UC_MODE_32)

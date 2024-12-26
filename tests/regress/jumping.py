@@ -1,12 +1,10 @@
-#!/usr/bin/env python
 # Mariano Graziano
 
-import binascii
 import regress
-
+import sys
+import unittest
 from unicorn import *
 from unicorn.x86_const import *
-
 
 # set rdx to either 0xbabe or 0xc0ca, based on a comparison.
 # rdx would never be set to 0xbabe unless we set zf to 1
@@ -68,20 +66,20 @@ class Jumping(regress.RegressTest):
     # callback for tracing instructions
     def hook_code(self, uc, address, size, _):
         insn = uc.mem_read(address, size)
-        regress.logger.debug(">>> Tracing instruction at %#x : %s", address, binascii.hexlify(insn))
+        regress.logger.debug(">>> Tracing instruction at %#x : %s", address, insn.hex())
 
         regs = uc.reg_read_batch((
             UC_X86_REG_RAX, UC_X86_REG_RBX, UC_X86_REG_RCX, UC_X86_REG_RDX,
             UC_X86_REG_RSI, UC_X86_REG_RDI, UC_X86_REG_RBP, UC_X86_REG_RSP,
-            UC_X86_REG_R8,  UC_X86_REG_R9,  UC_X86_REG_R10, UC_X86_REG_R11,
+            UC_X86_REG_R8, UC_X86_REG_R9, UC_X86_REG_R10, UC_X86_REG_R11,
             UC_X86_REG_R12, UC_X86_REG_R13, UC_X86_REG_R14, UC_X86_REG_R15,
             UC_X86_REG_EFLAGS
         ))
 
         zf = (regs[16] >> 6) & 0b1
 
-        regress.logger.debug("    RAX = %08x, R8  = %08x", regs[0], regs[ 8])
-        regress.logger.debug("    RBX = %08x, R9  = %08x", regs[1], regs[ 9])
+        regress.logger.debug("    RAX = %08x, R8  = %08x", regs[0], regs[8])
+        regress.logger.debug("    RBX = %08x, R9  = %08x", regs[1], regs[9])
         regress.logger.debug("    RCX = %08x, R10 = %08x", regs[2], regs[10])
         regress.logger.debug("    RDX = %08x, R11 = %08x", regs[3], regs[11])
         regress.logger.debug("    RSI = %08x, R12 = %08x", regs[4], regs[12])
@@ -93,7 +91,6 @@ class Jumping(regress.RegressTest):
         regress.logger.debug("-" * 32)
         self.multipath()
         regress.logger.debug("-" * 32)
-
 
     def setUp(self):
         # decide how to fixate zf value: 0 to clear, 1 to set
@@ -110,6 +107,7 @@ class Jumping(regress.RegressTest):
 
         self.uc = uc
 
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
     def runTest(self):
         # tracing all basic blocks with customized callback
         self.uc.hook_add(UC_HOOK_BLOCK, self.hook_block)
@@ -120,7 +118,8 @@ class Jumping(regress.RegressTest):
         # emulate machine code in infinite time
         self.uc.emu_start(BASE, BASE + len(CODE))
 
-        self.assertEqual(self.uc.reg_read(UC_X86_REG_RDX), 0xbabe, "rdx contains the wrong value. eflags modification failed")
+        self.assertEqual(self.uc.reg_read(UC_X86_REG_RDX), 0xbabe,
+                         "rdx contains the wrong value. eflags modification failed")
 
 
 if __name__ == '__main__':

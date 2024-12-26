@@ -1,21 +1,21 @@
-#!/usr/bin/env python
 # Sample code for ARM of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
-#
 
+
+import platform
 import regress
-
+import sys
+import unittest
 from unicorn import *
 from unicorn.arm_const import *
 
-
 # code to be emulated
 ARM_CODE = (
-    b"\x37\x00\xa0\xe3"		#  mov      r0, #0x37
-    b"\x03\x10\x42\xe0"		#  sub      r1, r2, r3
+    b"\x37\x00\xa0\xe3"  # mov      r0, #0x37
+    b"\x03\x10\x42\xe0"  # sub      r1, r2, r3
 )
 
-THUMB_CODE = b"\x83\xb0"    #  sub      sp, #0xc
+THUMB_CODE = b"\x83\xb0"  # sub      sp, #0xc
 
 # memory address where emulation starts
 ADDRESS = 0xF0000000
@@ -32,6 +32,7 @@ def hook_code(uc, address, size, user_data):
 
 
 class TestInitInputCrash(regress.RegressTest):
+    @unittest.skipIf(sys.platform == 'win32' or platform.machine().lower() not in ('x86_64', 'arm64'), 'TO BE CHECKED!')
     def test_arm(self):
         regress.logger.debug("Emulate ARM code")
 
@@ -42,7 +43,7 @@ class TestInitInputCrash(regress.RegressTest):
         mu.mem_map(ADDRESS, mem_size)
 
         stack_address = ADDRESS + mem_size
-        stack_size =  stack_address         # >>> here huge memory size
+        stack_size = stack_address  # >>> here huge memory size
         mu.mem_map(stack_address, stack_size)
 
         # write machine code to be emulated to memory

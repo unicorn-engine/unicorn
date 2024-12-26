@@ -1,7 +1,4 @@
-#!/usr/bin/python
-
 import regress
-
 from unicorn import *
 from unicorn.arm_const import *
 

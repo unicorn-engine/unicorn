@@ -1,16 +1,12 @@
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
-
 from capstone import *
 
-
-CODE = bytes.fromhex(
-    '48 31 c0'      # xor       rax,rax
-    '48 0f c7 f0'   # rdrand    rax
-    'f4'            # hlt
+CODE = (
+    b'\x48\x31\xc0'      # xor       rax,rax
+    b'\x48\x0f\xc7\xf0'  # rdrand    rax
+    b'\xf4'              # hlt
 )
 
 BASE = 0x100000
@@ -41,7 +37,7 @@ def hook_invalid_insn(uc, ud):
 
         # signal uc we are ok
         return True
-    
+
     # not handled, uc will crash
     return False
 

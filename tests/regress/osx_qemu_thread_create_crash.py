@@ -1,8 +1,6 @@
-#!/usr/bin/env python
-
 import regress
-
 from unicorn import *
+
 
 # OS X: OK with 2047 iterations.
 # OS X: Crashes at 2048:th iteration ("qemu: qemu_thread_create: Resource temporarily unavailable").

@@ -1,14 +1,12 @@
-#!/usr/bin/python
-
 import regress
-
+import sys
+import unittest
 from unicorn import *
 from unicorn.mips_const import *
 
-
 CODE = (
-    b'\x00\x00\x00\x00'     # nop
-    b'\x00\x00\xa4\x8f'     # lw    $a0, 0($sp)
+    b'\x00\x00\x00\x00'  # nop
+    b'\x00\x00\xa4\x8f'  # lw    $a0, 0($sp)
 )
 
 BASE = 0x20000000
@@ -16,6 +14,7 @@ BASE = 0x20000000
 
 class MipsExcept(regress.RegressTest):
 
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
     def runTest(self):
         uc = Uc(UC_ARCH_MIPS, UC_MODE_MIPS32 + UC_MODE_LITTLE_ENDIAN)
 

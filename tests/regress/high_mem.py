@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
-
 import regress
-
+import sys
+import unittest
 from unicorn import Uc, UcError, UC_ARCH_X86, UC_MODE_64
 from unicorn.unicorn_const import UC_TLB_VIRTUAL, UC_TLB_CPU, UC_ERR_FETCH_UNMAPPED
-
 
 MAX_INTEL_INSN_SIZE = 15
 
@@ -23,8 +21,10 @@ class TestMem(regress.RegressTest):
         self.uc.mem_map(address, 0x1000)
         self.uc.mem_write(address, payload)
 
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
     def test_virt_high_mapping(self):
-        """Mapping memory at high addresses should work when TLB mode
+        """
+        Mapping memory at high addresses should work when TLB mode
         is set to VIRTUAL.
         """
 
@@ -42,8 +42,10 @@ class TestMem(regress.RegressTest):
             except UcError:
                 self.fail('high mapping failed at %#018x' % code)
 
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
     def test_cpu_high_mapping(self):
-        """Mapping memory at high addresses should work fail TLB mode
+        """
+        Mapping memory at high addresses should work fail TLB mode
         is set to CPU (default).
         """
 
