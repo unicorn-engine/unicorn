@@ -1,12 +1,8 @@
-#!/usr/bin/env python
-
-from __future__ import print_function
+import regress
 from unicorn import *
 from unicorn.x86_const import *
 
-import regress
-
-X86_CODE64 = "\x90" # NOP
+X86_CODE64 = b"\x90"  # NOP
 
 
 class WriteBeforeMap(regress.RegressTest):
@@ -18,7 +14,10 @@ class WriteBeforeMap(regress.RegressTest):
         ADDRESS = 0x1000000
 
         # write machine code to be emulated to memory
-        mu.mem_write(ADDRESS, X86_CODE64)
+        with self.assertRaises(UcError) as raisedEx:
+            mu.mem_write(ADDRESS, X86_CODE64)
+
+        self.assertEqual(UC_ERR_WRITE_UNMAPPED, raisedEx.exception.errno)
 
 
 if __name__ == '__main__':

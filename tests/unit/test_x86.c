@@ -624,6 +624,67 @@ static void test_x86_smc_xor(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_smc_add(void)
+{
+    uc_engine *uc;
+    uint64_t stack_base = 0x20000;
+    int r_rsp;
+    /*
+     * mov qword ptr [rip+0x10], rax
+     * mov word ptr [rip], 0x0548
+     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412 add rax, 0x12345678
+     * hlt
+     */
+    char code[] = "\x48\x89\x05\x10\x00\x00\x00\x66\xc7\x05\x00\x00\x00\x00\x48\x05\x8b\x80\x78\x56\x34\x12\xf4";
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+
+    OK(uc_mem_map(uc, stack_base, 0x2000, UC_PROT_ALL));
+    r_rsp = stack_base + 0x1800;
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &r_rsp));
+    OK(uc_emu_start(uc, code_start, -1, 0, 0));
+}
+
+static void test_x86_smc_mem_hook_callback(uc_engine *uc, uc_mem_type t,
+                                           uint64_t addr, int size,
+                                           uint64_t value, void *user_data)
+{
+    uint64_t write_addresses[] = { 0x1030, 0x1010, 0x1010, 0x1018, 0x1018, 0x1029, 0x1029 };
+    unsigned int *i = user_data;
+
+    TEST_CHECK(*i < (sizeof(write_addresses)/sizeof(write_addresses[0])));
+    TEST_CHECK(write_addresses[*i] == addr);
+    (*i)++;
+}
+
+static void test_x86_smc_mem_hook(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t stack_base = 0x20000;
+    int r_rsp;
+    unsigned int i = 0;
+    /*
+     * mov qword ptr [rip+0x29], rax
+     * mov word ptr [rip], 0x0548
+     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412 add rax, 0x12345678
+     * nop
+     * nop
+     * nop
+     * mov qword ptr [rip-0x08], rax
+     * mov word ptr [rip], 0x0548
+     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412 add rax, 0x12345678
+     * hlt
+     */
+    char code[] = "\x48\x89\x05\x29\x00\x00\x00\x66\xC7\x05\x00\x00\x00\x00\x48\x05\x8B\x80\x78\x56\x34\x12\x90\x90\x90\x48\x89\x05\xF8\xFF\xFF\xFF\x66\xC7\x05\x00\x00\x00\x00\x48\x05\x8B\x80\x78\x56\x34\x12\xF4";
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE, test_x86_smc_mem_hook_callback, &i, 1, 0));
+    OK(uc_mem_map(uc, stack_base, 0x2000, UC_PROT_ALL));
+    r_rsp = stack_base + 0x1800;
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &r_rsp));
+    OK(uc_emu_start(uc, code_start, -1, 0, 0));
+}
+
 static uint64_t test_x86_mmio_uc_mem_rw_read_callback(uc_engine *uc,
                                                       uint64_t offset,
                                                       unsigned size,
@@ -1840,6 +1901,124 @@ static void test_rex_x64(void)
     }
 }
 
+static bool test_x86_ro_segfault_cb(uc_engine *uc, uc_mem_type type,
+                                    uint64_t address, int size, uint64_t value,
+                                    void *user_data)
+{
+    const char code[] = "\xA1\x00\x10\x00\x00\xA1\x00\x10\x00\x00";
+    OK(uc_mem_write(uc, address, code, sizeof(code) - 1));
+    return true;
+}
+
+static void test_x86_ro_segfault(void)
+{
+    uc_engine *uc;
+    // mov eax, [0x1000]
+    // mov eax, [0x1000]
+    const char code[] = "\xA1\x00\x10\x00\x00\xA1\x00\x10\x00\x00";
+    uint32_t out;
+    uc_hook hh;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_READ));
+
+    OK(uc_hook_add(uc, &hh, UC_HOOK_MEM_READ, test_x86_ro_segfault_cb, NULL, 1,
+                   0));
+    OK(uc_emu_start(uc, 0, sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, (void *)&out));
+    TEST_CHECK(out == 0x001000a1);
+    OK(uc_close(uc));
+}
+
+static bool test_x86_hook_insn_rdtsc_cb(uc_engine *uc, void *user_data)
+{
+    uint64_t h = 0x00000000FEDCBA98;
+    OK(uc_reg_write(uc, UC_X86_REG_RDX, &h));
+
+    uint64_t l = 0x0000000076543210;
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &l));
+
+    return true;
+}
+
+static void test_x86_hook_insn_rdtsc(void)
+{
+    char code[] = "\x0F\x31"; // RDTSC
+
+    uc_engine *uc;
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof code - 1);
+
+    uc_hook hook;
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_x86_hook_insn_rdtsc_cb, NULL,
+                   1, 0, UC_X86_INS_RDTSC));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof code - 1, 0, 0));
+
+    OK(uc_hook_del(uc, hook));
+
+    uint64_t h = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RDX, &h));
+    TEST_CHECK(h == 0x00000000FEDCBA98);
+
+    uint64_t l = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &l));
+    TEST_CHECK(l == 0x0000000076543210);
+
+    OK(uc_close(uc));
+}
+
+static bool test_x86_hook_insn_rdtscp_cb(uc_engine *uc, void *user_data)
+{
+    uint64_t h = 0x0000000001234567;
+    OK(uc_reg_write(uc, UC_X86_REG_RDX, &h));
+
+    uint64_t l = 0x0000000089ABCDEF;
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &l));
+
+    uint64_t i = 0x00000000DEADBEEF;
+    OK(uc_reg_write(uc, UC_X86_REG_RCX, &i));
+
+    return true;
+}
+
+static void test_x86_hook_insn_rdtscp(void)
+{
+    uc_engine *uc;
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_HASWELL));
+
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+
+    char code[] = "\x0F\x01\xF9"; // RDTSCP
+    OK(uc_mem_write(uc, code_start, code, sizeof code - 1));
+
+    uc_hook hook;
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_x86_hook_insn_rdtscp_cb, NULL,
+                   1, 0, UC_X86_INS_RDTSCP));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof code - 1, 0, 0));
+
+    OK(uc_hook_del(uc, hook));
+
+    uint64_t h = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RDX, &h));
+    TEST_CHECK(h == 0x0000000001234567);
+
+    uint64_t l = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &l));
+    TEST_CHECK(l == 0x0000000089ABCDEF);
+
+    uint64_t i = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RCX, &i));
+    TEST_CHECK(i == 0x00000000DEADBEEF);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1859,6 +2038,8 @@ TEST_LIST = {
     {"test_x86_mmio", test_x86_mmio},
     {"test_x86_missing_code", test_x86_missing_code},
     {"test_x86_smc_xor", test_x86_smc_xor},
+    {"test_x86_smc_add", test_x86_smc_add},
+    {"test_x86_smc_mem_hook", test_x86_smc_mem_hook},
     {"test_x86_mmio_uc_mem_rw", test_x86_mmio_uc_mem_rw},
     {"test_x86_sysenter", test_x86_sysenter},
     {"test_x86_hook_cpuid", test_x86_hook_cpuid},
@@ -1895,4 +2076,7 @@ TEST_LIST = {
     {"test_fxsave_fpip_x64", test_fxsave_fpip_x64},
     {"test_bswap_x64", test_bswap_ax},
     {"test_rex_x64", test_rex_x64},
+    {"test_x86_ro_segfault", test_x86_ro_segfault},
+    {"test_x86_hook_insn_rdtsc", test_x86_hook_insn_rdtsc},
+    {"test_x86_hook_insn_rdtscp", test_x86_hook_insn_rdtscp},
     {NULL, NULL}};

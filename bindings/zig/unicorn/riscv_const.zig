@@ -217,7 +217,8 @@ pub const riscvConst = enum(c_int) {
 	RISCV_REG_F30 = 188,
 	RISCV_REG_F31 = 189,
 	RISCV_REG_PC = 190,
-	RISCV_REG_ENDING = 191,
+	RISCV_REG_PRIV = 191,
+	RISCV_REG_ENDING = 192,
 
 // Alias registers
 	RISCV_REG_ZERO = 1,

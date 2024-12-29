@@ -9,6 +9,8 @@
 struct data {
     gsl_rstat_workspace *rstat_p;
     struct timespec start;
+    size_t nc;
+    uc_context **c;
 };
 
 
@@ -22,11 +24,8 @@ void update_stats(gsl_rstat_workspace *rstat_p, struct timespec *start, struct t
 static uint64_t CODEADDR = 0x1000;
 static uint64_t DATABASE = 0x40000000;
 static uint64_t BLOCKSIZE = 0x10000;
+static size_t NRUNS = 200;
 
-/*static void callback_mem(uc_engine *uc, uc_mem_type type, uint64_t addr, uint32_t size, uint64_t value, void *data)
-{
-    printf("callback mem valid: 0x%lX, value: 0x%lX\n", addr, value);
-}*/
 static int callback_mem_prot(uc_engine *uc, uc_mem_type type, uint64_t addr, uint32_t size, int64_t value, void *data)
 {
     printf("callback mem prot: 0x%lX, type: %X\n", addr, type);
@@ -50,27 +49,21 @@ static void callback_block(uc_engine *uc, uint64_t addr, uint32_t size, void *da
         d->rstat_p = gsl_rstat_alloc();
     }
     run = gsl_rstat_n(d->rstat_p);
-    if ((run >> 4) >= 20) {
+    if (run && !(run % 128)) {
         uc_emu_stop(uc);
         return;
-    } else if (run > 0 && run % 16 == 0) {
-        uc_snapshot(uc);
     }
-/*    if (run > 0 && run % 16 == 0) {
-        uc_emu_stop(uc);
-        return;
-    }*/
     rsi = random();
     memblock = random() & 15;
     offset = random() & (BLOCKSIZE - 1) & (~0xf);
-//    memblock = 0;
-//    offset = 0;
     if (memblock == 15 && (offset + 0x1000) > BLOCKSIZE) {
         offset -= 0x1000;
     }
     rbx += (memblock * BLOCKSIZE) + offset;
+#ifndef NDEBUG
     printf("write at 0x%lX\n", rbx);
     printf("[%li] callback block: 0x%lX\n", run, addr);
+#endif
     uc_reg_write(uc, UC_X86_REG_RBX, &rbx);
     uc_reg_write(uc, UC_X86_REG_RAX, &rax);
     uc_reg_write(uc, UC_X86_REG_RSI, &rsi);
@@ -80,7 +73,9 @@ static void callback_block(uc_engine *uc, uint64_t addr, uint32_t size, void *da
 static void prepare_mapping(uc_engine *uc)
 {
     for (size_t i = 0; i < 16; i++) {
+#ifndef NDEBUG
         printf("mem map: 0x%lX\n", DATABASE+i*BLOCKSIZE);
+#endif
         uc_mem_map(uc, DATABASE+i*BLOCKSIZE, BLOCKSIZE, UC_PROT_READ|UC_PROT_WRITE);
     }
 }
@@ -145,6 +140,7 @@ int main(int argc, char *argv[])
     uc_err err;
     uc_hook hook_block;
     uc_hook hook_mem;
+    uc_context **con = calloc(NRUNS, sizeof(*con));
     struct data d;
     uint64_t rax = 5;
     uint64_t rbx = DATABASE;
@@ -156,9 +152,13 @@ int main(int argc, char *argv[])
     }
 
     d.rstat_p = NULL;
+    d.c = con;
+    d.nc = 0;
     srandom(time(NULL));
 
     uc_open(UC_ARCH_X86, UC_MODE_64, &uc);
+    uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY);
+    uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL);
     prepare_code(uc, argv[1], &bin_mmap);
     prepare_mapping(uc);
     err = uc_hook_add(uc, &hook_block, UC_HOOK_BLOCK, &callback_block, &d, CODEADDR, 0x1000);
@@ -168,18 +168,19 @@ int main(int argc, char *argv[])
     uc_hook_add(uc, &hook_mem, UC_HOOK_MEM_INVALID, &callback_mem_prot, NULL, CODEADDR, 0x1000);
     uc_reg_write(uc, UC_X86_REG_RBX, &rbx);
     uc_reg_write(uc, UC_X86_REG_RAX, &rax);
-/*    err = uc_hook_add(uc, &hook_mem, UC_HOOK_MEM_VALID, &callback_mem, NULL, DATABASE, 16*BLOCKSIZE);
-    if (err) {
-        printf("err: %s\n", uc_strerror(err));
-        return 1;
-    }*/
-    for (int i = 0; i < 1; i++) {
+
+    for (int i = 0; i < NRUNS; i++) {
+#ifndef NDEBUG
+	printf("============ run: %i\n", i);
+#endif
         err = uc_emu_start(uc, CODEADDR, -1, 0, 0);
         if (err) {
             printf("err: %s\n", uc_strerror(err));
             return 1;
         }
-        uc_snapshot(uc);
+        uc_context_alloc(uc, &d.c[d.nc]);
+        uc_context_save(uc, d.c[d.nc]);
+        d.nc++;
     }
     print_stats(d.rstat_p);
     return 0;

@@ -245,10 +245,12 @@ S390CPU *cpu_s390_init(struct uc_struct *uc, const char *cpu_model)
     CPUClass *cc;
     // int i;
 
-    cpu = calloc(1, sizeof(*cpu));
+    // vregs
+    cpu = qemu_memalign(16, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
+    memset((void*)cpu, 0, sizeof(*cpu));
 
     if (uc->cpu_model == INT_MAX) {
         uc->cpu_model = UC_CPU_S390X_QEMU; // qemu-s390x-cpu

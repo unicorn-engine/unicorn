@@ -2,26 +2,24 @@
 # Sample code for ARM of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
 
-from __future__ import print_function
 from unicorn import *
 from unicorn.arm_const import *
 
-
 # code to be emulated
-ARM_CODE   = b"\x37\x00\xa0\xe3\x03\x10\x42\xe0" # mov r0, #0x37; sub r1, r2, r3
-THUMB_CODE = b"\x83\xb0" # sub    sp, #0xc
+ARM_CODE = b"\x37\x00\xa0\xe3\x03\x10\x42\xe0"  # mov r0, #0x37; sub r1, r2, r3
+THUMB_CODE = b"\x83\xb0"  # sub    sp, #0xc
 # memory address where emulation starts
-ADDRESS    = 0x10000
+ADDRESS = 0x10000
 
 
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
-    print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
+    print(">>> Tracing basic block at 0x%x, block size = 0x%x" % (address, size))
 
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
-    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
+    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" % (address, size))
 
 
 # Test ARM
@@ -41,8 +39,8 @@ def test_arm():
         mu.reg_write(UC_ARM_REG_R0, 0x1234)
         mu.reg_write(UC_ARM_REG_R2, 0x6789)
         mu.reg_write(UC_ARM_REG_R3, 0x3333)
-        mu.reg_write(UC_ARM_REG_APSR, 0xFFFFFFFF) #All application flags turned on
-   
+        mu.reg_write(UC_ARM_REG_APSR, 0xFFFFFFFF)  # All application flags turned on
+
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
 
@@ -57,8 +55,8 @@ def test_arm():
 
         r0 = mu.reg_read(UC_ARM_REG_R0)
         r1 = mu.reg_read(UC_ARM_REG_R1)
-        print(">>> R0 = 0x%x" %r0)
-        print(">>> R1 = 0x%x" %r1)
+        print(">>> R0 = 0x%x" % r0)
+        print(">>> R1 = 0x%x" % r1)
 
     except UcError as e:
         print("ERROR: %s" % e)
@@ -93,10 +91,11 @@ def test_thumb():
         print(">>> Emulation done. Below is the CPU context")
 
         sp = mu.reg_read(UC_ARM_REG_SP)
-        print(">>> SP = 0x%x" %sp)
+        print(">>> SP = 0x%x" % sp)
 
     except UcError as e:
         print("ERROR: %s" % e)
+
 
 def test_read_sctlr():
     print("Read SCTLR")
@@ -117,6 +116,7 @@ def test_read_sctlr():
 
     except UcError as e:
         print("ERROR: %s" % e)
+
 
 if __name__ == '__main__':
     test_arm()

@@ -265,10 +265,11 @@ M68kCPU *cpu_m68k_init(struct uc_struct *uc)
     CPUState *cs;
     CPUClass *cc;
 
-    cpu = calloc(1, sizeof(*cpu));
+    cpu = qemu_memalign(8, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
+    memset((void*)cpu, 0, sizeof(*cpu));
 
     if (uc->cpu_model == INT_MAX) {
         uc->cpu_model = UC_CPU_M68K_CFV4E; // cfv4e

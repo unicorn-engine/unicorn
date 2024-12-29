@@ -3,7 +3,7 @@
 # @author elicn
 
 from abc import abstractmethod
-from typing import Generic, Tuple, TypeVar
+from typing import Any, Generic, Tuple, TypeVar
 
 import ctypes
 
@@ -24,7 +24,7 @@ class UcReg(ctypes.Structure):
 
     @property
     @abstractmethod
-    def value(self):
+    def value(self) -> Any:
         """Get register value.
         """
 
@@ -32,7 +32,7 @@ class UcReg(ctypes.Structure):
 
     @classmethod
     @abstractmethod
-    def from_value(cls, value):
+    def from_value(cls, value) -> 'UcReg':
         """Create a register instance from a given value.
         """
 
@@ -52,7 +52,11 @@ class UcTupledReg(UcReg, Generic[VT]):
 
     @classmethod
     def from_value(cls, value: VT):
-        assert type(value) is tuple and len(value) == len(cls._fields_)
+        if not isinstance(value, tuple):
+            raise TypeError(f'got {type(value).__name__} while expecting a tuple')
+
+        if len(value) != len(cls._fields_):
+            raise TypeError(f'got {len(value)} elements while expecting {len(cls._fields_)}')
 
         return cls(*value)
 
@@ -72,7 +76,8 @@ class UcLargeReg(UcReg):
 
     @classmethod
     def from_value(cls, value: int):
-        assert type(value) is int
+        if not isinstance(value, int):
+            raise TypeError(f'got {type(value).__name__} while expecting an integer')
 
         mask = (1 << 64) - 1
         size = cls._fields_[0][1]._length_

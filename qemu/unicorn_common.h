@@ -140,6 +140,7 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->set_tlb = uc_set_tlb;
     uc->memory_mapping = find_memory_mapping;
     uc->memory_filter_subregions = memory_region_filter_subregions;
+    uc->flatview_copy = flatview_copy;
     uc->memory_cow = memory_cow;
 
     if (!uc->release)
@@ -153,5 +154,19 @@ static inline void uc_common_init(struct uc_struct* uc)
     *size = sizeof(type);                     \
     ret = UC_ERR_OK;                          \
 } while(0)
+
+#define CHECK_RET_DEPRECATE(ret, regid) do {                                    \
+    if (ret == UC_ERR_ARG && !getenv("UC_IGNORE_REG_BREAK")) {                  \
+        fprintf(stderr,                                                         \
+        "WARNING: Your register accessing on id %"PRIu32" is deprecated "       \
+        "and will get UC_ERR_ARG in the future release (2.2.0) because "        \
+        "the accessing is either no-op or not defined. If you believe "         \
+        "the register should be implemented or there is a bug, please "         \
+        "submit an issue to https://github.com/unicorn-engine/unicorn. "        \
+        "Set UC_IGNORE_REG_BREAK=1 to ignore this warning.\n",                  \
+        regid);                                                                 \
+        ret = UC_ERR_OK;                                                        \
+    }                                                                           \
+} while (0)
 
 #endif

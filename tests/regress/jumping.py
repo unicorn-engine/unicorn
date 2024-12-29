@@ -1,166 +1,125 @@
-#!/usr/bin/env python
 # Mariano Graziano
 
+import regress
+import sys
+import unittest
 from unicorn import *
 from unicorn.x86_const import *
 
-import regress
+# set rdx to either 0xbabe or 0xc0ca, based on a comparison.
+# rdx would never be set to 0xbabe unless we set zf to 1
+CODE = (
+    b"\x48\x31\xc0"                                 #       xor       rax, rax
+    b"\x48\xb8\x04\x00\x00\x00\x00\x00\x00\x00"     #  03:  movabs    rax, 0x4
+    b"\x48\x3d\x05\x00\x00\x00"                     #  0d:  cmp       rax, 0x5      <-- never true, zf is cleared
+    b"\x74\x05"                                     #  13:  je        0x1a
+    b"\xe9\x0f\x00\x00\x00"                         #       jmp       0x29
+    b"\x48\xba\xbe\xba\x00\x00\x00\x00\x00\x00"     #  1a:  movabs    rdx, 0xbabe   <-- never reached unless we set zf
+    b"\xe9\x0f\x00\x00\x00"                         #       jmp       0x38
+    b"\x48\xba\xca\xc0\x00\x00\x00\x00\x00\x00"     #  29:  movabs    rdx, 0xc0ca
+    b"\xe9\x00\x00\x00\x00"                         #       jmp       0x38
+    b"\xf4"                                         #  38:  hlt
+)
 
-#echo -ne "\x48\x31\xc0\x48\xb8\x04\x00\x00\x00\x00\x00\x00\x00\x48\x3d\x05\x00\x00\x00\x74\x05\xe9\x0f\x00\x00\x00\x48\xba\xbe\xba\x00\x00\x00\x00\x00\x00\xe9\x0f\x00\x00\x00\x48\xba\xca\xc0\x00\x00\x00\x00\x00\x00\xe9\x00\x00\x00\x00\x90" | ndisasm - -b64
-#00000000  4831C0            xor rax,rax
-#00000003  48B8040000000000  mov rax,0x4
-#         -0000
-#0000000D  483D05000000      cmp rax,0x5
-#00000013  7405              jz 0x1a
-#00000015  E90F000000        jmp qword 0x29
-#0000001A  48BABEBA00000000  mov rdx,0xbabe
-#         -0000
-#00000024  E90F000000        jmp qword 0x38
-#00000029  48BACAC000000000  mov rdx,0xc0ca
-#         -0000
-#00000033  E900000000        jmp qword 0x38
-#00000038  90                nop
-
-
-mu = 0
-zf = 1 # (0:clear, 1:set)
+BASE = 0x1000000
 
 
-class Init(regress.RegressTest):
+class Jumping(regress.RegressTest):
     def clear_zf(self):
-        eflags_cur = mu.reg_read(UC_X86_REG_EFLAGS)
-        eflags = eflags_cur & ~(1 << 6)
-        #eflags = 0x0
-        print "[clear_zf] - eflags from %x to %x" % (eflags_cur, eflags)
-        if eflags != eflags_cur:
-            print "[clear_zf] - writing new eflags..."
-            mu.reg_write(UC_X86_REG_EFLAGS, eflags)
+        eflags = self.uc.reg_read(UC_X86_REG_EFLAGS)
+
+        if (eflags >> 6) & 0b1 == 0b1:
+            eflags &= ~(0b1 << 6)
+
+            regress.logger.debug("[clear_zf] clearing zero flag")
+            self.uc.reg_write(UC_X86_REG_EFLAGS, eflags)
+
+        else:
+            regress.logger.debug("[clear_zf] no change needed")
 
     def set_zf(self):
-        eflags_cur = mu.reg_read(UC_X86_REG_EFLAGS)
-        eflags = eflags_cur | (1 << 6)
-        #eflags = 0xFFFFFFFF
-        print "[set_zf] - eflags from %x to %x" % (eflags_cur, eflags)
-        if eflags != eflags_cur:
-            print "[set_zf] - writing new eflags..."
-            mu.reg_write(UC_X86_REG_EFLAGS, eflags)
+        eflags = self.uc.reg_read(UC_X86_REG_EFLAGS)
 
-    def handle_zf(self, zf): 
-        print "[handle_zf] - eflags " , zf
-        if zf == 0: self.clear_zf()
-        else: self.set_zf()
+        if (eflags >> 6) & 0b1 == 0b0:
+            eflags |= (0b1 << 6)
+
+            regress.logger.debug("[set_zf] setting zero flag")
+            self.uc.reg_write(UC_X86_REG_EFLAGS, eflags)
+
+        else:
+            regress.logger.debug("[set_zf] no change needed")
 
     def multipath(self):
-        print "[multipath] - handling ZF (%s) - default" % zf
-        self.handle_zf(zf)
+        regress.logger.debug("[multipath] - handling ZF (%s) - default", self.fixed_zf)
+
+        if self.fixed_zf:
+            self.set_zf()
+        else:
+            self.clear_zf()
+
+        # BUG: eflags changes do not get reflected unless re-writing eip
 
     # callback for tracing basic blocks
-    def hook_block(self, uc, address, size, user_data):
-        print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
+    def hook_block(self, uc, address, size, _):
+        regress.logger.debug("Reached a new basic block at %#x (%d bytes in size)", address, size)
 
     # callback for tracing instructions
-    def hook_code(self, uc, address, size, user_data):
-        print(">>> Tracing instruction at 0x%x, instruction size = %u" %(address, size))
-        rax = mu.reg_read(UC_X86_REG_RAX)
-        rbx = mu.reg_read(UC_X86_REG_RBX)
-        rcx = mu.reg_read(UC_X86_REG_RCX)
-        rdx = mu.reg_read(UC_X86_REG_RDX)
-        rsi = mu.reg_read(UC_X86_REG_RSI)
-        rdi = mu.reg_read(UC_X86_REG_RDI)
-        r8 = mu.reg_read(UC_X86_REG_R8)
-        r9 = mu.reg_read(UC_X86_REG_R9)
-        r10 = mu.reg_read(UC_X86_REG_R10)
-        r11 = mu.reg_read(UC_X86_REG_R11)
-        r12 = mu.reg_read(UC_X86_REG_R12)
-        r13 = mu.reg_read(UC_X86_REG_R13)
-        r14 = mu.reg_read(UC_X86_REG_R14)
-        r15 = mu.reg_read(UC_X86_REG_R15)
-        eflags = mu.reg_read(UC_X86_REG_EFLAGS)
-        
-        print(">>> RAX = %x" %rax)
-        print(">>> RBX = %x" %rbx)
-        print(">>> RCX = %x" %rcx)
-        print(">>> RDX = %x" %rdx)
-        print(">>> RSI = %x" %rsi)
-        print(">>> RDI = %x" %rdi)
-        print(">>> R8 = %x" %r8)
-        print(">>> R9 = %x" %r9)
-        print(">>> R10 = %x" %r10)
-        print(">>> R11 = %x" %r11)
-        print(">>> R12 = %x" %r12)
-        print(">>> R13 = %x" %r13)
-        print(">>> R14 = %x" %r14)
-        print(">>> R15 = %x" %r15)
-        print(">>> ELAGS = %x" %eflags)
-        print "-"*11
+    def hook_code(self, uc, address, size, _):
+        insn = uc.mem_read(address, size)
+        regress.logger.debug(">>> Tracing instruction at %#x : %s", address, insn.hex())
+
+        regs = uc.reg_read_batch((
+            UC_X86_REG_RAX, UC_X86_REG_RBX, UC_X86_REG_RCX, UC_X86_REG_RDX,
+            UC_X86_REG_RSI, UC_X86_REG_RDI, UC_X86_REG_RBP, UC_X86_REG_RSP,
+            UC_X86_REG_R8, UC_X86_REG_R9, UC_X86_REG_R10, UC_X86_REG_R11,
+            UC_X86_REG_R12, UC_X86_REG_R13, UC_X86_REG_R14, UC_X86_REG_R15,
+            UC_X86_REG_EFLAGS
+        ))
+
+        zf = (regs[16] >> 6) & 0b1
+
+        regress.logger.debug("    RAX = %08x, R8  = %08x", regs[0], regs[8])
+        regress.logger.debug("    RBX = %08x, R9  = %08x", regs[1], regs[9])
+        regress.logger.debug("    RCX = %08x, R10 = %08x", regs[2], regs[10])
+        regress.logger.debug("    RDX = %08x, R11 = %08x", regs[3], regs[11])
+        regress.logger.debug("    RSI = %08x, R12 = %08x", regs[4], regs[12])
+        regress.logger.debug("    RDI = %08x, R13 = %08x", regs[5], regs[13])
+        regress.logger.debug("    RBP = %08x, R14 = %08x", regs[6], regs[14])
+        regress.logger.debug("    RSP = %08x, R15 = %08x", regs[7], regs[15])
+        regress.logger.debug("    EFLAGS = %08x (ZF = %d)", regs[16], zf)
+
+        regress.logger.debug("-" * 32)
         self.multipath()
-        print "-"*11
+        regress.logger.debug("-" * 32)
 
-    # callback for tracing memory access (READ or WRITE)
-    def hook_mem_access(self, uc, access, address, size, value, user_data):
-        if access == UC_MEM_WRITE:
-            print(">>> Memory is being WRITE at 0x%x, data size = %u, data value = 0x%x" \
-                    %(address, size, value))
-        else:   # READ
-            print(">>> Memory is being READ at 0x%x, data size = %u" \
-                    %(address, size))
+    def setUp(self):
+        # decide how to fixate zf value: 0 to clear, 1 to set
+        self.fixed_zf = 1
 
-    # callback for tracing invalid memory access (READ or WRITE)
-    def hook_mem_invalid(self, uc, access, address, size, value, user_data):
-        print("[ HOOK_MEM_INVALID - Address: %s ]" % hex(address))
-        if access == UC_MEM_WRITE_UNMAPPED:
-            print(">>> Missing memory is being WRITE at 0x%x, data size = %u, data value = 0x%x" %(address, size, value))
-            return True
-        else:
-            print(">>> Missing memory is being READ at 0x%x, data size = %u, data value = 0x%x" %(address, size, value))
-            return True
-
-
-    def hook_mem_fetch_unmapped(self, uc, access, address, size, value, user_data):
-        print("[ HOOK_MEM_FETCH - Address: %s ]" % hex(address))
-        print("[ mem_fetch_unmapped: faulting address at %s ]" % hex(address).strip("L"))
-        return True
-
-    def runTest(self):
-        global mu
- 
-        JUMP = "\x48\x31\xc0\x48\xb8\x04\x00\x00\x00\x00\x00\x00\x00\x48\x3d\x05\x00\x00\x00\x74\x05\xe9\x0f\x00\x00\x00\x48\xba\xbe\xba\x00\x00\x00\x00\x00\x00\xe9\x0f\x00\x00\x00\x48\xba\xca\xc0\x00\x00\x00\x00\x00\x00\xe9\x00\x00\x00\x00\x90"
-
-        ADDRESS = 0x1000000
-
-        print("Emulate x86_64 code")
         # Initialize emulator in X86-64bit mode
-        mu = Uc(UC_ARCH_X86, UC_MODE_64)
+        uc = Uc(UC_ARCH_X86, UC_MODE_64)
 
-        # map 2MB memory for this emulation
-        mu.mem_map(ADDRESS, 2 * 1024 * 1024)
+        # map one page for this emulation
+        uc.mem_map(BASE, 0x1000)
 
         # write machine code to be emulated to memory
-        mu.mem_write(ADDRESS, JUMP)
+        uc.mem_write(BASE, CODE)
 
-        # setup stack
-        mu.reg_write(UC_X86_REG_RSP, ADDRESS + 0x200000)
+        self.uc = uc
 
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
+    def runTest(self):
         # tracing all basic blocks with customized callback
-        mu.hook_add(UC_HOOK_BLOCK, self.hook_block)
+        self.uc.hook_add(UC_HOOK_BLOCK, self.hook_block)
 
         # tracing all instructions in range [ADDRESS, ADDRESS+0x60]
-        mu.hook_add(UC_HOOK_CODE, self.hook_code, None, ADDRESS, ADDRESS+0x60)
+        self.uc.hook_add(UC_HOOK_CODE, self.hook_code, begin=BASE, end=BASE + 0x60)
 
-        # tracing all memory READ & WRITE access
-        mu.hook_add(UC_HOOK_MEM_WRITE, self.hook_mem_access)
-        mu.hook_add(UC_HOOK_MEM_READ, self.hook_mem_access)
-        mu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, self.hook_mem_fetch_unmapped)
-        mu.hook_add(UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED, self.hook_mem_invalid)
+        # emulate machine code in infinite time
+        self.uc.emu_start(BASE, BASE + len(CODE))
 
-        try:
-            # emulate machine code in infinite time
-            mu.emu_start(ADDRESS, ADDRESS + len(JUMP))
-        except UcError as e:
-            print("ERROR: %s" % e)
-
-        rdx = mu.reg_read(UC_X86_REG_RDX)
-        self.assertEqual(rdx, 0xbabe, "RDX contains the wrong value. Eflags modification failed.")
+        self.assertEqual(self.uc.reg_read(UC_X86_REG_RDX), 0xbabe,
+                         "rdx contains the wrong value. eflags modification failed")
 
 
 if __name__ == '__main__':

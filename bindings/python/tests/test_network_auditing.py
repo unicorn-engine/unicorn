@@ -2,11 +2,10 @@
 # Unicorn sample for auditing network connection and file handling in shellcode.
 # Nguyen Tan Cong <shenlongbk@gmail.com>
 
-from __future__ import print_function
-from unicorn import *
-from unicorn.x86_const import *
 import struct
 import uuid
+from unicorn import *
+from unicorn.x86_const import *
 
 SIZE_REG = 4
 SOCKETCALL_MAX_ARGS = 3
@@ -355,7 +354,7 @@ def hook_intr(uc, intno, user_data):
             fd = args[0]
             how = args[1]
 
-            msg = "fd(%d) is shutted down because of %d" % (fd, how)
+            msg = "fd(%d) is shut down because of %d" % (fd, how)
             fd_chains.add_log(fd, msg)
             print_sockcall(msg)
 

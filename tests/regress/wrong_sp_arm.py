@@ -1,11 +1,10 @@
-#!/usr/bin/python
 # By Ryan Hileman, issue #16
 
+import regress
 from unicorn import *
 from unicorn.arm_const import *
 from unicorn.arm64_const import *
 
-import regress
 
 class WrongSPArm(regress.RegressTest):
 
@@ -23,6 +22,7 @@ class WrongSPArm(regress.RegressTest):
         uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
         uc.reg_write(UC_ARM_REG_SP, 4)
         self.assertEqual(0x4, uc.reg_read(UC_ARM_REG_SP))
+
 
 if __name__ == '__main__':
     regress.main()

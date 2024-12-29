@@ -2,25 +2,23 @@
 # Sample code for ARM of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
 
-from __future__ import print_function
 from unicorn import *
 from unicorn.m68k_const import *
 
-
 # code to be emulated
-M68K_CODE  = b"\x76\xed" # movq #-19, %d3
+M68K_CODE = b"\x76\xed"  # movq #-19, %d3
 # memory address where emulation starts
-ADDRESS    = 0x10000
+ADDRESS = 0x10000
 
 
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
-    print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
+    print(">>> Tracing basic block at 0x%x, block size = 0x%x" % (address, size))
 
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
-    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
+    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" % (address, size))
 
 
 # Test ARM

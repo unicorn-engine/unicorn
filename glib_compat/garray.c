@@ -333,7 +333,7 @@ gchar *g_array_free (GArray   *farray,
 
     /* if others are holding a reference, preserve the wrapper but do free/return the data */
     //if (!g_atomic_ref_count_dec (&array->ref_count))
-    flags |= PRESERVE_WRAPPER;
+    // flags |= PRESERVE_WRAPPER;
 
     return array_free (array, flags);
 }

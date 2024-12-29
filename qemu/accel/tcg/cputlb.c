@@ -1188,15 +1188,15 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
 
 static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
                            CPUIOTLBEntry *iotlbentry, uintptr_t retaddr,
-                           MemoryRegion *mr)
+                           CPUTLBEntry *tlbe)
 {
+#ifdef TARGET_ARM
+    struct uc_struct *uc = cpu->uc;
+#endif
     ram_addr_t ram_addr = mem_vaddr + iotlbentry->addr;
+    MemoryRegion *mr = cpu->uc->memory_mapping(cpu->uc, tlbe->paddr | (mem_vaddr & ~TARGET_PAGE_MASK));
 
-    if (mr == NULL) {
-        mr = cpu->uc->memory_mapping(cpu->uc, mem_vaddr);
-    }
-
-    if ((mr->perms & UC_PROT_EXEC) != 0) {
+    if (mr && (mr->perms & UC_PROT_EXEC) != 0) {
         struct page_collection *pages
             = page_collection_lock(cpu->uc, ram_addr, ram_addr + size);
         tb_invalidate_phys_page_fast(cpu->uc, pages, ram_addr, size, retaddr);
@@ -1208,8 +1208,9 @@ static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
     // - have memory hooks installed
     // - or doing snapshot
     // , then never clean the tlb
-    if (!(cpu->uc->snapshot_level > 0 || mr->priority > 0) && 
-            !(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE))) {
+    if (!(!mr || (tlbe->addr_write != -1 && mr->priority < cpu->uc->snapshot_level)) &&
+            !(tlbe->addr_code != -1) &&
+            !uc_mem_hook_installed(cpu->uc, tlbe->paddr | (mem_vaddr & ~TARGET_PAGE_MASK))) {
         tlb_set_dirty(cpu, mem_vaddr);
     }
 }
@@ -1288,7 +1289,7 @@ void *probe_access(CPUArchState *env, target_ulong addr, int size,
 
         /* Handle clean RAM pages.  */
         if (tlb_addr & TLB_NOTDIRTY) {
-            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, NULL);
+            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, entry);
         }
     }
 
@@ -1414,7 +1415,7 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
 
     if (unlikely(tlb_addr & TLB_NOTDIRTY)) {
         notdirty_write(env_cpu(env), addr, 1 << s_bits,
-                       &env_tlb(env)->d[mmu_idx].iotlb[index], retaddr, NULL);
+                       &env_tlb(env)->d[mmu_idx].iotlb[index], retaddr, tlbe);
     }
 
     return hostaddr;
@@ -1601,10 +1602,23 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
             JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, paddr, size, 0, hook->user_data));
-
             // the last callback may already asked to stop emulation
             if (uc->stop_request)
                 break;
+        }
+
+        /* Unicorn: Previous callbacks may invalidate TLB, reload everything.
+                    This may have impact on performance but generally fine.
+                    A better approach is not always invalidating tlb but this
+                    might cause more chaos regarding re-entry (nested uc_emu_start).
+        */
+        if (tlb_entry_is_empty(entry)) {
+            tlb_fill(env_cpu(env), addr, size,
+                        access_type, mmu_idx, retaddr);
+            index = tlb_index(env, mmu_idx, addr);
+            entry = tlb_entry(env, mmu_idx, addr);
+            tlb_addr = code_read ? entry->addr_code : entry->addr_read;
+            tlb_addr &= ~TLB_INVALID_MASK;
         }
 
         // callback on non-readable memory
@@ -2261,7 +2275,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
 
         /* Handle clean RAM pages.  */
         if (tlb_addr & TLB_NOTDIRTY) {
-            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, mr);
+            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, entry);
         }
 
         haddr = (void *)((uintptr_t)addr + entry->addend);

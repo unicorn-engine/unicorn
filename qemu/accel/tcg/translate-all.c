@@ -1839,7 +1839,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     }
 
     /* Undoes tlb_set_dirty in notdirty_write. */
-    if (!(HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(cpu->uc, UC_HOOK_MEM_WRITE))) {
+    if (!uc_mem_hook_installed(cpu->uc, tb->pc)) {
         tlb_reset_dirty_by_vaddr(cpu, pc & TARGET_PAGE_MASK,
                                 (pc & ~TARGET_PAGE_MASK) + tb->size);
     }
@@ -2172,7 +2172,7 @@ void tcg_flush_softmmu_tlb(struct uc_struct *uc)
 }
 
 
-#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && defined(HAVE_SPRR) && (defined(__arm__) || defined(__aarch64__))
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 static bool tb_exec_is_locked(struct uc_struct *uc)
 {
     return uc->current_executable;
@@ -2180,13 +2180,11 @@ static bool tb_exec_is_locked(struct uc_struct *uc)
 
 static void tb_exec_change(struct uc_struct *uc, bool executable)
 {
-    assert(uc->current_executable == thread_executable());
+    assert_executable(uc->current_executable);
     if (uc->current_executable != executable) {
         jit_write_protect(executable);
         uc->current_executable = executable;
-        assert(
-            executable == thread_executable()
-        );
+        assert_executable(executable);
     }
 }
 #else /* not needed on non-Darwin platforms */

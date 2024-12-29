@@ -2,27 +2,25 @@
 # Sample code for MIPS of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
 
-from __future__ import print_function
 from unicorn import *
 from unicorn.mips_const import *
 
-
 # code to be emulated
-MIPS_CODE_EB = b"\x34\x21\x34\x56" # ori $at, $at, 0x3456;
-MIPS_CODE_EL = b"\x56\x34\x21\x34" # ori $at, $at, 0x3456;
+MIPS_CODE_EB = b"\x34\x21\x34\x56"  # ori $at, $at, 0x3456;
+MIPS_CODE_EL = b"\x56\x34\x21\x34"  # ori $at, $at, 0x3456;
 
 # memory address where emulation starts
-ADDRESS      = 0x10000
+ADDRESS = 0x10000
 
 
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
-    print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
+    print(">>> Tracing basic block at 0x%x, block size = 0x%x" % (address, size))
 
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
-    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
+    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" % (address, size))
 
 
 # Test MIPS EB
@@ -54,7 +52,7 @@ def test_mips_eb():
         print(">>> Emulation done. Below is the CPU context")
 
         r1 = mu.reg_read(UC_MIPS_REG_1)
-        print(">>> R1 = 0x%x" %r1)
+        print(">>> R1 = 0x%x" % r1)
 
     except UcError as e:
         print("ERROR: %s" % e)
@@ -89,7 +87,7 @@ def test_mips_el():
         print(">>> Emulation done. Below is the CPU context")
 
         r1 = mu.reg_read(UC_MIPS_REG_1)
-        print(">>> R1 = 0x%x" %r1)
+        print(">>> R1 = 0x%x" % r1)
 
     except UcError as e:
         print("ERROR: %s" % e)

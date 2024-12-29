@@ -709,6 +709,7 @@ struct TCGContext {
     TCGv_i64 cpu_bndu[4];
 
     /* qemu/tcg/i386/tcg-target.inc.c */
+    /* qemu/tcg/aarch64/tcg-target.inc.c */
     void *tb_ret_addr;
 
     /* target/riscv/translate.c */

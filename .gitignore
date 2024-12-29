@@ -37,7 +37,7 @@ unicorn_*.lib
 unicorn_*.exp
 unicorn_*.dll
 
-
+.gdb_history
 *.tgz
 *.zip
 *.pyc
@@ -91,3 +91,9 @@ cmocka/
 zig-cache/
 zig-out/
 .cache
+
+##################
+## PyCharm Project
+##################
+
+.idea/

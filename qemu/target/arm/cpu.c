@@ -2102,10 +2102,12 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
     CPUClass *cc;
     CPUARMState *env;
 
-    cpu = calloc(1, sizeof(*cpu));
+    // cpu->env is 16 bytes aligned
+    cpu = qemu_memalign(16, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
+    memset((void*)cpu, 0, sizeof(*cpu));
 
 #if !defined(TARGET_AARCH64)
     if (uc->mode & UC_MODE_MCLASS) {
