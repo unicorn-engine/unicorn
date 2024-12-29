@@ -54,11 +54,9 @@ mod arm;
 pub use crate::arm::*;
 
 // include arm64 support if conditionally compiled in
-// NOTE: unicorn-c only separates on top-level arch name,
-//       not on the bit-length, so we include both
-#[cfg(feature = "arch_arm")]
+#[cfg(feature = "arch_aarch64")]
 mod arm64;
-#[cfg(feature = "arch_arm")]
+#[cfg(feature = "arch_aarch64")]
 pub use crate::arm64::*;
 
 // include m68k support if conditionally compiled in
