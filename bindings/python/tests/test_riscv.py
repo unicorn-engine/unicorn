@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # Sample code for RISCV of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 
-from __future__ import print_function
 from unicorn import *
 from unicorn.riscv_const import *
 

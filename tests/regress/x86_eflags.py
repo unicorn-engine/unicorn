@@ -1,7 +1,4 @@
-#!/usr/bin/python
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
@@ -21,7 +18,6 @@ class WrongEFLAGS2(regress.RegressTest):
         uc.mem_write(0x6000b0, CODE)
         uc.emu_start(0x6000b0, 0, count=1)
 
-
         # Here's the original execution trace for this on actual hardware.
         #
         # (gdb) x/i $eip
@@ -38,6 +34,7 @@ class WrongEFLAGS2(regress.RegressTest):
         # $4 = 0x202
 
         self.assertEqual(0x202, uc.reg_read(UC_X86_REG_EFLAGS))
+
 
 if __name__ == '__main__':
     regress.main()

@@ -1,25 +1,21 @@
-#!/usr/bin/env python
 # Moshe Kravchik
 
 import binascii
 import regress
-
 from unicorn import *
 from unicorn.arm_const import *
 
-
-#enable VFP
+# enable VFP
 ENABLE_VFP_CODE = (
-    b"\x4f\xf4\x70\x03"     #  00000016    mov.w       r3, #0xf00000
-    b"\x01\xee\x50\x3f"     #  0000001a    mcr         p15, #0x0, r3, c1, c0, #0x2
-    b"\xbf\xf3\x6f\x8f"     #  0000bfb6    isb         sy
-    b"\x4f\xf0\x80\x43"     #  0000bfba    mov.w       r3, #0x40000000
-    b"\xe8\xee\x10\x3a"     #  0000bfbe    vmsr        fpexc, r3
+    b"\x4f\xf4\x70\x03"  # 00000016    mov.w       r3, #0xf00000
+    b"\x01\xee\x50\x3f"  # 0000001a    mcr         p15, #0x0, r3, c1, c0, #0x2
+    b"\xbf\xf3\x6f\x8f"  # 0000bfb6    isb         sy
+    b"\x4f\xf0\x80\x43"  # 0000bfba    mov.w       r3, #0x40000000
+    b"\xe8\xee\x10\x3a"  # 0000bfbe    vmsr        fpexc, r3
 )
 
-
-VLD_CODE = b"\x21\xf9\x0f\x6a"      # 0000002a    vld1.8  {d6, d7}, [r1]
-VST_CODE = b"\x00\xf9\x0f\x6a"      # 0000002e    vst1.8  {d6, d7}, [r0]
+VLD_CODE = b"\x21\xf9\x0f\x6a"  # 0000002a    vld1.8  {d6, d7}, [r1]
+VST_CODE = b"\x00\xf9\x0f\x6a"  # 0000002e    vst1.8  {d6, d7}, [r0]
 
 # memory address where emulation starts
 ADDRESS = 0x10000
@@ -27,8 +23,9 @@ SCRATCH_ADDRESS = 0x1000
 
 
 class SIMDNotReadArm(regress.RegressTest):
+
     def runTest(self):
-        code = ENABLE_VFP_CODE+VLD_CODE+VST_CODE
+        code = ENABLE_VFP_CODE + VLD_CODE + VST_CODE
         regress.logger.debug("Emulate THUMB code")
 
         # Initialize emulator in thumb mode
@@ -84,7 +81,7 @@ class SIMDNotReadArm(regress.RegressTest):
         regress.logger.debug(">>> PC = %#x", mu.reg_read(UC_ARM_REG_PC))
 
         for i in range(UC_ARM_REG_R0, UC_ARM_REG_R12):
-            regress.logger.debug("\tR%d = %#x", (i-UC_ARM_REG_R0), mu.reg_read(i))
+            regress.logger.debug("\tR%d = %#x", (i - UC_ARM_REG_R0), mu.reg_read(i))
 
         regress.logger.debug("\tD6 = %#x", mu.reg_read(UC_ARM_REG_D6))
         regress.logger.debug("\tD7 = %#x", mu.reg_read(UC_ARM_REG_D7))

@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-
 import regress
-
 from unicorn import *
-from unicorn.x86_const import *
 
 CODE = (
     b'\xb8\x00\x00\x00\x02'  #  mov eax, 0x2000000

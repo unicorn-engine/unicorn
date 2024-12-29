@@ -1,9 +1,8 @@
-#!/usr/bin/python
+""" See https://github.com/unicorn-engine/unicorn/issues/65 """
 
-"""See https://github.com/unicorn-engine/unicorn/issues/65"""
-
-import unicorn
 import regress
+import unicorn
+
 
 class EmuStopSegFault(regress.RegressTest):
 
@@ -15,6 +14,7 @@ class EmuStopSegFault(regress.RegressTest):
         mu.emu_start(ADDR, ADDR + 1, count=1)
         # The following should not trigger a null pointer dereference
         self.assertEqual(None, mu.emu_stop())
+
 
 if __name__ == '__main__':
     regress.main()

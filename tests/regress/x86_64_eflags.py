@@ -1,7 +1,4 @@
-#!/usr/bin/python
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
@@ -18,7 +15,6 @@ class WrongEFLAGS(regress.RegressTest):
         uc.mem_map(0x600000, 0x1000)
         uc.mem_write(0x6000b0, CODE)
         uc.emu_start(0x6000b0, 0, count=1)
-
 
         # Here's the original execution trace for this on actual hardware.
         #

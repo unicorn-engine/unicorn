@@ -1,18 +1,15 @@
-#!/usr/bin/python
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
 
-class Hang(regress.RegressTest):
+class BadRam(regress.RegressTest):
     def runTest(self):
         PAGE_SIZE = 0x5000
         CODE_ADDR = 0x400000
-        RSP_ADDR =  0x200000
+        RSP_ADDR = 0x200000
 
-        CODE = b"\xCA\x24\x5D" # retf 0x5d24
+        CODE = b"\xCA\x24\x5D"  # retf 0x5d24
 
         mu = Uc(UC_ARCH_X86, UC_MODE_64)
 

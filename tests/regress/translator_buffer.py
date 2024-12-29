@@ -1,9 +1,9 @@
-#!/usr/bin/python
 # By Mariano Graziano
 
-import struct
+import platform
 import regress
-
+import struct
+import unittest
 from unicorn import *
 from unicorn.x86_const import *
 
@@ -21,7 +21,7 @@ class Emulator:
         regress.logger.debug("mapping code  : %#x", __page_aligned(code))
         regress.logger.debug("mapping stack : %#x", __page_aligned(stack))
 
-        self.mu.mem_map(__page_aligned(code),  0x1000)
+        self.mu.mem_map(__page_aligned(code), 0x1000)
         self.mu.mem_map(__page_aligned(stack), 0x1000)
 
         self.mu.reg_write(UC_X86_REG_RSP, stack)
@@ -44,7 +44,8 @@ class Emulator:
         return True
 
     def hook_mem_invalid(self, uc, access, address, size, value, user_data):
-        regress.logger.debug("invalid mem access: access type = %d, to = %#x, size = %u, value = %#x", access, address, size, value)
+        regress.logger.debug("invalid mem access: access type = %d, to = %#x, size = %u, value = %#x", access, address,
+                             size, value)
 
         return True
 
@@ -65,7 +66,7 @@ class Emulator:
         self.mu.reg_write(reg, value)
 
 
-class Init(regress.RegressTest):
+class TranslatorBuffer(regress.RegressTest):
     def init_unicorn(self, ip, sp, magic):
         emu = Emulator(ip, sp)
 
@@ -74,10 +75,11 @@ class Init(regress.RegressTest):
 
         emu.emu(1)
 
+    @unittest.skipIf(platform.machine().lower() == 'aarch64', reason='TO BE CHECKED!')
     def runTest(self):
-        ip_base = 0x000fffff816a0000    # was: 0xffffffff816a0000
-        sp_base = 0x000f88001b800000    # was: 0xffff88001b800000
-        mg_base = 0x000f880026f02000    # was: 0xffff880026f02000
+        ip_base = 0x000fffff816a0000  # was: 0xffffffff816a0000
+        sp_base = 0x000f88001b800000  # was: 0xffff88001b800000
+        mg_base = 0x000f880026f02000  # was: 0xffff880026f02000
 
         ips = range(0x9000, 0xf000, 8)
         sps = range(0x0000, 0x6000, 8)

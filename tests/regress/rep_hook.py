@@ -1,10 +1,6 @@
-#!/usr/bin/python
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
-
 
 PAGE_SIZE = 0x1000
 

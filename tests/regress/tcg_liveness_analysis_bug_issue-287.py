@@ -1,9 +1,6 @@
-﻿
-import regress
-
+﻿import regress
 from unicorn import *
 from unicorn.arm_const import *
-
 
 # issue #287
 # Initial Register States: R0=3, R1=24, R2=16, R3=0
@@ -90,15 +87,16 @@ from unicorn.arm_const import *
 
 
 CODE = (
-    b'\xa1\x01\x50\xe1'		#  cmp 		r0, r1, lsr #3
-    b'\xa1\x01\x40\x20'		#  subhs 	r0, r0, r1, lsr #3
-    b'\x01\x00\x50\xe3'		#  cmp 		r0, #1
-    b'\x21\x12\xa0\xe1'		#  lsr 		r1, r1, #4
-    b'\x04\x20\x52\xa2'		#  subsge 	r2, r2, #4
-    b'\x64\x30\xa0\xa3'		#  movge 	r3, #0x64
+    b'\xa1\x01\x50\xe1'  # cmp 		r0, r1, lsr #3
+    b'\xa1\x01\x40\x20'  # subhs 	r0, r0, r1, lsr #3
+    b'\x01\x00\x50\xe3'  # cmp 		r0, #1
+    b'\x21\x12\xa0\xe1'  # lsr 		r1, r1, #4
+    b'\x04\x20\x52\xa2'  # subsge 	r2, r2, #4
+    b'\x64\x30\xa0\xa3'  # movge 	r3, #0x64
 )
 
 BASE = 0x00000000
+
 
 def show_regs(uc):
     regress.logger.debug('R0  : %08x', uc.reg_read(UC_ARM_REG_R0))
@@ -126,7 +124,7 @@ def show_regs(uc):
     regress.logger.debug('zero     : %d', (flags >> 30) & 0b1)
 
 
-class TestReadMem(regress.RegressTest):
+class TestIssue287(regress.RegressTest):
     def runTest(self):
         uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
 

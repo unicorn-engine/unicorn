@@ -1,11 +1,7 @@
-#!/usr/bin/env python
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 from struct import pack
-
 
 F_GRANULARITY   = 0x8
 F_PROT_32       = 0x4
@@ -36,7 +32,8 @@ S_PRIV_2 = 0x2
 S_PRIV_1 = 0x1
 S_PRIV_0 = 0x0
 
-CODE = b'\x65\x33\x0d\x18\x00\x00\x00' # xor ecx, dword ptr gs:[0x18]
+CODE = b'\x65\x33\x0d\x18\x00\x00\x00'  # xor ecx, dword ptr gs:[0x18]
+
 
 def create_selector(idx, flags):
     to_ret = flags
@@ -47,16 +44,16 @@ def create_selector(idx, flags):
 
 def create_gdt_entry(base, limit, access, flags):
     return pack('<Q', (
-        limit & 0xffff
-        | (base & 0xffffff) << 16
-        | (access & 0xff) << 40
-        | ((limit >> 16) & 0xf) << 48
-        | (flags & 0xff) << 52
-        | ((base >> 24) & 0xff) << 56
+            limit & 0xffff
+            | (base & 0xffffff) << 16
+            | (access & 0xff) << 40
+            | ((limit >> 16) & 0xf) << 48
+            | (flags & 0xff) << 52
+            | ((base >> 24) & 0xff) << 56
     ))
 
 
-def hook_mem_read(uc, type, addr,*args):
+def hook_mem_read(uc, type, addr, *args):
     regress.logger.debug("%#x", addr)
 
     return False
@@ -72,6 +69,7 @@ GDT_ENTRY_SIZE = 0x8
 SEGMENT_ADDR = 0x5000
 SEGMENT_SIZE = 0x1000
 
+
 class GdtRead(regress.RegressTest):
 
     def test_gdt(self):
@@ -85,7 +83,8 @@ class GdtRead(regress.RegressTest):
         uc.mem_write(CODE_ADDR, CODE)
         uc.mem_write(SEGMENT_ADDR + 0x18, b'AAAA')
 
-        gdt_entry = create_gdt_entry(SEGMENT_ADDR, SEGMENT_SIZE, A_PRESENT | A_DATA | A_DATA_WRITABLE | A_PRIV_3 | A_DIR_CON_BIT, F_PROT_32)
+        gdt_entry = create_gdt_entry(SEGMENT_ADDR, SEGMENT_SIZE,
+                                     A_PRESENT | A_DATA | A_DATA_WRITABLE | A_PRIV_3 | A_DIR_CON_BIT, F_PROT_32)
         uc.mem_write(GDT_ADDR + 8, gdt_entry)
 
         uc.reg_write(UC_X86_REG_GDTR, (0, GDT_ADDR, GDT_LIMIT, 0x0))
@@ -93,7 +92,7 @@ class GdtRead(regress.RegressTest):
         selector = create_selector(1, S_GDT | S_PRIV_3)
         uc.reg_write(UC_X86_REG_GS, selector)
 
-        uc.emu_start(CODE_ADDR, CODE_ADDR+len(CODE))
+        uc.emu_start(CODE_ADDR, CODE_ADDR + len(CODE))
 
         self.assertEqual(uc.reg_read(UC_X86_REG_ECX), 0x41414141)
 

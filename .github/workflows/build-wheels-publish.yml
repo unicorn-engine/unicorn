@@ -1,10 +1,18 @@
-name: Build wheels with cibuildwheel
+name: Build and publish wheels with cibuildwheel
 
 on:
   workflow_dispatch:
     inputs:
       debugMode:
         description: 'Debug Mode'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - '0'
+          - '1'
+      fullMode:
+        description: 'Full Mode'
         required: false
         default: ''
         type: choice
@@ -26,12 +34,12 @@ on:
 
 env:
   # Enable DEBUG flag either according to the tag release or manual override
-  UNICORN_DEBUG: ${{ inputs.debugMode != '' && inputs.debugMode || startsWith(github.ref, 'refs/tags') && '0' || '1' }}
+  UNICORN_DEBUG: ${{ inputs.debugMode != '' && inputs.debugMode || startsWith(github.ref, 'refs/tags') && '0' || contains(github.event.head_commit.message, 'CI(release)') && '0' || '1' }}
 
 jobs:
   # job to be executed for every push - testing purpose
   build_wheels_python38_only:
-    name: Building on ${{ matrix.os }} - ${{ matrix.arch }} ${{ matrix.cibw_build }}
+    name: Building on ${{ matrix.os }} - ${{ matrix.arch }} - ${{ matrix.cibw_build }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -39,41 +47,41 @@ jobs:
         include:
           # NOTE: aarch64 builds are super slow due to QEMU emulation. Making this to parallelize and speed up workflow
           # i686 - manylinux
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp38-manylinux' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp38-manylinux*', cibw_skip: '' }
           # i686 - musllinux
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp38-musllinux' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp38-musllinux*', cibw_skip: '' }
           # x86_64 - manylinux
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp38-manylinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp38-manylinux*', cibw_skip: '' }
           # x86_64 - musllinux
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp38-musllinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp38-musllinux*', cibw_skip: '' }
           # aarch64 - manylinux
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp38-manylinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp38-manylinux*', cibw_skip: '' }
           # aarch64 - musllinux
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp38-musllinux' }
-          - { os: macos-13, arch: x86_64, cibw_build: '' }
-          - { os: macos-latest, arch: arm64, cibw_build: '' }
-          - { os: windows-2019, arch: AMD64, cibw_build: '' }
-          - { os: windows-2019, arch: x86, cibw_build: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp38-musllinux*', cibw_skip: '' }
+          - { os: macos-13, arch: x86_64, cibw_build: 'cp38*', cibw_skip: '' }
+          - { os: macos-latest, arch: arm64, cibw_build: 'cp38*', cibw_skip: '' }
+          - { os: windows-2019, arch: AMD64, cibw_build: 'cp38*', cibw_skip: '' }
+          - { os: windows-2019, arch: x86, cibw_build: 'cp38*', cibw_skip: '' }
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # https://github.com/actions/upload-artifact/issues/22
+      - name: Prepare a unique name for Artifacts
+        shell: bash
+        run: |
+          # replace not-allowed chars with dash
+          name="cibw-wheels-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.cibw_build }}"
+          name=$(echo -n "$name" | sed -e 's/[ \t:\/\\"<>|*?]/-/g' -e 's/--*/-/g' | sed -e 's/\-$//')
+          echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
 
       - name: '🛠️ Add msbuild to PATH'
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v2
         with:
           vs-version: '16.5'
-
-      - name: '🛠️ Win build dependencies'
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          choco install ninja
-
-      - name: '🛠️ macOS dependencies'
-        if: runner.os == 'macOS'
-        run: |
-          brew install ninja
 
       # https://cibuildwheel.pypa.io/en/stable/faq/#macos-building-cpython-38-wheels-on-arm64
       - uses: actions/setup-python@v5
@@ -94,60 +102,20 @@ jobs:
           arch: x64
 
       - name: '🛠️ Set up QEMU'
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.arch != 'x86_64'
         uses: docker/setup-qemu-action@v3
 
-      - name: '🚧 cibuildwheel run - Linux'
-        if: matrix.os == 'ubuntu-latest'
-        uses: pypa/cibuildwheel@v2.21.3
+      - name: '🚧 cibuildwheel run'
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_BUILD_FRONTEND: build
-          CIBW_BUILD: ${{ matrix.cibw_build }}*
+          CIBW_BUILD: ${{ matrix.cibw_build }}
+          CIBW_SKIP: ${{ matrix.cibw_skip }}
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_ENVIRONMENT: DEBUG=${{ env.UNICORN_DEBUG }}
           CIBW_ENVIRONMENT_PASS_LINUX: DEBUG
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {package}/tests
-        with:
-          package-dir: bindings/python
-          output-dir: wheelhouse
-
-      - name: '🚧 cibuildwheel run - Windows'
-        if: matrix.os == 'windows-2019'
-        uses: pypa/cibuildwheel@v2.21.3
-        env:
-          CIBW_BUILD_FRONTEND: build
-          CIBW_BUILD: 'cp38*'
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_ENVIRONMENT: DEBUG=${{ env.UNICORN_DEBUG }}
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {package}/tests
-        with:
-          package-dir: bindings/python
-          output-dir: wheelhouse
-
-      - name: '🚧 cibuildwheel run - MacOS x86_84'
-        if: matrix.os == 'macos-13'
-        uses: pypa/cibuildwheel@v2.21.3
-        env:
-          CIBW_BUILD_FRONTEND: build
-          CIBW_BUILD: 'cp38*'
-          CIBW_ENVIRONMENT: SYSTEM_VERSION_COMPAT=0 DEBUG=${{ env.UNICORN_DEBUG }}
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {package}/tests
-        with:
-          package-dir: bindings/python
-          output-dir: wheelhouse
-
-      - name: '🚧 cibuildwheel run - MacOS arm64'
-        if: matrix.os == 'macos-latest'
-        uses: pypa/cibuildwheel@v2.21.3
-        env:
-          CIBW_BUILD_FRONTEND: build
-          CIBW_BUILD: 'cp38*'
-          CIBW_ENVIRONMENT: DEBUG=${{ env.UNICORN_DEBUG }}
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {package}/tests
+          CIBW_TEST_EXTRAS: test
+          CIBW_TEST_COMMAND: 'python -m unittest discover -v {project}/tests/regress "*.py"'
           # https://github.com/pypa/cibuildwheel/pull/1169
           CIBW_TEST_SKIP: "cp38-macosx_*:arm64"
         with:
@@ -155,49 +123,42 @@ jobs:
           output-dir: wheelhouse
 
       # we re-tag cp38 wheel (just an old one) with py2 tag. Hacky but it works...
-      - name: '🚧 Python 2.7 wheels re-tagging - Windows'
-        if: matrix.os == 'windows-2019'
-        run: |
-          python -m pip install -U pip wheel && Get-ChildItem -Path wheelhouse/ -Filter *cp38*.whl | Foreach-Object {
-            python -m wheel tags --python-tag='py2' --abi-tag=none $_.FullName
-            break
-          }
-
-      - name: '🚧 Python 2.7 wheels re-tagging - Non-Windows'
-        if: matrix.os != 'windows-2019'
+      - name: '🚧 Python 2.7 wheels re-tagging'
         env:
           PIP_BREAK_SYSTEM_PACKAGES: 1
+        shell: bash
         run: |
-          python3 -m pip install -U pip wheel && python3 -m wheel tags --python-tag='py2' --abi-tag=none wheelhouse/*cp38*.whl
+          python3 -m pip install -U pip wheel
+          python3 -m wheel tags --python-tag='py2' --abi-tag=none wheelhouse/*cp38*.whl
 
-      - uses: LizardByte/setup-python-action@master
-        if: (matrix.os == 'ubuntu-latest' && matrix.arch == 'x86_64' && matrix.cibw_build == 'cp38-manylinux') || matrix.os == 'macos-latest' || (matrix.os == 'windows-2019' && matrix.arch == 'AMD64')
+      - uses: LizardByte/setup-python-action@v2024.919.163656
+        if: (matrix.os == 'ubuntu-latest' && matrix.arch == 'x86_64' && matrix.cibw_build == 'cp38-manylinux*') || matrix.os == 'macos-latest' || (matrix.os == 'windows-2019' && matrix.arch == 'AMD64')
         with:
           python-version: 2.7
 
+      # we install and test python2.7 wheels only on native arch
       - name: 'Python 2.7 tests - Windows'
         if: matrix.os == 'windows-2019' && matrix.arch == 'AMD64'
+        shell: bash
         run: |
-          C:\Python27\python.exe -m pip install -U pip pytest && Get-ChildItem -Path wheelhouse/ -Filter *py2*.whl | Foreach-Object {
-            C:\Python27\python.exe -m pip install $_.FullName
-            C:\Python27\python.exe -m pytest bindings/python/tests
-            break
-          }
+          C:/Python27/python.exe -m pip install capstone==4.0.2 wheelhouse/*py2*.whl
+          C:/Python27/python.exe -m unittest discover tests/regress "*.py"
 
-      # we install and test python2.7 wheels only on native arch
       # NOTE: no python2.7 support for macos-13: https://github.com/LizardByte/setup-python-action/issues/2
       - name: 'Python 2.7 tests - Non-Windows'
-        if: (matrix.os == 'ubuntu-latest' && matrix.arch == 'x86_64' && matrix.cibw_build == 'cp38-manylinux') || matrix.os == 'macos-latest'
-        run: python2 -m pip install wheelhouse/*py2*.whl && python2 -m pip install -U pip pytest && python2 -m pytest bindings/python/tests
+        if: (matrix.os == 'ubuntu-latest' && matrix.arch == 'x86_64' && matrix.cibw_build == 'cp38-manylinux*') || matrix.os == 'macos-latest'
+        run: |
+          python2 -m pip install capstone==4.0.2 wheelhouse/*py2*.whl
+          python2 -m unittest discover tests/regress "*.py"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}-py38
+          name: ${{ env.ARTIFACT_NAME }}
           path: ./wheelhouse/*.whl
 
   # Job to be executed to build all wheels for all platforms/architectures/python versions only for tag release
   build_wheels_all_versions:
-    name: Building on ${{ matrix.os }} - ${{ matrix.arch }} ${{ matrix.cibw_build }}
+    name: Building on ${{ matrix.os }} - ${{ matrix.arch }} - ${{ matrix.cibw_build }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -205,71 +166,71 @@ jobs:
         include:
           # NOTE: aarch64 builds are super slow due to QEMU emulation. Making this to parallelize and speed up workflow
           # i686 - manylinux
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp37-manylinux' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp39-manylinux' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp310-manylinux' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp311-manylinux' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp312-manylinux' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp313-manylinux' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp37-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp39-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp310-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp311-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp312-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp313-manylinux*', cibw_skip: '' }
           # i686 - musllinux
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp37-musllinux' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp39-musllinux' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp310-musllinux' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp311-musllinux' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp312-musllinux' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp313-musllinux' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp37-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp39-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp310-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp311-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp312-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp313-musllinux*', cibw_skip: '' }
           # x86_64 - manylinux
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp37-manylinux' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp39-manylinux' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp310-manylinux' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp311-manylinux' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp312-manylinux' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp313-manylinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp37-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp39-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp310-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp311-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp312-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp313-manylinux*', cibw_skip: '' }
           # x86_64 - musllinux
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp37-musllinux' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp39-musllinux' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp310-musllinux' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp311-musllinux' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp312-musllinux' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp313-musllinux' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp37-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp39-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp310-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp311-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp312-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp313-musllinux*', cibw_skip: '' }
           # aarch64 - manylinux
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp37-manylinux' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp39-manylinux' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp310-manylinux' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp311-manylinux' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp312-manylinux' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp313-manylinux' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp37-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp39-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp310-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp311-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp312-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp313-manylinux*', cibw_skip: '' }
           # aarch64 - musllinux
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp37-musllinux' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp39-musllinux' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp310-musllinux' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp311-musllinux' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp312-musllinux' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp313-musllinux' }
-          - { os: macos-13, arch: x86_64, cibw_build: '' }
-          - { os: macos-latest, arch: arm64, cibw_build: '' }
-          - { os: windows-2019, arch: AMD64, cibw_build: '' }
-          - { os: windows-2019, arch: x86, cibw_build: '' }
-    if: startsWith(github.ref, 'refs/tags')
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp37-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp39-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp310-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp311-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp312-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp313-musllinux*', cibw_skip: '' }
+          - { os: macos-13, arch: x86_64, cibw_build: 'cp*', cibw_skip: '*36* *38*' }
+          - { os: macos-latest, arch: arm64, cibw_build: 'cp*', cibw_skip: '*36* *37* *38*' }
+          - { os: windows-2019, arch: AMD64, cibw_build: 'cp*', cibw_skip: '*36* *38*' }
+          - { os: windows-2019, arch: x86, cibw_build: 'cp*', cibw_skip: '*36* *38*' }
+    if: ${{ inputs.fullMode == 1 || startsWith(github.ref, 'refs/tags') || contains(github.event.head_commit.message, 'CI(full)') }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # https://github.com/actions/upload-artifact/issues/22
+      - name: Prepare a unique name for Artifacts
+        shell: bash
+        run: |
+          # replace not-allowed chars with dash
+          name="cibw-wheels-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.cibw_build }}"
+          name=$(echo -n "$name" | sed -e 's/[ \t:\/\\"<>|*?]/-/g' -e 's/--*/-/g' | sed -e 's/\-$//')
+          echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
 
       - name: '🛠️ Add msbuild to PATH'
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v2
         with:
           vs-version: '16.5'
-
-      - name: '🛠️ Win build dependencies'
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          choco install ninja
-
-      - name: '🛠️ macOS dependencies'
-        if: runner.os == 'macOS'
-        run: |
-          brew install ninja
 
       - name: '🛠️ Win MSVC 32 dev cmd setup'
         if: runner.os == 'Windows' && matrix.arch == 'x86'
@@ -284,70 +245,27 @@ jobs:
           arch: x64
 
       - name: '🛠️ Set up QEMU'
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.arch != 'x86_64'
         uses: docker/setup-qemu-action@v3
 
-      - name: '🚧 cibuildwheel run - Linux'
-        if: matrix.os == 'ubuntu-latest'
-        uses: pypa/cibuildwheel@v2.21.3
+      - name: '🚧 cibuildwheel run'
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_BUILD_FRONTEND: build
-          CIBW_BUILD: ${{ matrix.cibw_build }}*
+          CIBW_BUILD: ${{ matrix.cibw_build }}
+          CIBW_SKIP: ${{ matrix.cibw_skip }}
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_ENVIRONMENT: DEBUG=${{ env.UNICORN_DEBUG }}
           CIBW_ENVIRONMENT_PASS_LINUX: DEBUG
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {package}/tests
-        with:
-          package-dir: bindings/python
-          output-dir: wheelhouse
-
-      - name: '🚧 cibuildwheel run - Windows'
-        if: matrix.os == 'windows-2019'
-        uses: pypa/cibuildwheel@v2.21.3
-        env:
-          CIBW_BUILD_FRONTEND: build
-          CIBW_SKIP: '*36* *38*'
-          CIBW_BUILD: 'cp*'
-          CIBW_ENVIRONMENT: DEBUG=${{ env.UNICORN_DEBUG }}
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {package}/tests
-        with:
-          package-dir: bindings/python
-          output-dir: wheelhouse
-
-      - name: '🚧 cibuildwheel run - MacOS x86_84'
-        if: matrix.os == 'macos-13'
-        uses: pypa/cibuildwheel@v2.21.3
-        env:
-          CIBW_BUILD_FRONTEND: build
-          CIBW_SKIP: '*36* *38*'
-          CIBW_BUILD: 'cp*'
-          CIBW_ENVIRONMENT: DEBUG=${{ env.UNICORN_DEBUG }}
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {package}/tests
-        with:
-          package-dir: bindings/python
-          output-dir: wheelhouse
-
-      - name: '🚧 cibuildwheel run - MacOS arm64'
-        if: matrix.os == 'macos-latest'
-        uses: pypa/cibuildwheel@v2.21.3
-        env:
-          CIBW_BUILD_FRONTEND: build
-          CIBW_SKIP: '*36* *37* *38*'
-          CIBW_BUILD: 'cp*'
-          CIBW_ENVIRONMENT: DEBUG=${{ env.UNICORN_DEBUG }}
-          CIBW_TEST_REQUIRES: pytest
-          CIBW_TEST_COMMAND: pytest {package}/tests
+          CIBW_TEST_EXTRAS: test
+          CIBW_TEST_COMMAND: 'python -m unittest discover -v {project}/tests/regress "*.py"'
         with:
           package-dir: bindings/python
           output-dir: wheelhouse
 
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}-all
+          name: ${{ env.ARTIFACT_NAME }}
           path: ./wheelhouse/*.whl
 
   make_sdist:
@@ -356,8 +274,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Optional, use if you use setuptools_scm
-          submodules: true  # Optional, use if you have submodules
+          fetch-depth: 0
 
       - name: Build SDist
         run: |

@@ -5,7 +5,7 @@ CODE = b"\x90" * 3
 CODE_ADDR = 0x1000
 
 
-class HookCounter(object):
+class HookCounter:
     """Counts number of hook calls."""
 
     def __init__(self):

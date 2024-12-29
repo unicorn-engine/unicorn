@@ -1,16 +1,12 @@
-#!/usr/bin/env python
-
 # reg_write() can't modify PC from within trace callbacks
 # issue #210
 
 import regress
-
 from unicorn import *
 from unicorn.arm_const import *
 
-
 BASE_ADDRESS = 0x10000000
-THUMB_CODE = b"\x83\xb0" * 5     # sub sp, #0xc
+THUMB_CODE = b"\x83\xb0" * 5  # sub sp, #0xc
 TARGET_PC = 0xffffffff
 
 

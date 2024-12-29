@@ -1,12 +1,8 @@
-#!/usr/bin/env python
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
-
-X86_CODE64 = b"\x90" # NOP
+X86_CODE64 = b"\x90"  # NOP
 
 
 class WriteBeforeMap(regress.RegressTest):

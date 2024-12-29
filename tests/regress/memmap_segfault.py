@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-
 import regress
-
 from unicorn import *
-from unicorn.x86_const import *
 
 
 class MmapSeg1(regress.RegressTest):

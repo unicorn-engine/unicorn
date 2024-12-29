@@ -1,15 +1,12 @@
-#!/usr/bin/env python
-
-"""See https://github.com/unicorn-engine/unicorn/issues/82"""
+""" See https://github.com/unicorn-engine/unicorn/issues/82 """
 
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
-
 CODE_ADDR = 0x10101000
 CODE = b'\xff\xe3'  # jmp ebx
+
 
 class JumEbxHang(regress.RegressTest):
     def runTest(self):

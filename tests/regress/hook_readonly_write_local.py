@@ -1,20 +1,17 @@
-#!/usr/bin/python
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
-
 
 PAGE_SIZE = 0x1000
 ACCESS_ADDR = 0x1000
 
 CODE = (
-    b'\xA1\x00\x10\x00\x00'     # mov eax, [0x1000]
-    b'\xA1\x00\x10\x00\x00'     # mov eax, [0x1000]
+    b'\xA1\x00\x10\x00\x00'  # mov eax, [0x1000]
+    b'\xA1\x00\x10\x00\x00'  # mov eax, [0x1000]
 )
 
 BASE = 0x00000000
+
 
 def hook_mem_read(uc, access, address, size, value, data):
     regress.logger.debug("Reading at %#x", address)
@@ -29,7 +26,7 @@ class REP(regress.RegressTest):
         mu.mem_map(BASE, PAGE_SIZE)
         mu.mem_write(BASE, CODE)
         mu.mem_map(ACCESS_ADDR, PAGE_SIZE, UC_PROT_READ)
-        mu.hook_add(UC_HOOK_MEM_READ, hook_mem_read, begin = ACCESS_ADDR, end = ACCESS_ADDR + PAGE_SIZE)
+        mu.hook_add(UC_HOOK_MEM_READ, hook_mem_read, begin=ACCESS_ADDR, end=ACCESS_ADDR + PAGE_SIZE)
 
         mu.emu_start(BASE, BASE + len(CODE))
 

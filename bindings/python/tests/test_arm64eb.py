@@ -3,7 +3,6 @@
 # Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
 # AARCH64 Python sample ported by zhangwm <rustydaar@gmail.com>
 
-from __future__ import print_function
 from unicorn import *
 from unicorn.arm64_const import *
 

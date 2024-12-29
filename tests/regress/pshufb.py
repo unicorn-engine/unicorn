@@ -1,8 +1,6 @@
-#!/usr/bin/python
 # By Ryan Hileman, issue #91
 
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
@@ -15,7 +13,7 @@ class Pshufb(regress.RegressTest):
 
         uc.mem_map(0x2000, 0x1000)
 
-        uc.mem_write(0x2000, b'\x66\x0f\x38\x00\xc1')   #  pshufb xmm0, xmm1
+        uc.mem_write(0x2000, b'\x66\x0f\x38\x00\xc1')  # pshufb xmm0, xmm1
 
         # Invalid instruction -> test failed
         uc.emu_start(0x2000, 0x2005)

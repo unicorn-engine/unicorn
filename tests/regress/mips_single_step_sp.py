@@ -1,27 +1,26 @@
-#!/usr/bin/python
-
 import regress
-
+import sys
+import unittest
 from unicorn import *
 from unicorn.mips_const import *
 
-
 CODE = (
-    b'\xf8\xff\x01\x24'     #  addiu $at, $zero, -8
-    b'\x24\xe8\xa1\x03'     #  and $sp, $sp, $at
-    b'\x09\xf8\x20\x03'     #  jalr $t9
-    b'\xe8\xff\xbd\x23'     #  addi $sp, $sp, -0x18
-    b'\xb8\xff\xbd\x27'     #  addiu $sp, $sp, -0x48
-    b'\x00\x00\x00\x00'     #  nop
+    b'\xf8\xff\x01\x24'  # addiu $at, $zero, -8
+    b'\x24\xe8\xa1\x03'  # and $sp, $sp, $at
+    b'\x09\xf8\x20\x03'  # jalr $t9
+    b'\xe8\xff\xbd\x23'  # addi $sp, $sp, -0x18
+    b'\xb8\xff\xbd\x27'  # addiu $sp, $sp, -0x48
+    b'\x00\x00\x00\x00'  # nop
 )
 
 BASE = 0x4010dc
+
 
 def code_hook(uc, addr, size, user_data):
     regress.logger.debug('code hook: pc=%08x sp=%08x', addr, uc.reg_read(UC_MIPS_REG_SP))
 
 
-def run(step) -> int:
+def run(step):
     uc = Uc(UC_ARCH_MIPS, UC_MODE_MIPS32 + UC_MODE_LITTLE_ENDIAN)
 
     if step:
@@ -45,6 +44,8 @@ def run(step) -> int:
 
 
 class MipsSingleStep(regress.RegressTest):
+
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
     def runTest(self):
         sp1 = run(step=False)
         sp2 = run(step=True)

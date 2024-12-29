@@ -1,12 +1,9 @@
-#!/usr/bin/python
 # By Ryan Hileman, issue #9
 
 # this prints out 2 lines and the contents must be the same
 
 import regress
-
 from unicorn import *
-from unicorn.x86_const import *
 
 
 class MemMap(regress.RegressTest):
@@ -40,7 +37,7 @@ class MemMap(regress.RegressTest):
         for i in range(20):
             with self.assertRaises(UcError):
                 u.mem_map(i * 0x1000, 5)
-                u.mem_read(i * 0x1000+6, 1)
+                u.mem_read(i * 0x1000 + 6, 1)
 
 
 if __name__ == '__main__':
