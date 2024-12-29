@@ -1342,6 +1342,48 @@ static void test_x86_unaligned_access(void)
 
     OK(uc_close(uc));
 }
+
+static void test_x86_64_unaligned_access(void){
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = {
+        "\x48\x89\x01"  //   mov         qword ptr [rcx],rax
+        "\x48\x8b\x00"  //  mov         rax,qword ptr [rax]  
+        "\xcc"
+    };
+    uint64_t r_rax = LEINT64(0x2fffff);
+    uint64_t r_rcx = LEINT64(0x2fffff);
+    struct writelog_t write_log[10];
+    struct writelog_t read_log[10];
+    memset(write_log, 0, sizeof(write_log));
+    memset(read_log, 0, sizeof(read_log));
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_mem_map(uc, 0x200000, 0x200000, UC_PROT_ALL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE,
+                   test_x86_unaligned_access_callback, write_log, 1, 0));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ,
+                   test_x86_unaligned_access_callback, read_log, 1, 0));
+
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &r_rax));
+    OK(uc_reg_write(uc, UC_X86_REG_RCX, &r_rcx));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 2));
+
+    TEST_CHECK(write_log[0].addr == 0x2fffff);
+    TEST_CHECK(write_log[0].size == 8);
+    TEST_CHECK(write_log[1].size == 0);
+
+    TEST_CHECK(read_log[0].addr == 0x2fffff);
+    TEST_CHECK(read_log[0].size == 8);
+    TEST_CHECK(read_log[1].size == 0);
+
+    uint64_t b;
+    OK(uc_mem_read(uc, 0x2fffff, &b, 8));
+    TEST_CHECK(b == 0x2fffff);
+
+    OK(uc_close(uc));
+
+}
 #endif
 
 static bool test_x86_lazy_mapping_mem_callback(uc_engine *uc, uc_mem_type type,
@@ -2019,6 +2061,8 @@ TEST_LIST = {
     {"test_x86_invalid_vex_l", test_x86_invalid_vex_l},
 #if !defined(TARGET_READ_INLINED) && defined(BOOST_LITTLE_ENDIAN)
     {"test_x86_unaligned_access", test_x86_unaligned_access},
+    {"test_x86_64_unaligned_access", test_x86_64_unaligned_access},
+
 #endif
     {"test_x86_lazy_mapping", test_x86_lazy_mapping},
     {"test_x86_16_incorrect_ip", test_x86_16_incorrect_ip},

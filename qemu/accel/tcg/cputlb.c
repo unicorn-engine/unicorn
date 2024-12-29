@@ -1593,7 +1593,8 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
     }
 
     // now it is read on mapped memory
-    if (!code_read) {
+    // patch issue #1041 multiple UC_HOOK_MEM callbacks for unaligned access
+    if (!code_read && !uc->size_recur_mem) {
         // this is date reading
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ) {
             if (hook->to_delete)
