@@ -102,24 +102,25 @@ def build_libraries():
 
     has_msbuild = shutil.which('msbuild') is not None
     conf = 'Debug' if int(os.getenv('DEBUG', 0)) else 'Release'
+    cmake_args = ['cmake', '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
+    if os.getenv("UNICORN_TRACER"):
+        cmake_args += ["-DUNICORN_TRACER=on"]
+    if conf == 'Debug':
+        cmake_args += ["-DUNICORN_LOGGING=on"]
 
     if has_msbuild and sys.platform == 'win32':
+        generators = os.getenv('GENERATORS') or 'Visual Studio 16 2019'
         plat = 'Win32' if platform.architecture()[0] == '32bit' else 'x64'
-
-        subprocess.check_call(['cmake', '-B', BUILD_DIR, '-G', "Visual Studio 16 2019", "-A", plat,
-                               "-DCMAKE_BUILD_TYPE=" + conf], cwd=UC_DIR)
+        cmake_args += ['-G', generators, "-A", plat]
+        subprocess.check_call(cmake_args, cwd=UC_DIR)
         subprocess.check_call(['msbuild', 'unicorn.sln', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf],
                               cwd=BUILD_DIR)
 
         obj_dir = os.path.join(BUILD_DIR, conf)
         shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
-        shutil.copy(os.path.join(BUILD_DIR, STATIC_LIBRARY_FILE), LIBS_DIR)
+        shutil.copy(os.path.join(obj_dir, STATIC_LIBRARY_FILE), LIBS_DIR)
     else:
-        cmake_args = ["cmake", '-B', BUILD_DIR, '-S', UC_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
-        if os.getenv("TRACE"):
-            cmake_args += ["-DUNICORN_TRACER=on"]
-        if conf == "Debug":
-            cmake_args += ["-DUNICORN_LOGGING=on"]
+        cmake_args += ['-S', UC_DIR]
         subprocess.check_call(cmake_args, cwd=UC_DIR)
         threads = os.getenv("THREADS", "4")
         subprocess.check_call(["cmake", "--build", ".", "-j" + threads], cwd=BUILD_DIR)

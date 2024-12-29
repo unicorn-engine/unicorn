@@ -2163,14 +2163,12 @@ int main() {
 EOF
     if ! compile_prog ""; then
       have_sprr_mrs='no'
-      have_pthread_jit_protect='no'
     else
       $TMPE
       if [ $? -eq 0 ]; then
         have_sprr_mrs='yes'
       else
         have_sprr_mrs='no'
-        have_pthread_jit_protect='no'
       fi
     fi
   fi

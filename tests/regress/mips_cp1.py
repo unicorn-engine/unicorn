@@ -1,11 +1,8 @@
-
 import regress
-
 from unicorn import *
 from unicorn.mips_const import *
 
-
-CODE = b'\x44\x43\xF8\x00'      #  cfc1    $v1, FCSR
+CODE = b'\x44\x43\xF8\x00'  # cfc1    $v1, FCSR
 BASE = 0x416CB0
 
 

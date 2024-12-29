@@ -2,7 +2,6 @@
 # Sample code for ARM of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
 
-from __future__ import print_function
 from unicorn import *
 from unicorn.m68k_const import *
 

@@ -1,27 +1,22 @@
-#!/usr/bin/python
-
-import binascii
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
-
-CODE = binascii.unhexlify((
-    "8B 74 01 28"       # mov esi, dword ptr [ecx + eax + 0x28]  mapped: 0x1000
-    "03 F0"             # add esi, eax                                   0x1004
-    "8D 45 FC"          # lea eax, dword ptr [ebp - 4]                   0x1006
-    "50"                # push eax                                       0x1009
-    "6A 40"             # push 0x40                                      0x100A
-    "6A 10"             # push 0x10                                      0x100C
-    "56"                # push esi                                       0x100E
-).replace(' ', ''))
-
+CODE = (
+    b'\x8B\x74\x01\x28'  # mov esi, dword ptr [ecx + eax + 0x28]  mapped: 0x1000
+    b'\x03\xF0'          # add esi, eax                                   0x1004
+    b'\x8D\x45\xFC'      # lea eax, dword ptr [ebp - 4]                   0x1006
+    b'\x50'              # push eax                                       0x1009
+    b'\x6A\x40'          # push 0x40                                      0x100A
+    b'\x6A\x10'          # push 0x10                                      0x100C
+    b'\x56'              # push esi                                       0x100E
+)
 BASE = 0x1000
 STACK = 0x4000
 
 
-class HookCodeStopEmuTest(regress.RegressTest):
+class EmuClearErrorsTest(regress.RegressTest):
+
     def test_hook_code_stop_emu(self):
         mu = Uc(UC_ARCH_X86, UC_MODE_32)
 

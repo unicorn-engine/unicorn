@@ -1,9 +1,5 @@
-
 import regress
-
 from unicorn import *
-from unicorn.arm_const import *
-
 
 CODE = (
     b'\x00\x00\x8a\xe0'     #       ADD R0, R10, R0

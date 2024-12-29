@@ -1,13 +1,10 @@
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
-
 CODE = (
-    b'\x8b\x83\xd4\x05\x00\x00'     #  mov    eax, DWORD PTR [ebx+0x5d4]
-    b'\x8b\x93\x80\x05\x00\x00'     #  mov    edx, DWORD PTR [ebx+0x580]
+    b'\x8b\x83\xd4\x05\x00\x00'  # mov    eax, DWORD PTR [ebx+0x5d4]
+    b'\x8b\x93\x80\x05\x00\x00'  # mov    edx, DWORD PTR [ebx+0x580]
 )
 
 BASE = 0x47bb000

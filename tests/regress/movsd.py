@@ -1,12 +1,10 @@
-#!/usr/bin/python
 # By Ryan Hileman, issue #3
 
 import regress
-
+import sys
+import unittest
 from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 from unicorn import *
-from unicorn.x86_const import *
-
 
 CODE = b'\xf2\x0f\x10\x05\xaa\x12\x00\x00'
 
@@ -24,6 +22,8 @@ def hook_code(uc, addr, size, md):
 
 
 class Movsd(regress.RegressTest):
+
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
     def runTest(self):
         addr = 0x400000
         mu = Uc(UC_ARCH_X86, UC_MODE_64)

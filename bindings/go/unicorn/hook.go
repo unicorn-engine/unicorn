@@ -98,6 +98,12 @@ func hookX86Syscall(handle unsafe.Pointer, user unsafe.Pointer) {
 	hook.Callback.(func(Unicorn))(hook.Uc)
 }
 
+//export hookX86Cpuid
+func hookX86Cpuid(handle unsafe.Pointer, user unsafe.Pointer) bool {
+	hook := hookMap.get(user)
+	return hook.Callback.(func(Unicorn) bool)(hook.Uc)
+}
+
 func (u *uc) HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int) (Hook, error) {
 	var callback unsafe.Pointer
 	var insn C.int
@@ -119,6 +125,8 @@ func (u *uc) HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int)
 			callback = C.hookX86Out_cgo
 		case X86_INS_SYSCALL, X86_INS_SYSENTER:
 			callback = C.hookX86Syscall_cgo
+		case X86_INS_CPUID, X86_INS_RDTSC, X86_INS_RDTSCP:
+			callback = C.hookX86Cpuid_cgo
 		default:
 			return 0, errors.New("Unknown instruction type.")
 		}

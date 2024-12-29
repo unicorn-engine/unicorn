@@ -2,8 +2,6 @@
 # Sample code for Unicorn.
 # By Lazymio(@wtdcode), 2021
 
-import pytest
-import sys
 from unicorn import *
 from unicorn.x86_const import *
 from datetime import datetime
@@ -36,7 +34,6 @@ def time_emulation(uc, start, end):
 
 
 # TODO: Check if worth adapting the ctl_request_cache method for py2 bindings
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="requires python3.7 or higher")
 def test_uc_ctl_tb_cache():
     # Initialize emulator in X86-32bit mode
     uc = Uc(UC_ARCH_X86, UC_MODE_32)
@@ -84,7 +81,6 @@ def trace_tcg_sub(uc, address, arg1, arg2, size, data):
 
 
 # TODO: Check if worth adapting the hook_add method for py2 bindings
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="requires python3.7 or higher")
 def test_uc_ctl_exits():
     uc = Uc(UC_ARCH_X86, UC_MODE_32)
     addr = 0x1000

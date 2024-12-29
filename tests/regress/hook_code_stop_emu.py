@@ -1,10 +1,6 @@
-#!/usr/bin/python
-
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
-
 
 CODE = (
     b'\x48\xc7\xc0\x03\x00\x00\x00'     # 0x1000:    mov      rax, 3

@@ -1,8 +1,5 @@
-#!/usr/bin/env python
-
 import os
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
@@ -12,11 +9,13 @@ filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'x86_self_m
 
 CODE_ADDR = 0x08048000
 STACK_ADDR = 0x2000000
-CODE = open(filename, 'rb').read()
+with open(filename, 'rb') as f:
+    CODE = f.read()
 CODE_SIZE = len(CODE) + (0x1000 - len(CODE) % 0x1000)
 STACK_SIZE = 0x8000
 
 ENTRY_POINT = 0x8048074
+
 
 def hook_intr(uc, intno, data):
     uc.emu_stop()

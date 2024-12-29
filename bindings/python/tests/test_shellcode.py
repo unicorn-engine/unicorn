@@ -3,8 +3,6 @@
 # Nguyen Anh Quynh <aquynh@gmail.com>
 # KaiJern Lau <kj@theshepherdlab.io>
 
-from __future__ import print_function
-import pytest
 from unicorn import *
 from unicorn.x86_const import *
 
@@ -134,8 +132,6 @@ def hook_syscall64(mu, user_data):
     mu.emu_stop()
 
 
-@pytest.mark.parametrize("mode,code",
-                         [(UC_MODE_32, X86_CODE32_SELF), (UC_MODE_32, X86_CODE32), (UC_MODE_64, X86_CODE64)])
 # Test X86 32 bit
 def test_i386(mode, code):
     if mode == UC_MODE_32:

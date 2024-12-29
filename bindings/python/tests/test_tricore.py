@@ -5,7 +5,6 @@
    Copyright 2022 Aptiv 
 """
 
-from __future__ import print_function
 from unicorn import *
 from unicorn.tricore_const import *
 

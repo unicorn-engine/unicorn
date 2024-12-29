@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # This test demonstrates emulation behavior within and across
 #  basic blocks.
@@ -6,10 +5,8 @@
 import binascii
 import struct
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
-
 
 CODE = (
     b"\xb8\x00\x00\x00\x00" # 1000:   mov    eax,0x0
@@ -22,7 +19,7 @@ CODE = (
     b"\xcc"                 # 100f:   int3
     b"\xb8\x00\x00\x00\x00" # 1010:   mov    eax,0x0
     b"\x40"                 # 1015:   inc    eax
-    b"\x40"                 # 1016:   inc    eax 
+    b"\x40"                 # 1016:   inc    eax
 )
 
 
@@ -116,12 +113,10 @@ class RunAcrossBBTest(regress.RegressTest):
 
             showpc(mu)
 
-
             #######################################################################
             # emu_run ONE:
             #   exectue four instructions, until the last instruction in a BB
             #######################################################################
-
 
             mu.emu_start(0x1000, 0x100c)
             # should exec the following four instructions:
@@ -134,21 +129,19 @@ class RunAcrossBBTest(regress.RegressTest):
             self.assertEqual(0x100c, mu.reg_read(UC_X86_REG_EIP), "unexpected PC (2)")
 
             # single push, so stack diff is 0x4
-            TOP_OF_STACK = 0x2800-0x4
+            TOP_OF_STACK = 0x2800 - 0x4
             self.assertEqual(TOP_OF_STACK, mu.reg_read(UC_X86_REG_ESP), "unexpected SP (2)")
 
             # top of stack should be 0x1010
-            self.assertEqual(0x1010, 
+            self.assertEqual(0x1010,
                              struct.unpack("<I", mu.mem_read(TOP_OF_STACK, 0x4))[0],
                              "unexpected stack value")
             showpc(mu)
-
 
             #######################################################################
             # emu_run TWO
             #   execute one instruction that jumps to a new BB
             #######################################################################
-
 
             mu.emu_start(0x100c, 0x1010)
             # should exec one instruction that jumps to 0x1010:
@@ -165,12 +158,10 @@ class RunAcrossBBTest(regress.RegressTest):
             self.assertEqual(0x2800, mu.reg_read(UC_X86_REG_ESP), "unexpected SP (3)")
             showpc(mu)
 
-
             #######################################################################
             # emu_run THREE
             #  execute three instructions to verify things work as expected
             #######################################################################
-
 
             mu.emu_start(0x1010, 0x1016)
             # should exec the following three instructions:
@@ -178,8 +169,7 @@ class RunAcrossBBTest(regress.RegressTest):
             # 1015: 40                      inc    eax       <
             # 1016: 40                      inc    eax       <
             self.assertEqual(0x1016, mu.reg_read(UC_X86_REG_EIP),
-	                     "unexpected PC (4): 0x%x vs 0x%x" % (
-				     0x1016, mu.reg_read(UC_X86_REG_EIP)))
+                             "unexpected PC (4): 0x%x vs 0x%x" % (0x1016, mu.reg_read(UC_X86_REG_EIP)))
             showpc(mu)
 
         except UcError as e:

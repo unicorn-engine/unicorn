@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # Sample code for X86 of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 
-from __future__ import print_function
 import pickle
 from unicorn import *
 from unicorn.x86_const import *

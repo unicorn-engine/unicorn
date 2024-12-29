@@ -1,13 +1,10 @@
-#!/usr/bin/env python
 # Test callback that returns False to cancel emulation
 
-from __future__ import print_function
+import regress
 from unicorn import *
 from unicorn.x86_const import *
 
-import regress
-
-X86_CODE32_MEM_WRITE = b"\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a" # mov [0xaaaaaaaa], ecx; INC ecx; DEC edx
+X86_CODE32_MEM_WRITE = b"\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a"  # mov [0xaaaaaaaa], ecx; INC ecx; DEC edx
 
 
 # callback for tracing invalid memory access (READ or WRITE)

@@ -1,8 +1,5 @@
-#!/usr/bin/python
-
 import binascii
 import regress
-
 from unicorn import *
 from unicorn.x86_const import *
 
@@ -13,7 +10,7 @@ def hook_code(uc, address, size, user_data):
     if size == 0xf1f1f1f1:
         return
 
-    regress.logger.debug("[%#x] = %s" , address, binascii.hexlify(uc.mem_read(address, size)))
+    regress.logger.debug("[%#x] = %s", address, binascii.hexlify(uc.mem_read(address, size)))
 
 
 # callback for tracing Linux interrupt
@@ -31,6 +28,7 @@ def hook_intr(uc, intno, user_data):
 
 
 class Hang(regress.RegressTest):
+
     def runTest(self):
         # self modifying shellcode execve('/bin/sh')
         shellcode = (
