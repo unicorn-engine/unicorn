@@ -641,27 +641,35 @@ static void test_x86_mmio_uc_mem_rw_write_callback(uc_engine *uc,
                                                    uint64_t value,
                                                    void *user_data)
 {
-    TEST_CHECK(offset == 4);
+    //dprintf(2, "value = 0x%lx, size = %d, offset = %d\n", value, size, offset);
     TEST_CHECK(size == 4);
-    TEST_CHECK(value == 0xdeadbeef);
-
+    TEST_CHECK(value != 0x1234567890abcdef);
+    if (offset == 4) {
+        TEST_CHECK(value == 0x90abcdef);
+    } else if (offset == 8) {
+        TEST_CHECK(value == 0x12345678);
+    } else {
+        TEST_CHECK(false);
+    }
     return;
 }
 
 static void test_x86_mmio_uc_mem_rw(void)
 {
     uc_engine *uc;
-    int data = LEINT32(0xdeadbeef);
+    uint64_t data = LEINT64(0x1234567890abcdef);
 
-    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    //OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
 
     OK(uc_mmio_map(uc, 0x20000, 0x1000, test_x86_mmio_uc_mem_rw_read_callback,
                    NULL, test_x86_mmio_uc_mem_rw_write_callback, NULL));
 
-    OK(uc_mem_write(uc, 0x20004, (void *)&data, 4));
+    OK(uc_mem_write(uc, 0x20004, (void *)&data, 8));
     OK(uc_mem_read(uc, 0x20008, (void *)&data, 4));
 
-    TEST_CHECK(LEINT32(data) == 0x19260817);
+    //dprintf(2, "data = 0x%lx\n", LEINT32(data));
+    TEST_CHECK(LEINT32(data) == 0x1234567819260817);
 
     OK(uc_close(uc));
 }
