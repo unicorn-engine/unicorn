@@ -38,6 +38,7 @@ See [docs/COMPILE.md](docs/COMPILE.md) file for how to compile and install Unico
 
 More documentation is available in [docs/README.md](docs/README.md).
 
+For common questions, read [docs/FAQ.md](docs/FAQ.md) before raising an issue.
 
 Contact
 -------
