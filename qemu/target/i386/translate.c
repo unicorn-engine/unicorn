@@ -2914,6 +2914,9 @@ static inline void gen_ldq_env_A0(DisasContext *s, int offset)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ))
+        gen_sync_pc(tcg_ctx, s->prev_pc); // Unicorn: sync EIP
+
     tcg_gen_qemu_ld_i64(tcg_ctx, s->tmp1_i64, s->A0, s->mem_index, MO_LEQ);
     tcg_gen_st_i64(tcg_ctx, s->tmp1_i64, tcg_ctx->cpu_env, offset);
 }
@@ -2921,6 +2924,9 @@ static inline void gen_ldq_env_A0(DisasContext *s, int offset)
 static inline void gen_stq_env_A0(DisasContext *s, int offset)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE))
+        gen_sync_pc(tcg_ctx, s->prev_pc); // Unicorn: sync EIP
 
     tcg_gen_ld_i64(tcg_ctx, s->tmp1_i64, tcg_ctx->cpu_env, offset);
     tcg_gen_qemu_st_i64(tcg_ctx, s->tmp1_i64, s->A0, s->mem_index, MO_LEQ);
@@ -2930,6 +2936,10 @@ static inline void gen_ldo_env_A0(DisasContext *s, int offset)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int mem_index = s->mem_index;
+
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ))
+        gen_sync_pc(tcg_ctx, s->prev_pc); // Unicorn: sync EIP
+
     tcg_gen_qemu_ld_i64(tcg_ctx, s->tmp1_i64, s->A0, mem_index, MO_LEQ);
     tcg_gen_st_i64(tcg_ctx, s->tmp1_i64, tcg_ctx->cpu_env, offset + offsetof(ZMMReg, ZMM_Q(0)));
     tcg_gen_addi_tl(tcg_ctx, s->tmp0, s->A0, 8);
@@ -2941,6 +2951,10 @@ static inline void gen_sto_env_A0(DisasContext *s, int offset)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int mem_index = s->mem_index;
+
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE))
+        gen_sync_pc(tcg_ctx, s->prev_pc); // Unicorn: sync EIP
+
     tcg_gen_ld_i64(tcg_ctx, s->tmp1_i64, tcg_ctx->cpu_env, offset + offsetof(ZMMReg, ZMM_Q(0)));
     tcg_gen_qemu_st_i64(tcg_ctx, s->tmp1_i64, s->A0, mem_index, MO_LEQ);
     tcg_gen_addi_tl(tcg_ctx, s->tmp0, s->A0, 8);
