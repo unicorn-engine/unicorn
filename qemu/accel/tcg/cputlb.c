@@ -1665,7 +1665,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 return 0;
             }
         }
-    } else {
+    } else if (code_read) {
         // code fetching
         // Unicorn: callback on fetch from NX
         if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  // non-executable
