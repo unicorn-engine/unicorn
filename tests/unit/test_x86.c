@@ -61,7 +61,7 @@ static void QuickTest_run(QuickTest *test)
             uint64_t value = 0;
             OK(uc_reg_read(uc, out->reg, &value));
             acutest_check_(value == out->value, out->file, out->line,
-                           "OUT_REG(%s, 0x%llX) = 0x%llX", out->name,
+                           "OUT_REG(%s, 0x%lX) = 0x%lX", out->name,
                            out->value, value);
         } else {
             uint32_t value = 0;
