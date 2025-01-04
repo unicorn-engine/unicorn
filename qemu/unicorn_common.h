@@ -40,6 +40,10 @@ static void release_common(void *t)
     int i;
 #endif
 
+    // Clear bps
+    cpu_watchpoint_remove_all(CPU(s->uc->cpu), BP_CPU);
+    cpu_breakpoint_remove_all(CPU(s->uc->cpu), BP_CPU);
+
     // Clean TCG.
     TCGOpDef* def = s->tcg_op_defs;
     g_free(def->args_ct);
@@ -72,8 +76,6 @@ static void release_common(void *t)
     /* qemu/util/qht.c:264: map = qht_map_create(n_buckets); */
     qht_destroy(&s->tb_ctx.htable);
 
-    cpu_watchpoint_remove_all(CPU(s->uc->cpu), BP_CPU);
-    cpu_breakpoint_remove_all(CPU(s->uc->cpu), BP_CPU);
 
 #if TCG_TARGET_REG_BITS == 32
     for(i = 0; i < s->nb_globals; i++) {

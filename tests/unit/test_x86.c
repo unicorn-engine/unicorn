@@ -2019,6 +2019,17 @@ static void test_x86_hook_insn_rdtscp(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_dr7() {
+    uc_engine *uc;
+    char code[] =
+        "\x48\xC7\xC0\x05\x00\x01\x00\x0F\x23\xF8"; // mov rax, 0x10005
+                                                    // mov dr7, rax
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2079,4 +2090,5 @@ TEST_LIST = {
     {"test_x86_ro_segfault", test_x86_ro_segfault},
     {"test_x86_hook_insn_rdtsc", test_x86_hook_insn_rdtsc},
     {"test_x86_hook_insn_rdtscp", test_x86_hook_insn_rdtscp},
+    {"test_x86_dr7", test_x86_dr7},
     {NULL, NULL}};
