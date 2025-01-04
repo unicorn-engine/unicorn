@@ -2000,7 +2000,8 @@ static bool x86_stop_interrupt(struct uc_struct *uc, int intno)
 
 static bool x86_insn_hook_validate(uint32_t insn_enum)
 {
-    // for x86 we can only hook IN, OUT, SYSCALL, SYSENTER, CPUID, RDTSC, and RDTSCP
+    // for x86 we can only hook IN, OUT, SYSCALL, SYSENTER, CPUID, RDTSC, and
+    // RDTSCP
     if (insn_enum != UC_X86_INS_IN && insn_enum != UC_X86_INS_OUT &&
         insn_enum != UC_X86_INS_SYSCALL && insn_enum != UC_X86_INS_SYSENTER &&
         insn_enum != UC_X86_INS_CPUID && insn_enum != UC_X86_INS_RDTSC &&

@@ -108,7 +108,8 @@ typedef MemoryRegion *(*uc_memory_mapping_t)(struct uc_struct *, hwaddr addr);
 
 typedef void (*uc_memory_filter_t)(MemoryRegion *, int32_t);
 
-typedef bool (*uc_flatview_copy_t)(struct uc_struct *, FlatView *, FlatView *, bool);
+typedef bool (*uc_flatview_copy_t)(struct uc_struct *, FlatView *, FlatView *,
+                                   bool);
 
 typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
@@ -426,14 +427,14 @@ struct uc_struct {
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
 struct uc_context {
-    size_t context_size; // size of the real internal context structure
-    uc_mode mode;        // the mode of this context
-    uc_arch arch;        // the arch of this context
-    int snapshot_level;  // the memory snapshot level to restore
-    bool ramblock_freed; // wheter there was a some ramblock freed
-    RAMBlock *last_block;// The last element of the ramblock list
-    FlatView *fv;        // The current flatview of the memory
-    char data[0];        // context
+    size_t context_size;  // size of the real internal context structure
+    uc_mode mode;         // the mode of this context
+    uc_arch arch;         // the arch of this context
+    int snapshot_level;   // the memory snapshot level to restore
+    bool ramblock_freed;  // wheter there was a some ramblock freed
+    RAMBlock *last_block; // The last element of the ramblock list
+    FlatView *fv;         // The current flatview of the memory
+    char data[0];         // context
 };
 
 // We have to support 32bit system so we can't hold uint64_t on void*

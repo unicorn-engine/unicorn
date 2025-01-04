@@ -632,10 +632,11 @@ static void test_x86_smc_add(void)
     /*
      * mov qword ptr [rip+0x10], rax
      * mov word ptr [rip], 0x0548
-     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412 add rax, 0x12345678
-     * hlt
+     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412
+     * add rax, 0x12345678 hlt
      */
-    char code[] = "\x48\x89\x05\x10\x00\x00\x00\x66\xc7\x05\x00\x00\x00\x00\x48\x05\x8b\x80\x78\x56\x34\x12\xf4";
+    char code[] = "\x48\x89\x05\x10\x00\x00\x00\x66\xc7\x05\x00\x00\x00\x00\x48"
+                  "\x05\x8b\x80\x78\x56\x34\x12\xf4";
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
 
     OK(uc_mem_map(uc, stack_base, 0x2000, UC_PROT_ALL));
@@ -648,10 +649,11 @@ static void test_x86_smc_mem_hook_callback(uc_engine *uc, uc_mem_type t,
                                            uint64_t addr, int size,
                                            uint64_t value, void *user_data)
 {
-    uint64_t write_addresses[] = { 0x1030, 0x1010, 0x1010, 0x1018, 0x1018, 0x1029, 0x1029 };
+    uint64_t write_addresses[] = {0x1030, 0x1010, 0x1010, 0x1018,
+                                  0x1018, 0x1029, 0x1029};
     unsigned int *i = user_data;
 
-    TEST_CHECK(*i < (sizeof(write_addresses)/sizeof(write_addresses[0])));
+    TEST_CHECK(*i < (sizeof(write_addresses) / sizeof(write_addresses[0])));
     TEST_CHECK(write_addresses[*i] == addr);
     (*i)++;
 }
@@ -666,19 +668,19 @@ static void test_x86_smc_mem_hook(void)
     /*
      * mov qword ptr [rip+0x29], rax
      * mov word ptr [rip], 0x0548
-     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412 add rax, 0x12345678
-     * nop
-     * nop
-     * nop
-     * mov qword ptr [rip-0x08], rax
-     * mov word ptr [rip], 0x0548
-     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412 add rax, 0x12345678
-     * hlt
+     * [orig] mov eax, dword ptr [rax + 0x12345678]; [after SMC] 480578563412
+     * add rax, 0x12345678 nop nop nop mov qword ptr [rip-0x08], rax mov word
+     * ptr [rip], 0x0548 [orig] mov eax, dword ptr [rax + 0x12345678]; [after
+     * SMC] 480578563412 add rax, 0x12345678 hlt
      */
-    char code[] = "\x48\x89\x05\x29\x00\x00\x00\x66\xC7\x05\x00\x00\x00\x00\x48\x05\x8B\x80\x78\x56\x34\x12\x90\x90\x90\x48\x89\x05\xF8\xFF\xFF\xFF\x66\xC7\x05\x00\x00\x00\x00\x48\x05\x8B\x80\x78\x56\x34\x12\xF4";
+    char code[] =
+        "\x48\x89\x05\x29\x00\x00\x00\x66\xC7\x05\x00\x00\x00\x00\x48\x05\x8B"
+        "\x80\x78\x56\x34\x12\x90\x90\x90\x48\x89\x05\xF8\xFF\xFF\xFF\x66\xC7"
+        "\x05\x00\x00\x00\x00\x48\x05\x8B\x80\x78\x56\x34\x12\xF4";
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
 
-    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE, test_x86_smc_mem_hook_callback, &i, 1, 0));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE, test_x86_smc_mem_hook_callback,
+                   &i, 1, 0));
     OK(uc_mem_map(uc, stack_base, 0x2000, UC_PROT_ALL));
     r_rsp = stack_base + 0x1800;
     OK(uc_reg_write(uc, UC_X86_REG_RSP, &r_rsp));
@@ -1343,14 +1345,13 @@ static void test_x86_unaligned_access(void)
     OK(uc_close(uc));
 }
 
-static void test_x86_64_unaligned_access(void){
+static void test_x86_64_unaligned_access(void)
+{
     uc_engine *uc;
     uc_hook hook;
-    char code[] = {
-        "\x48\x89\x01"  //   mov         qword ptr [rcx],rax
-        "\x48\x8b\x00"  //  mov         rax,qword ptr [rax]  
-        "\xcc"
-    };
+    char code[] = {"\x48\x89\x01" //   mov         qword ptr [rcx],rax
+                   "\x48\x8b\x00" //  mov         rax,qword ptr [rax]
+                   "\xcc"};
     uint64_t r_rax = LEINT64(0x2fffff);
     uint64_t r_rcx = LEINT64(0x2fffff);
     struct writelog_t write_log[10];
@@ -1382,7 +1383,6 @@ static void test_x86_64_unaligned_access(void){
     TEST_CHECK(b == 0x2fffff);
 
     OK(uc_close(uc));
-
 }
 #endif
 
