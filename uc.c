@@ -2543,7 +2543,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 break;
             }
 
-            if (uc->arch != UC_ARCH_ARM) {
+            if (uc->arch != UC_ARCH_ARM && uc->arch != UC_ARCH_ARM64) {
                 err = UC_ERR_ARG;
                 break;
             }
