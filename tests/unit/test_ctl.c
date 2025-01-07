@@ -198,6 +198,29 @@ static void test_uc_ctl_change_page_size(void)
 }
 #endif
 
+// Test requires UC_ARCH_ARM64.
+#ifdef UNICORN_HAS_ARM64
+static void test_uc_ctl_change_page_size_arm64(void)
+{
+    uc_engine *uc;
+    uc_engine *uc2;
+    uint32_t pg = 0;
+
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc2));
+
+    OK(uc_ctl_set_page_size(uc, 16384));
+    OK(uc_ctl_get_page_size(uc, &pg));
+    TEST_CHECK(pg == 16384);
+
+    OK(uc_mem_map(uc2, 1 << 10, 1 << 10, UC_PROT_ALL));
+    uc_assert_err(UC_ERR_ARG, uc_mem_map(uc, 1 << 10, 1 << 10, UC_PROT_ALL));
+
+    OK(uc_close(uc));
+    OK(uc_close(uc2));
+}
+#endif
+
 // Test requires UC_ARCH_ARM.
 #ifdef UNICORN_HAS_ARM
 // Copy from test_arm.c but with new API.
@@ -414,6 +437,9 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
 #ifdef UNICORN_HAS_ARM
              {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
              {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
+#endif
+#ifdef UNICORN_HAS_ARM64
+             {"test_uc_ctl_change_page_size_arm64", test_uc_ctl_change_page_size_arm64},
 #endif
              {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
              {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
