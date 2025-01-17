@@ -50,6 +50,7 @@
 #define vm_start vm_start_avr
 #define address_space_dispatch_compact address_space_dispatch_compact_avr
 #define flatview_translate flatview_translate_avr
+#define flatview_copy flatview_copy_avr
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_avr
 #define qemu_get_cpu qemu_get_cpu_avr
 #define cpu_address_space_init cpu_address_space_init_avr
@@ -86,6 +87,7 @@
 #define iotlb_to_section iotlb_to_section_avr
 #define address_space_dispatch_new address_space_dispatch_new_avr
 #define address_space_dispatch_free address_space_dispatch_free_avr
+#define address_space_dispatch_clear address_space_dispatch_clear_avr
 #define flatview_read_continue flatview_read_continue_avr
 #define address_space_read_full address_space_read_full_avr
 #define address_space_write address_space_write_avr
