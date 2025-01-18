@@ -61,8 +61,8 @@ static void QuickTest_run(QuickTest *test)
             uint64_t value = 0;
             OK(uc_reg_read(uc, out->reg, &value));
             acutest_check_(value == out->value, out->file, out->line,
-                           "OUT_REG(%s, 0x%" PRIx64 ") = 0x%"PRIx64"", out->name,
-                           out->value, value);
+                           "OUT_REG(%s, 0x%" PRIx64 ") = 0x%" PRIx64 "",
+                           out->name, out->value, value);
         } else {
             uint32_t value = 0;
             OK(uc_reg_read(uc, out->reg, &value));
@@ -2019,7 +2019,8 @@ static void test_x86_hook_insn_rdtscp(void)
     OK(uc_close(uc));
 }
 
-static void test_x86_dr7() {
+static void test_x86_dr7()
+{
     uc_engine *uc;
     char code[] =
         "\x48\xC7\xC0\x05\x00\x01\x00\x0F\x23\xF8"; // mov rax, 0x10005
@@ -2031,14 +2032,14 @@ static void test_x86_dr7() {
 }
 
 static void test_x86_hook_block_cb(uc_engine *uc, uint64_t address,
-                                          uint32_t size, void *user_data)
+                                   uint32_t size, void *user_data)
 {
     uint32_t pc;
 
-    OK(uc_reg_read(uc, UC_X86_REG_EIP, (void*)&pc));
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, (void *)&pc));
 
     TEST_CHECK(pc == address);
-    *((uint64_t*)user_data) += 1;
+    *((uint64_t *)user_data) += 1;
 }
 
 static void test_x86_hook_block()
@@ -2051,7 +2052,8 @@ static void test_x86_hook_block()
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
-    OK(uc_hook_add(uc, &hk, UC_HOOK_BLOCK, test_x86_hook_block_cb, (void*)&cnt, 1, 0));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_BLOCK, test_x86_hook_block_cb, (void *)&cnt,
+                   1, 0));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     TEST_CHECK(cnt == 2);

@@ -428,21 +428,22 @@ static void test_noexec(void)
     OK(uc_close(uc));
 }
 
-TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
-             {"test_uc_ctl_page_size", test_uc_ctl_page_size},
-             {"test_uc_ctl_arch", test_uc_ctl_arch},
-             {"test_uc_ctl_time_out", test_uc_ctl_time_out},
-             {"test_uc_ctl_exits", test_uc_ctl_exits},
-             {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
+TEST_LIST = {
+    {"test_uc_ctl_mode", test_uc_ctl_mode},
+    {"test_uc_ctl_page_size", test_uc_ctl_page_size},
+    {"test_uc_ctl_arch", test_uc_ctl_arch},
+    {"test_uc_ctl_time_out", test_uc_ctl_time_out},
+    {"test_uc_ctl_exits", test_uc_ctl_exits},
+    {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
 #ifdef UNICORN_HAS_ARM
-             {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
-             {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
+    {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
+    {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
 #endif
 #ifdef UNICORN_HAS_ARM64
-             {"test_uc_ctl_change_page_size_arm64", test_uc_ctl_change_page_size_arm64},
+    {"test_uc_ctl_change_page_size_arm64", test_uc_ctl_change_page_size_arm64},
 #endif
-             {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
-             {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
-             {"test_tlb_clear", test_tlb_clear},
-             {"test_noexec", test_noexec},
-             {NULL, NULL}};
+    {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
+    {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
+    {"test_tlb_clear", test_tlb_clear},
+    {"test_noexec", test_noexec},
+    {NULL, NULL}};
