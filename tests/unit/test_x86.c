@@ -2030,6 +2030,34 @@ static void test_x86_dr7() {
     OK(uc_close(uc));
 }
 
+static void test_x86_hook_block_cb(uc_engine *uc, uint64_t address,
+                                          uint32_t size, void *user_data)
+{
+    uint32_t pc;
+
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, (void*)&pc));
+
+    TEST_CHECK(pc == address);
+    *((uint64_t*)user_data) += 1;
+}
+
+static void test_x86_hook_block()
+{
+    uc_engine *uc;
+    char code[] = "\xeb\x02\x90\x90\x90\x90\x90\x90"; // jmp 4; nop; nop; nop;
+                                                      // nop; nop; nop
+    uint64_t cnt = 0;
+    uc_hook hk;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_BLOCK, test_x86_hook_block_cb, (void*)&cnt, 1, 0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(cnt == 2);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2091,4 +2119,5 @@ TEST_LIST = {
     {"test_x86_hook_insn_rdtsc", test_x86_hook_insn_rdtsc},
     {"test_x86_hook_insn_rdtscp", test_x86_hook_insn_rdtscp},
     {"test_x86_dr7", test_x86_dr7},
+    {"test_x86_hook_block", test_x86_hook_block},
     {NULL, NULL}};
