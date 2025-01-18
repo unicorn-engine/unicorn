@@ -6683,6 +6683,8 @@ static DisasJumpType translate_one(CPUS390XState *env, DisasContext *s)
 
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(s->uc, UC_HOOK_CODE, s->base.pc_next)) {
+        update_psw_addr(s);
+        update_cc_op(s);
         gen_uc_tracecode(tcg_ctx, s->ilen, UC_HOOK_CODE_IDX, s->uc, s->base.pc_next);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
@@ -6928,6 +6930,12 @@ static void s390x_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
     }
 }
 
+static void s390x_sync_pc(DisasContextBase *db, CPUState *cpu)
+{
+    DisasContext *s = container_of(db, DisasContext, base);
+    update_psw_addr(s);
+}
+
 static const TranslatorOps s390x_tr_ops = {
     .init_disas_context = s390x_tr_init_disas_context,
     .tb_start           = s390x_tr_tb_start,
@@ -6935,6 +6943,7 @@ static const TranslatorOps s390x_tr_ops = {
     .breakpoint_check   = s390x_tr_breakpoint_check,
     .translate_insn     = s390x_tr_translate_insn,
     .tb_stop            = s390x_tr_tb_stop,
+    .pc_sync            = s390x_sync_pc
 };
 
 void gen_intermediate_code(CPUState *cs, TranslationBlock *tb, int max_insns)

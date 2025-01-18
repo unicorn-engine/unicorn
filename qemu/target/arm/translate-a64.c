@@ -14834,6 +14834,12 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
+static void aarch64_sync_pc(DisasContextBase *db, CPUState *cpu)
+{
+    DisasContext *dc = container_of(db, DisasContext, base);
+    gen_a64_set_pc_im(dc->uc->tcg_ctx, dc->base.pc_next);
+}
+
 const TranslatorOps aarch64_translator_ops = {
     .init_disas_context = aarch64_tr_init_disas_context,
     .tb_start           = aarch64_tr_tb_start,
@@ -14841,4 +14847,5 @@ const TranslatorOps aarch64_translator_ops = {
     .breakpoint_check   = aarch64_tr_breakpoint_check,
     .translate_insn     = aarch64_tr_translate_insn,
     .tb_stop            = aarch64_tr_tb_stop,
+    .pc_sync            = aarch64_sync_pc
 };

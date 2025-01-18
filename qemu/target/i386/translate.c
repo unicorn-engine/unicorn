@@ -9441,6 +9441,13 @@ static void i386_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
+static void i386_sync_pc(DisasContextBase *db, CPUState *cpu)
+{
+    DisasContext *dc = container_of(db, DisasContext, base);
+
+    gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
+}
+
 static const TranslatorOps i386_tr_ops = {
     .init_disas_context = i386_tr_init_disas_context,
     .tb_start           = i386_tr_tb_start,
@@ -9448,6 +9455,7 @@ static const TranslatorOps i386_tr_ops = {
     .breakpoint_check   = i386_tr_breakpoint_check,
     .translate_insn     = i386_tr_translate_insn,
     .tb_stop            = i386_tr_tb_stop,
+    .pc_sync            = i386_sync_pc,
 };
 
 /* generate intermediate code for basic block 'tb'.  */
