@@ -299,6 +299,9 @@ static void test_arm64_correct_address_in_long_jump_hook(void)
 static void test_arm64_block_sync_pc_cb(uc_engine *uc, uint64_t addr,
                                         uint32_t size, void *data)
 {
+    uint64_t pc;
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, (void*)&pc));
+    TEST_CHECK(pc == addr);
     uint64_t val = code_start;
     bool first = *(bool *)data;
     if (first) {
