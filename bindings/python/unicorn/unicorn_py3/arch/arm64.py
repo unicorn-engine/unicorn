@@ -37,6 +37,15 @@ class UcRegCP64(UcTupledReg[ARM64CPReg]):
         return self.val
 
 
+class CpReg(NamedTuple):
+    crn: int
+    crm: int
+    op0: int
+    op1: int
+    op2: int
+    val: int
+
+
 class UcAArch64(Uc):
     """Unicorn subclass for ARM64 architecture.
     """
@@ -56,14 +65,6 @@ class UcAArch64(Uc):
             @uccallback(self, HOOK_INSN_SYS_CFUNC)
             def __hook_insn_sys_cb(uc: Uc, reg: int, pcp_reg: Any, key: int) -> int:
                 cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(UcRegCP64)).contents
-
-                class CpReg(NamedTuple):
-                    crn: int
-                    crm: int
-                    op0: int
-                    op1: int
-                    op2: int
-                    val: int
 
                 cp_reg = CpReg(cp_reg.crn, cp_reg.crm, cp_reg.op0, cp_reg.op1, cp_reg.op2, cp_reg.val)
 
