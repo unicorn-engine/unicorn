@@ -1601,7 +1601,11 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, bool is64)
     /* This a conditional BL only to load a pointer within this opcode into LR
        for the slow path.  We will not be using the value for a tail call.  */
     label_ptr = s->code_ptr;
-    tcg_out_bl(s, COND_NE, 0);
+    if (!tcg_uc_has_hookmem(s)) {
+        tcg_out_bl(s, COND_NE, 0);
+    } else {
+        tcg_out_bl(s, COND_AL, 0);
+    }
 
     tcg_out_qemu_ld_index(s, opc, datalo, datahi, addrlo, addend);
 
@@ -1733,7 +1737,11 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, bool is64)
 
     /* The conditional call must come last, as we're going to return here.  */
     label_ptr = s->code_ptr;
-    tcg_out_bl(s, COND_NE, 0);
+    if (!tcg_uc_has_hookmem(s)) {
+        tcg_out_bl(s, COND_NE, 0);
+    } else {
+        tcg_out_bl(s, COND_AL, 0);
+    }
 
     add_qemu_ldst_label(s, false, oi, datalo, datahi, addrlo, addrhi,
                         s->code_ptr, label_ptr);
