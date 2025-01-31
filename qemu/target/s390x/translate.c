@@ -28,6 +28,8 @@
 #  define LOG_DISAS(...) do { } while (0)
 #endif
 
+#define NUM_REGS 16
+
 #include "qemu/osdep.h"
 #include "cpu.h"
 #include "internal.h"
