@@ -299,6 +299,9 @@ static void test_arm64_correct_address_in_long_jump_hook(void)
 static void test_arm64_block_sync_pc_cb(uc_engine *uc, uint64_t addr,
                                         uint32_t size, void *data)
 {
+    uint64_t pc;
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, (void*)&pc));
+    TEST_CHECK(pc == addr);
     uint64_t val = code_start;
     bool first = *(bool *)data;
     if (first) {
@@ -529,6 +532,124 @@ static void test_arm64_pc_wrap(void)
     OK(uc_close(uc));
 }
 
+static void test_arm64_mem_prot_regress_hook_mem(uc_engine *uc,
+                                                 uc_mem_type type,
+                                                 uint64_t address, int size,
+                                                 int64_t value, void *user_data)
+{
+    // fprintf(stderr, "%s %p %d\n", (type == UC_MEM_WRITE) ? "UC_MEM_WRITE" :
+    // "UC_MEM_READ", (void *)address, size);
+}
+
+static bool test_arm64_mem_prot_regress_hook_prot(uc_engine *uc,
+                                                  uc_mem_type type,
+                                                  uint64_t address, int size,
+                                                  int64_t value,
+                                                  void *user_data)
+{
+    // fprintf(stderr, "%s %p %d\n", (type == UC_MEM_WRITE_PROT) ?
+    // "UC_MEM_WRITE_PROT" : ((type == UC_MEM_FETCH_PROT) ? "UC_MEM_FETCH_PROT"
+    // : "UC_MEM_READ_PROT"), (void *)address, size);
+    return false;
+}
+
+static bool test_arm64_mem_prot_regress_hook_unm(uc_engine *uc,
+                                                 uc_mem_type type,
+                                                 uint64_t address, int size,
+                                                 int64_t value, void *user_data)
+{
+    // fprintf(stderr, "%s %p %d\n", (type == UC_MEM_WRITE_UNMAPPED) ?
+    // "UC_MEM_WRITE_UNMAPPED" : ((type == UC_MEM_FETCH_UNMAPPED) ?
+    // "UC_MEM_FETCH_UNMAPPED" : "UC_MEM_READ_UNMAPPED"), (void *)address,
+    // size);
+    return false;
+}
+
+// https://github.com/unicorn-engine/unicorn/issues/2078
+static void test_arm64_mem_prot_regress(void)
+{
+    const uint8_t code[] = {
+        0x08, 0x40, 0x5e, 0x78, // ldurh w8, [x0, #-0x1c]
+    };
+
+    uc_engine *uc;
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
+
+    OK(uc_mem_map(uc, 0, 0x4000, UC_PROT_READ | UC_PROT_EXEC));
+    OK(uc_mem_map(uc, 0x4000, 0xC000, UC_PROT_READ | UC_PROT_WRITE));
+    OK(uc_mem_write(uc, 0, code, sizeof(code)));
+    uc_hook hh_mem;
+    OK(uc_hook_add(uc, &hh_mem, UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE,
+                   test_arm64_mem_prot_regress_hook_mem, NULL, 1, 0));
+
+    uc_hook hh_prot;
+    OK(uc_hook_add(uc, &hh_prot,
+                   UC_HOOK_MEM_READ_PROT | UC_HOOK_MEM_WRITE_PROT |
+                       UC_HOOK_MEM_FETCH_PROT,
+                   test_arm64_mem_prot_regress_hook_prot, NULL, 1, 0));
+
+    uc_hook hh_unm;
+    OK(uc_hook_add(uc, &hh_unm,
+                   UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED |
+                       UC_HOOK_MEM_FETCH_UNMAPPED,
+                   test_arm64_mem_prot_regress_hook_unm, NULL, 1, 0));
+
+    const uint64_t value = 0x801b;
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &value));
+
+    OK(uc_emu_start(uc, 0, sizeof(code), 0, 0));
+
+    OK(uc_close(uc));
+}
+
+static bool test_arm64_mem_read_write_cb(uc_engine *uc, int type,
+                                         uint64_t address, int size,
+                                         int64_t value, void *user_data)
+{
+    uint64_t *count = (uint64_t *)user_data;
+    switch (type) {
+    case UC_MEM_READ:
+        count[0]++;
+        break;
+    case UC_MEM_WRITE:
+        count[1]++;
+        break;
+    }
+
+    return 0;
+}
+static void test_arm64_mem_hook_read_write(void)
+{
+    uc_engine *uc;
+    // ldp x1, x2, [sp]
+    // stp x1, x2,[sp]
+    // ldp x1, x2, [sp]
+    // stp x1, x2,[sp]
+    const char code[] = {0xe1, 0x0b, 0x40, 0xa9, 0xe1, 0x0b, 0x00, 0xa9,
+                         0xe1, 0x0b, 0x40, 0xa9, 0xe1, 0x0b, 0x00, 0xa9};
+    uint64_t r_sp;
+    r_sp = 0x16db6a040;
+    uc_hook hk;
+    uint64_t counter[2] = {0, 0};
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code),
+                    UC_CPU_ARM64_A72);
+
+    uc_reg_write(uc, UC_ARM64_REG_SP, &r_sp);
+    uc_mem_map(uc, 0x16db68000, 1024 * 16, UC_PROT_ALL);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_READ, test_arm64_mem_read_write_cb,
+                   counter, 1, 0));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_WRITE, test_arm64_mem_read_write_cb,
+                   counter, 1, 0));
+
+    uc_assert_err(UC_ERR_OK, uc_emu_start(uc, code_start,
+                                          code_start + sizeof(code), 0, 0));
+
+    TEST_CHECK(counter[0] == 4 && counter[1] == 4);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -544,4 +665,6 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
               test_arm64_block_invalid_mem_read_write_sync},
              {"test_arm64_mmu", test_arm64_mmu},
              {"test_arm64_pc_wrap", test_arm64_pc_wrap},
+             {"test_arm64_mem_prot_regress", test_arm64_mem_prot_regress},
+             {"test_arm64_mem_hook_read_write", test_arm64_mem_hook_read_write},
              {NULL, NULL}};

@@ -27,7 +27,7 @@
 //#define DEBUG_UNASSIGNED
 
 void memory_region_transaction_begin(void);
-void memory_region_transaction_commit(MemoryRegion *mr);
+static void memory_region_transaction_commit(MemoryRegion *mr);
 
 typedef struct AddrRange AddrRange;
 
@@ -94,6 +94,7 @@ static void make_contained(struct uc_struct *uc, MemoryRegion *current)
 
 MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *current, hwaddr begin, size_t size)
 {
+    hwaddr addr;
     hwaddr offset;
     hwaddr current_offset;
     MemoryRegion *ram = g_new(MemoryRegion, 1);
@@ -112,17 +113,15 @@ MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *current, hwaddr beg
         g_free(ram);
         return NULL;
     }
-    memory_region_transaction_begin();
 
     memcpy(ramblock_ptr(ram->ram_block, 0), ramblock_ptr(current->ram_block, current_offset), size);
     memory_region_add_subregion_overlap(current->container, offset, ram, uc->snapshot_level);
 
     if (uc->cpu) {
-        tlb_flush(uc->cpu);
+        for (addr = ram->addr; (int64_t)(ram->end - addr) > 0; addr += uc->target_page_size) {
+           tlb_flush_page(uc->cpu, addr);
+        }
     }
-
-    uc->memory_region_update_pending = true;
-    memory_region_transaction_commit(ram);
 
     return ram;
 }
@@ -196,19 +195,33 @@ MemoryRegion *memory_map_io(struct uc_struct *uc, ram_addr_t begin, size_t size,
     return mmio;
 }
 
+static void memory_region_remove_subregion(MemoryRegion *mr,
+                                 MemoryRegion *subregion)
+{
+    assert(subregion->container == mr);
+    subregion->container = NULL;
+    QTAILQ_REMOVE(&mr->subregions, subregion, subregions_link);
+}
+
 void memory_region_filter_subregions(MemoryRegion *mr, int32_t level)
 {
     MemoryRegion *subregion, *subregion_next;
-    memory_region_transaction_begin();
+    /*
+     * memory transaction/commit are only to rebuild the flatview. At
+     * this point there is need to rebuild the flatview, because this
+     * function is either called as part of a destructor or as part of
+     * a context restore. In the destructor case the caller remove the
+     * complete memory region and should do a transaction/commit. In
+     * the context restore case the flatview is taken from the context so
+     * no need to rebuild it.
+     */
     QTAILQ_FOREACH_SAFE(subregion, &mr->subregions, subregions_link, subregion_next) {
         if (subregion->priority >= level) {
-            memory_region_del_subregion(mr, subregion);
+            memory_region_remove_subregion(mr, subregion);
             subregion->destructor(subregion);
             g_free(subregion);
-            mr->uc->memory_region_update_pending = true;
         }
     }
-    memory_region_transaction_commit(mr);
 }
 
 static void memory_region_remove_mapped_block(struct uc_struct *uc, MemoryRegion *mr, bool free)
@@ -909,6 +922,77 @@ static void flatviews_init(struct uc_struct *uc)
     }
 }
 
+bool flatview_copy(struct uc_struct *uc, FlatView *dst, FlatView *src, bool update_dispatcher)
+{
+    if (!dst->ranges || !dst->nr_allocated || dst->nr_allocated < src->nr) {
+        if (dst->ranges && dst->nr_allocated) {
+            free(dst->ranges);
+        }
+        dst->ranges = calloc(src->nr_allocated, sizeof(*dst->ranges));
+        if (!dst->ranges) {
+            return false;
+        }
+        dst->nr_allocated = src->nr_allocated;
+    }
+    memcpy(dst->ranges, src->ranges, src->nr*sizeof(*dst->ranges));
+    dst->nr = src->nr;
+    if (!update_dispatcher) {
+        return true;
+    }
+    MEMORY_LISTENER_CALL_GLOBAL(uc, begin, Forward);
+    if (dst->dispatch) {
+        address_space_dispatch_clear(dst->dispatch);
+    }
+    dst->dispatch = address_space_dispatch_new(uc, dst);
+    for (size_t j = 0; j < dst->nr; j++) {
+        MemoryRegionSection mrs =
+            section_from_flat_range(&dst->ranges[j], dst);
+	mrs.mr->subpage = false;
+        flatview_add_to_dispatch(uc, dst, &mrs);
+    }
+    address_space_dispatch_compact(dst->dispatch);
+    MEMORY_LISTENER_CALL_GLOBAL(uc, commit, Forward);
+    return true;
+}
+
+static bool flatview_update(FlatView *fv, MemoryRegion *mr)
+{
+    struct uc_struct *uc = mr->uc;
+    MemoryRegion *c = mr;
+    AddrRange r;
+    hwaddr addr = 0;
+    r.size = mr->size;
+    do {
+        addr += c->addr;
+    } while ((c = c->container));
+    r.start = int128_make64(addr);
+
+    if (!mr->container || !QTAILQ_EMPTY(&mr->subregions))
+        return false;
+
+    for (size_t i = 0; i < fv->nr; i++) {
+        if (!addrrange_intersects(fv->ranges[i].addr, r)) {
+            continue;
+        }
+        if (!addrrange_equal(fv->ranges[i].addr, r)) {
+            break;
+        }
+        fv->ranges[i].mr = mr;
+        fv->ranges[i].offset_in_region = 0;
+        fv->ranges[i].readonly = mr->readonly;
+        address_space_dispatch_clear(fv->dispatch);
+        fv->dispatch = address_space_dispatch_new(uc, fv);
+        for (size_t j = 0; j < fv->nr; j++) {
+            MemoryRegionSection mrs =
+                section_from_flat_range(&fv->ranges[j], fv);
+            flatview_add_to_dispatch(uc, fv, &mrs);
+        }
+        address_space_dispatch_compact(fv->dispatch);
+        return true;
+    }
+    return false;
+}
+
 static void flatviews_reset(struct uc_struct *uc)
 {
     AddressSpace *as;
@@ -975,18 +1059,23 @@ void memory_region_transaction_begin(void)
 {
 }
 
-void memory_region_transaction_commit(MemoryRegion *mr)
+static void memory_region_transaction_commit(MemoryRegion *mr)
 {
-    AddressSpace *as;
+    AddressSpace *as = memory_region_to_address_space(mr);
+    FlatView *fv = NULL;
+    if (as)
+        fv = address_space_to_flatview(as);
 
     if (mr->uc->memory_region_update_pending) {
-        flatviews_reset(mr->uc);
-
         MEMORY_LISTENER_CALL_GLOBAL(mr->uc, begin, Forward);
 
-        QTAILQ_FOREACH(as, &mr->uc->address_spaces, address_spaces_link) {
-            address_space_set_flatview(as);
+        if (!fv || !flatview_update(fv, mr)) {
+            flatviews_reset(mr->uc);
+            QTAILQ_FOREACH(as, &mr->uc->address_spaces, address_spaces_link) {
+                address_space_set_flatview(as);
+            }
         }
+
         mr->uc->memory_region_update_pending = false;
         MEMORY_LISTENER_CALL_GLOBAL(mr->uc, commit, Forward);
     }
@@ -1238,7 +1327,7 @@ static void memory_region_update_container_subregions(MemoryRegion *subregion)
 
 done:
     mr->uc->memory_region_update_pending = true;
-    memory_region_transaction_commit(mr);
+    memory_region_transaction_commit(subregion);
 }
 
 static void memory_region_add_subregion_common(MemoryRegion *mr,

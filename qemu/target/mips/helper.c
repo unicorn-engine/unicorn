@@ -535,6 +535,18 @@ static void raise_mmu_exception(CPUMIPSState *env, target_ulong address,
 #endif
     cs->exception_index = exception;
     env->error_code = error_code;
+
+    // Dispatch internal exceptions to Unicorn Exceptions
+    switch (exception) {
+        case EXCP_TLBL:
+            env->uc->invalid_error = UC_ERR_READ_UNMAPPED;
+            env->uc->invalid_addr = address;
+            break;
+        case EXCP_TLBS:
+            env->uc->invalid_error = UC_ERR_WRITE_UNMAPPED;
+            env->uc->invalid_addr = address;
+            break;
+    }
 }
 
 hwaddr mips_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)

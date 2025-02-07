@@ -1,6 +1,6 @@
 [package]
 name = "unicorn-engine"
-version = "2.0.2"
+version = "2.1.1"
 authors = ["Ziqiao Kong", "Lukas Seidel"]
 documentation = "https://github.com/unicorn-engine/unicorn/wiki"
 edition = "2021"
@@ -45,7 +45,9 @@ dynamic_linkage = []
 arch_all = ["arch_x86", "arch_arm", "arch_aarch64", "arch_riscv", "arch_mips", "arch_sparc", "arch_m68k", "arch_ppc", "arch_s390x", "arch_tricore"]
 arch_x86 = []
 arch_arm = []
-arch_aarch64 = []
+# NOTE: unicorn-c only separates on top-level arch name,
+#       not on the bit-length, so we include both arm and aarch64
+arch_aarch64 = ["arch_arm"]
 arch_riscv = []
 arch_mips = []
 arch_sparc = []

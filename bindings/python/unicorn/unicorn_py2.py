@@ -3,17 +3,16 @@
 import ctypes
 import ctypes.util
 import distutils.sysconfig
-from functools import wraps
-import pkg_resources
 import inspect
 import os.path
+import pkg_resources
 import sys
 import weakref
-import functools
+from functools import wraps, partial
 from collections import namedtuple
 
-# We can't place this file in a separate folder due to Python2 limitations but
-# anyway we just maintain it with minimum efforts and it has been more than 3
+# We can't place this file in a separate folder due to Python2 limitations, but
+# anyway we just maintain it with minimum efforts, and it has been more than 3
 # years since EOL of Python2 so it should be fine.
 from . import x86_const, arm_const, arm64_const, unicorn_const as uc
 
@@ -23,16 +22,11 @@ ucsubclass = 0
 if not hasattr(sys.modules[__name__], "__file__"):
     __file__ = inspect.getfile(inspect.currentframe())
 
-_python2 = sys.version_info[0] < 3
-if _python2:
-    range = xrange
-
-_lib = { 'darwin': 'libunicorn.2.dylib',
-         'win32': 'unicorn.dll',
-         'cygwin': 'cygunicorn.dll',
-         'linux': 'libunicorn.so.2',
-         'linux2': 'libunicorn.so.2' }
-
+_lib = {'darwin': 'libunicorn.2.dylib',
+        'win32': 'unicorn.dll',
+        'cygwin': 'cygunicorn.dll',
+        'linux': 'libunicorn.so.2',
+        'linux2': 'libunicorn.so.2'}
 
 # Windows DLL in dependency order
 _all_windows_dlls = (
@@ -43,6 +37,7 @@ _all_windows_dlls = (
 
 _loaded_windows_dlls = set()
 
+
 def _load_win_support(path):
     for dll in _all_windows_dlls:
         if dll in _loaded_windows_dlls:
@@ -51,17 +46,19 @@ def _load_win_support(path):
         lib_file = os.path.join(path, dll)
         if ('/' not in path and '\\' not in path) or os.path.exists(lib_file):
             try:
-                #print('Trying to load Windows library', lib_file)
+                # print('Trying to load Windows library', lib_file)
                 ctypes.cdll.LoadLibrary(lib_file)
-                #print('SUCCESS')
+                # print('SUCCESS')
                 _loaded_windows_dlls.add(dll)
             except OSError as e:
-                #print('FAIL to load %s' %lib_file, e)
+                # print('FAIL to load %s' %lib_file, e)
                 continue
+
 
 # Initial attempt: load all dlls globally
 if sys.platform in ('win32', 'cygwin'):
     _load_win_support('')
+
 
 def _load_lib(path):
     try:
@@ -70,11 +67,12 @@ def _load_lib(path):
 
         lib_file = os.path.join(path, _lib.get(sys.platform, 'libunicorn.so.2'))
         dll = ctypes.cdll.LoadLibrary(lib_file)
-        #print('SUCCESS')
+        # print('SUCCESS')
         return dll
     except OSError as e:
-        #print('FAIL to load %s' %lib_file, e)
+        # print('FAIL to load %s' %lib_file, e)
         return None
+
 
 _uc = None
 
@@ -95,7 +93,7 @@ _path_list = [os.getenv('LIBUNICORN_PATH', None),
               os.getenv('PATH', '')]
 
 # print(_path_list)
-#print("-" * 80)
+# print("-" * 80)
 
 for _path in _path_list:
     if _path is None: continue
@@ -103,6 +101,7 @@ for _path in _path_list:
     if _uc is not None: break
 else:
     raise ImportError("ERROR: fail to load the dynamic library.")
+
 
 # __version__ = "%u.%u.%u" % (uc.UC_VERSION_MAJOR, uc.UC_VERSION_MINOR, uc.UC_VERSION_EXTRA)
 
@@ -112,7 +111,9 @@ def _setup_prototype(lib, fname, restype, *argtypes):
         getattr(lib, fname).restype = restype
         getattr(lib, fname).argtypes = argtypes
     except AttributeError:
-        raise ImportError("ERROR: Fail to setup some function prototypes. Make sure you have cleaned your unicorn1 installation.")
+        raise ImportError(
+            "ERROR: Fail to setup some function prototypes. Make sure you have cleaned your unicorn1 installation.")
+
 
 ucerr = ctypes.c_int
 uc_mode = ctypes.c_int
@@ -121,12 +122,14 @@ uc_engine = ctypes.c_void_p
 uc_context = ctypes.c_void_p
 uc_hook_h = ctypes.c_size_t
 
+
 class _uc_mem_region(ctypes.Structure):
     _fields_ = [
         ("begin", ctypes.c_uint64),
-        ("end",   ctypes.c_uint64),
+        ("end", ctypes.c_uint64),
         ("perms", ctypes.c_uint32),
     ]
+
 
 class uc_tb(ctypes.Structure):
     """"TranslationBlock"""
@@ -135,6 +138,7 @@ class uc_tb(ctypes.Structure):
         ("icount", ctypes.c_uint16),
         ("size", ctypes.c_uint16)
     ]
+
 
 _setup_prototype(_uc, "uc_version", ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 _setup_prototype(_uc, "uc_arch_supported", ctypes.c_bool, ctypes.c_int)
@@ -146,12 +150,15 @@ _setup_prototype(_uc, "uc_reg_read", ucerr, uc_engine, ctypes.c_int, ctypes.c_vo
 _setup_prototype(_uc, "uc_reg_write", ucerr, uc_engine, ctypes.c_int, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_mem_read", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
 _setup_prototype(_uc, "uc_mem_write", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
-_setup_prototype(_uc, "uc_emu_start", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
+_setup_prototype(_uc, "uc_emu_start", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64,
+                 ctypes.c_size_t)
 _setup_prototype(_uc, "uc_emu_stop", ucerr, uc_engine)
 _setup_prototype(_uc, "uc_hook_del", ucerr, uc_engine, uc_hook_h)
-_setup_prototype(_uc, "uc_mmio_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
+_setup_prototype(_uc, "uc_mmio_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p,
+                 ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_mem_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
-_setup_prototype(_uc, "uc_mem_map_ptr", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32, ctypes.c_void_p)
+_setup_prototype(_uc, "uc_mem_map_ptr", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32,
+                 ctypes.c_void_p)
 _setup_prototype(_uc, "uc_mem_unmap", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t)
 _setup_prototype(_uc, "uc_mem_protect", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
 _setup_prototype(_uc, "uc_query", ucerr, uc_engine, ctypes.c_uint32, ctypes.POINTER(ctypes.c_size_t))
@@ -163,9 +170,11 @@ _setup_prototype(_uc, "uc_context_size", ctypes.c_size_t, uc_engine)
 _setup_prototype(_uc, "uc_context_reg_read", ucerr, uc_context, ctypes.c_int, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_context_reg_write", ucerr, uc_context, ctypes.c_int, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_context_free", ucerr, uc_context)
-_setup_prototype(_uc, "uc_mem_regions", ucerr, uc_engine, ctypes.POINTER(ctypes.POINTER(_uc_mem_region)), ctypes.POINTER(ctypes.c_uint32))
+_setup_prototype(_uc, "uc_mem_regions", ucerr, uc_engine, ctypes.POINTER(ctypes.POINTER(_uc_mem_region)),
+                 ctypes.POINTER(ctypes.c_uint32))
 # https://bugs.python.org/issue42880
-_setup_prototype(_uc, "uc_hook_add", ucerr, uc_engine, ctypes.POINTER(uc_hook_h), ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint64)
+_setup_prototype(_uc, "uc_hook_add", ucerr, uc_engine, ctypes.POINTER(uc_hook_h), ctypes.c_int, ctypes.c_void_p,
+                 ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint64)
 _setup_prototype(_uc, "uc_ctl", ucerr, uc_engine, ctypes.c_int)
 
 UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p)
@@ -203,6 +212,7 @@ UC_HOOK_TCG_OPCODE_CB = ctypes.CFUNCTYPE(
     None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_void_p
 )
 
+
 # access to error code via @errno of UcError
 class UcError(Exception):
     def __init__(self, errno):
@@ -232,28 +242,30 @@ def version_bind():
 def uc_arch_supported(query):
     return _uc.uc_arch_supported(query)
 
+
 # uc_reg_read/write and uc_context_reg_read/write.
 def reg_read(reg_read_func, arch, reg_id, opt=None):
     if arch == uc.UC_ARCH_X86:
-        if reg_id in [x86_const.UC_X86_REG_IDTR, x86_const.UC_X86_REG_GDTR, x86_const.UC_X86_REG_LDTR, x86_const.UC_X86_REG_TR]:
+        if reg_id in [x86_const.UC_X86_REG_IDTR, x86_const.UC_X86_REG_GDTR, x86_const.UC_X86_REG_LDTR,
+                      x86_const.UC_X86_REG_TR]:
             reg = uc_x86_mmr()
             status = reg_read_func(reg_id, ctypes.byref(reg))
             if status != uc.UC_ERR_OK:
                 raise UcError(status)
             return reg.selector, reg.base, reg.limit, reg.flags
-        if reg_id in range(x86_const.UC_X86_REG_FP0, x86_const.UC_X86_REG_FP0+8):
+        if reg_id in xrange(x86_const.UC_X86_REG_FP0, x86_const.UC_X86_REG_FP0 + 8):
             reg = uc_x86_float80()
             status = reg_read_func(reg_id, ctypes.byref(reg))
             if status != uc.UC_ERR_OK:
                 raise UcError(status)
             return reg.mantissa, reg.exponent
-        if reg_id in range(x86_const.UC_X86_REG_XMM0, x86_const.UC_X86_REG_XMM0+8):
+        if reg_id in xrange(x86_const.UC_X86_REG_XMM0, x86_const.UC_X86_REG_XMM0 + 8):
             reg = uc_x86_xmm()
             status = reg_read_func(reg_id, ctypes.byref(reg))
             if status != uc.UC_ERR_OK:
                 raise UcError(status)
             return reg.low_qword | (reg.high_qword << 64)
-        if reg_id in range(x86_const.UC_X86_REG_YMM0, x86_const.UC_X86_REG_YMM0+16):
+        if reg_id in xrange(x86_const.UC_X86_REG_YMM0, x86_const.UC_X86_REG_YMM0 + 16):
             reg = uc_x86_ymm()
             status = reg_read_func(reg_id, ctypes.byref(reg))
             if status != uc.UC_ERR_OK:
@@ -291,7 +303,8 @@ def reg_read(reg_read_func, arch, reg_id, opt=None):
                 raise UcError(status)
             return reg.val
 
-        elif reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+        elif reg_id in xrange(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31 + 1) or xrange(
+                arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31 + 1):
             reg = uc_arm64_neon128()
             status = reg_read_func(reg_id, ctypes.byref(reg))
             if status != uc.UC_ERR_OK:
@@ -305,26 +318,28 @@ def reg_read(reg_read_func, arch, reg_id, opt=None):
         raise UcError(status)
     return reg.value
 
+
 def reg_write(reg_write_func, arch, reg_id, value):
     reg = None
 
     if arch == uc.UC_ARCH_X86:
-        if reg_id in [x86_const.UC_X86_REG_IDTR, x86_const.UC_X86_REG_GDTR, x86_const.UC_X86_REG_LDTR, x86_const.UC_X86_REG_TR]:
+        if reg_id in [x86_const.UC_X86_REG_IDTR, x86_const.UC_X86_REG_GDTR, x86_const.UC_X86_REG_LDTR,
+                      x86_const.UC_X86_REG_TR]:
             assert isinstance(value, tuple) and len(value) == 4
             reg = uc_x86_mmr()
             reg.selector = value[0]
             reg.base = value[1]
             reg.limit = value[2]
             reg.flags = value[3]
-        if reg_id in range(x86_const.UC_X86_REG_FP0, x86_const.UC_X86_REG_FP0+8):
+        if reg_id in xrange(x86_const.UC_X86_REG_FP0, x86_const.UC_X86_REG_FP0 + 8):
             reg = uc_x86_float80()
             reg.mantissa = value[0]
             reg.exponent = value[1]
-        if reg_id in range(x86_const.UC_X86_REG_XMM0, x86_const.UC_X86_REG_XMM0+8):
+        if reg_id in xrange(x86_const.UC_X86_REG_XMM0, x86_const.UC_X86_REG_XMM0 + 8):
             reg = uc_x86_xmm()
             reg.low_qword = value & 0xffffffffffffffff
             reg.high_qword = value >> 64
-        if reg_id in range(x86_const.UC_X86_REG_YMM0, x86_const.UC_X86_REG_YMM0+16):
+        if reg_id in xrange(x86_const.UC_X86_REG_YMM0, x86_const.UC_X86_REG_YMM0 + 16):
             reg = uc_x86_ymm()
             reg.first_qword = value & 0xffffffffffffffff
             reg.second_qword = (value >> 64) & 0xffffffffffffffff
@@ -336,7 +351,8 @@ def reg_write(reg_write_func, arch, reg_id, value):
             reg.value = value[1]
 
     if arch == uc.UC_ARCH_ARM64:
-        if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+        if reg_id in xrange(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31 + 1) or xrange(
+                arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31 + 1):
             reg = uc_arm64_neon128()
             reg.low_qword = value & 0xffffffffffffffff
             reg.high_qword = value >> 64
@@ -363,6 +379,7 @@ def reg_write(reg_write_func, arch, reg_id, value):
         raise UcError(status)
 
     return
+
 
 def _catch_hook_exception(func):
     @wraps(func)
@@ -396,6 +413,7 @@ class uc_arm_cp_reg(ctypes.Structure):
         ("val", ctypes.c_uint64)
     ]
 
+
 class uc_arm64_cp_reg(ctypes.Structure):
     """ARM64 coprocessors registers for instructions MRS, MSR"""
     _fields_ = [
@@ -407,20 +425,23 @@ class uc_arm64_cp_reg(ctypes.Structure):
         ("val", ctypes.c_uint64)
     ]
 
+
 class uc_x86_mmr(ctypes.Structure):
     """Memory-Management Register for instructions IDTR, GDTR, LDTR, TR."""
     _fields_ = [
         ("selector", ctypes.c_uint16),  # not used by GDTR and IDTR
-        ("base", ctypes.c_uint64),      # handle 32 or 64 bit CPUs
+        ("base", ctypes.c_uint64),  # handle 32 or 64 bit CPUs
         ("limit", ctypes.c_uint32),
-        ("flags", ctypes.c_uint32),     # not used by GDTR and IDTR
+        ("flags", ctypes.c_uint32),  # not used by GDTR and IDTR
     ]
+
 
 class uc_x86_msr(ctypes.Structure):
     _fields_ = [
         ("rid", ctypes.c_uint32),
         ("value", ctypes.c_uint64),
     ]
+
 
 class uc_x86_float80(ctypes.Structure):
     """Float80"""
@@ -437,6 +458,7 @@ class uc_x86_xmm(ctypes.Structure):
         ("high_qword", ctypes.c_uint64),
     ]
 
+
 class uc_x86_ymm(ctypes.Structure):
     """256-bit ymm register"""
     _fields_ = [
@@ -446,6 +468,7 @@ class uc_x86_ymm(ctypes.Structure):
         ("fourth_qword", ctypes.c_uint64),
     ]
 
+
 class uc_arm64_neon128(ctypes.Structure):
     """128-bit neon register"""
     _fields_ = [
@@ -453,9 +476,11 @@ class uc_arm64_neon128(ctypes.Structure):
         ("high_qword", ctypes.c_uint64),
     ]
 
+
 # Subclassing ref to allow property assignment.
 class UcRef(weakref.ref):
     pass
+
 
 # This class tracks Uc instance destruction and releases handles.
 class UcCleanupManager(object):
@@ -485,6 +510,7 @@ class UcCleanupManager(object):
         # the saved `._class` reference.
         del self._refs[id(ref)]
         ref._class.release_handle(ref._uch)
+
 
 class Uc(object):
     _cleanup = UcCleanupManager()
@@ -540,11 +566,11 @@ class Uc(object):
 
     # return the value of a register
     def reg_read(self, reg_id, opt=None):
-        return reg_read(functools.partial(_uc.uc_reg_read, self._uch), self._arch, reg_id, opt)
+        return reg_read(partial(_uc.uc_reg_read, self._uch), self._arch, reg_id, opt)
 
     # write to a register
     def reg_write(self, reg_id, value):
-        return reg_write(functools.partial(_uc.uc_reg_write, self._uch), self._arch, reg_id, value)
+        return reg_write(partial(_uc.uc_reg_write, self._uch), self._arch, reg_id, value)
 
     # read from MSR - X86 only
     def msr_read(self, msr_id):
@@ -681,7 +707,8 @@ class Uc(object):
 
         (cb, data) = self._callbacks[user_data]
 
-        return cb(self, reg, uc_arm64_cp_reg_tuple(cp_reg.crn, cp_reg.crm, cp_reg.op0, cp_reg.op1, cp_reg.op2, cp_reg.val), data)
+        return cb(self, reg,
+                  uc_arm64_cp_reg_tuple(cp_reg.crn, cp_reg.crm, cp_reg.op0, cp_reg.op1, cp_reg.op2, cp_reg.val), data)
 
     @_catch_hook_exception
     def _hook_insn_out_cb(self, handle, port, size, value, user_data):
@@ -711,7 +738,7 @@ class Uc(object):
         return self.__ctl(ctl, nr, uc.UC_CTL_IO_WRITE)
 
     def __ctl_rw(self, ctl, nr):
-        return self.__ctl(ctl, nr, uc.UC_CTL_IO_READ_WRITE) 
+        return self.__ctl(ctl, nr, uc.UC_CTL_IO_READ_WRITE)
 
     def __ctl_r_1_arg(self, ctl, ctp):
         arg = ctp()
@@ -795,7 +822,8 @@ class Uc(object):
                 cb = ctypes.cast(UC_HOOK_INSN_OUT_CB(self._hook_insn_out_cb), UC_HOOK_INSN_OUT_CB)
             if arg1 in (x86_const.UC_X86_INS_SYSCALL, x86_const.UC_X86_INS_SYSENTER):  # SYSCALL/SYSENTER instruction
                 cb = ctypes.cast(UC_HOOK_INSN_SYSCALL_CB(self._hook_insn_syscall_cb), UC_HOOK_INSN_SYSCALL_CB)
-            if arg1 in (arm64_const.UC_ARM64_INS_MRS, arm64_const.UC_ARM64_INS_MSR, arm64_const.UC_ARM64_INS_SYS, arm64_const.UC_ARM64_INS_SYSL):
+            if arg1 in (arm64_const.UC_ARM64_INS_MRS, arm64_const.UC_ARM64_INS_MSR, arm64_const.UC_ARM64_INS_SYS,
+                        arm64_const.UC_ARM64_INS_SYSL):
                 cb = ctypes.cast(UC_HOOK_INSN_SYS_CB(self._hook_insn_sys_cb), UC_HOOK_INSN_SYS_CB)
             status = _uc.uc_hook_add(
                 self._uch, ctypes.byref(_h2), htype, cb,
@@ -807,7 +835,8 @@ class Uc(object):
             flags = ctypes.c_int(arg2)
 
             status = _uc.uc_hook_add(
-                self._uch, ctypes.byref(_h2), htype, ctypes.cast(UC_HOOK_TCG_OPCODE_CB(self._hook_tcg_op_cb), UC_HOOK_TCG_OPCODE_CB),
+                self._uch, ctypes.byref(_h2), htype,
+                ctypes.cast(UC_HOOK_TCG_OPCODE_CB(self._hook_tcg_op_cb), UC_HOOK_TCG_OPCODE_CB),
                 ctypes.cast(self._callback_count, ctypes.c_void_p),
                 ctypes.c_uint64(begin), ctypes.c_uint64(end), opcode, flags
             )
@@ -905,7 +934,7 @@ class Uc(object):
             raise UcError(status)
 
         try:
-            for i in range(count.value):
+            for i in xrange(count.value):
                 yield (regions[i].begin, regions[i].end, regions[i].perms)
         finally:
             _uc.uc_free(regions)
@@ -940,11 +969,11 @@ class UcContext:
 
     # return the value of a register
     def reg_read(self, reg_id, opt=None):
-        return reg_read(functools.partial(_uc.uc_context_reg_read, self._context), self.arch, reg_id, opt)
+        return reg_read(partial(_uc.uc_context_reg_read, self._context), self.arch, reg_id, opt)
 
     # write to a register
     def reg_write(self, reg_id, value):
-        return reg_write(functools.partial(_uc.uc_context_reg_write, self._context), self.arch, reg_id, value)
+        return reg_write(partial(_uc.uc_context_reg_write, self._context), self.arch, reg_id, value)
 
     # Make UcContext picklable
     def __getstate__(self):

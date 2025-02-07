@@ -43,6 +43,7 @@ typedef struct {
 typedef struct RAMList {
     bool freed;
     RAMBlock *mru_block;
+    RAMBlock *last_block;
     QLIST_HEAD(, RAMBlock) blocks;
 } RAMList;
 

@@ -815,6 +815,52 @@ static void test_armeb_be32_thumb2(void)
     OK(uc_close(uc));
 }
 
+static bool test_arm_mem_read_write_cb(uc_engine *uc, int type,
+                                       uint64_t address, int size,
+                                       int64_t value, void *user_data)
+{
+    uint64_t *count = (uint64_t *)user_data;
+    switch (type) {
+    case UC_MEM_READ:
+        count[0]++;
+        break;
+    case UC_MEM_WRITE:
+        count[1]++;
+        break;
+    }
+
+    return 0;
+}
+static void test_arm_mem_hook_read_write(void)
+{
+    uc_engine *uc;
+    // ldr r1, [sp]
+    // str r1, [sp, #4]
+    // ldr r2, [sp, #4]
+    // str r2, [sp]
+    const char code[] = "\x00\x10\x9d\xe5\x04\x10\x8d\xe5\x04\x20\x9d\xe5\x00\x20\x8d\xe5";
+    uint32_t r_sp;
+    r_sp = 0x9000;
+    uc_hook hk;
+    uint64_t counter[2] = {0, 0};
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
+
+    uc_reg_write(uc, UC_ARM_REG_SP, &r_sp);
+    uc_mem_map(uc, 0x8000, 1024 * 16, UC_PROT_ALL);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_READ, test_arm_mem_read_write_cb,
+                   counter, 1, 0));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_WRITE, test_arm_mem_read_write_cb,
+                   counter, 1, 0));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(counter[0] == 2 && counter[1] == 2);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -840,4 +886,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_context_save", test_arm_context_save},
              {"test_arm_thumb2", test_arm_thumb2},
              {"test_armeb_be32_thumb2", test_armeb_be32_thumb2},
+             {"test_arm_mem_hook_read_write", test_arm_mem_hook_read_write},
              {NULL, NULL}};

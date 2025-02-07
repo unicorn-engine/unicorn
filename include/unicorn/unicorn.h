@@ -65,16 +65,16 @@ typedef size_t uc_hook;
 #define UNICORN_DEPRECATED __declspec(deprecated)
 #else
 #pragma message(                                                               \
-    "WARNING: You need to implement UNICORN_DEPRECATED for this compiler")
+        "WARNING: You need to implement UNICORN_DEPRECATED for this compiler")
 #define UNICORN_DEPRECATED
 #endif
 
 // Unicorn API version
 #define UC_API_MAJOR 2
-#define UC_API_MINOR 0
-#define UC_API_PATCH 2
+#define UC_API_MINOR 1
+#define UC_API_PATCH 1
 // Release candidate version, 255 means the official release.
-#define UC_API_EXTRA 1
+#define UC_API_EXTRA 255
 
 // Unicorn package version
 #define UC_VERSION_MAJOR UC_API_MAJOR
@@ -1017,6 +1017,16 @@ struct uc_tlb_entry {
     uint64_t paddr;
     uc_prot perms;
 };
+
+/*
+ Variables to control which state should be stored in the context.
+ Defaults to UC_CTL_CONTEXT_CPU. The options are used in a bitfield
+ so to enable more then one content the binary or of the required
+ contents can be use.
+ The UC_CTL_CONTEXT_MEMORY stores some pointers to internal allocated
+ memory. Therefor it's not possible to use this context with another
+ unicorn object.
+*/
 
 typedef enum uc_context_content {
     UC_CTL_CONTEXT_CPU = 1,

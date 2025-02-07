@@ -1455,6 +1455,7 @@ fi
 clock_adjtime=no
 cat > $TMPC <<EOF
 #include <time.h>
+#include <sys/timex.h>
 
 int main(void)
 {
@@ -2151,26 +2152,24 @@ EOF
     cat > $TMPC << EOF
 #include "stdint.h"
 int main() {
-    uint64_t commpage_sprr = (*(uint64_t*)0xFFFFFC10C);
+    uint64_t v;
 
-    // In Apple Hypervisor, this value is not accessbile and
-    // pthread_jit_write_protect_np essentially is a no-op
-    if (!commpage_sprr) {
-        return 1;
-    } else {
-        return 0;
-    }
+    __asm__ __volatile__("isb sy\n"
+                          "mrs %0, S3_6_c15_c1_5\n"
+                          : "=r"(v)::"memory");
+    // In Apple Hypervisor virtualized environment (EL1), this value is not accessbile
+    // but pthread_jit_write_protect_np essentially is a no-op.
+    return 0;
 }
 EOF
     if ! compile_prog ""; then
-      have_sprr='no'
-      have_pthread_jit_protect='no'
+      have_sprr_mrs='no'
     else
       $TMPE
       if [ $? -eq 0 ]; then
-        have_sprr='yes'
+        have_sprr_mrs='yes'
       else
-        have_sprr='no'
+        have_sprr_mrs='no'
       fi
     fi
   fi
@@ -2554,8 +2553,8 @@ if test "$have_pthread_jit_protect" = "yes" ; then
   echo "HAVE_PTHREAD_JIT_PROTECT=y" >> $config_host_mak
 fi
 
-if test "$have_sprr" = "yes" ; then
-  echo "HAVE_SPRR=y" >> $config_host_mak
+if test "$have_sprr_mrs" = "yes" ; then
+  echo "HAVE_SPRR_MRS=y" >> $config_host_mak
 fi
 
 # Hold two types of flag:

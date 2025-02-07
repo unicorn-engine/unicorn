@@ -104,6 +104,8 @@ typedef struct DisasContextBase {
  *
  * @tb_stop:
  *      Emit any opcodes required to exit the TB, based on db->is_jmp.
+ * @pc_sync:
+ *      Sync pc at this point
  */
 typedef struct TranslatorOps {
     void (*init_disas_context)(DisasContextBase *db, CPUState *cpu);
@@ -113,6 +115,7 @@ typedef struct TranslatorOps {
                              const CPUBreakpoint *bp);
     void (*translate_insn)(DisasContextBase *db, CPUState *cpu);
     void (*tb_stop)(DisasContextBase *db, CPUState *cpu);
+    void (*pc_sync)(DisasContextBase *db, CPUState *cpu);
 } TranslatorOps;
 
 /**

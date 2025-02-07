@@ -19,12 +19,18 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc);
 
 static void mips_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC = address;
+    ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC = address & ~(uint64_t )1ULL;
+    if (address & 1) {
+        ((CPUMIPSState *)uc->cpu->env_ptr)->hflags |= MIPS_HFLAG_M16;
+    } else {
+        ((CPUMIPSState *)uc->cpu->env_ptr)->hflags &= ~(MIPS_HFLAG_M16);
+    }
 }
 
 static uint64_t mips_get_pc(struct uc_struct *uc)
 {
-    return ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC;
+    return ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC |
+        !!(((CPUMIPSState *)uc->cpu->env_ptr)->hflags & (MIPS_HFLAG_M16));
 }
 
 static void mips_release(void *ctx)
@@ -100,6 +106,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         }
     }
 
+    CHECK_RET_DEPRECATE(ret, regid);
     return ret;
 }
 
@@ -127,7 +134,12 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             break;
         case UC_MIPS_REG_PC:
             CHECK_REG_TYPE(mipsreg_t);
-            env->active_tc.PC = *(mipsreg_t *)value;
+            env->active_tc.PC = *(mipsreg_t *)value & ~1ULL;
+            if ((*(uint32_t *)value & 1)) {
+                env->hflags |= MIPS_HFLAG_M16;
+            } else {
+                env->hflags &= ~(MIPS_HFLAG_M16);
+            }
             *setpc = 1;
             break;
         case UC_MIPS_REG_CP0_CONFIG3:
@@ -149,6 +161,7 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         }
     }
 
+    CHECK_RET_DEPRECATE(ret, regid);
     return ret;
 }
 

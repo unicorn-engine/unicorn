@@ -407,7 +407,7 @@ static void tcg_region_assign(TCGContext *s, size_t curr_region)
     s->code_gen_ptr = start;
     s->code_gen_buffer_size = (char *)end - (char *)start;
 
-    memset(s->code_gen_buffer, 0x00, s->code_gen_buffer_size);
+    // memset(s->code_gen_buffer, 0x00, s->code_gen_buffer_size); // Outdated Unicorn hacks
     s->code_gen_highwater = (char *)end - TCG_HIGHWATER;
 }
 
@@ -812,6 +812,7 @@ TranslationBlock *tcg_tb_alloc(TCGContext *s)
     }
     s->code_gen_ptr = next;
     s->data_gen_ptr = NULL;
+    // memset((void*)tb, 0x00, sizeof(TranslationBlock)); // not necessary as both tb and tb->tc.ptr is reused here
     return tb;
 }
 

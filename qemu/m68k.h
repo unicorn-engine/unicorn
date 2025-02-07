@@ -54,6 +54,7 @@
 #define vm_start vm_start_m68k
 #define address_space_dispatch_compact address_space_dispatch_compact_m68k
 #define flatview_translate flatview_translate_m68k
+#define flatview_copy flatview_copy_m68k
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_m68k
 #define qemu_get_cpu qemu_get_cpu_m68k
 #define cpu_address_space_init cpu_address_space_init_m68k
@@ -90,6 +91,7 @@
 #define iotlb_to_section iotlb_to_section_m68k
 #define address_space_dispatch_new address_space_dispatch_new_m68k
 #define address_space_dispatch_free address_space_dispatch_free_m68k
+#define address_space_dispatch_clear address_space_dispatch_clear_m68k
 #define flatview_read_continue flatview_read_continue_m68k
 #define address_space_read_full address_space_read_full_m68k
 #define address_space_write address_space_write_m68k

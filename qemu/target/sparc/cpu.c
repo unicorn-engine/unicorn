@@ -517,11 +517,11 @@ SPARCCPU *cpu_sparc_init(struct uc_struct *uc)
     CPUClass *cc;
     SPARCCPUClass *scc;
 
-    cpu = malloc(sizeof(*cpu));
+    cpu = qemu_memalign(8, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
-    memset(cpu, 0, sizeof(*cpu));
+    memset((void*)cpu, 0, sizeof(*cpu));
 
     if (uc->cpu_model == INT_MAX) {
 #ifdef TARGET_SPARC64

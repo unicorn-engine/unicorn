@@ -7731,6 +7731,12 @@ static void ppc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
     }
 }
 
+static void ppc_sync_pc(DisasContextBase *db, CPUState *cpu)
+{
+    DisasContext *ctx = container_of(db, DisasContext, base);
+    gen_update_nip(ctx, ctx->base.pc_next);
+}
+
 static const TranslatorOps ppc_tr_ops = {
     .init_disas_context = ppc_tr_init_disas_context,
     .tb_start           = ppc_tr_tb_start,
@@ -7738,6 +7744,7 @@ static const TranslatorOps ppc_tr_ops = {
     .breakpoint_check   = ppc_tr_breakpoint_check,
     .translate_insn     = ppc_tr_translate_insn,
     .tb_stop            = ppc_tr_tb_stop,
+    .pc_sync            = ppc_sync_pc
 };
 
 void gen_intermediate_code(CPUState *cs, TranslationBlock *tb, int max_insns)

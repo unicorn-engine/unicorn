@@ -1,13 +1,11 @@
-#!/usr/bin/python
-
+import regress
 from unicorn import *
 from unicorn.x86_const import *
-
-import regress
 
 CODE_ADDR = 0x0
 binary1 = b'\xb8\x02\x00\x00\x00'
 binary2 = b'\xb8\x01\x00\x00\x00'
+
 
 class CrashTB(regress.RegressTest):
 
@@ -32,6 +30,6 @@ class CrashTB(regress.RegressTest):
 
         self.assertEqual(0x1, mu.reg_read(UC_X86_REG_RAX))
 
+
 if __name__ == '__main__':
     regress.main()
-

@@ -1,6 +1,81 @@
 This file details the changelog of Unicorn Engine.
 
 -------------------------------
+[Version 2.1.1]: Sept 26th, 2024
+
+This is a small release to fix a few urgent issues.
+
+- Remove pkg_resources usage
+- Fix wheels distribution for x86_64 macos
+- Fix redundant wheel hacks
+- Support musllinux distribution
+
+-------------------------------
+[Version 2.1.0]: Sept 22nd, 2024
+
+It has been a while since the last release, and 2.1.0 brings several exciting features. Below is the changelog from the latest to the oldest (though not strictly).
+
+Highlights
+
+- Revive QEMU logs, now we have `-DUNICORN_LOGGING=yes` to enable all qemu logs. @BitMaskMixer 
+- Faster (up to 40x) write performance by not always doing `store_helper` and cleaning page locks. @tunz @boborjan2
+- Brand new python bindings, with strongly typed and many improvements. @elicn 
+- Fix to a long-standing MinGW random segfault bug.
+- We bring python2 compatibility back.
+- We now fully support M1, both building and a pre-built wheel.
+- We support snapshot memory now, with a very low overhead copy-on-write fashion. @PhilippTakacs 
+- An option to bypass MMU is also added, check our FAQ. @PhilippTakacs 
+- A brand new (and modern) java bindings. We are also working to publish it to maven. @nneonneo
+- We have zig integrated. @kassane @atipls 
+- Now Unicorn no longer allocates 2GB memory for every instance. The memory will be only committed once used and the upper limit can be adjusted with `uc_ctl`.
+- New DotNet binding, with published to both Github and Nuget. @TSRBerry 
+- The release will attach all binaries, thanks to @marameref 
+
+Fixes & Improvements
+
+- RISCV improvements, but we still have a long way to go. @apparentlymart @ks0777 
+- cmake improvements @scribam @es3n1n 
+- Various python bindings fix and improvements @bet4it @rhelmot 
+- Docs. @gerph @BitMaskMixer 
+- Rust bindings. @lockbox @mlgiraud @deadash
+- TCG backend fixes. @redoste @StalkR @dglynos 
+- PPC32 fixes. @dotCirill 
+- Haiku fixes. @kallisti5 
+- Improvements to avoid simulator detection. @mrexodia 
+
+New Contributors
+
+* @ks0777 made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1736
+* @LG3696 made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1764
+* @PhilippTakacs made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1765
+* @edsky made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1754
+* @tunz made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1790
+* @kassane made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1809
+* @Xeonacid made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1807
+* @nneonneo made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1830
+* @lockbox made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1847
+* @mlgiraud made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1849
+* @basavesh made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1861
+* @hamarituc made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1886
+* @StalkR made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1907
+* @dotCirill made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1910
+* @marameref made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1897
+* @redoste made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1922
+* @xclusivor made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1929
+* @elicn made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1629
+* @nganhkhoa made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1942
+* @es3n1n made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1960
+* @BitMaskMixer made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1977
+* @apparentlymart made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1995
+* @atipls made their first contribution in https://github.com/unicorn-engine/unicorn/pull/1985
+* @omer54463 made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2005
+
+Full Changelog: https://github.com/unicorn-engine/unicorn/compare/2.0.1...2.1.0
+
+
+Again, thanks for all contributors and sorry if I missed your name here (please tell me @wtdcode !). 2.1.1 is also coming because we expect some minor break changes to fix.
+
+-------------------------------
 [Version 2.0.1.post1]: Nov 22nd, 2022
 
 This is a small release to complement the previous 2.0.1 release.

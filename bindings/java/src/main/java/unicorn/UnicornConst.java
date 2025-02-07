@@ -4,15 +4,15 @@ package unicorn;
 
 public interface UnicornConst {
     public static final int UC_API_MAJOR = 2;
+    public static final int UC_API_MINOR = 1;
 
-    public static final int UC_API_MINOR = 0;
-    public static final int UC_API_PATCH = 2;
-    public static final int UC_API_EXTRA = 1;
+    public static final int UC_API_PATCH = 0;
+    public static final int UC_API_EXTRA = 255;
     public static final int UC_VERSION_MAJOR = 2;
+    public static final int UC_VERSION_MINOR = 1;
 
-    public static final int UC_VERSION_MINOR = 0;
-    public static final int UC_VERSION_PATCH = 2;
-    public static final int UC_VERSION_EXTRA = 1;
+    public static final int UC_VERSION_PATCH = 0;
+    public static final int UC_VERSION_EXTRA = 255;
     public static final int UC_SECOND_SCALE = 1000000;
     public static final int UC_MILISECOND_SCALE = 1000;
     public static final int UC_ARCH_ARM = 1;
@@ -144,11 +144,14 @@ public interface UnicornConst {
     public static final int UC_CTL_TLB_FLUSH = 11;
     public static final int UC_CTL_TLB_TYPE = 12;
     public static final int UC_CTL_TCG_BUFFER_SIZE = 13;
+    public static final int UC_CTL_CONTEXT_MODE = 14;
 
     public static final int UC_PROT_NONE = 0;
     public static final int UC_PROT_READ = 1;
     public static final int UC_PROT_WRITE = 2;
     public static final int UC_PROT_EXEC = 4;
     public static final int UC_PROT_ALL = 7;
+    public static final int UC_CTL_CONTEXT_CPU = 1;
+    public static final int UC_CTL_CONTEXT_MEMORY = 2;
 
 }

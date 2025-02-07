@@ -1,28 +1,32 @@
-#!/usr/bin/python
+import regress
 from unicorn import *
 from unicorn.x86_const import *
-import regress
 
-PAGE_SIZE = 4 * 1024
+PAGE_SIZE = 0x1000
 
 CODE = b'\xf3\xaa'  # rep stosb
+BASE = 0x00000000
 
 
-def hook_code(uc, addr, size, user_data):
-    print("hook called at %x" %addr)
+class TestRep(regress.RegressTest):
 
-class REP(regress.RegressTest):
-
-    def test_rep(self):
+    def runTest(self):
         mu = Uc(UC_ARCH_X86, UC_MODE_32)
 
-        mu.mem_map(0, PAGE_SIZE)
-        mu.mem_write(0, CODE)
-        mu.reg_write(UC_X86_REG_ECX, 3)
-        mu.reg_write(UC_X86_REG_EDI, 0x100)
-        mu.hook_add(UC_HOOK_CODE, hook_code)
+        mu.mem_map(BASE, PAGE_SIZE)
+        mu.mem_write(BASE, CODE)
 
-        mu.emu_start(0, len(CODE))
+        mu.reg_write(UC_X86_REG_ECX, 8)
+        mu.reg_write(UC_X86_REG_ESI, 0x10)
+        mu.reg_write(UC_X86_REG_EDI, 0x20)
+
+        def __hook_code(uc, addr, size, ud):
+            regress.logger.debug('iterations remaining: %d', uc.reg_read(UC_X86_REG_ECX))
+
+        mu.hook_add(UC_HOOK_CODE, __hook_code)
+
+        mu.emu_start(BASE, len(CODE))
+
         self.assertEqual(0, mu.reg_read(UC_X86_REG_ECX))
 
 

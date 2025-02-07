@@ -30,6 +30,24 @@ if(APPLE AND NOT CMAKE_C_COMPILER)
     set(CMAKE_C_COMPILER "/usr/bin/cc")
 endif()
 
+# Source: https://github.com/capstone-engine/capstone/blob/next/CMakeLists.txt
+# If building for OSX it's best to allow CMake to handle building both architectures
+if(APPLE)
+    # The cibuildwheel on Github Actions sets this env variable
+    # with the architecture flags it wants to build for.
+    if(DEFINED ENV{ARCHFLAGS})
+        if("$ENV{ARCHFLAGS}" STREQUAL "-arch arm64 -arch x86_64")
+            set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+        elseif("$ENV{ARCHFLAGS}" STREQUAL "-arch arm64")
+            set(CMAKE_OSX_ARCHITECTURES "arm64")
+        elseif("$ENV{ARCHFLAGS}" STREQUAL "-arch x86_64")
+            set(CMAKE_OSX_ARCHITECTURES "x86_64")
+        endif()
+    else()
+        set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+    endif()
+endif()
+
 # Detect if unicorn is compiled as the top-level project
 set(PROJECT_IS_TOP_LEVEL OFF)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -52,8 +70,8 @@ endif()
 set(CMAKE_C_STANDARD 11)
 
 set(UNICORN_VERSION_MAJOR 2)
-set(UNICORN_VERSION_MINOR 0)
-set(UNICORN_VERSION_PATCH 2)
+set(UNICORN_VERSION_MINOR 1)
+set(UNICORN_VERSION_PATCH 1)
 
 include(cmake/bundle_static.cmake)
 
@@ -63,6 +81,7 @@ include(cmake/bundle_static.cmake)
 # Also we would like users to link a native cmake target, instead of a custom target for better
 # compatability.
 option(BUILD_SHARED_LIBS "Build shared instead of static library" ${PROJECT_IS_TOP_LEVEL})
+option(UNICORN_LEGACY_STATIC_ARCHIVE "Enable Unicorn v1 style all-in-one objects archive for libunicorn.a" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_FUZZ "Enable fuzzing" OFF)
 option(UNICORN_LOGGING "Enable logging" OFF)
 option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
@@ -1424,16 +1443,18 @@ if (BUILD_SHARED_LIBS)
 endif()
 
 # Black magic for generating static archives...
-if (BUILD_SHARED_LIBS)
-    if (MSVC)
-        # Avoid the import lib built by MVSC clash with our archive.
-        set_target_properties(unicorn PROPERTIES ARCHIVE_OUTPUT_NAME "unicorn-import")
+if (UNICORN_LEGACY_STATIC_ARCHIVE)
+    if (BUILD_SHARED_LIBS)
+        if (MSVC)
+            # Avoid the import lib built by MVSC clash with our archive.
+            set_target_properties(unicorn PROPERTIES ARCHIVE_OUTPUT_NAME "unicorn-import")
+        endif()
+        bundle_static_library(unicorn_static unicorn_archive unicorn)
+    else()
+        # Rename the "static" lib to avoid filename clash.
+        set_target_properties(unicorn PROPERTIES OUTPUT_NAME "unicorn-static")
+        bundle_static_library(unicorn unicorn_archive unicorn)
     endif()
-    bundle_static_library(unicorn_static unicorn_archive unicorn)
-else()
-    # Rename the "static" lib to avoid filename clash.
-    set_target_properties(unicorn PROPERTIES OUTPUT_NAME "unicorn-static")
-    bundle_static_library(unicorn unicorn_archive unicorn)
 endif()
 
 if(UNICORN_FUZZ)
@@ -1496,7 +1517,10 @@ if(UNICORN_INSTALL AND NOT MSVC)
             LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         )
     endif()
-    install(FILES $<TARGET_FILE:unicorn_archive> DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    if (UNICORN_LEGACY_STATIC_ARCHIVE)
+        install(FILES $<TARGET_FILE:unicorn_archive> DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        install(FILES $<TARGET_FILE_DIR:unicorn_archive>/$<TARGET_PROPERTY:unicorn_archive,SYMLINK_NAME> DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
     install(FILES ${UNICORN_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unicorn)
     if (ATOMIC_LINKAGE_FIX)
         set(ATOMIC_LINK_PKG_CONFIG " -latomic")

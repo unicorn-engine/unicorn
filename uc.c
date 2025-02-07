@@ -36,7 +36,7 @@ static uc_err uc_snapshot(uc_engine *uc);
 static uc_err uc_restore_latest_snapshot(uc_engine *uc);
 
 #if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) &&                 \
-    defined(HAVE_SPRR) && (defined(__arm__) || defined(__aarch64__))
+    (defined(__arm__) || defined(__aarch64__))
 static void save_jit_state(uc_engine *uc)
 {
     if (!uc->nested) {
@@ -51,7 +51,7 @@ static void restore_jit_state(uc_engine *uc)
 {
     assert(uc->nested > 0);
     if (uc->nested == 1) {
-        assert(uc->current_executable == thread_executable());
+        assert_executable(uc->current_executable);
         if (uc->current_executable != uc->thread_executable_entry) {
             if (uc->thread_executable_entry) {
                 jit_write_protect(true);
@@ -515,7 +515,7 @@ uc_err uc_close(uc_engine *uc)
     g_free(uc->cpu->thread);
 
     /* cpu */
-    free(uc->cpu);
+    qemu_vfree(uc->cpu);
 
     /* flatviews */
     g_hash_table_destroy(uc->flat_views);
@@ -2106,6 +2106,7 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
         (*_context)->context_size = size - sizeof(uc_context);
         (*_context)->arch = uc->arch;
         (*_context)->mode = uc->mode;
+        (*_context)->fv = NULL;
         restore_jit_state(uc);
         return UC_ERR_OK;
     } else {
@@ -2142,11 +2143,25 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
     uc_err ret = UC_ERR_OK;
 
     if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
+        if (!context->fv) {
+            context->fv = g_malloc0(sizeof(*context->fv));
+        }
+        if (!context->fv) {
+            return UC_ERR_NOMEM;
+        }
+        if (!uc->flatview_copy(uc, context->fv,
+                               uc->address_space_memory.current_map, false)) {
+            restore_jit_state(uc);
+            return UC_ERR_NOMEM;
+        }
         ret = uc_snapshot(uc);
         if (ret != UC_ERR_OK) {
             restore_jit_state(uc);
             return ret;
         }
+        context->ramblock_freed = uc->ram_list.freed;
+        context->last_block = uc->ram_list.last_block;
+        uc->tcg_flush_tlb(uc);
     }
 
     context->snapshot_level = uc->snapshot_level;
@@ -2415,17 +2430,28 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
         uc->snapshot_level = context->snapshot_level;
         ret = uc_restore_latest_snapshot(uc);
         if (ret != UC_ERR_OK) {
+            restore_jit_state(uc);
             return ret;
         }
         uc_snapshot(uc);
+        uc->ram_list.freed = context->ramblock_freed;
+        uc->ram_list.last_block = context->last_block;
+        if (!uc->flatview_copy(uc, uc->address_space_memory.current_map,
+                               context->fv, true)) {
+            return UC_ERR_NOMEM;
+        }
+        uc->tcg_flush_tlb(uc);
     }
 
     if (uc->context_content & UC_CTL_CONTEXT_CPU) {
         if (!uc->context_restore) {
             memcpy(uc->cpu->env_ptr, context->data, context->context_size);
+            restore_jit_state(uc);
             return UC_ERR_OK;
         } else {
-            return uc->context_restore(uc, context);
+            ret = uc->context_restore(uc, context);
+            restore_jit_state(uc);
+            return ret;
         }
     }
     return UC_ERR_OK;
@@ -2434,6 +2460,10 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 UNICORN_EXPORT
 uc_err uc_context_free(uc_context *context)
 {
+    if (context->fv) {
+        free(context->fv->ranges);
+        g_free(context->fv);
+    }
     return uc_free(context);
 }
 
@@ -2513,7 +2543,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 break;
             }
 
-            if (uc->arch != UC_ARCH_ARM) {
+            if (uc->arch != UC_ARCH_ARM && uc->arch != UC_ARCH_ARM64) {
                 err = UC_ERR_ARG;
                 break;
             }
@@ -2523,7 +2553,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 break;
             }
 
-            while (page_size) {
+            // Bits is used to calculate the mask
+            while (page_size > 1) {
                 bits++;
                 page_size >>= 1;
             }
@@ -2869,6 +2900,7 @@ static uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
         g_array_remove_range(uc->unmapped_regions, i, 1);
     }
     uc->snapshot_level--;
+
     return UC_ERR_OK;
 }
 

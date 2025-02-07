@@ -32,7 +32,7 @@ Add this to your `Cargo.toml`:
 
 ```
 [dependencies]
-unicorn-engine = "2.0.0"
+unicorn-engine = "2.1.1"
 ```
 
 ## Acknowledgements

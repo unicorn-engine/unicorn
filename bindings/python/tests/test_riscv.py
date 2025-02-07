@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 # Sample code for RISCV of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
-#
 
-from __future__ import print_function
 from unicorn import *
 from unicorn.riscv_const import *
-
 
 '''
 $ cstool riscv64 1305100093850502
@@ -15,17 +12,17 @@ $ cstool riscv64 1305100093850502
 RISCV_CODE = b"\x13\x05\x10\x00\x93\x85\x05\x02"
 
 # memory address where emulation starts
-ADDRESS    = 0x10000
+ADDRESS = 0x10000
 
 
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
-    print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
+    print(">>> Tracing basic block at 0x%x, block size = 0x%x" % (address, size))
 
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
-    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
+    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" % (address, size))
 
 
 # Test RISCV
@@ -59,8 +56,8 @@ def test_riscv():
 
         a0 = mu.reg_read(UC_RISCV_REG_A0)
         a1 = mu.reg_read(UC_RISCV_REG_A1)
-        print(">>> A0 = 0x%x" %a0)
-        print(">>> A1 = 0x%x" %a1)
+        print(">>> A0 = 0x%x" % a0)
+        print(">>> A1 = 0x%x" % a1)
 
     except UcError as e:
         print("ERROR: %s" % e)
@@ -68,4 +65,3 @@ def test_riscv():
 
 if __name__ == '__main__':
     test_riscv()
-

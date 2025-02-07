@@ -1,4 +1,9 @@
 recursive-include src *
 recursive-include prebuilt *
-include LICENSE.TXT
-include README.TXT
+graft unicorn/lib
+graft unicorn/include
+global-include *.a
+global-include *.so.2
+global-include *.*lib
+global-include *.dll
+global-include *.h

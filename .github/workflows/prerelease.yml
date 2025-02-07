@@ -34,6 +34,7 @@ jobs:
         with:
           workflow: build-uc2.yml
           workflow_conclusion: success
+          branch: master
           path: artifact
 
       - name: Display structure of downloaded files

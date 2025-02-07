@@ -2,15 +2,15 @@
 
 pub const unicornConst = enum(c_int) {
 	API_MAJOR = 2,
+	API_MINOR = 1,
 
-	API_MINOR = 0,
-	API_PATCH = 2,
-	API_EXTRA = 1,
+	API_PATCH = 0,
+	API_EXTRA = 255,
 	VERSION_MAJOR = 2,
+	VERSION_MINOR = 1,
 
-	VERSION_MINOR = 0,
-	VERSION_PATCH = 2,
-	VERSION_EXTRA = 1,
+	VERSION_PATCH = 0,
+	VERSION_EXTRA = 255,
 	SECOND_SCALE = 1000000,
 	MILISECOND_SCALE = 1000,
 	ARCH_ARM = 1,
@@ -75,6 +75,7 @@ pub const unicornConst = enum(c_int) {
 	ERR_HOOK_EXIST = 19,
 	ERR_RESOURCE = 20,
 	ERR_EXCEPTION = 21,
+	ERR_OVERFLOW = 22,
 	MEM_READ = 16,
 	MEM_WRITE = 17,
 	MEM_FETCH = 18,
@@ -140,11 +141,15 @@ pub const unicornConst = enum(c_int) {
 	CTL_TB_FLUSH = 10,
 	CTL_TLB_FLUSH = 11,
 	CTL_TLB_TYPE = 12,
+	CTL_TCG_BUFFER_SIZE = 13,
+	CTL_CONTEXT_MODE = 14,
 
 	PROT_NONE = 0,
 	PROT_READ = 1,
 	PROT_WRITE = 2,
 	PROT_EXEC = 4,
 	PROT_ALL = 7,
+	CTL_CONTEXT_CPU = 1,
+	CTL_CONTEXT_MEMORY = 2,
 
 };

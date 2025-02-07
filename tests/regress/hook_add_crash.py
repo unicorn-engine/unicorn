@@ -1,16 +1,16 @@
-#!/usr/bin/env python
+""" https://github.com/unicorn-engine/unicorn/issues/165 """
 
-"""https://github.com/unicorn-engine/unicorn/issues/165"""
+import regress
+from unicorn import *
 
-import unicorn
 
-def hook_mem_read_unmapped(mu, access, address, size, value, user_data):
-    pass
+class TestHook(regress.RegressTest):
+    def test_excessive_hooks(self):
+        mu = Uc(UC_ARCH_X86, UC_MODE_32)
 
-mu = unicorn.Uc(unicorn.UC_ARCH_X86, unicorn.UC_MODE_32)
+        for _ in range(1337):
+            mu.hook_add(UC_HOOK_MEM_READ_UNMAPPED, lambda *args, **kwargs: None)
 
-try:
-    for x in range(0, 1000):
-        mu.hook_add(unicorn.UC_HOOK_MEM_READ_UNMAPPED, hook_mem_read_unmapped, None)
-except unicorn.UcError as e:
-    print("ERROR: %s" % e)
+
+if __name__ == '__main__':
+    regress.main()

@@ -1,43 +1,49 @@
-#!/usr/bin/env python
 # Sample code for ARM of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
-#
 
 
-from __future__ import print_function
+import platform
+import regress
+import sys
+import unittest
 from unicorn import *
 from unicorn.arm_const import *
 
-
 # code to be emulated
-ARM_CODE   = "\x37\x00\xa0\xe3\x03\x10\x42\xe0" # mov r0, #0x37; sub r1, r2, r3
-THUMB_CODE = "\x83\xb0" # sub    sp, #0xc
+ARM_CODE = (
+    b"\x37\x00\xa0\xe3"  # mov      r0, #0x37
+    b"\x03\x10\x42\xe0"  # sub      r1, r2, r3
+)
+
+THUMB_CODE = b"\x83\xb0"  # sub      sp, #0xc
+
 # memory address where emulation starts
-ADDRESS    = 0xF0000000
+ADDRESS = 0xF0000000
 
 
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
-    print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
+    regress.logger.debug(">>> Tracing basic block at %#x, block size = %#x", address, size)
 
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
-    print(">>> Tracing instruction at 0x%x, instruction size = %u" %(address, size))
+    regress.logger.debug(">>> Tracing instruction at %#x, instruction size = %u", address, size)
 
 
-# Test ARM
-def test_arm():
-    print("Emulate ARM code")
-    try:
+class TestInitInputCrash(regress.RegressTest):
+    @unittest.skipIf(sys.platform == 'win32' or platform.machine().lower() not in ('x86_64', 'arm64'), 'TO BE CHECKED!')
+    def test_arm(self):
+        regress.logger.debug("Emulate ARM code")
+
         # Initialize emulator in ARM mode
         mu = Uc(UC_ARCH_ARM, UC_MODE_ARM)
-        
+
         mem_size = 2 * (1024 * 1024)
         mu.mem_map(ADDRESS, mem_size)
-        
+
         stack_address = ADDRESS + mem_size
-        stack_size =  stack_address         # >>> here huge memory size
+        stack_size = stack_address  # >>> here huge memory size
         mu.mem_map(stack_address, stack_size)
 
         # write machine code to be emulated to memory
@@ -58,20 +64,16 @@ def test_arm():
         mu.emu_start(ADDRESS, ADDRESS + len(ARM_CODE))
 
         # now print out some registers
-        print(">>> Emulation done. Below is the CPU context")
+        regress.logger.debug(">>> Emulation done. Below is the CPU context")
 
         r0 = mu.reg_read(UC_ARM_REG_R0)
         r1 = mu.reg_read(UC_ARM_REG_R1)
-        print(">>> R0 = 0x%x" %r0)
-        print(">>> R1 = 0x%x" %r1)
+        regress.logger.debug(">>> R0 = %#x", r0)
+        regress.logger.debug(">>> R1 = %#x", r1)
 
-    except UcError as e:
-        print("ERROR: %s" % e)
+    def test_thumb(self):
+        regress.logger.debug("Emulate THUMB code")
 
-
-def test_thumb():
-    print("Emulate THUMB code")
-    try:
         # Initialize emulator in thumb mode
         mu = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
 
@@ -91,19 +93,14 @@ def test_thumb():
         mu.hook_add(UC_HOOK_CODE, hook_code)
 
         # emulate machine code in infinite time
-        mu.emu_start(ADDRESS, ADDRESS + len(THUMB_CODE))
+        mu.emu_start(ADDRESS | 0b1, ADDRESS + len(THUMB_CODE))
 
         # now print out some registers
-        print(">>> Emulation done. Below is the CPU context")
+        regress.logger.debug(">>> Emulation done. Below is the CPU context")
 
         sp = mu.reg_read(UC_ARM_REG_SP)
-        print(">>> SP = 0x%x" %sp)
-
-    except UcError as e:
-        print("ERROR: %s" % e)
+        regress.logger.debug(">>> SP = %#x", sp)
 
 
 if __name__ == '__main__':
-    test_arm()
-    print("=" * 20)
-    test_thumb() 
+    regress.main()
