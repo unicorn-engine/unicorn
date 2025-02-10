@@ -433,7 +433,10 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             CHECK_REG_TYPE(uint32_t);
             env->pc = (*(uint32_t *)value & ~1);
             env->thumb = (*(uint32_t *)value & 1);
-            env->uc->thumb = (*(uint32_t *)value & 1);
+            if (env->uc) {
+                // This can be NULL if env is a context
+                env->uc->thumb = (*(uint32_t *)value & 1);
+            }
             env->regs[15] = (*(uint32_t *)value & ~1);
             *setpc = 1;
             break;
@@ -754,7 +757,8 @@ static uc_err uc_arm_context_restore(struct uc_struct *uc, uc_context *context)
     ARM_ENV_RESTORE(env->sau.rlar)
 
 #undef ARM_ENV_RESTORE
-
+    // Overwrite uc to our uc
+    env->uc = uc;
     return UC_ERR_OK;
 }
 
