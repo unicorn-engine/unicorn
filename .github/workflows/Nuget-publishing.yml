@@ -221,7 +221,7 @@ jobs:
             generators: 'Ninja'
           }
           - {
-            os: ubuntu-latest,
+            os: ubuntu-22.04,
             arch: aarch64,
             python-arch: aarch64,
             python-ver: '3.8',
@@ -233,7 +233,7 @@ jobs:
             distro: ubuntu20.04
           }
           - {
-            os: ubuntu-latest,
+            os: ubuntu-22.04,
             arch: ppc64le,
             python-arch: ppc,
             python-ver: '3.8',
