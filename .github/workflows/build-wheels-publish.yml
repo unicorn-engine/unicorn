@@ -194,19 +194,19 @@ jobs:
           - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp312-musllinux*', cibw_skip: '' }
           - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp313-musllinux*', cibw_skip: '' }
           # aarch64 - manylinux
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp37-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp39-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp310-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp311-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp312-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp313-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp37-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp39-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp310-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp311-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp312-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp313-manylinux*', cibw_skip: '' }
           # aarch64 - musllinux
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp37-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp39-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp310-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp311-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp312-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: aarch64, cibw_build: 'cp313-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp37-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp39-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp310-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp311-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp312-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-22.04, arch: aarch64, cibw_build: 'cp313-musllinux*', cibw_skip: '' }
           - { os: macos-13, arch: x86_64, cibw_build: 'cp*', cibw_skip: '*36* *38*' }
           - { os: macos-latest, arch: arm64, cibw_build: 'cp*', cibw_skip: '*36* *37* *38*' }
           - { os: windows-2019, arch: AMD64, cibw_build: 'cp*', cibw_skip: '*36* *38*' }
