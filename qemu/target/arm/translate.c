@@ -452,7 +452,7 @@ static void gen_sub_carry(TCGContext *tcg_ctx, TCGv_i32 dest, TCGv_i32 t0, TCGv_
     tcg_gen_subi_i32(tcg_ctx, dest, dest, 1);
 }
 
-static inline void mb_tcg_opcode_cmp_hook(TCGContext *tcg_ctx, TCGv_i64 v0, TCGv_i64 v1, uint32_t size, uint32_t pc)
+static inline void mb_tcg_opcode_cmp_hook(TCGContext *tcg_ctx, TCGv_i64 v0, TCGv_i64 v1, uint32_t size)
 {
     uc_engine *uc = tcg_ctx->uc;
     if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_TCG_OPCODE, tcg_ctx->pc_start)) {
