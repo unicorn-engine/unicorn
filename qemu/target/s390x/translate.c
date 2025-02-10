@@ -28,6 +28,8 @@
 #  define LOG_DISAS(...) do { } while (0)
 #endif
 
+#define NUM_REGS 16
+
 #include "qemu/osdep.h"
 #include "cpu.h"
 #include "internal.h"
@@ -2089,6 +2091,12 @@ static DisasJumpType op_cksm(DisasContext *s, DisasOps *o)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int r2 = get_field(s, r2);
     TCGv_i64 len = tcg_temp_new_i64(tcg_ctx);
+    
+    if (r2 < 0 || r2 + 1 >= NUM_REGS) {
+        // Handle invalid r2 index
+        tcg_temp_free_i64(tcg_ctx, len);
+        return DISAS_NORETURN;
+    }
 
     gen_helper_cksm(tcg_ctx, len, tcg_ctx->cpu_env, o->in1, o->in2, tcg_ctx->regs[r2 + 1]);
     set_cc_static(s);
