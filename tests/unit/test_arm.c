@@ -902,7 +902,7 @@ static void test_arm_tcg_opcode_cmp(void)
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 3));
     TEST_CHECK(cmp_info.v0 == 5 && cmp_info.v1 == 3);
-    TEST_CHECK(cmp_info.pc == code_start);
+    TEST_CHECK(cmp_info.pc == 0x1008);
     TEST_CHECK(cmp_info.size == 32);
 }
 
@@ -928,7 +928,7 @@ static void test_arm_thumb_tcg_opcode_cmn(void)
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 4));
     TEST_CHECK(cmp_info.v0 == 5 && cmp_info.v1 == 3);
-    TEST_CHECK(cmp_info.pc == (code_start | 1));
+    TEST_CHECK(cmp_info.pc == 0x1006);
     TEST_CHECK(cmp_info.size == 32);
 }
 

@@ -11598,6 +11598,7 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         check_exit_request(tcg_ctx);
     }
 
+    tcg_ctx->pc_start = dc->base.pc_next - insn_size;
     if (is_16bit) {
         disas_thumb_insn(dc, insn);
     } else {
