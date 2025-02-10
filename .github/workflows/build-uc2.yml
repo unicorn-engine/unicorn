@@ -471,7 +471,7 @@ jobs:
             generators: 'Ninja'
           }
           - {
-            os: ubuntu-latest,
+            os: ubuntu-22.04,
             arch: aarch64,
             python-arch: aarch64,
             python-ver: '3.8',
@@ -479,10 +479,10 @@ jobs:
             artifact: 'ubuntu-cmake-aarch64.7z',
             archiver: '7z a',
             generators: 'Ninja',
-            distro: ubuntu20.04
+            distro: ubuntu22.04
           }
           - {
-            os: ubuntu-latest,
+            os: ubuntu-22.04,
             arch: ppc64le,
             python-arch: ppc,
             python-ver: '3.8',
@@ -490,7 +490,7 @@ jobs:
             artifact: 'ubuntu-cmake-ppc64le.7z',
             archiver: '7z a',
             generators: 'Ninja',
-            distro: ubuntu20.04
+            distro: ubuntu22.04
           }
         compiler: [ gcc ]
     steps:
