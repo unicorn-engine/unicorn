@@ -1507,7 +1507,7 @@ if(UNICORN_BUILD_TESTS)
 endif()
 
 
-if(UNICORN_INSTALL AND NOT MSVC)
+if(UNICORN_INSTALL)
     include("GNUInstallDirs")
     file(GLOB UNICORN_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/unicorn/*.h)
     if (BUILD_SHARED_LIBS)
