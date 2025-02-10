@@ -479,7 +479,7 @@ jobs:
             artifact: 'ubuntu-cmake-aarch64.7z',
             archiver: '7z a',
             generators: 'Ninja',
-            distro: ubuntu20.04
+            distro: ubuntu22.04
           }
           - {
             os: ubuntu-latest,
@@ -490,7 +490,7 @@ jobs:
             artifact: 'ubuntu-cmake-ppc64le.7z',
             archiver: '7z a',
             generators: 'Ninja',
-            distro: ubuntu20.04
+            distro: ubuntu22.04
           }
         compiler: [ gcc ]
     steps:
