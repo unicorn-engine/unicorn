@@ -1291,6 +1291,7 @@
 #define gen_helper_cpsr_write gen_helper_cpsr_write_x86_64
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_x86_64
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_x86_64
+#define helper_stqcx_be_parallel helper_stqcx_be_parallel_x86_64
 #define cpu_get_tsc cpu_get_tsc_x86_64
 #define x86_cpu_get_memory_mapping x86_cpu_get_memory_mapping_x86_64
 #define cpu_x86_update_dr7 cpu_x86_update_dr7_x86_64

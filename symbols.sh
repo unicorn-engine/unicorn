@@ -1291,6 +1291,7 @@ gen_helper_cpsr_read \
 gen_helper_cpsr_write \
 tlb_reset_dirty_by_vaddr \
 helper_stqcx_le_parallel \
+helper_stqcx_be_parallel \
 "
 
 x86_64_SYMBOLS="

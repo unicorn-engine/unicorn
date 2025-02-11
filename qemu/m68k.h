@@ -1291,6 +1291,7 @@
 #define gen_helper_cpsr_write gen_helper_cpsr_write_m68k
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_m68k
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_m68k
+#define helper_stqcx_be_parallel helper_stqcx_be_parallel_m68k
 #define cpu_m68k_init cpu_m68k_init_m68k
 #define helper_reds32 helper_reds32_m68k
 #define helper_redf32 helper_redf32_m68k
