@@ -2780,7 +2780,7 @@ static void gen_lq(DisasContext *ctx)
     hi = cpu_gpr[rd];
 
     if (tb_cflags(ctx->base.tb) & CF_PARALLEL) {
-        if (HAVE_ATOMIC128) {
+#ifdef HAVE_ATOMIC128
             TCGv_i32 oi = tcg_temp_new_i32(tcg_ctx);
             if (ctx->le_mode) {
                 tcg_gen_movi_i32(tcg_ctx, oi, make_memop_idx(MO_LEQ, ctx->mem_idx));
@@ -2791,11 +2791,11 @@ static void gen_lq(DisasContext *ctx)
             }
             tcg_temp_free_i32(tcg_ctx, oi);
             tcg_gen_ld_i64(tcg_ctx, hi, tcg_ctx->cpu_env, offsetof(CPUPPCState, retxh));
-        } else {
+#else
             /* Restart with exclusive lock.  */
             gen_helper_exit_atomic(tcg_ctx, tcg_ctx->cpu_env);
             ctx->base.is_jmp = DISAS_NORETURN;
-        }
+#endif
     } else if (ctx->le_mode) {
         tcg_gen_qemu_ld_i64(tcg_ctx, lo, EA, ctx->mem_idx, MO_LEQ);
         gen_addr_add(ctx, EA, EA, 8);
@@ -2958,7 +2958,7 @@ static void gen_std(DisasContext *ctx)
         hi = cpu_gpr[rs];
 
         if (tb_cflags(ctx->base.tb) & CF_PARALLEL) {
-            if (HAVE_ATOMIC128) {
+#ifdef HAVE_ATOMIC128
                 TCGv_i32 oi = tcg_temp_new_i32(tcg_ctx);
                 if (ctx->le_mode) {
                     tcg_gen_movi_i32(tcg_ctx, oi, make_memop_idx(MO_LEQ, ctx->mem_idx));
@@ -2968,11 +2968,11 @@ static void gen_std(DisasContext *ctx)
                     gen_helper_stq_be_parallel(tcg_ctx, tcg_ctx->cpu_env, EA, lo, hi, oi);
                 }
                 tcg_temp_free_i32(tcg_ctx, oi);
-            } else {
+#else
                 /* Restart with exclusive lock.  */
                 gen_helper_exit_atomic(tcg_ctx, tcg_ctx->cpu_env);
                 ctx->base.is_jmp = DISAS_NORETURN;
-            }
+#endif
         } else if (ctx->le_mode) {
             tcg_gen_qemu_st_i64(tcg_ctx, lo, EA, ctx->mem_idx, MO_LEQ);
             gen_addr_add(ctx, EA, EA, 8);
@@ -3574,7 +3574,7 @@ static void gen_lqarx(DisasContext *ctx)
     hi = cpu_gpr[rd];
 
     if (tb_cflags(ctx->base.tb) & CF_PARALLEL) {
-        if (HAVE_ATOMIC128) {
+#ifdef HAVE_ATOMIC128
             TCGv_i32 oi = tcg_temp_new_i32(tcg_ctx);
             if (ctx->le_mode) {
                 tcg_gen_movi_i32(tcg_ctx, oi, make_memop_idx(MO_LEQ | MO_ALIGN_16,
@@ -3587,13 +3587,13 @@ static void gen_lqarx(DisasContext *ctx)
             }
             tcg_temp_free_i32(tcg_ctx, oi);
             tcg_gen_ld_i64(tcg_ctx, hi, tcg_ctx->cpu_env, offsetof(CPUPPCState, retxh));
-        } else {
+#else
             /* Restart with exclusive lock.  */
             gen_helper_exit_atomic(tcg_ctx, tcg_ctx->cpu_env);
             ctx->base.is_jmp = DISAS_NORETURN;
             tcg_temp_free(tcg_ctx, EA);
             return;
-        }
+#endif
     } else if (ctx->le_mode) {
         tcg_gen_qemu_ld_i64(tcg_ctx, lo, EA, ctx->mem_idx, MO_LEQ | MO_ALIGN_16);
         tcg_gen_mov_tl(tcg_ctx, cpu_reserve, EA);
@@ -3632,7 +3632,7 @@ static void gen_stqcx_(DisasContext *ctx)
     hi = cpu_gpr[rs];
 
     if (tb_cflags(ctx->base.tb) & CF_PARALLEL) {
-        if (HAVE_CMPXCHG128) {
+#ifdef HAVE_CMPXCHG128
             TCGv_i32 oi = tcg_const_i32(tcg_ctx, DEF_MEMOP(MO_Q) | MO_ALIGN_16);
             if (ctx->le_mode) {
                 gen_helper_stqcx_le_parallel(tcg_ctx, cpu_crf[0], tcg_ctx->cpu_env,
@@ -3642,11 +3642,11 @@ static void gen_stqcx_(DisasContext *ctx)
                                              EA, lo, hi, oi);
             }
             tcg_temp_free_i32(tcg_ctx, oi);
-        } else {
+#else
             /* Restart with exclusive lock.  */
             gen_helper_exit_atomic(tcg_ctx, tcg_ctx->cpu_env);
             ctx->base.is_jmp = DISAS_NORETURN;
-        }
+#endif
         tcg_temp_free(tcg_ctx, EA);
     } else {
         TCGLabel *lab_fail = gen_new_label(tcg_ctx);

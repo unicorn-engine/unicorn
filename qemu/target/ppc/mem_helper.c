@@ -374,6 +374,7 @@ target_ulong helper_lscbx(CPUPPCState *env, target_ulong addr, uint32_t reg,
 }
 
 #ifdef TARGET_PPC64
+#ifdef HAVE_ATOMIC128
 uint64_t helper_lq_le_parallel(CPUPPCState *env, target_ulong addr,
                                uint32_t opidx)
 {
@@ -419,7 +420,9 @@ void helper_stq_be_parallel(CPUPPCState *env, target_ulong addr,
     val = int128_make128(lo, hi);
     helper_atomic_sto_be_mmu(env, addr, val, opidx, GETPC());
 }
+#endif
 
+#ifdef HAVE_CMPXCHG128
 uint32_t helper_stqcx_le_parallel(CPUPPCState *env, target_ulong addr,
                                   uint64_t new_lo, uint64_t new_hi,
                                   uint32_t opidx)
@@ -463,6 +466,7 @@ uint32_t helper_stqcx_be_parallel(CPUPPCState *env, target_ulong addr,
     env->reserve_addr = -1;
     return env->so + success * CRF_EQ_BIT;
 }
+#endif
 #endif
 
 /*****************************************************************************/
