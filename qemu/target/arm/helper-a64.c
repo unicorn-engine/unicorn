@@ -568,7 +568,7 @@ uint64_t HELPER(paired_cmpxchg64_le)(CPUARMState *env, uint64_t addr,
 uint64_t HELPER(paired_cmpxchg64_le_parallel)(CPUARMState *env, uint64_t addr,
                                               uint64_t new_lo, uint64_t new_hi)
 {
-#ifdef HAVE_CMPXCHG128
+#if HAVE_CMPXCHG128 == 1
     Int128 oldv, cmpv, newv;
     uintptr_t ra = GETPC();
     bool success;
@@ -625,7 +625,7 @@ uint64_t HELPER(paired_cmpxchg64_be)(CPUARMState *env, uint64_t addr,
 uint64_t HELPER(paired_cmpxchg64_be_parallel)(CPUARMState *env, uint64_t addr,
                                               uint64_t new_lo, uint64_t new_hi)
 {
-#ifdef HAVE_CMPXCHG128
+#if HAVE_CMPXCHG128 == 1
     Int128 oldv, cmpv, newv;
     uintptr_t ra = GETPC();
     bool success;
@@ -657,7 +657,7 @@ uint64_t HELPER(paired_cmpxchg64_be_parallel)(CPUARMState *env, uint64_t addr,
 void HELPER(casp_le_parallel)(CPUARMState *env, uint32_t rs, uint64_t addr,
                               uint64_t new_lo, uint64_t new_hi)
 {
-#ifdef HAVE_CMPXCHG128
+#if HAVE_CMPXCHG128 == 1
     Int128 oldv, cmpv, newv;
     uintptr_t ra = GETPC();
     int mem_idx;
@@ -682,7 +682,7 @@ void HELPER(casp_le_parallel)(CPUARMState *env, uint32_t rs, uint64_t addr,
 void HELPER(casp_be_parallel)(CPUARMState *env, uint32_t rs, uint64_t addr,
                               uint64_t new_hi, uint64_t new_lo)
 {
-#ifdef HAVE_CMPXCHG128
+#if HAVE_CMPXCHG128 == 1
     Int128 oldv, cmpv, newv;
     uintptr_t ra = GETPC();
     int mem_idx;

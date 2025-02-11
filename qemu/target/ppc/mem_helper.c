@@ -377,7 +377,7 @@ target_ulong helper_lscbx(CPUPPCState *env, target_ulong addr, uint32_t reg,
 uint64_t helper_lq_le_parallel(CPUPPCState *env, target_ulong addr,
                                uint32_t opidx)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 == 1
     Int128 ret;
 
     /* We will have raised EXCP_ATOMIC from the translator.  */
@@ -394,7 +394,7 @@ uint64_t helper_lq_le_parallel(CPUPPCState *env, target_ulong addr,
 uint64_t helper_lq_be_parallel(CPUPPCState *env, target_ulong addr,
                                uint32_t opidx)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 == 1
     Int128 ret;
 
     /* We will have raised EXCP_ATOMIC from the translator.  */
@@ -411,7 +411,7 @@ uint64_t helper_lq_be_parallel(CPUPPCState *env, target_ulong addr,
 void helper_stq_le_parallel(CPUPPCState *env, target_ulong addr,
                             uint64_t lo, uint64_t hi, uint32_t opidx)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 == 1
     Int128 val;
 
     /* We will have raised EXCP_ATOMIC from the translator.  */
@@ -427,7 +427,7 @@ void helper_stq_le_parallel(CPUPPCState *env, target_ulong addr,
 void helper_stq_be_parallel(CPUPPCState *env, target_ulong addr,
                             uint64_t lo, uint64_t hi, uint32_t opidx)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 == 1
     Int128 val;
 
     /* We will have raised EXCP_ATOMIC from the translator.  */
@@ -446,7 +446,7 @@ uint32_t helper_stqcx_le_parallel(CPUPPCState *env, target_ulong addr,
                                   uint64_t new_lo, uint64_t new_hi,
                                   uint32_t opidx)
 {
-#ifdef HAVE_CMPXCHG128
+#if HAVE_CMPXCHG128 == 1
     bool success = false;
 
     /* We will have raised EXCP_ATOMIC from the translator.  */
@@ -473,7 +473,7 @@ uint32_t helper_stqcx_be_parallel(CPUPPCState *env, target_ulong addr,
                                   uint64_t new_lo, uint64_t new_hi,
                                   uint32_t opidx)
 {
-#ifdef HAVE_CMPXCHG128
+#if HAVE_CMPXCHG128 == 1
     bool success = false;
 
     /* We will have raised EXCP_ATOMIC from the translator.  */

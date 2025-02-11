@@ -1695,7 +1695,7 @@ void HELPER(cdsg)(CPUS390XState *env, uint64_t addr,
 void HELPER(cdsg_parallel)(CPUS390XState *env, uint64_t addr,
                            uint32_t r1, uint32_t r3)
 {
-#ifdef HAVE_CMPXCHG128
+#if HAVE_CMPXCHG128 == 1
     uintptr_t ra = GETPC();
     Int128 cmpv = int128_make128(env->regs[r1 + 1], env->regs[r1]);
     Int128 newv = int128_make128(env->regs[r3 + 1], env->regs[r3]);
@@ -1834,7 +1834,7 @@ static uint32_t do_csst(CPUS390XState *env, uint32_t r3, uint64_t a1,
                 cpu_stq_data_ra(env, a1 + 0, int128_gethi(nv), ra);
                 cpu_stq_data_ra(env, a1 + 8, int128_getlo(nv), ra);
             } else {
-#ifdef HAVE_CMPXCHG128
+#if HAVE_CMPXCHG128 == 1
                 TCGMemOpIdx oi = make_memop_idx(MO_TEQ | MO_ALIGN_16, mem_idx);
                 ov = helper_atomic_cmpxchgo_be_mmu(env, a1, cv, nv, oi, ra);
                 cc = !int128_eq(ov, cv);
@@ -1875,7 +1875,7 @@ static uint32_t do_csst(CPUS390XState *env, uint32_t r3, uint64_t a1,
                 cpu_stq_data_ra(env, a2 + 0, svh, ra);
                 cpu_stq_data_ra(env, a2 + 8, svl, ra);
             } else {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 == 1
                 TCGMemOpIdx oi = make_memop_idx(MO_TEQ | MO_ALIGN_16, mem_idx);
                 Int128 sv = int128_make128(svl, svh);
                 helper_atomic_sto_be_mmu(env, a2, sv, oi, ra);
@@ -2356,7 +2356,7 @@ uint64_t HELPER(lpq)(CPUS390XState *env, uint64_t addr)
 
 uint64_t HELPER(lpq_parallel)(CPUS390XState *env, uint64_t addr)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 == 1
     uintptr_t ra = GETPC();
     uint64_t hi, lo;
     int mem_idx;
@@ -2393,7 +2393,7 @@ void HELPER(stpq)(CPUS390XState *env, uint64_t addr,
 void HELPER(stpq_parallel)(CPUS390XState *env, uint64_t addr,
                            uint64_t low, uint64_t high)
 {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 == 1
     uintptr_t ra = GETPC();
     int mem_idx;
     TCGMemOpIdx oi;

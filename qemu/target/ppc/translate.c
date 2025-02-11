@@ -2780,7 +2780,7 @@ static void gen_lq(DisasContext *ctx)
     hi = cpu_gpr[rd];
 
     if (tb_cflags(ctx->base.tb) & CF_PARALLEL) {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 == 1
             TCGv_i32 oi = tcg_temp_new_i32(tcg_ctx);
             if (ctx->le_mode) {
                 tcg_gen_movi_i32(tcg_ctx, oi, make_memop_idx(MO_LEQ, ctx->mem_idx));
@@ -2958,7 +2958,7 @@ static void gen_std(DisasContext *ctx)
         hi = cpu_gpr[rs];
 
         if (tb_cflags(ctx->base.tb) & CF_PARALLEL) {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 == 1
                 TCGv_i32 oi = tcg_temp_new_i32(tcg_ctx);
                 if (ctx->le_mode) {
                     tcg_gen_movi_i32(tcg_ctx, oi, make_memop_idx(MO_LEQ, ctx->mem_idx));
@@ -3574,7 +3574,7 @@ static void gen_lqarx(DisasContext *ctx)
     hi = cpu_gpr[rd];
 
     if (tb_cflags(ctx->base.tb) & CF_PARALLEL) {
-#ifdef HAVE_ATOMIC128
+#if HAVE_ATOMIC128 == 1
             TCGv_i32 oi = tcg_temp_new_i32(tcg_ctx);
             if (ctx->le_mode) {
                 tcg_gen_movi_i32(tcg_ctx, oi, make_memop_idx(MO_LEQ | MO_ALIGN_16,
@@ -3632,7 +3632,7 @@ static void gen_stqcx_(DisasContext *ctx)
     hi = cpu_gpr[rs];
 
     if (tb_cflags(ctx->base.tb) & CF_PARALLEL) {
-#ifdef HAVE_CMPXCHG128
+#if HAVE_CMPXCHG128 == 1
             TCGv_i32 oi = tcg_const_i32(tcg_ctx, DEF_MEMOP(MO_Q) | MO_ALIGN_16);
             if (ctx->le_mode) {
                 gen_helper_stqcx_le_parallel(tcg_ctx, cpu_crf[0], tcg_ctx->cpu_env,
