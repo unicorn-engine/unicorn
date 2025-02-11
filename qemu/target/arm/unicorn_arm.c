@@ -440,10 +440,10 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             env->regs[15] = (*(uint32_t *)value & ~1);
             *setpc = 1;
             break;
-            // case UC_ARM_REG_C1_C0_2:
-            //     env->cp15.c1_coproc = *(int32_t *)value;
-            //     break;
-
+        case UC_ARM_REG_C1_C0_2:
+            CHECK_REG_TYPE(int32_t);
+            env->cp15.cpacr_el1 = *(int32_t *)value;
+            break;
         case UC_ARM_REG_C13_C0_3:
             CHECK_REG_TYPE(int32_t);
             env->cp15.tpidrro_el[0] = *(int32_t *)value;

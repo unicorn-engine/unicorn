@@ -932,6 +932,27 @@ static void test_arm_thumb_tcg_opcode_cmn(void)
     TEST_CHECK(cmp_info.size == 32);
 }
 
+static void test_arm_cp15_c1_c0_2(void)
+{
+    uc_engine *uc;
+    uint32_t val = 0x12345678;
+    uint32_t read_val;
+
+    // Initialize emulator in ARM mode
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_A15));
+
+    // Write to CP15 C1_C0_2
+    OK(uc_reg_write(uc, UC_ARM_REG_C1_C0_2, &val));
+
+    // Read from CP15 C1_C0_2
+    OK(uc_reg_read(uc, UC_ARM_REG_C1_C0_2, &read_val));
+
+    TEST_CHECK(read_val == val);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -960,4 +981,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_mem_hook_read_write", test_arm_mem_hook_read_write},
              {"test_arm_tcg_opcode_cmp", test_arm_tcg_opcode_cmp},
              {"test_arm_thumb_tcg_opcode_cmn", test_arm_thumb_tcg_opcode_cmn},
+             {"test_arm_cp15_c1_c0_2", test_arm_cp15_c1_c0_2},
              {NULL, NULL}};
