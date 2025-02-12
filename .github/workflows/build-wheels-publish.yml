@@ -77,6 +77,12 @@ jobs:
           name=$(echo -n "$name" | sed -e 's/[ \t:\/\\"<>|*?]/-/g' -e 's/--*/-/g' | sed -e 's/\-$//')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
 
+      - name: "Increase pagefile to avoid OOM"
+        if: runner.os == 'Windows'
+        uses: al-cheb/configure-pagefile-action@v1.2
+        with:
+          minimum-size: 8GB
+
       - name: '🛠️ Add msbuild to PATH'
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v2
@@ -225,6 +231,12 @@ jobs:
           name="cibw-wheels-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.cibw_build }}"
           name=$(echo -n "$name" | sed -e 's/[ \t:\/\\"<>|*?]/-/g' -e 's/--*/-/g' | sed -e 's/\-$//')
           echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
+
+      - name: "Increase pagefile to avoid OOM"
+        if: runner.os == 'Windows'
+        uses: al-cheb/configure-pagefile-action@v1.2
+        with:
+          minimum-size: 8GB
 
       - name: '🛠️ Add msbuild to PATH'
         if: runner.os == 'Windows'
