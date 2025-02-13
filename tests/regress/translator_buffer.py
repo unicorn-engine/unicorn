@@ -1,8 +1,8 @@
 # By Mariano Graziano
 
-import platform
 import regress
 import struct
+import sys
 import unittest
 from unicorn import *
 from unicorn.x86_const import *
@@ -17,6 +17,7 @@ class Emulator:
         self.unicorn_stack = stack
 
         self.mu = Uc(UC_ARCH_X86, UC_MODE_64)
+        self.mu.ctl_set_tlb_mode(UC_TLB_VIRTUAL)
 
         regress.logger.debug("mapping code  : %#x", __page_aligned(code))
         regress.logger.debug("mapping stack : %#x", __page_aligned(stack))
@@ -75,7 +76,7 @@ class TranslatorBuffer(regress.RegressTest):
 
         emu.emu(1)
 
-    @unittest.skipIf(platform.machine().lower() == 'aarch64', reason='TO BE CHECKED!')
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
     def runTest(self):
         ip_base = 0x000fffff816a0000  # was: 0xffffffff816a0000
         sp_base = 0x000f88001b800000  # was: 0xffff88001b800000

@@ -16,7 +16,6 @@ ITERATIONS = 10000
 class MemoryLeak(regress.RegressTest):
 
     @unittest.skipIf(sys.platform == 'win32', reason='Test for Unix only')
-    @unittest.skipIf(platform.machine().lower() == 'aarch64', reason='TO BE CHECKED!')
     def test(self):
         if platform.system() == "Darwin":
             rusage_multiplier = 1

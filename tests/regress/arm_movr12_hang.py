@@ -1,13 +1,11 @@
-import platform
 import regress
-import unittest
 from unicorn import *
 from unicorn.arm_const import *
 
 
 class MovHang(regress.RegressTest):
 
-    @unittest.skipIf(platform.machine().lower() == 'aarch64', reason='TO BE CHECKED!')
+    # NOTE: This test was failing when workflow was using ubuntu-latest + qemu. Fixed once switched to native arm runner
     def runTest(self):
         uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
         uc.mem_map(0x1000, 0x1000)
