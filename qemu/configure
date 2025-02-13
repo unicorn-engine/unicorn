@@ -491,6 +491,8 @@ elif check_define __aarch64__ ; then
   cpu="aarch64"
 elif check_define __tricore__ ; then
   cpu="tricore"
+elif check_define __loongarch64 ; then
+  cpu="loongarch64"
 else
   cpu=$(uname -m)
 fi
@@ -532,6 +534,10 @@ case "$cpu" in
   ;;
   tricore)
     cpu="tricore"
+    supported_cpu="yes"
+  ;;
+  loongarch64)
+    cpu="loongarch64"
     supported_cpu="yes"
   ;;
   *)
@@ -844,6 +850,11 @@ case "$cpu" in
            CPU_CFLAGS="-m64 -mcx16"
            QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
            ;;
+    loongarch*)
+	   CPU_CFLAGS=""
+           QEMU_LDFLAGS=" $QEMU_LDFLAGS"
+           ;;
+
     x32)
            CPU_CFLAGS="-mx32"
            QEMU_LDFLAGS="-mx32 $QEMU_LDFLAGS"
@@ -2658,6 +2669,11 @@ case "$target_name" in
   i386)
     mttcg="yes"
     TARGET_SYSTBL_ABI=i386
+  ;;
+  loongarch64)
+    mttcg="yes"
+    TARGET_ARCH=loongarch64
+    TARGET_SYSTBL_ABI=common,64
   ;;
   x86_64)
     TARGET_BASE_ARCH=i386
