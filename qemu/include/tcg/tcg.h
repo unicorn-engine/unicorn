@@ -695,6 +695,7 @@ struct TCGContext {
     struct jit_code_entry *one_entry;
     /* qemu/tcg/tcg-common.c */
     TCGOpDef *tcg_op_defs;
+    size_t tcg_op_defs_max;
 
     // Unicorn engine variables
     struct uc_struct *uc;

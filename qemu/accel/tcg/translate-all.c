@@ -1019,12 +1019,18 @@ void free_code_gen_buffer(struct uc_struct *uc)
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
+#if CONFIG_TCG_INTERPRETER
+    int prot = PROT_WRITE | PROT_READ;
+#else
     int prot = PROT_WRITE | PROT_READ | PROT_EXEC;
+#endif
     int flags = MAP_PRIVATE | MAP_ANONYMOUS;
     size_t size = tcg_ctx->code_gen_buffer_size;
     void *buf;
+#if !CONFIG_TCG_INTERPRETER
 #ifdef USE_MAP_JIT
     flags |= MAP_JIT;
+#endif
 #endif
     buf = mmap(NULL, size, prot, flags, -1, 0);
     if (buf == MAP_FAILED) {
