@@ -16,6 +16,7 @@ Highlights
 - RISC-V API updates. @apparentlymart 
 - fix UC_HOOK_MEM_READ on aarch64. @glennsec 
 - Support UC_TCG_OP_FLAG_CMP for ARM @dotCirill 
+- An alternative tag prefixed with "v" is added for golang compatibility.
 
 Fix & Improvements
 
