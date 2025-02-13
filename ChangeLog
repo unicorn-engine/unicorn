@@ -57,7 +57,7 @@ Full Changelog: https://github.com/unicorn-engine/unicorn/compare/2.1.1...2.1.2
 
 As usual, thanks to all contributors and sorry if I missed your name here (please tell me @wtdcode !).
 
-Lastly and personally, I would like to express my big thanks to @Antelox @elicn and @PhilippTakacs for spending lots of time improving Unicorn Engine. Also, there are a few big pull requests adding new architectures and I will actively push them to 2.2.0.
+Lastly and personally, I would like to express my big thanks to @Antelox @elicn and @PhilippTakacs for spending lots of time improving Unicorn Engine. Also, there are a few big pull requests adding new architectures (RH850, TCI,  LoongArch64, AVR) and I will actively push them to 2.2.0.
 
 -------------------------------
 [Version 2.1.1]: Sept 26th, 2024
