@@ -35,7 +35,7 @@ jobs:
       matrix:
         config:
           - {
-            os: windows-2019,
+            os: windows-2022,
             arch: x64,
             python-arch: x64,
             python-ver: '3.8',
@@ -45,10 +45,10 @@ jobs:
             shared: 'yes',
             build_type: 'Release',
             archiver: '7z a',
-            generators: 'Visual Studio 16 2019'
+            generators: 'Visual Studio 17 2022'
           }
           - {
-            os: windows-2019,
+            os: windows-2022,
             arch: x86,
             python-arch: x86,
             python-ver: '3.8',
@@ -58,7 +58,7 @@ jobs:
             shared: 'yes',
             build_type: 'Release',
             archiver: '7z a',
-            generators: 'Visual Studio 16 2019'
+            generators: 'Visual Studio 17 2022'
           }
         compiler: [ gcc ]
     steps:
@@ -228,7 +228,7 @@ jobs:
             generators: 'Ninja'
           }
           - {
-            os: ubuntu-22.04,
+            os: ubuntu-24.04-arm,
             arch: aarch64,
             python-arch: aarch64,
             python-ver: '3.8',
@@ -237,7 +237,7 @@ jobs:
             build_type: 'Release',
             archiver: '7z a',
             generators: 'Ninja',
-            distro: ubuntu20.04
+            distro: ubuntu24.04
           }
           - {
             os: ubuntu-22.04,
@@ -249,7 +249,7 @@ jobs:
             build_type: 'Release',
             archiver: '7z a',
             generators: 'Ninja',
-            distro: ubuntu20.04
+            distro: ubuntu22.04
           }
         compiler: [ gcc ]
     steps:
@@ -257,14 +257,15 @@ jobs:
 
       - name: '🚧 Linux x64/x86 build'
         if: contains(matrix.config.arch, 'x64') || contains(matrix.config.arch, 'x86')
-        shell: 'script -q -e -c "bash {0}"'
+        shell: bash
         run: |
           if [ ${{ matrix.config.arch }} == 'x64' ]; then
+                sudo apt update -q -y
                 sudo apt install -q -y libcmocka-dev ninja-build
           else
                 export CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
                 sudo dpkg --add-architecture i386
-                sudo apt update
+                sudo apt update -q -y
                 sudo apt install -q -y lib32ncurses-dev lib32z1-dev lib32gcc-9-dev libc6-dev-i386 gcc-multilib \
                   libcmocka-dev:i386 libcmocka0:i386 libc6:i386 libgcc-s1:i386 ninja-build
           fi
@@ -281,8 +282,26 @@ jobs:
           cmake --install . --strip
           ctest -VV -C ${{ matrix.config.build_type }}
 
-      - name: '🚧 Linux ppc64le/aarch64 build'
-        if: contains(matrix.config.arch, 'ppc64le') || contains(matrix.config.arch, 'aarch64')
+      - name: '🚧 Linux aarch64 build'
+        if: contains(matrix.config.arch, 'aarch64')
+        shell: bash
+        run: |
+          sudo apt-get update -q -y
+          sudo apt-get install -q -y git cmake build-essential automake libcmocka-dev pkg-config ${{ matrix.compiler }} ninja-build
+          mkdir build
+          mkdir instdir
+          cmake \
+            -S . \
+            -B . \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_INSTALL_PREFIX:PATH=/instdir
+          cmake --build . --config ${{ matrix.config.build_type }}
+          sudo cmake --install . --strip
+          ctest -VV -C ${{ matrix.config.build_type }}
+
+      - name: '🚧 Linux ppc64le build'
+        if: contains(matrix.config.arch, 'ppc64le')
         uses: uraimo/run-on-arch-action@v2
         with:
           arch: ${{ matrix.config.arch }}
@@ -323,7 +342,7 @@ jobs:
           name: ${{ matrix.config.artifact }}
 
   publish:
-    needs: ["Windows", "Macos", "Linux"]
+    needs: [ "Windows", "Macos", "Linux" ]
     if: ${{ needs.Windows.result == 'success' && needs.Macos.result == 'success' && needs.Linux.result == 'success' }}
     runs-on: ubuntu-latest
 
