@@ -75,7 +75,7 @@ jobs:
         cargo test
 
     - name: '📦 Cargo Publish'
-      if: startsWith(github.ref, 'refs/tags') && contains(matrix.config.os, 'ubuntu')
+      if: startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v') && contains(matrix.config.os, 'ubuntu')
       env:
         TOKEN: ${{ secrets.cratesio_token }}
         UNICORN_VERSION: dev

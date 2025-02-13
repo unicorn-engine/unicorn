@@ -34,7 +34,7 @@ on:
 
 env:
   # Enable DEBUG flag either according to the tag release or manual override
-  UNICORN_DEBUG: ${{ inputs.debugMode != '' && inputs.debugMode || startsWith(github.ref, 'refs/tags') && '0' || contains(github.event.head_commit.message, 'CI(release)') && '0' || '1' }}
+  UNICORN_DEBUG: ${{ inputs.debugMode != '' && inputs.debugMode || (startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v')) && '0' || contains(github.event.head_commit.message, 'CI(release)') && '0' || '1' }}
 
 jobs:
   # job to be executed for every push - testing purpose
@@ -218,7 +218,7 @@ jobs:
           - { os: macos-latest, arch: arm64, cibw_build: 'cp*', cibw_skip: '*36* *37* *38*' }
           - { os: windows-2022, arch: AMD64, cibw_build: 'cp*', cibw_skip: '*36* *38*' }
           - { os: windows-2022, arch: x86, cibw_build: 'cp*', cibw_skip: '*36* *38*' }
-    if: ${{ inputs.fullMode == 1 || startsWith(github.ref, 'refs/tags') || contains(github.event.head_commit.message, 'CI(full)') }}
+    if: ${{ inputs.fullMode == 1 || (startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v')) || contains(github.event.head_commit.message, 'CI(full)') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -310,7 +310,7 @@ jobs:
     permissions:
       id-token: write
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags')
+    if: startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/download-artifact@v4
         with:

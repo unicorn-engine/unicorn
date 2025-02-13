@@ -429,12 +429,12 @@ jobs:
           path: ${{ github.workspace }}/bindings/dotnet/UnicornEngine/bin/Release/UnicornEngine.Unicorn.*.nupkg
 
       - name: 📦 Publish to Github Packages
-        if: startsWith(github.ref, 'refs/tags')
+        if: startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v')
         working-directory: bindings/dotnet/UnicornEngine
         run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" --source "github" --api-key "${{ secrets.GHPR_TOKEN }}"
 
       - name: 📦 Publish Nuget package
-        if: startsWith(github.ref, 'refs/tags')
+        if: startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v')
         working-directory: bindings/dotnet/UnicornEngine
         run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" -k "$NUGET_AUTH_TOKEN" -s https://api.nuget.org/v3/index.json
         env:
