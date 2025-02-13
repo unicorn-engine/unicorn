@@ -1,6 +1,65 @@
 This file details the changelog of Unicorn Engine.
 
 -------------------------------
+[Version 2.1.2]: Feb 13rd, 2025
+2.1.2 is a patch release to mainly resolve the stability issue of the 2.1.0 release series and fix a few distribution issues. All users of Unicorn are expected to upgrade. 
+
+Highlights
+
+- macOS arm64 no longer provides binary wheels due to a feature missing from Github Action runners.
+- py3.8 support is brought back, python2 wheels are built and test as well and we migrate to cibuildwheel! @Antelox 
+- Several polish to python bindings and implement new API. @elicn  @droe 
+- Revert previous break changes that return UC_ERR_ARG for non-existing registers. Now this prints a warning. We urge all users relying on this behavior to fix code as soon as possible.
+- Fix several segment faults, including a few long-standing random segfault issues.
+- Revive previous unicorn 1 test suite and related refactoring. @elicn @Antelox 
+- Optimize memory handling and notdirty writes for faster memory access and snapshots, especially useful for fuzzing. @PhilippTakacs 
+- RISC-V API updates. @apparentlymart 
+- fix UC_HOOK_MEM_READ on aarch64. @glennsec 
+- Support UC_TCG_OP_FLAG_CMP for ARM @dotCirill 
+
+Fix & Improvements
+
+- Implement UC_ARM64_REG_WSP
+- Several fixes on arm64 macos @tbodt 
+- reg_read_batch and reg_write_batch @hsa1as 
+- Fix pc sync issue for SPARC, MIPS, x86. This also fixes PC sync issue within UC_HOOK_BLOCK hooks.
+- Allow cmake to install files on Windows and allow cmake not to generate Unicorn 1 style all-in-one objects archive 
+- Make i386 instructions RDTSC and RDTSCP hookable @t0rr3sp3dr0 
+- Allow Statically Linking in Go @t0rr3sp3dr0 
+- Rust bindings improvements @Sanae6 
+- Patch multiple UC_HOOK_MEM callbacks for unaligned access @Michael-c0de 
+- Fix UC_MEM_FETCH_PROT for data read
+- Remove more Unicorn 1 hacks to improve performance.
+- Docs & unit test updates. @saicao 
+- Allow uc_ctl_set_page_size() for arm64 @droe 
+- Musl builds @clan 
+- mips16 fix @ZakDanger 
+- Fix UC_HOOK_MEM on arm32 @xndcn 
+- Fix heap buffer overflow in op_cksm function @Shivam7-1 
+
+
+New Contributors
+* @droe made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2023
+* @Antelox made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2026
+* @tbodt made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2049
+* @hsa1as made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2060
+* @t0rr3sp3dr0 made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2066
+* @Sanae6 made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2069
+* @Michael-c0de made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2063
+* @Evian-Zhang made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2064
+* @glennsec made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2028
+* @clan made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2085
+* @xndcn made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2091
+* @Shivam7-1 made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2096
+* @amaanq made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2099
+
+Full Changelog: https://github.com/unicorn-engine/unicorn/compare/2.1.1...2.1.2
+
+As usual, thanks to all contributors and sorry if I missed your name here (please tell me @wtdcode !).
+
+Lastly and personally, I would like to express my big thanks to @Antelox @elicn and @PhilippTakacs for spending lots of time improving Unicorn Engine. Also, there are a few big pull requests adding new architectures and I will actively push them to 2.2.0.
+
+-------------------------------
 [Version 2.1.1]: Sept 26th, 2024
 
 This is a small release to fix a few urgent issues.
