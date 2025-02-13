@@ -14,6 +14,7 @@ class Init(regress.RegressTest):
     def init_unicorn(self, ip, sp, counter):
         regress.logger.debug("[+] Emulating IP: %x SP: %x - Counter: %x" % (ip, sp, counter))
         self.emulator = Uc(UC_ARCH_X86, UC_MODE_64)
+        self.emulator.ctl_set_tlb_mode(UC_TLB_VIRTUAL)
         self.emulator.mem_map(0x1000000, 2 * 1024 * 1024)
         self.emulator.mem_write(0x1000000, b"\x90")
         self.emulator.mem_map(0x8000000, 8 * 1024 * 1024)
@@ -55,7 +56,7 @@ class Init(regress.RegressTest):
         return True
 
     @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
-    @unittest.skipIf(sys.platform == 'win32' or platform.machine().lower() not in ('x86_64', 'arm64'), 'TO BE CHECKED!')
+    @unittest.skipIf(sys.platform == 'win32', 'TO BE CHECKED!')
     def runTest(self):
         ips = range(0x1000000, 0x1001000)
         sps = range(0x8000000, 0x8001000)
