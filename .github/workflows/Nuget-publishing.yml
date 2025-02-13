@@ -12,9 +12,6 @@ on:
       - "AUTHORS.TXT"
       - "CHANGELOG"
       - "COPYING"
-    branches:
-      - dev
-      - master
 
 permissions:
   packages: write
