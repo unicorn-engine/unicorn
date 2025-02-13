@@ -12,16 +12,16 @@ on:
       - "AUTHORS.TXT"
       - "CHANGELOG"
       - "COPYING"
-    workflow_dispatch:
-      inputs:
-        forceRelease:
-          description: 'Force release'
-          required: false
-          default: ''
-          type: choice
-          options:
-            - '0'
-            - '1'
+  workflow_dispatch:
+    inputs:
+      forceRelease:
+        description: 'Force release'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - '0'
+          - '1'
 
 permissions:
   packages: write
