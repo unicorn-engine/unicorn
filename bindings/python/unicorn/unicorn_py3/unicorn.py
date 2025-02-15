@@ -3,11 +3,12 @@ based on Nguyen Anh Quynnh's work
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator, Optional, Sequence, Tuple, Type, TypeVar, Union, ParamSpec
 
 import ctypes
 import functools
 import weakref
+import warnings
 
 from unicorn import unicorn_const as uc
 from .arch.types import uc_err, uc_engine, uc_context, uc_hook_h, UcReg, VT
@@ -630,6 +631,29 @@ def ucsubclass(cls):
 class Uc(RegStateManager):
     """Unicorn Engine class.
     """
+
+    # Code snippet modified from:
+    # https://stackoverflow.com/questions/2536307/decorators-in-the-python-standard-lib-deprecated-specifically
+    
+    
+    @staticmethod
+    def __deprecated(msg: str):
+        __rT = TypeVar('rT') # return type
+        __pT = ParamSpec('pT') # parameters type
+        def __deprecated_inner(func: Callable[__pT, __rT]) -> Callable[__pT, __rT]:
+            """Use this decorator to mark functions as deprecated.
+            Every time the decorated function runs, it will emit
+            a "deprecation" warning."""
+            @functools.wraps(func)
+            def new_func(*args: Uc.__pT.args, **kwargs: Uc.__pT.kwargs):
+                warnings.simplefilter('always', DeprecationWarning)  # turn off filter
+                warnings.warn("Call to a deprecated function {}. {}".format(func.__name__, msg),
+                            category=DeprecationWarning,
+                            stacklevel=2)
+                warnings.simplefilter('default', DeprecationWarning)  # reset filter
+                return func(*args, **kwargs)
+            return new_func
+        return __deprecated_inner
 
     @staticmethod
     def __is_compliant() -> bool:
@@ -1435,6 +1459,15 @@ class Uc(RegStateManager):
 
         self.__ctl_w(uc.UC_CTL_TB_FLUSH)
 
+    @__deprecated("You should use ctl_set_tlb_mode instead.")
+    def ctl_tlb_mode(self, mode: int) -> None:
+        """Deprecated, please use ctl_set_tlb_mode instead.
+        
+        Args:
+            mode: tlb mode to use (see UC_TLB_* constants)
+        """
+        self.ctl_set_tlb_mode(mode)
+    
     def ctl_set_tlb_mode(self, mode: int) -> None:
         """Set TLB mode.
 
