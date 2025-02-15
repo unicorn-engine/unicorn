@@ -643,7 +643,7 @@ class Uc(RegStateManager):
             Every time the decorated function runs, it will emit
             a "deprecation" warning."""
             @functools.wraps(func)
-            def new_func(*args: Uc.__pT.args, **kwargs: Uc.__pT.kwargs):
+            def new_func(*args: __pT.args, **kwargs: __pT.kwargs):
                 warnings.simplefilter('always', DeprecationWarning)  # turn off filter
                 warnings.warn("Call to a deprecated function {}. {}".format(func.__name__, msg),
                             category=DeprecationWarning,
