@@ -3,7 +3,7 @@ based on Nguyen Anh Quynnh's work
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator, Optional, Sequence, Tuple, Type, TypeVar, Union, ParamSpec
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 import ctypes
 import functools
@@ -636,14 +636,12 @@ class Uc(RegStateManager):
     # https://stackoverflow.com/questions/2536307/decorators-in-the-python-standard-lib-deprecated-specifically
     @staticmethod
     def __deprecated(msg: str):
-        __rT = TypeVar('rT') # return type
-        __pT = ParamSpec('pT') # parameters type
-        def __deprecated_inner(func: Callable[__pT, __rT]) -> Callable[__pT, __rT]:
+        def __deprecated_inner(func: Callable) -> Callable:
             """Use this decorator to mark functions as deprecated.
             Every time the decorated function runs, it will emit
             a "deprecation" warning."""
             @functools.wraps(func)
-            def new_func(*args: __pT.args, **kwargs: __pT.kwargs):
+            def new_func(*args, **kwargs):
                 warnings.simplefilter('always', DeprecationWarning)  # turn off filter
                 warnings.warn("Call to a deprecated function {}. {}".format(func.__name__, msg),
                             category=DeprecationWarning,
