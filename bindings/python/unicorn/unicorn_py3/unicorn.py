@@ -634,8 +634,6 @@ class Uc(RegStateManager):
 
     # Code snippet modified from:
     # https://stackoverflow.com/questions/2536307/decorators-in-the-python-standard-lib-deprecated-specifically
-    
-    
     @staticmethod
     def __deprecated(msg: str):
         __rT = TypeVar('rT') # return type
