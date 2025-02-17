@@ -103,6 +103,49 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(mipsreg_t);
             *(mipsreg_t *)value = env->active_tc.CP0_UserLocal;
             break;
+        case UC_MIPS_REG_F0:
+        case UC_MIPS_REG_F1:
+        case UC_MIPS_REG_F2:
+        case UC_MIPS_REG_F3:
+        case UC_MIPS_REG_F4:
+        case UC_MIPS_REG_F5:
+        case UC_MIPS_REG_F6:
+        case UC_MIPS_REG_F7:
+        case UC_MIPS_REG_F8:
+        case UC_MIPS_REG_F9:
+        case UC_MIPS_REG_F10:
+        case UC_MIPS_REG_F11:
+        case UC_MIPS_REG_F12:
+        case UC_MIPS_REG_F13:
+        case UC_MIPS_REG_F14:
+        case UC_MIPS_REG_F15:
+        case UC_MIPS_REG_F16:
+        case UC_MIPS_REG_F17:
+        case UC_MIPS_REG_F18:
+        case UC_MIPS_REG_F19:
+        case UC_MIPS_REG_F20:
+        case UC_MIPS_REG_F21:
+        case UC_MIPS_REG_F22:
+        case UC_MIPS_REG_F23:
+        case UC_MIPS_REG_F24:
+        case UC_MIPS_REG_F25:
+        case UC_MIPS_REG_F26:
+        case UC_MIPS_REG_F27:
+        case UC_MIPS_REG_F28:
+        case UC_MIPS_REG_F29:
+        case UC_MIPS_REG_F30:
+        case UC_MIPS_REG_F31:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->active_fpu.fpr[regid - UC_MIPS_REG_F0].d;
+            break;
+        case UC_MIPS_REG_FIR:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->active_fpu.fcr0;
+            break;
+        case UC_MIPS_REG_FCSR:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->active_fpu.fcr31;
+            break;
         }
     }
 
@@ -158,6 +201,57 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             CHECK_REG_TYPE(mipsreg_t);
             env->active_tc.CP0_UserLocal = *(mipsreg_t *)value;
             break;
+        case UC_MIPS_REG_F0:
+        case UC_MIPS_REG_F1:
+        case UC_MIPS_REG_F2:
+        case UC_MIPS_REG_F3:
+        case UC_MIPS_REG_F4:
+        case UC_MIPS_REG_F5:
+        case UC_MIPS_REG_F6:
+        case UC_MIPS_REG_F7:
+        case UC_MIPS_REG_F8:
+        case UC_MIPS_REG_F9:
+        case UC_MIPS_REG_F10:
+        case UC_MIPS_REG_F11:
+        case UC_MIPS_REG_F12:
+        case UC_MIPS_REG_F13:
+        case UC_MIPS_REG_F14:
+        case UC_MIPS_REG_F15:
+        case UC_MIPS_REG_F16:
+        case UC_MIPS_REG_F17:
+        case UC_MIPS_REG_F18:
+        case UC_MIPS_REG_F19:
+        case UC_MIPS_REG_F20:
+        case UC_MIPS_REG_F21:
+        case UC_MIPS_REG_F22:
+        case UC_MIPS_REG_F23:
+        case UC_MIPS_REG_F24:
+        case UC_MIPS_REG_F25:
+        case UC_MIPS_REG_F26:
+        case UC_MIPS_REG_F27:
+        case UC_MIPS_REG_F28:
+        case UC_MIPS_REG_F29:
+        case UC_MIPS_REG_F30:
+        case UC_MIPS_REG_F31:
+            CHECK_REG_TYPE(uint64_t);
+            env->active_fpu.fpr[regid - UC_MIPS_REG_F0].d = *(uint64_t*)value;
+            break;
+        case UC_MIPS_REG_FCSR: {
+            CHECK_REG_TYPE(uint32_t);
+            uint32_t arg1 = *(uint32_t *)value;
+            uint32_t original = env->active_fpu.fcr31;
+            env->active_fpu.fcr31 = (arg1 & env->active_fpu.fcr31_rw_bitmask) |
+               (env->active_fpu.fcr31 & ~(env->active_fpu.fcr31_rw_bitmask));
+            if ((GET_FP_ENABLE(env->active_fpu.fcr31) | 0x20) &
+                GET_FP_CAUSE(env->active_fpu.fcr31)) {
+                env->active_fpu.fcr31 = original;
+                ret = UC_ERR_EXCEPTION;
+            } else {
+                restore_fp_status(env);
+                set_float_exception_flags(0, &env->active_fpu.fp_status);
+            }
+            break;
+        }
         }
     }
 
