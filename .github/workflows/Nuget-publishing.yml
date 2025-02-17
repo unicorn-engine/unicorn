@@ -37,11 +37,9 @@ jobs:
           - {
             os: windows-2022,
             arch: x64,
-            python-arch: x64,
-            python-ver: '3.8',
             name: 'windows-x64 MSVC 64bit shared',
             msvc-arch: x64,
-            artifact: 'windows_msvc64_shared.7z',
+            artifact: 'windows-msvc64-shared.7z',
             shared: 'yes',
             build_type: 'Release',
             archiver: '7z a',
@@ -50,11 +48,9 @@ jobs:
           - {
             os: windows-2022,
             arch: x86,
-            python-arch: x86,
-            python-ver: '3.8',
             name: 'windows-x86 MSVC 32bit shared',
             msvc-arch: x86,
-            artifact: 'windows_msvc32_shared.7z',
+            artifact: 'windows-msvc32-shared.7z',
             shared: 'yes',
             build_type: 'Release',
             archiver: '7z a',
@@ -148,8 +144,6 @@ jobs:
           - {
             os: macos-latest,
             arch: x64,
-            python-arch: x64,
-            python-ver: '3.8',
             name: 'macos-x64 cmake shared',
             shared: 'yes',
             artifact: 'macos-cmake-shared-x64.7z',
@@ -206,8 +200,6 @@ jobs:
           - {
             os: ubuntu-latest,
             arch: x64,
-            python-arch: x64,
-            python-ver: '3.8',
             name: 'ubuntu-x64 cmake shared',
             shared: 'yes',
             artifact: 'ubuntu-cmake-shared-x64.7z',
@@ -218,8 +210,6 @@ jobs:
           - {
             os: ubuntu-latest,
             arch: x86,
-            python-arch: x86,
-            python-ver: '3.8',
             name: 'ubuntu-x86 cmake shared',
             shared: 'yes',
             artifact: 'ubuntu-cmake-shared-x86.7z',
@@ -230,8 +220,6 @@ jobs:
           - {
             os: ubuntu-24.04-arm,
             arch: aarch64,
-            python-arch: aarch64,
-            python-ver: '3.8',
             name: 'ubuntu-aarch64 cmake',
             artifact: 'ubuntu-cmake-aarch64.7z',
             build_type: 'Release',
@@ -242,8 +230,6 @@ jobs:
           - {
             os: ubuntu-22.04,
             arch: ppc64le,
-            python-arch: ppc,
-            python-ver: '3.8',
             name: 'ubuntu-ppc64le cmake',
             artifact: 'ubuntu-cmake-ppc64le.7z',
             build_type: 'Release',
@@ -295,9 +281,9 @@ jobs:
             -B . \
             -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
             -G "${{ matrix.config.generators }}" \
-            -DCMAKE_INSTALL_PREFIX:PATH=/instdir
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir
           cmake --build . --config ${{ matrix.config.build_type }}
-          sudo cmake --install . --strip
+          cmake --install . --strip
           ctest -VV -C ${{ matrix.config.build_type }}
 
       - name: '🚧 Linux ppc64le build'
@@ -388,13 +374,13 @@ jobs:
               "destDir": "runtimes/osx-x64/native",
               "destFile": "libunicorn.dylib"
             },
-            "windows_msvc64_shared.7z": {
+            "windows-msvc64-shared.7z": {
               "sourceDir": "",
               "sourceFile": "unicorn.dll",
               "destDir": "runtimes/win-x64/native",
               "destFile": "unicorn.dll"
             },
-            "windows_msvc32_shared.7z": {
+            "windows-msvc32-shared.7z": {
               "sourceDir": "",
               "sourceFile": "unicorn.dll",
               "destDir": "runtimes/win-x86/native",

@@ -487,9 +487,9 @@ jobs:
             -B . \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
             -G "${{ matrix.config.generators }}" \
-            -DCMAKE_INSTALL_PREFIX:PATH=/instdir
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir
           cmake --build . --config ${{ env.BUILD_TYPE }}
-          sudo cmake --install . --strip
+          cmake --install . --strip
           ctest -VV -C ${{ env.BUILD_TYPE }}
 
       - name: '🚧 Linux ppc64le build'
