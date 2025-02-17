@@ -19,7 +19,8 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc);
 
 static void mips_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC = address & ~(uint64_t )1ULL;
+    ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC =
+        address & ~(uint64_t)1ULL;
     if (address & 1) {
         ((CPUMIPSState *)uc->cpu->env_ptr)->hflags |= MIPS_HFLAG_M16;
     } else {
@@ -30,7 +31,7 @@ static void mips_set_pc(struct uc_struct *uc, uint64_t address)
 static uint64_t mips_get_pc(struct uc_struct *uc)
 {
     return ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC |
-        !!(((CPUMIPSState *)uc->cpu->env_ptr)->hflags & (MIPS_HFLAG_M16));
+           !!(((CPUMIPSState *)uc->cpu->env_ptr)->hflags & (MIPS_HFLAG_M16));
 }
 
 static void mips_release(void *ctx)
@@ -234,14 +235,15 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_MIPS_REG_F30:
         case UC_MIPS_REG_F31:
             CHECK_REG_TYPE(uint64_t);
-            env->active_fpu.fpr[regid - UC_MIPS_REG_F0].d = *(uint64_t*)value;
+            env->active_fpu.fpr[regid - UC_MIPS_REG_F0].d = *(uint64_t *)value;
             break;
         case UC_MIPS_REG_FCSR: {
             CHECK_REG_TYPE(uint32_t);
             uint32_t arg1 = *(uint32_t *)value;
             uint32_t original = env->active_fpu.fcr31;
-            env->active_fpu.fcr31 = (arg1 & env->active_fpu.fcr31_rw_bitmask) |
-               (env->active_fpu.fcr31 & ~(env->active_fpu.fcr31_rw_bitmask));
+            env->active_fpu.fcr31 =
+                (arg1 & env->active_fpu.fcr31_rw_bitmask) |
+                (env->active_fpu.fcr31 & ~(env->active_fpu.fcr31_rw_bitmask));
             if ((GET_FP_ENABLE(env->active_fpu.fcr31) | 0x20) &
                 GET_FP_CAUSE(env->active_fpu.fcr31)) {
                 env->active_fpu.fcr31 = original;

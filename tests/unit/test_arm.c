@@ -764,8 +764,8 @@ static void test_arm_context_save(void)
 
     OK(uc_context_alloc(uc, &ctx));
     OK(uc_context_save(uc, ctx));
-    OK(uc_context_reg_read(ctx, UC_ARM_REG_PC, (void*)&pc));
-    OK(uc_context_reg_write(ctx, UC_ARM_REG_PC, (void*)&pc));
+    OK(uc_context_reg_read(ctx, UC_ARM_REG_PC, (void *)&pc));
+    OK(uc_context_reg_write(ctx, UC_ARM_REG_PC, (void *)&pc));
     OK(uc_context_restore(uc, ctx));
 
     uc_common_setup(&uc2, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
@@ -841,7 +841,8 @@ static void test_arm_mem_hook_read_write(void)
     // str r1, [sp, #4]
     // ldr r2, [sp, #4]
     // str r2, [sp]
-    const char code[] = "\x00\x10\x9d\xe5\x04\x10\x8d\xe5\x04\x20\x9d\xe5\x00\x20\x8d\xe5";
+    const char code[] =
+        "\x00\x10\x9d\xe5\x04\x10\x8d\xe5\x04\x20\x9d\xe5\x00\x20\x8d\xe5";
     uint32_t r_sp;
     r_sp = 0x9000;
     uc_hook hk;

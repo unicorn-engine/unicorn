@@ -220,7 +220,8 @@ typedef enum UC_MIPS_REG {
     UC_MIPS_REG_CP0_USERLOCAL,
     UC_MIPS_REG_CP0_STATUS,
 
-    // FCR(s) Ref: https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00083-2B-MIPS64INT-AFP-06.01.pdf
+    // FCR(s) Ref:
+    // https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00083-2B-MIPS64INT-AFP-06.01.pdf
     UC_MIPS_REG_FIR,
     UC_MIPS_REG_FCSR,
 

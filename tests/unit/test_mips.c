@@ -17,8 +17,8 @@ static void test_mips_el_ori(void)
     char code[] = "\x56\x34\x21\x34"; // ori $at, $at, 0x3456;
     int r_r1 = 0x6789;
 
-    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN, code,
-                    sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN,
+                    code, sizeof(code) - 1);
     OK(uc_reg_write(uc, UC_MIPS_REG_1, &r_r1));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
@@ -36,8 +36,8 @@ static void test_mips_eb_ori(void)
     char code[] = "\x34\x21\x34\x56"; // ori $at, $at, 0x3456;
     int r_r1 = 0x6789;
 
-    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_BIG_ENDIAN, code,
-                    sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_BIG_ENDIAN,
+                    code, sizeof(code) - 1);
     OK(uc_reg_write(uc, UC_MIPS_REG_1, &r_r1));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
@@ -56,8 +56,8 @@ static void test_mips_stop_at_branch(void)
         "\x02\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00"; // j 0x8; nop;
     int r_pc = 0x0;
 
-    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN, code,
-                    sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN,
+                    code, sizeof(code) - 1);
 
     // Execute one instruction with branch delay slot.
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 1));
@@ -78,8 +78,8 @@ static void test_mips_stop_at_delay_slot(void)
         "\x02\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00"; // j 0x8; nop;
     int r_pc = 0x0;
 
-    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN, code,
-                    sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN,
+                    code, sizeof(code) - 1);
 
     // Stop at the delay slot by design.
     OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
@@ -99,8 +99,8 @@ static void test_mips_lwx_exception_issue_1314(void)
     char code[] = "\x0a\xc8\x79\x7e"; // lwx $t9, $t9($s3)
     int reg;
 
-    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN, code,
-                    sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN,
+                    code, sizeof(code) - 1);
     OK(uc_mem_map(uc, 0x10000, 0x4000, UC_PROT_ALL));
 
     // Enable DSP
@@ -133,11 +133,12 @@ static void test_mips_mips16(void)
     int r_v0 = 0x6789;
     int mips16_lowbit = 1;
 
-    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN, code,
-                    sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN,
+                    code, sizeof(code) - 1);
     OK(uc_reg_write(uc, UC_MIPS_REG_V0, &r_v0));
 
-    OK(uc_emu_start(uc, code_start | mips16_lowbit, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_emu_start(uc, code_start | mips16_lowbit,
+                    code_start + sizeof(code) - 1, 0, 0));
 
     OK(uc_reg_read(uc, UC_MIPS_REG_V0, &r_v0));
 
