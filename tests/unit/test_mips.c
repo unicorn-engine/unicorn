@@ -147,6 +147,23 @@ static void test_mips_mips16(void)
     OK(uc_close(uc));
 }
 
+static void test_mips_mips_fpr(void)
+{
+    uc_engine *uc;
+    uint64_t r_f1;
+    // ks.asm("li $t1, 0x42f6e979;mtc1 $t1, $f1")
+    const char code[] = "\xf6\x42\x09\x3c\x79\xe9\x29\x35\x00\x08\x89\x44";
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32, code, sizeof(code) - 1);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_MIPS_REG_F1, (void *)&r_f1));
+
+    TEST_CHECK(r_f1 = 0x42f6e979);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_mips_stop_at_branch", test_mips_stop_at_branch},
     {"test_mips_stop_at_delay_slot", test_mips_stop_at_delay_slot},
@@ -154,4 +171,5 @@ TEST_LIST = {
     {"test_mips_eb_ori", test_mips_eb_ori},
     {"test_mips_lwx_exception_issue_1314", test_mips_lwx_exception_issue_1314},
     {"test_mips_mips16", test_mips_mips16},
+    {"test_mips_mips_fpr", test_mips_mips_fpr},
     {NULL, NULL}};
