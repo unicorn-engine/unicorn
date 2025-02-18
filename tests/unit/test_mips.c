@@ -97,6 +97,30 @@ static void test_mips_stop_at_delay_slot(void)
     OK(uc_close(uc));
 }
 
+static void test_mips_stop_delay_slot_from_qiling(void)
+{
+    uc_engine *uc;
+    // 24 06 00 03          addiu                $a2, $zero, 3
+    // 10 a6 00 79          beq                  $a1, $a2, 0x47c8da4
+    // 30 42 00 fc          andi                 $v0, $v0, 0xfc
+    char code[] =
+        "\x24\x06\x00\x03\x10\xa6\x00\x79\x30\x42\x00\xfc";
+    uint32_t r_pc = 0x0;
+    uint32_t r_a2 = 1;
+
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_BIG_ENDIAN,
+                    code, sizeof(code) - 1);
+
+    OK(uc_reg_write(uc, UC_MIPS_REG_A2, &r_a2));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 2));
+
+    OK(uc_reg_read(uc, UC_MIPS_REG_PC, &r_pc));
+    TEST_CHECK(r_pc == code_start + 12);
+
+    OK(uc_close(uc));
+}
+
 static void test_mips_lwx_exception_issue_1314(void)
 {
     uc_engine *uc;
@@ -176,4 +200,5 @@ TEST_LIST = {
     {"test_mips_lwx_exception_issue_1314", test_mips_lwx_exception_issue_1314},
     {"test_mips_mips16", test_mips_mips16},
     {"test_mips_mips_fpr", test_mips_mips_fpr},
+    {"test_mips_stop_delay_slot_from_qiling", test_mips_stop_delay_slot_from_qiling},
     {NULL, NULL}};
