@@ -102,7 +102,7 @@ def build_libraries():
 
     has_msbuild = shutil.which('msbuild') is not None
     conf = 'Debug' if int(os.getenv('DEBUG', 0)) else 'Release'
-    cmake_args = ['cmake', '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
+    cmake_args = ['cmake', '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf, "-DUNICORN_BUILD_TESTS=off"]
     if os.getenv("UNICORN_TRACER"):
         cmake_args += ["-DUNICORN_TRACER=on"]
     if conf == 'Debug':
