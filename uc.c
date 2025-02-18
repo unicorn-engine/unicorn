@@ -1978,8 +1978,12 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
         index &
         UC_HOOK_FLAG_MASK; // The index here may contain additional flags. See
                            // the comments of uc_hook_idx for details.
-
+    // bool not_allow_stop = (size & UC_HOOK_FLAG_NO_STOP) || (hook_flags & UC_HOOK_FLAG_NO_STOP);
+    bool not_allow_stop = hook_flags & UC_HOOK_FLAG_NO_STOP;
+    
     index = index & UC_HOOK_IDX_MASK;
+    // // Like hook index, only low 6 bits of size is used for representing sizes.
+    // size = size & UC_HOOK_IDX_MASK;
 
     // This has been done in tcg code.
     // sync PC in CPUArchState with address
@@ -1988,8 +1992,10 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
     // }
 
     // the last callback may already asked to stop emulation
-    if (uc->stop_request && !(hook_flags & UC_HOOK_FLAG_NO_STOP)) {
+    if (uc->stop_request && !not_allow_stop) {
         return;
+    } else if (not_allow_stop && uc->stop_request) {
+        revert_uc_emu_stop(uc);
     }
 
     for (cur = uc->hook[index].head;
@@ -2021,7 +2027,9 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
         //   normally. No check_exit_request is generated and the hooks are
         //   triggered normally. In other words, the whole IT block is treated
         //   as a single instruction.
-        if (uc->stop_request && !(hook_flags & UC_HOOK_FLAG_NO_STOP)) {
+        if (not_allow_stop && uc->stop_request) {
+            revert_uc_emu_stop(uc);
+        } else if (!not_allow_stop && uc->stop_request) {
             break;
         }
     }

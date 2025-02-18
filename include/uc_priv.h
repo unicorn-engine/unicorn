@@ -534,6 +534,14 @@ static inline uc_err break_translation_loop(uc_engine *uc)
     return UC_ERR_OK;
 }
 
+static inline void revert_uc_emu_stop(uc_engine *uc)
+{
+    uc->stop_request = 0;
+    uc->cpu->exit_request = 0;
+    uc->cpu->tcg_exit_req = 0;
+    uc->cpu->icount_decr_ptr->u16.high = 0;
+}
+
 #ifdef UNICORN_TRACER
 #define UC_TRACE_START(loc) trace_start(get_tracer(), loc)
 #define UC_TRACE_END(loc, fmt, ...)                                            \

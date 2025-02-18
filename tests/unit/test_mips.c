@@ -53,20 +53,24 @@ static void test_mips_stop_at_branch(void)
 {
     uc_engine *uc;
     char code[] =
-        "\x02\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00"; // j 0x8; nop;
+        "\x02\x00\x00\x08\x21\x10\x62\x00"; // j 0x8; addu $v0, $v1, $v0;
     int r_pc = 0x0;
+    uint32_t v1 = 5;
 
     uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN,
                     code, sizeof(code) - 1);
 
+    OK(uc_reg_write(uc, UC_MIPS_REG_V1, &v1));
     // Execute one instruction with branch delay slot.
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 1));
 
     OK(uc_reg_read(uc, UC_MIPS_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_MIPS_REG_V0, &v1));
 
     // Even if we just execute one instruction, the instruction in the
     // delay slot would also be executed.
     TEST_CHECK(r_pc == code_start + 0x8);
+    TEST_CHECK(v1 == 0x5);
 
     OK(uc_close(uc));
 }
