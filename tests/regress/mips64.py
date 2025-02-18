@@ -1,6 +1,4 @@
 import regress
-import sys
-import unittest
 from unicorn import *
 from unicorn.mips_const import *
 
