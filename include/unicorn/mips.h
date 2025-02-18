@@ -43,7 +43,7 @@ typedef enum uc_cpu_mips32 {
 
 //> MIPS64 CPUS
 typedef enum uc_cpu_mips64 {
-    UC_CPU_MIPS64_R4000 = 0,
+    UC_CPU_MIPS64_R4000 = UC_CPU_MIPS32_ENDING,
     UC_CPU_MIPS64_VR5432,
     UC_CPU_MIPS64_5KC,
     UC_CPU_MIPS64_5KF,
