@@ -85,7 +85,10 @@ static void reg_reset(struct uc_struct *uc)
     env->fpstt = 0; /* top of stack index */
     env->fpus = 0;
     env->fpuc = 0;
-    memset(env->fptags, 0, sizeof(env->fptags)); /* 0 = valid, 1 = empty */
+    for (int i = 0; i < 8; i++) {
+        env->fptags[i] = 1;
+    }
+    cpu_set_fpuc(env, 0x37f);
 
     env->mxcsr = 0;
     memset(env->xmm_regs, 0, sizeof(env->xmm_regs));
@@ -96,7 +99,10 @@ static void reg_reset(struct uc_struct *uc)
 
     memset(env->opmask_regs, 0, sizeof(env->opmask_regs));
     memset(env->zmmh_regs, 0, sizeof(env->zmmh_regs));
-
+    memset(env->dr, 0, sizeof(env->dr));
+    env->dr[6] = DR6_FIXED_1;
+    env->dr[7] = DR7_FIXED_1;
+    
     /* sysenter registers */
     env->sysenter_cs = 0;
     env->sysenter_esp = 0;
@@ -162,6 +168,15 @@ static void reg_reset(struct uc_struct *uc)
         env->hflags &= ~(HF_ADDSEG_MASK);
         env->efer |= MSR_EFER_LMA | MSR_EFER_LME; // extended mode activated
         cpu_x86_update_cr0(env, CR0_PE_MASK);     // protected mode
+        uint32_t cr4 = 0;
+
+        if (env->features[FEAT_1_ECX] & CPUID_EXT_XSAVE) {
+            cr4 |= CR4_OSFXSR_MASK | CR4_OSXSAVE_MASK;
+        }
+        if (env->features[FEAT_7_0_EBX] & CPUID_7_0_EBX_FSGSBASE) {
+            cr4 |= CR4_FSGSBASE_MASK;
+        }
+        cpu_x86_update_cr4(env, cr4);
         /* If we are operating in 64bit mode then add the Long Mode flag
          * to the CPUID feature flag
          */
