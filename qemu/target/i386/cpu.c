@@ -5085,9 +5085,9 @@ X86CPU *cpu_x86_init(struct uc_struct *uc)
 
     if (uc->cpu_model == INT_MAX) {
 #ifdef TARGET_X86_64
-        uc->cpu_model = UC_CPU_X86_QEMU64; // qemu64
+        uc->cpu_model = UC_CPU_X86_HASWELL; // qemu64
 #else
-        uc->cpu_model = UC_CPU_X86_QEMU32; // qemu32
+        uc->cpu_model = UC_CPU_X86_HASWELL; // qemu32
 #endif
     } else if (uc->cpu_model >= ARRAY_SIZE(builtin_x86_defs)) {
         free(cpu);
