@@ -247,7 +247,11 @@ static void test_x86_inc_dec_pxor(void)
     uint64_t r_xmm0[2] = {0x08090a0b0c0d0e0f, 0x0001020304050607};
     uint64_t r_xmm1[2] = {0x8090a0b0c0d0e0f0, 0x0010203040506070};
 
-    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_HASWELL));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+
     OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
     OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
     OK(uc_reg_write(uc, UC_X86_REG_XMM0, &r_xmm0));
