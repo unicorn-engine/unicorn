@@ -43,6 +43,8 @@ typedef enum uc_cpu_mips32 {
 
 //> MIPS64 CPUS
 typedef enum uc_cpu_mips64 {
+    // This is used as an index into the array defined in "qemu/target/mips/translate_init.inc.c".
+    // 64-bit CPU models are defined in the array directly after 32-bit models
     UC_CPU_MIPS64_R4000 = UC_CPU_MIPS32_ENDING,
     UC_CPU_MIPS64_VR5432,
     UC_CPU_MIPS64_5KC,
