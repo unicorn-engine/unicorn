@@ -85,10 +85,7 @@ static void reg_reset(struct uc_struct *uc)
     env->fpstt = 0; /* top of stack index */
     env->fpus = 0;
     env->fpuc = 0;
-    for (int i = 0; i < 8; i++) {
-        env->fptags[i] = 1;
-    }
-    cpu_set_fpuc(env, 0x37f);
+    memset(env->fptags, 0, sizeof(env->fptags)); /* 0 = valid, 1 = empty */
 
     env->mxcsr = 0;
     memset(env->xmm_regs, 0, sizeof(env->xmm_regs));
@@ -2085,7 +2082,7 @@ void uc_init(struct uc_struct *uc)
     uc->insn_hook_validate = x86_insn_hook_validate;
     uc->opcode_hook_invalidate = x86_opcode_hook_invalidate;
     uc->cpus_init = x86_cpus_init;
-    uc->cpu_context_size = offsetof(CPUX86State, retaddr);
+    uc->cpu_context_size = offsetof(CPUX86State, end_reset_fields);
     uc_common_init(uc);
 }
 
