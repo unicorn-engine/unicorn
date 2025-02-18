@@ -196,7 +196,7 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc)
     env = &cpu->env;
     if(uc->mode & UC_MODE_MIPS64){
         // 64-bit CPU models are defined in the array directly after 32-bit models
-        env->cpu_model = &(mips_defs[uc->cpu_model + UC_CPU_MIPS32_ENDING])
+        env->cpu_model = &(mips_defs[uc->cpu_model + UC_CPU_MIPS32_ENDING]);
     } else {
         env->cpu_model = &(mips_defs[uc->cpu_model]);
     }
