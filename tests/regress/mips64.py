@@ -14,7 +14,7 @@ def run():
     # See https://github.com/unicorn-engine/unicorn/pull/2111 for more details
     uc.ctl_set_tlb_mode(UC_TLB_VIRTUAL)
 
-    ADDRESS = 0x01_2000_3000
+    ADDRESS = 0x0120003000
 
     uc.reg_write(UC_MIPS_REG_PC, ADDRESS)
     uc.reg_write(UC_MIPS_REG_GP, 0x123)
