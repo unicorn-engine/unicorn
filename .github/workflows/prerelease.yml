@@ -26,7 +26,7 @@ jobs:
         run: mkdir artifact
         working-directory: ./
 
-      - uses: dawidd6/action-download-artifact@v2
+      - uses: dawidd6/action-download-artifact@v6
         id: download-artifact
         with:
           workflow: build-uc2.yml
