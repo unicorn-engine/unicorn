@@ -28,6 +28,8 @@ class Mips64(regress.RegressTest):
         # This will raise an exception if MIPS64 fails
         uc.emu_start(ADDRESS, 0, count=2)
 
+        assert uc.reg_read(UC_MIPS_REG_PC) == 0x0120003000 + 8
+
 
 if __name__ == '__main__':
     regress.main()
