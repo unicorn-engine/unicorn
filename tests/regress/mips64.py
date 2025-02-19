@@ -1,9 +1,13 @@
+import sys
+import unittest
 import regress
 from unicorn import *
 from unicorn.mips_const import *
 
 
 class Mips64(regress.RegressTest):
+
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
     def runTest(self):
         # Two instructions:
         #   daddu  $gp, $gp, $ra    # a 64-bit instruction. This is important - it ensures the selected CPU model is 64-bit, otherwise it would crash
