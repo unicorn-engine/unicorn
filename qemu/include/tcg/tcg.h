@@ -664,6 +664,7 @@ struct TCGContext {
     struct TCGLabelPoolData *pool_labels;
 #endif
 
+    TCGv_i32 delay_slot_flag;
     TCGLabel *exitreq_label;
 
     TCGTempSet free_temps[TCG_TYPE_COUNT * 2];

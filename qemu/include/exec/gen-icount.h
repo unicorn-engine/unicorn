@@ -41,14 +41,25 @@ static inline void gen_tb_start(TCGContext *tcg_ctx, TranslationBlock *tb)
     tcg_gen_ld_i32(tcg_ctx, count, tcg_ctx->cpu_env,
                    offsetof(ArchCPU, neg.icount_decr.u32) -
                    offsetof(ArchCPU, env));
-
+    // Unicorn:
+    //    We CANT'T use brcondi_i32 here or we will fail liveness analysis
+    //    because it marks the end of BB
+    if (tcg_ctx->delay_slot_flag != NULL) {
+        TCGv_i32 tmp = tcg_const_i32(tcg_ctx, 0);
+        // dest = (c1 cond c2 ? v1 : v2)
+        tcg_gen_movcond_i32(tcg_ctx, TCG_COND_GT, count, tcg_ctx->delay_slot_flag, tmp, tcg_ctx->delay_slot_flag, count);
+        tcg_temp_free_i32(tcg_ctx, tmp);
+    }
     tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_LT, count, 0, tcg_ctx->exitreq_label);
-
     tcg_temp_free_i32(tcg_ctx, count);
 }
 
 static inline void gen_tb_end(TCGContext *tcg_ctx, TranslationBlock *tb, int num_insns)
 {
+    if (tcg_ctx->delay_slot_flag != NULL){
+        tcg_temp_free_i32(tcg_ctx, tcg_ctx->delay_slot_flag);
+    }
+    tcg_ctx->delay_slot_flag = NULL;
     if (tb_cflags(tb) & CF_USE_ICOUNT) {
         /* Update the num_insn immediate parameter now that we know
          * the actual insn count.  */

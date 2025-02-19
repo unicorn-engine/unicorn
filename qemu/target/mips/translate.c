@@ -6006,6 +6006,10 @@ static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     if (use_goto_tb(ctx, dest)) {
+        // Unicorn: Force save pc for delay slot instructions, this should be
+        //          harmless either goto_tb is taken or not but will give correct
+        //          pc after execution stops within the delay slot.
+        gen_save_pc(tcg_ctx, dest);
         tcg_gen_goto_tb(tcg_ctx, n);
         gen_save_pc(tcg_ctx, dest);
         tcg_gen_exit_tb(tcg_ctx, ctx->base.tb, n);
@@ -30888,6 +30892,9 @@ static void mips_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
 
 static void mips_tr_tb_start(DisasContextBase *dcbase, CPUState *cs)
 {
+    DisasContext *ctx = container_of(dcbase, DisasContext, base);
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    tcg_ctx->delay_slot_flag = tcg_temp_local_new_i32(tcg_ctx);
 }
 
 static void mips_tr_insn_start(DisasContextBase *dcbase, CPUState *cs)
@@ -30897,6 +30904,7 @@ static void mips_tr_insn_start(DisasContextBase *dcbase, CPUState *cs)
 
     tcg_gen_insn_start(tcg_ctx, ctx->base.pc_next, ctx->hflags & MIPS_HFLAG_BMASK,
                        ctx->btarget);
+    tcg_gen_movi_i32(tcg_ctx, tcg_ctx->delay_slot_flag, 0);
 }
 
 static bool mips_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cs,
@@ -30928,6 +30936,7 @@ static void mips_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     int insn_bytes;
     int is_slot;
     bool hook_insn = false;
+    TCGv_i32 dyn_is_slot = NULL;
 
     is_slot = ctx->hflags & MIPS_HFLAG_BMASK;
 
@@ -30939,6 +30948,10 @@ static void mips_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
         return;
     }
 
+    dyn_is_slot = tcg_const_i32(tcg_ctx, 0);
+    slot_op = tcg_last_op(tcg_ctx);
+    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->delay_slot_flag, dyn_is_slot);
+
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, ctx->base.pc_next)) {
 
@@ -30949,17 +30962,7 @@ static void mips_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
         prev_op = tcg_last_op(tcg_ctx);
         hook_insn = true;
         gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, uc, ctx->base.pc_next);
-        
-        // TODO: Memory hooks, maybe use icount_decr.low?
-        TCGLabel *skip_label = gen_new_label(tcg_ctx);
-        TCGv_i32 dyn_is_slot = tcg_const_i32(tcg_ctx, 0);
-        slot_op = tcg_last_op(tcg_ctx);
-        // if slot, skip exit_request
-        // tcg is smart enough to optimize this branch away
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_GT, dyn_is_slot, 0, skip_label); 
-        tcg_temp_free_i32(tcg_ctx, dyn_is_slot);
         check_exit_request(tcg_ctx);
-        gen_set_label(tcg_ctx, skip_label);
     }
     
     if (ctx->insn_flags & ISA_NANOMIPS32) {
@@ -30978,6 +30981,7 @@ static void mips_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     } else {
         generate_exception_end(ctx, EXCP_RI);
         g_assert(ctx->base.is_jmp == DISAS_NORETURN);
+        slot_op->args[1] = is_slot;
         return;
     }
 
@@ -31072,6 +31076,10 @@ static void mips_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
             g_assert_not_reached();
         }
     }
+    if (tcg_ctx->delay_slot_flag) {
+        tcg_temp_free_i32(tcg_ctx, tcg_ctx->delay_slot_flag);
+    }
+    tcg_ctx->delay_slot_flag = NULL;
 }
 
 static void mips_sync_pc(DisasContextBase *db, CPUState *cpu)

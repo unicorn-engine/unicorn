@@ -101,22 +101,29 @@ static void test_mips_stop_delay_slot_from_qiling(void)
 {
     uc_engine *uc;
     // 24 06 00 03          addiu                $a2, $zero, 3
-    // 10 a6 00 79          beq                  $a1, $a2, 0x47c8da4
+    // 10 a6 00 79          beq                  $a1, $a2, 0x1e8
     // 30 42 00 fc          andi                 $v0, $v0, 0xfc
+    // 10 40 00 32          beqz                 $v0, 0x47c8c90
+    // 24 ab ff da          addiu                $t3, $a1, -0x26
+    // 2d 62 00 02          sltiu                $v0, $t3, 2
+    // 10 40 00 32          beqz                 $v0, 0x47c8c9c
+    // 00 00 00 00          nop  
     char code[] =
-        "\x24\x06\x00\x03\x10\xa6\x00\x79\x30\x42\x00\xfc";
+        "\x24\x06\x00\x03\x10\xa6\x00\x79\x30\x42\x00\xfc\x10\x40\x00\x32\x24\xab\xff\xda\x2d\x62\x00\x02\x10\x40\x00\x32\x00\x00\x00\x00";
     uint32_t r_pc = 0x0;
-    uint32_t r_a2 = 1;
-
+    uint32_t r_v0 = 0xff;
+    uint32_t r_a1 = 0x3;
+    
     uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_BIG_ENDIAN,
                     code, sizeof(code) - 1);
-
-    OK(uc_reg_write(uc, UC_MIPS_REG_A2, &r_a2));
-
-    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 2));
+    OK(uc_reg_write(uc, UC_MIPS_REG_V0, &r_v0));
+    OK(uc_reg_write(uc, UC_MIPS_REG_A1, &r_a1));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) + 16, 0, 2));
 
     OK(uc_reg_read(uc, UC_MIPS_REG_PC, &r_pc));
-    TEST_CHECK(r_pc == code_start + 12);
+    OK(uc_reg_read(uc, UC_MIPS_REG_V0, &r_v0));
+    TEST_CHECK(r_pc == code_start + 4 + 0x1e8);
+    TEST_CHECK(r_v0 == 0xfc);
 
     OK(uc_close(uc));
 }
