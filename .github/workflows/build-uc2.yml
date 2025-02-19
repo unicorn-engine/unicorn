@@ -130,7 +130,6 @@ jobs:
         with:
           msystem: ${{ matrix.config.mingw }}
           install: >-
-            git
             mingw-w64-${{ matrix.config.mingw-arch }}-cmake
             mingw-w64-${{ matrix.config.mingw-arch }}-ninja
             mingw-w64-${{ matrix.config.mingw-arch }}-cmocka
@@ -479,7 +478,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update -q -y
-          sudo apt-get install -q -y git cmake build-essential automake libcmocka-dev pkg-config ${{ matrix.compiler }} ninja-build
+          sudo apt-get install -q -y cmake build-essential automake libcmocka-dev pkg-config ${{ matrix.compiler }} ninja-build
           mkdir build
           mkdir instdir
           cmake \
@@ -505,7 +504,7 @@ jobs:
           shell: /bin/sh
           install: |
             apt-get update -q -y
-            apt-get install -q -y git cmake build-essential automake libcmocka-dev pkg-config ${{ matrix.compiler }} ninja-build
+            apt-get install -q -y cmake build-essential automake libcmocka-dev pkg-config ${{ matrix.compiler }} ninja-build
           run: |
             mkdir build
             cmake \
@@ -517,6 +516,108 @@ jobs:
             cmake --build . --config ${{ env.BUILD_TYPE }}
             cmake --install . --strip
             ctest -VV -C ${{ env.BUILD_TYPE }}
+
+      - name: '📦 Pack artifact'
+        if: always()
+        shell: bash
+        working-directory: instdir
+        run: |
+          ls -laR
+          ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} . ../test*
+
+      - name: '📤 Upload artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./${{ matrix.config.artifact }}
+          name: ${{ matrix.config.artifact }}
+
+  AlpineLinux:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }} - ${{ matrix.compiler }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+            os: ubuntu-latest,
+            arch: x86_64,
+            name: 'alpine-x86_64 cmake shared',
+            shared: 'yes',
+            artifact: 'alpine-cmake-shared-x86_64.7z',
+            archiver: '7z a',
+            generators: 'Ninja'
+          }
+          - {
+            os: ubuntu-latest,
+            arch: x86_64,
+            name: 'alpine-x86_64 cmake static',
+            shared: 'no',
+            artifact: 'alpine-cmake-static-x86_64.7z',
+            archiver: '7z a',
+            generators: 'Ninja'
+          }
+          - {
+            os: ubuntu-latest,
+            arch: x86,
+            name: 'alpine-x86 cmake shared',
+            shared: 'yes',
+            artifact: 'alpine-cmake-shared-x86.7z',
+            archiver: '7z a',
+            generators: 'Ninja'
+          }
+          - {
+            os: ubuntu-latest,
+            arch: x86,
+            name: 'alpine-x86 cmake static',
+            shared: 'no',
+            artifact: 'alpine-cmake-static-x86.7z',
+            archiver: '7z a',
+            generators: 'Ninja'
+          }
+          - {
+            os: ubuntu-latest,
+            arch: aarch64,
+            name: 'alpine-aarch64 cmake',
+            artifact: 'alpine-cmake-aarch64.7z',
+            archiver: '7z a',
+            generators: 'Ninja',
+            distro: ubuntu24.04
+          }
+          - {
+            os: ubuntu-latest,
+            arch: ppc64le,
+            name: 'alpine-ppc64le cmake',
+            artifact: 'alpine-cmake-ppc64le.7z',
+            archiver: '7z a',
+            generators: 'Ninja',
+            distro: ubuntu24.04
+          }
+        compiler: [ gcc ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: '🚧 Setup Alpine Linux'
+        uses: jirutka/setup-alpine@v1
+        with:
+          arch: ${{ matrix.config.arch }}
+          packages: cmake build-base automake cmocka-dev pkgconfig ${{ matrix.compiler }} ninja linux-headers
+
+      - name: '🚧 Linux Alpine build'
+        shell: alpine.sh --root {0}
+        run: |
+          mkdir build
+          mkdir instdir
+          cmake \
+            -S . \
+            -B . \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+            -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
+          cmake --build . --config ${{ env.BUILD_TYPE }}
+          cmake --install . --strip
+          ctest -VV -C ${{ env.BUILD_TYPE }}
 
       - name: '📦 Pack artifact'
         if: always()
