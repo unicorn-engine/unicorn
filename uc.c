@@ -1020,8 +1020,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 #endif
 #ifdef UNICORN_HAS_MIPS
     case UC_ARCH_MIPS:
-        // TODO: MIPS32/MIPS64/BIGENDIAN etc
-        uc_reg_write(uc, UC_MIPS_REG_PC, &begin_pc32);
+        if (uc->mode & UC_MODE_MIPS64) {
+            uc_reg_write(uc, UC_MIPS_REG_PC, &begin);
+        } else {
+            uc_reg_write(uc, UC_MIPS_REG_PC, &begin_pc32);
+        }
         break;
 #endif
 #ifdef UNICORN_HAS_SPARC
