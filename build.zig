@@ -74,6 +74,7 @@ pub fn build(b: *std.Build) void {
         .{ .file_type = .zig, .root_file_path = "bindings/zig/sample/sample_riscv_zig.zig" },
         .{ .file_type = .c, .root_file_path = "samples/sample_arm.c" },
         .{ .file_type = .c, .root_file_path = "samples/sample_arm64.c" },
+        .{ .file_type = .c, .root_file_path = "samples/sample_avr.c" },
         .{ .file_type = .c, .root_file_path = "samples/sample_ctl.c" },
         .{ .file_type = .c, .root_file_path = "samples/sample_batch_reg.c" },
         .{ .file_type = .c, .root_file_path = "samples/sample_m68k.c" },
