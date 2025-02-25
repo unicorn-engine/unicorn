@@ -538,7 +538,14 @@ void tcg_region_init(TCGContext *tcg_ctx)
     }
 
     tcg_ctx->tree = g_tree_new(tb_tc_cmp);
+    // Unicorn: Though this code is taken from CONFIG_USER_ONLY, it is crucial or
+    //          tcg_ctx->region.current is 0 and we will miss a tb_flush when the
+    //          buffer gets full.
+    {
+        bool err = tcg_region_initial_alloc__locked(tcg_ctx);
 
+        g_assert(!err);
+    }
 }
 
 /*
