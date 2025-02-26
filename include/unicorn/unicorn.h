@@ -935,6 +935,82 @@ UNICORN_EXPORT
 uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, uint64_t size);
 
 /*
+ Read a range of bytes in memory after mmu translation.
+
+ @uc:      handle returned by uc_open()
+ @address: starting virtual memory address of bytes to get.
+ @prot:    The access type for the tlb lookup
+ @bytes:   pointer to a variable containing data copied from memory.
+ @size:    size of memory to read.
+
+ NOTE: @bytes must be big enough to contain @size bytes.
+
+ This function will translate the address with the MMU. Therefore all
+ pages needs to be memory mapped with the proper access rights. The MMU
+ will not translate the virtual address when the pages are not mapped
+ with the given access rights.
+
+ When the pages are mapped with the given access rights the read will
+ happen indipenden from the access rights of the mapping. So when you
+ have a page write only mapped, a call with prot == UC_PROT_WRITE will
+ be able to read the stored data.
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_vmem_read(uc_engine *uc, uint64_t address, uint32_t prot,
+                           void *bytes, size_t size);
+
+/*
+ Write to a range of bytes in memory after mmu translation.
+
+ @uc: handle returned by uc_open()
+ @address: starting memory address of bytes to set.
+ @prot:    The access type for the tlb lookup
+ @bytes:   pointer to a variable containing data to be written to memory.
+ @size:   size of memory to write to.
+
+ This function will translate the address with the MMU. Therefore all
+ pages needs to be memory mapped with the proper access rights. The MMU
+ will not translate the virtual address when the pages are not mapped
+ with the given access rights.
+
+ When the pages are mapped with the given access rights the write will
+ happen indipenden from the access rights of the mapping. So when you
+ have a page read only mapped, a call with prot == UC_PROT_READ will
+ be able to write the data.
+
+ NOTE: @bytes must be big enough to contain @size bytes.
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_vmem_write(uc_engine *uc, uint64_t address, uint32_t prot,
+                           void *bytes, size_t size);
+
+/*
+ Translate a virtuall address to a physical address
+
+ @uc:
+ @address:  virtual address to translate
+ @prot:     The access type for the tlb lookup
+ @paddress: A pointer to store the result
+
+ This function will translate the address with the MMU. Therefore all
+ pages needs to be memory mapped with the proper access rights. The MMU
+ will not translate the virtual address when the pages are not mapped
+ with the given access rights.
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_vmem_translate(uc_engine *uc, uint64_t address, uint32_t prot,
+                              uint64_t *paddress);
+
+/*
  Emulate machine code in a specific duration of time.
 
  @uc: handle returned by uc_open()

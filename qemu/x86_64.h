@@ -797,6 +797,7 @@
 #define get_page_addr_code get_page_addr_code_x86_64
 #define probe_access probe_access_x86_64
 #define tlb_vaddr_to_host tlb_vaddr_to_host_x86_64
+#define tlb_vaddr_to_paddr tlb_vaddr_to_paddr_x86_64
 #define helper_ret_ldub_mmu helper_ret_ldub_mmu_x86_64
 #define helper_le_lduw_mmu helper_le_lduw_mmu_x86_64
 #define helper_be_lduw_mmu helper_be_lduw_mmu_x86_64

@@ -797,6 +797,7 @@
 #define get_page_addr_code get_page_addr_code_ppc
 #define probe_access probe_access_ppc
 #define tlb_vaddr_to_host tlb_vaddr_to_host_ppc
+#define tlb_vaddr_to_paddr tlb_vaddr_to_paddr_ppc
 #define helper_ret_ldub_mmu helper_ret_ldub_mmu_ppc
 #define helper_le_lduw_mmu helper_le_lduw_mmu_ppc
 #define helper_be_lduw_mmu helper_be_lduw_mmu_ppc

@@ -777,6 +777,136 @@ static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
     return (count == size);
 }
 
+uc_err uc_vmem_translate(uc_engine *uc, uint64_t address, uc_prot prot,
+                              uint64_t *paddress)
+{
+    UC_INIT(uc);
+
+    if (!(UC_PROT_READ == prot || UC_PROT_WRITE == prot ||
+          UC_PROT_EXEC == prot)) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    // The sparc mmu doesn't support probe mode
+    if (uc->arch == UC_ARCH_SPARC && uc->cpu->cc->tlb_fill == uc->cpu->cc->tlb_fill_cpu) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    if (!uc->virtual_to_physical(uc, address, prot, paddress)) {
+        restore_jit_state(uc);
+        switch (prot) {
+        case UC_PROT_READ:
+            return UC_ERR_READ_PROT;
+        case UC_PROT_WRITE:
+            return UC_ERR_WRITE_PROT;
+        case UC_PROT_EXEC:
+            return UC_ERR_FETCH_PROT;
+        }
+    }
+
+    restore_jit_state(uc);
+    return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_vmem_read(uc_engine *uc, uint64_t address, uc_prot prot,
+                           void *_bytes, size_t size)
+{
+    size_t count = 0, len;
+    uint8_t *bytes = _bytes;
+    uint64_t align;
+    uint64_t pagesize;
+
+    UC_INIT(uc);
+
+    // qemu cpu_physical_memory_rw() size is an int
+    if (size > INT_MAX) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    // The sparc mmu doesn't support probe mode
+    if (uc->arch == UC_ARCH_SPARC && uc->cpu->cc->tlb_fill == uc->cpu->cc->tlb_fill_cpu) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    if (!(UC_PROT_READ == prot || UC_PROT_WRITE == prot ||
+          UC_PROT_EXEC == prot)) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    while (count < size) {
+        align = uc->target_page_align;
+        pagesize = uc->target_page_size;
+        len = MIN(size - count, (address & ~align) + pagesize - address);
+        if (!uc->read_mem_virtual(uc, address, prot, bytes, len)) {
+            restore_jit_state(uc);
+            return UC_ERR_READ_PROT;
+        }
+        bytes += len;
+        address += len;
+        count += len;
+    }
+    assert(count == size);
+    restore_jit_state(uc);
+    return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_vmem_write(uc_engine *uc, uint64_t address, uc_prot prot,
+                           void *_bytes, size_t size)
+{
+    size_t count = 0, len;
+    uint8_t *bytes = _bytes;
+    uint64_t align;
+    uint64_t pagesize;
+    uint64_t paddr = 0;
+
+    UC_INIT(uc);
+
+    // qemu cpu_physical_memory_rw() size is an int
+    if (size > INT_MAX) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    // The sparc mmu doesn't support probe mode
+    if (uc->arch == UC_ARCH_SPARC && uc->cpu->cc->tlb_fill == uc->cpu->cc->tlb_fill_cpu) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    if (!(UC_PROT_READ == prot || UC_PROT_WRITE == prot ||
+          UC_PROT_EXEC == prot)) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    while (count < size) {
+        align = uc->target_page_align;
+        pagesize = uc->target_page_size;
+        len = MIN(size - count, (address & ~align) + pagesize - address);
+	if (uc_vmem_translate(uc, address, prot, &paddr) != UC_ERR_OK) {
+            restore_jit_state(uc);
+            return UC_ERR_WRITE_PROT;
+	}
+        if (uc_mem_write(uc, paddr, bytes, len) != UC_ERR_OK) {
+            restore_jit_state(uc);
+            return UC_ERR_WRITE_PROT;
+        }
+        bytes += len;
+        address += len;
+        count += len;
+    }
+    assert(count == size);
+    restore_jit_state(uc);
+    return UC_ERR_OK;
+}
+
 UNICORN_EXPORT
 uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, uint64_t size)
 {

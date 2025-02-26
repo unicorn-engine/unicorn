@@ -797,6 +797,7 @@ get_page_addr_code_hostp \
 get_page_addr_code \
 probe_access \
 tlb_vaddr_to_host \
+tlb_vaddr_to_paddr \
 helper_ret_ldub_mmu \
 helper_le_lduw_mmu \
 helper_be_lduw_mmu \
