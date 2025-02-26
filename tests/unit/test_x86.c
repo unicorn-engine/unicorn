@@ -1489,9 +1489,9 @@ static void test_x86_mmu_pt_set(uc_engine *uc, uint64_t vaddr, uint64_t paddr,
     uint64_t pto = ((vaddr & 0x000000001ff000) >> 12) * 8;
     uint32_t pte;
     if (readwrite)
-	    pte = (paddr) | 1 | (1 << 2);
+        pte = (paddr) | 1 | (1 << 2);
     else
-	    pte = (paddr) | 1;
+        pte = (paddr) | 1;
     uc_mem_write(uc, tlb_base + 0x3000 + pto, &pte, sizeof(pte));
 }
 
@@ -1591,7 +1591,6 @@ static void test_x86_mmu(void)
     TEST_CHECK(child == 42);
 }
 
-
 static void test_x86_read_virtual(void)
 {
     bool parrent_done = false;
@@ -1647,7 +1646,8 @@ static void test_x86_read_virtual(void)
     OK(uc_reg_read(uc, UC_X86_REG_RIP, &rip));
 
     OK(uc_emu_start(uc, rip, 0x0, 0, 0));
-    OK(uc_mem_read_virtual(uc, 0x4000, UC_PROT_READ, &parrent, sizeof(parrent)));
+    OK(uc_mem_read_virtual(uc, 0x4000, UC_PROT_READ, &parrent,
+                           sizeof(parrent)));
 
     /* restore for child */
     OK(uc_context_restore(uc, context));
@@ -1659,7 +1659,9 @@ static void test_x86_read_virtual(void)
 
     OK(uc_emu_start(uc, rip, 0x0, 0, 0));
     OK(uc_mem_read_virtual(uc, 0x4000, UC_PROT_READ, &child, sizeof(child)));
-    uc_assert_err(UC_ERR_READ_UNMAPPED, uc_mem_read_virtual(uc, 0x1000, UC_PROT_WRITE, &tmp, sizeof(tmp)));
+    uc_assert_err(
+        UC_ERR_READ_UNMAPPED,
+        uc_mem_read_virtual(uc, 0x1000, UC_PROT_WRITE, &tmp, sizeof(tmp)));
     TEST_CHECK(parrent == 60);
     TEST_CHECK(child == 42);
 }
