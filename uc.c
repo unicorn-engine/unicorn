@@ -774,6 +774,47 @@ static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
 }
 
 UNICORN_EXPORT
+uc_err uc_mem_read_virtual(uc_engine *uc, uint64_t address, uc_prot prot,
+                           void *_bytes, size_t size)
+{
+    size_t count = 0, len;
+    uint8_t *bytes = _bytes;
+    uint64_t align;
+    uint64_t pagesize;
+
+    UC_INIT(uc);
+
+    // qemu cpu_physical_memory_rw() size is an int
+    if (size > INT_MAX) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    if (!(UC_PROT_READ == prot || UC_PROT_WRITE == prot ||
+          UC_PROT_EXEC == prot)) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    while (count < size) {
+        align = uc->target_page_align;
+        pagesize = uc->target_page_size;
+        len = MIN(size - count, (address & ~align) + pagesize - address);
+        if (!uc->read_mem_virtual(uc, address, prot, bytes, len)) {
+            restore_jit_state(uc);
+            return UC_ERR_READ_UNMAPPED;
+        }
+        bytes += len;
+        address += len;
+        count += len;
+        size -= len;
+    }
+    assert(count == size);
+    restore_jit_state(uc);
+    return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
 uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
 {
     size_t count = 0, len;
