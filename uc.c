@@ -807,7 +807,6 @@ uc_err uc_mem_read_virtual(uc_engine *uc, uint64_t address, uc_prot prot,
         bytes += len;
         address += len;
         count += len;
-        size -= len;
     }
     assert(count == size);
     restore_jit_state(uc);
