@@ -48,6 +48,13 @@ extern "C" {
         bytes: *mut u8,
         size: libc::size_t,
     ) -> uc_error;
+    pub fn uc_mem_read_virtual(
+        engine: uc_handle,
+        address: u64,
+        prot: Permission,
+        bytes: *mut u8,
+        size: libc::size_t,
+    ) -> uc_error;
     pub fn uc_mem_map(engine: uc_handle, address: u64, size: libc::size_t, perms: u32) -> uc_error;
     pub fn uc_mem_map_ptr(
         engine: uc_handle,
