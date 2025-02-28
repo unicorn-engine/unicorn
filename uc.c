@@ -790,6 +790,12 @@ uc_err uc_mem_read_virtual(uc_engine *uc, uint64_t address, uc_prot prot,
         return UC_ERR_ARG;
     }
 
+    // The sparc mmu doesn't support probe mode
+    if (uc->arch == UC_ARCH_SPARC && uc->cpu->cc->tlb_fill == uc->cpu->cc->tlb_fill_cpu) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
     if (!(UC_PROT_READ == prot || UC_PROT_WRITE == prot ||
           UC_PROT_EXEC == prot)) {
         restore_jit_state(uc);
