@@ -336,9 +336,30 @@ impl<'a, D> Unicorn<'a, D> {
         unsafe { ffi::uc_mem_read(self.get_handle(), address, buf.as_mut_ptr(), size) }.and(Ok(buf))
     }
 
+    /// Read a range of bytes from memory at the specified emulated virtual address.
+    pub fn mem_read_virtual(&self, address: u64, prot: Permission, buf: &mut [u8]) -> Result<(), uc_error> {
+        unsafe { ffi::uc_mem_read_virtual(self.get_handle(), address, prot, buf.as_mut_ptr(), buf.len()) }.into()
+    }
+
+    /// Return a range of bytes from memory at the specified emulated virtual address as vector.
+    pub fn mem_read_virtual_as_vec(&self, address: u64, prot: Permission, size: usize) -> Result<Vec<u8>, uc_error> {
+        let mut buf = vec![0; size];
+        unsafe { ffi::uc_mem_read_virtual(self.get_handle(), address, prot, buf.as_mut_ptr(), buf.len()) }.and(Ok(buf))
+    }
+
     /// Write the data in `bytes` to the emulated physical address `address`
     pub fn mem_write(&mut self, address: u64, bytes: &[u8]) -> Result<(), uc_error> {
         unsafe { ffi::uc_mem_write(self.get_handle(), address, bytes.as_ptr(), bytes.len()) }.into()
+    }
+
+    /// translate virtual to physical address
+    pub fn virtual_to_physical(&mut self, address: u64, prot: Permission) -> Result<u64, uc_error> {
+        let mut physical: u64 = 0;
+        let err = unsafe { ffi::uc_virtual_to_physical(self.get_handle(), address, prot, &mut physical) };
+        if err != uc_error::OK {
+            return Err(err);
+        }
+        return Ok(physical);
     }
 
     /// Map an existing memory region in the emulator at the specified address.
