@@ -114,14 +114,17 @@ def __load_uc_lib() -> ctypes.CDLL:
     # - global load
     # - python's lib directory
 
-    if sys.version_info.minor >= 12:
+    if sys.version_info >= (3, 9):
         from importlib import resources
 
         canonicals = resources.files('unicorn') / 'lib'
     else:
-        import pkg_resources
+        try:
+            import pkg_resources
 
-        canonicals = pkg_resources.resource_filename('unicorn', 'lib')
+            canonicals = pkg_resources.resource_filename('unicorn', 'lib')
+        except ImportError:
+            canonicals = None
 
     lib_locations = [
         os.getenv('LIBUNICORN_PATH'),
