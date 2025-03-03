@@ -109,19 +109,17 @@ def __load_uc_lib() -> ctypes.CDLL:
 
     # Loading attempts, in order
     # - user-provided environment variable
-    # - pkg_resources can get us the path to the local libraries
+    # - importlib.resources/importlib_resources can get us the path to the local libraries
     # - we can get the path to the local libraries by parsing our filename
     # - global load
     # - python's lib directory
 
-    if sys.version_info.minor >= 12:
-        from importlib import resources
-
-        canonicals = resources.files('unicorn') / 'lib'
+    if sys.version_info >= (3, 9):
+        import importlib.resources as resources
     else:
-        import pkg_resources
+        import importlib_resources as resources
 
-        canonicals = pkg_resources.resource_filename('unicorn', 'lib')
+    canonicals = resources.files('unicorn') / 'lib'
 
     lib_locations = [
         os.getenv('LIBUNICORN_PATH'),
