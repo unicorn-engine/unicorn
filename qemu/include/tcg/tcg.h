@@ -276,7 +276,14 @@ typedef struct TCGPool {
 
 #define TCG_POOL_CHUNK_SIZE 32768
 
+#if HOST_LONG_BITS == 32
+// Unicorn: On 32 bits targets, our instrumentation uses extra temps and
+//          thus could exhaust the max temps and cause segment fault.
+//          Double the limit on 32 bits targets to avoid this.
+#define TCG_MAX_TEMPS 1024
+#else
 #define TCG_MAX_TEMPS 512
+#endif
 #define TCG_MAX_INSNS 512
 
 /* when the size of the arguments of a called function is smaller than
