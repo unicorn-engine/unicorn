@@ -689,7 +689,7 @@ void uc_add_inline_hook(uc_engine *uc, struct hook *hk, void** args, int args_le
     case UC_HOOK_CODE:
         // (*uc_cb_hookcode_t)(uc_engine *uc, uint64_t address, uint32_t size, void *user_data);
         sizemask = dh_sizemask(void, 0) | dh_sizemask(ptr, 1) | dh_sizemask(i64, 2) | dh_sizemask(i32, 3) | dh_sizemask(ptr, 4);
-        snprintf(name, 63, "hookcode_%d_%" PRIx64 , hk->type, (uint64_t)hk->callback);
+        snprintf(name, 63, "hookcode_%d_%" PRIxPTR , hk->type, (uintptr_t)hk->callback);
         break;
 
     default:
