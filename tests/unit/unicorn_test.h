@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <unicorn/unicorn.h>
 #include "acutest.h"
-#include "endian.h"
+#include "config-host.h"
 
 // Copied from glibc-2.29
 
@@ -41,16 +41,16 @@
  */
 #define OK(stat) uc_assert_err(UC_ERR_OK, stat)
 
-#ifdef BOOST_LITTLE_ENDIAN
-#define LEINT32(x) (x)
-#define LEINT64(x) (x)
-#define BEINT32(x) (bswap_32(x))
-#define BEINT64(x) (bswap_64(x))
-#else
+#ifdef BOOST_BIG_ENDIAN
 #define LEINT32(x) (bswap_32(x))
 #define LEINT64(x) (bswap_64(x))
 #define BEINT32(x) (x)
 #define BEINT64(x) (x)
+#else
+#define LEINT32(x) (x)
+#define LEINT64(x) (x)
+#define BEINT32(x) (bswap_32(x))
+#define BEINT64(x) (bswap_64(x))
 #endif
 
 #endif /* UNICORN_TEST_H */
