@@ -494,7 +494,7 @@ jobs:
 
       - name: '🚧 Linux ppc64le build'
         if: contains(matrix.config.arch, 'ppc64le')
-        uses: uraimo/run-on-arch-action@v2
+        uses: uraimo/run-on-arch-action@v3
         with:
           arch: ${{ matrix.config.arch }}
           distro: ${{ matrix.config.distro }}
