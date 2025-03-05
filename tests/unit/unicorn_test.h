@@ -41,7 +41,7 @@
  */
 #define OK(stat) uc_assert_err(UC_ERR_OK, stat)
 
-#ifdef BOOST_BIG_ENDIAN
+#ifdef HOST_WORDS_BIGENDIAN
 #define LEINT32(x) (bswap_32(x))
 #define LEINT64(x) (bswap_64(x))
 #define BEINT32(x) (x)
