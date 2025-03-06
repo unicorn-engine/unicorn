@@ -1589,6 +1589,8 @@ static void test_x86_mmu(void)
     OK(uc_mem_read(uc, 0x2000, &child, sizeof(child)));
     TEST_CHECK(parrent == 60);
     TEST_CHECK(child == 42);
+    OK(uc_context_free(context));
+    OK(uc_close(uc));
 }
 
 static bool test_x86_vtlb_callback(uc_engine *uc, uint64_t addr,
@@ -1632,6 +1634,7 @@ static void test_x86_segmentation(void)
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
     OK(uc_reg_write(uc, UC_X86_REG_GDTR, &gdtr));
     uc_assert_err(UC_ERR_EXCEPTION, uc_reg_write(uc, UC_X86_REG_FS, &fs));
+    OK(uc_close(uc));
 }
 
 static void test_x86_0xff_lcall_callback(uc_engine *uc, uint64_t address,
