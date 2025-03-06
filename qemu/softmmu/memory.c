@@ -28,6 +28,7 @@
 
 void memory_region_transaction_begin(void);
 static void memory_region_transaction_commit(MemoryRegion *mr);
+static void memory_region_destructor_container(MemoryRegion *mr);
 
 typedef struct AddrRange AddrRange;
 
@@ -87,6 +88,7 @@ static void make_contained(struct uc_struct *uc, MemoryRegion *current)
     hwaddr addr = current->addr;
     MemoryRegion *container = g_new(MemoryRegion, 1);
     memory_region_init(uc, container, int128_get64(current->size));
+    container->destructor = memory_region_destructor_container;
     memory_region_del_subregion(uc->system_memory, current);
     memory_region_add_subregion_overlap(container, 0, current, current->priority);
     memory_region_add_subregion(uc->system_memory, addr, container);
@@ -1089,6 +1091,11 @@ static void memory_region_destructor_ram(MemoryRegion *mr)
 {
     memory_region_filter_subregions(mr, 0);
     qemu_ram_free(mr->uc, mr->ram_block);
+}
+
+static void memory_region_destructor_container(MemoryRegion *mr)
+{
+    memory_region_filter_subregions(mr, 0);
 }
 
 void memory_region_init(struct uc_struct *uc,
