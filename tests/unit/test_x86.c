@@ -632,7 +632,7 @@ static void test_x86_smc_add(void)
 {
     uc_engine *uc;
     uint64_t stack_base = 0x20000;
-    int r_rsp;
+    uint64_t r_rsp;
     /*
      * mov qword ptr [rip+0x10], rax
      * mov word ptr [rip], 0x0548
@@ -647,6 +647,8 @@ static void test_x86_smc_add(void)
     r_rsp = stack_base + 0x1800;
     OK(uc_reg_write(uc, UC_X86_REG_RSP, &r_rsp));
     OK(uc_emu_start(uc, code_start, -1, 0, 0));
+
+    OK(uc_close(uc));
 }
 
 static void test_x86_smc_mem_hook_callback(uc_engine *uc, uc_mem_type t,
@@ -667,7 +669,7 @@ static void test_x86_smc_mem_hook(void)
     uc_engine *uc;
     uc_hook hook;
     uint64_t stack_base = 0x20000;
-    int r_rsp;
+    uint64_t r_rsp;
     unsigned int i = 0;
     /*
      * mov qword ptr [rip+0x29], rax
@@ -689,6 +691,8 @@ static void test_x86_smc_mem_hook(void)
     r_rsp = stack_base + 0x1800;
     OK(uc_reg_write(uc, UC_X86_REG_RSP, &r_rsp));
     OK(uc_emu_start(uc, code_start, -1, 0, 0));
+
+    OK(uc_close(uc));
 }
 
 static uint64_t test_x86_mmio_uc_mem_rw_read_callback(uc_engine *uc,
@@ -1589,6 +1593,8 @@ static void test_x86_mmu(void)
     OK(uc_mem_read(uc, 0x2000, &child, sizeof(child)));
     TEST_CHECK(parrent == 60);
     TEST_CHECK(child == 42);
+    OK(uc_context_free(context));
+    OK(uc_close(uc));
 }
 
 static bool test_x86_vtlb_callback(uc_engine *uc, uint64_t addr,
@@ -1632,6 +1638,7 @@ static void test_x86_segmentation(void)
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
     OK(uc_reg_write(uc, UC_X86_REG_GDTR, &gdtr));
     uc_assert_err(UC_ERR_EXCEPTION, uc_reg_write(uc, UC_X86_REG_FS, &fs));
+    OK(uc_close(uc));
 }
 
 static void test_x86_0xff_lcall_callback(uc_engine *uc, uint64_t address,

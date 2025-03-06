@@ -481,6 +481,7 @@ static void test_arm64_mmu(void)
     TEST_CHECK(x1 == 0x4444444444444444);
     TEST_CHECK(x2 == 0x4444444444444444);
     free(data);
+    OK(uc_close(uc));
 }
 
 static void test_arm64_pc_wrap(void)

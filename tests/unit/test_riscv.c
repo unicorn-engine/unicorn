@@ -718,6 +718,7 @@ static void test_riscv_mmu(void)
     OK(uc_mem_read(uc, data_address, &data_result, sizeof(data_result)));
 
     TEST_CHECK(data_value == data_result);
+    OK(uc_close(uc));
 }
 
 static void test_riscv_priv(void)
