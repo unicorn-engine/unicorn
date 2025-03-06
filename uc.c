@@ -2439,6 +2439,10 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 
     if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
         uc->snapshot_level = context->snapshot_level;
+        if (!uc->flatview_copy(uc, uc->address_space_memory.current_map,
+                               context->fv, true)) {
+            return UC_ERR_NOMEM;
+        }
         ret = uc_restore_latest_snapshot(uc);
         if (ret != UC_ERR_OK) {
             restore_jit_state(uc);
@@ -2447,10 +2451,6 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
         uc_snapshot(uc);
         uc->ram_list.freed = context->ramblock_freed;
         uc->ram_list.last_block = context->last_block;
-        if (!uc->flatview_copy(uc, uc->address_space_memory.current_map,
-                               context->fv, true)) {
-            return UC_ERR_NOMEM;
-        }
         uc->tcg_flush_tlb(uc);
     }
 
