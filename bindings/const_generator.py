@@ -6,7 +6,7 @@ import sys, re, os
 
 INCL_DIR = os.path.join('..', 'include', 'unicorn')
 
-include = [ 'arm.h', 'arm64.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'ppc.h', 'riscv.h', 's390x.h', 'tricore.h', 'unicorn.h' ]
+include = [ 'arm.h', 'arm64.h', 'avr.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'ppc.h', 'riscv.h', 's390x.h', 'tricore.h', 'unicorn.h' ]
 
 template = {
     'python': {
@@ -17,6 +17,7 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
             'arm64.h': 'arm64',
+            'avr.h': 'avr',
             'mips.h': 'mips',
             'x86.h': 'x86',
             'sparc.h': 'sparc',
@@ -37,6 +38,7 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
             'arm64.h': 'arm64',
+            'avr.h': 'avr',
             'mips.h': 'mips',
             'x86.h': 'x86',
             'sparc.h': 'sparc',
@@ -57,6 +59,7 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
             'arm64.h': 'arm64',
+            'avr.h': 'avr',
             'mips.h': 'mips',
             'x86.h': 'x86',
             'sparc.h': 'sparc',
@@ -77,6 +80,7 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
             'arm64.h': 'Arm64',
+            'avr.h': 'AVR',
             'mips.h': 'Mips',
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
@@ -97,6 +101,7 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
             'arm64.h': 'Arm64',
+            'avr.h': 'AVR',
             'mips.h': 'Mips',
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
@@ -117,6 +122,7 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
             'arm64.h': 'Arm64',
+            'avr.h': 'AVR',
             'mips.h': 'Mips',
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
@@ -137,6 +143,7 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
             'arm64.h': 'arm64',
+            'avr.h': 'AVR',
             'mips.h': 'mips',
             'x86.h': 'x86',
             'sparc.h': 'sparc',
