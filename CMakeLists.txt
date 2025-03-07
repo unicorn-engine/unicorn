@@ -88,6 +88,7 @@ option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
 set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x;tricore" CACHE STRING "Enabled unicorn architectures")
 option(UNICORN_TRACER "Trace unicorn execution" OFF)
+option(UNICORN_INTERPRETER "Use interpreter mode" OFF)
 
 foreach(ARCH_LOOP ${UNICORN_ARCH})
     string(TOUPPER "${ARCH_LOOP}" ARCH_LOOP)
@@ -277,6 +278,10 @@ else()
         endwhile(TRUE)
     endif()
 
+    if(UNICORN_INTERPRETER)
+        set(UNICORN_TARGET_ARCH "tci")
+    endif()
+
     set(EXTRA_CFLAGS "--extra-cflags=")
     if(UNICORN_HAS_X86)
         set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_X86 ")
@@ -362,10 +367,17 @@ else()
     set(TARGET_LIST "${TARGET_LIST} ")
 
     # GEN config-host.mak & target directories
+    set(UNICORN_EXECUTION_MODE "")
+    if(UNICORN_INTERPRETER)
+        set(UNICORN_EXECUTION_MODE "--enable-interpreter")
+    else()
+        set(UNICORN_EXECUTION_MODE "--disable-interpreter")
+    endif()
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
         --cc=${CMAKE_C_COMPILER}
         ${EXTRA_CFLAGS}
         ${TARGET_LIST}
+        ${UNICORN_EXECUTION_MODE}
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
@@ -506,6 +518,10 @@ set(UNICORN_ARCH_COMMON
 
     qemu/softmmu/unicorn_vtlb.c
 )
+
+if(UNICORN_INTERPRETER)
+    list(APPEND UNICORN_ARCH_COMMON qemu/tcg/tci.c)
+endif()
 
 if(UNICORN_HAS_X86)
 add_library(x86_64-softmmu STATIC
