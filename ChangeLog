@@ -1,6 +1,27 @@
 This file details the changelog of Unicorn Engine.
 
 -------------------------------
+[Version 2.1.3]: March 7th, 2025
+
+2.1.3 includes a few fixes for distribution and stability issues. We urge users to update their versions as previous version contains security vulnerabilities.
+
+Fix & Improvements
+
+- Several security issues fixes. @PhilippTakacs 
+- Add alpine workflow and fix several distribution issues. @Antelox 
+- Introduce importlib_resources for py3.8 (EOL already) @Arusekk @Antelox 
+- Mips64 improvemtns. @OBarronCS 
+- mips related fixes and implement a few registers.
+- x86 default cpu model is changed to `UC_CPU_X86_HASWELL` and remove a few quirks.
+- Fix CR4 implementation.
+- Fix python bindings break changes by adding back `ctl_tlb_mode`. @Antelox 
+
+New Contributors
+* @OBarronCS made their first contribution in https://github.com/unicorn-engine/unicorn/pull/2111
+
+Full Changelog: https://github.com/unicorn-engine/unicorn/compare/2.1.2...2.1.3
+
+-------------------------------
 [Version 2.1.2]: Feb 13rd, 2025
 2.1.2 is a patch release to mainly resolve the stability issue of the 2.1.0 release series and fix a few distribution issues. All users of Unicorn are expected to upgrade. 
 
