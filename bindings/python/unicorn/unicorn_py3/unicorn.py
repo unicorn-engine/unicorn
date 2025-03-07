@@ -332,11 +332,12 @@ def debug() -> str:
         ('tricore', uc.UC_ARCH_TRICORE)
     )
 
-    all_archs = ''.join(f'-{name}' for name, atype in archs if uc_arch_supported(atype))
+    all_archs = '-'.join(f'{name}' for name, atype in archs if uc_arch_supported(atype))
     lib_maj, lib_min, _ = uc_version()
     bnd_maj, bnd_min, _ = version_bind()
+    lib_path = str(uclib)
 
-    return f'python-{all_archs}-c{lib_maj}.{lib_min}-b{bnd_maj}.{bnd_min}'
+    return f'python-{all_archs}-c{lib_maj}.{lib_min}-b{bnd_maj}.{bnd_min}-{lib_path}'
 
 
 if TYPE_CHECKING:
