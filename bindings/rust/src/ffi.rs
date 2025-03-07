@@ -3,7 +3,7 @@
 
 use crate::{Unicorn, UnicornInner};
 
-use super::unicorn_const::{uc_error, Arch, HookType, MemRegion, MemType, Mode, Query, TlbEntry};
+use super::unicorn_const::{uc_error, Arch, HookType, MemRegion, MemType, Mode, Query, TlbEntry, Permission};
 use alloc::rc::Weak;
 use core::cell::UnsafeCell;
 use core::ffi::c_void;
@@ -47,6 +47,19 @@ extern "C" {
         address: u64,
         bytes: *mut u8,
         size: libc::size_t,
+    ) -> uc_error;
+    pub fn uc_mem_read_virtual(
+        engine: uc_handle,
+        address: u64,
+        prot: Permission,
+        bytes: *mut u8,
+        size: libc::size_t,
+    ) -> uc_error;
+    pub fn uc_virtual_to_physical(
+        engine: uc_handle,
+        address: u64,
+        prot: Permission,
+        paddr: *mut u64,
     ) -> uc_error;
     pub fn uc_mem_map(engine: uc_handle, address: u64, size: libc::size_t, perms: u32) -> uc_error;
     pub fn uc_mem_map_ptr(
