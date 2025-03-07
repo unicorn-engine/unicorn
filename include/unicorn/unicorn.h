@@ -955,6 +955,21 @@ uc_err uc_mem_read_virtual(uc_engine *uc, uint64_t address, uint32_t prot,
                            void *bytes, size_t size);
 
 /*
+ Translate a virtuall address to a physical address
+
+ @uc:
+ @address:  virtual address to translate
+ @prot:     The access type for the tlb lookup
+ @paddress: A pointer to store the result
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_virtual_to_physical(uc_engine *uc, uint64_t address, uint32_t prot,
+                              uint64_t *paddress);
+
+/*
  Emulate machine code in a specific duration of time.
 
  @uc: handle returned by uc_open()

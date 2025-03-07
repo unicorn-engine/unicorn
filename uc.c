@@ -773,6 +773,39 @@ static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
     return (count == size);
 }
 
+uc_err uc_virtual_to_physical(uc_engine *uc, uint64_t address, uc_prot prot,
+                              uint64_t *paddress)
+{
+    UC_INIT(uc);
+
+    if (!(UC_PROT_READ == prot || UC_PROT_WRITE == prot ||
+          UC_PROT_EXEC == prot)) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    // The sparc mmu doesn't support probe mode
+    if (uc->arch == UC_ARCH_SPARC && uc->cpu->cc->tlb_fill == uc->cpu->cc->tlb_fill_cpu) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    if (!uc->virtual_to_physical(uc, address, prot, paddress)) {
+        restore_jit_state(uc);
+        switch (prot) {
+        case UC_PROT_READ:
+            return UC_ERR_READ_PROT;
+        case UC_PROT_WRITE:
+            return UC_ERR_WRITE_PROT;
+        case UC_PROT_EXEC:
+            return UC_ERR_FETCH_PROT;
+        }
+    }
+
+    restore_jit_state(uc);
+    return UC_ERR_OK;
+}
+
 UNICORN_EXPORT
 uc_err uc_mem_read_virtual(uc_engine *uc, uint64_t address, uc_prot prot,
                            void *_bytes, size_t size)

@@ -449,6 +449,31 @@ static void test_snapshot_unmap(void)
     OK(uc_close(uc));
 }
 
+static bool test_v2p_tlb_fill(uc_engine *uc, uint64_t addr, uc_mem_type type,
+                               uc_tlb_entry *result, void *user_data)               
+{
+    if (type != UC_MEM_READ)
+        return false;
+    result->paddr = addr;
+    result->perms = UC_PROT_READ;
+    return true;
+}
+
+static void test_virtual_to_physical(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t res;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_v2p_tlb_fill, NULL, 1, 0));
+
+    OK(uc_virtual_to_physical(uc, 0x1000, UC_PROT_READ, &res));
+    uc_assert_err(UC_ERR_WRITE_PROT,
+                  uc_virtual_to_physical(uc, 0x1000, UC_PROT_WRITE, &res));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -464,4 +489,5 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_snapshot_with_vtlb", test_snapshot_with_vtlb},
              {"test_context_snapshot", test_context_snapshot},
              {"test_snapshot_unmap", test_snapshot_unmap},
+             {"test_virtual_to_physical", test_virtual_to_physical},
              {NULL, NULL}};

@@ -63,6 +63,34 @@ static bool cpu_virtual_mem_read(struct uc_struct *uc, vaddr addr, uint32_t prot
     return true;
 }
 
+static bool cpu_virtual_to_physical(struct uc_struct *uc, vaddr addr, uint32_t prot, uint64_t *paddr)
+{
+    target_ulong res;
+    MMUAccessType access_type;
+    int mmu_idx = cpu_mmu_index(uc->cpu->env_ptr, false);
+
+    switch(prot) {
+    case UC_PROT_READ:
+        access_type = MMU_DATA_LOAD;
+        break;
+    case UC_PROT_WRITE:
+        access_type = MMU_DATA_STORE;
+        break;
+    case UC_PROT_EXEC:
+        access_type = MMU_INST_FETCH;
+        break;
+    default:
+        return false;
+    }
+
+    if (!tlb_vaddr_to_paddr(uc->cpu->env_ptr, addr, access_type, mmu_idx, &res)) {
+        return false;
+    }
+
+    *paddr = res;
+    return true;
+}
+
 void tb_cleanup(struct uc_struct *uc);
 void free_code_gen_buffer(struct uc_struct *uc);
 
@@ -162,6 +190,7 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->write_mem = cpu_physical_mem_write;
     uc->read_mem = cpu_physical_mem_read;
     uc->read_mem_virtual = cpu_virtual_mem_read;
+    uc->virtual_to_physical = cpu_virtual_to_physical;
     uc->tcg_exec_init = tcg_exec_init;
     uc->cpu_exec_init_all = cpu_exec_init_all;
     uc->vm_start = vm_start;
