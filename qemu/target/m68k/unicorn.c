@@ -173,7 +173,7 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             break;
         case UC_M68K_REG_CR_CACR: {
             CHECK_REG_TYPE(uint32_t);
-            uint32_t val = *(uint32_t*)value;
+            uint32_t val = *(uint32_t *)value;
             if (m68k_feature(env, M68K_FEATURE_M68020)) {
                 env->cacr = val & 0x0000000f;
             } else if (m68k_feature(env, M68K_FEATURE_M68030)) {

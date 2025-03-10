@@ -277,8 +277,8 @@ static void test_uc_hook_cached_uaf(void)
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
-    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, (void *)test_uc_hook_cached_cb, (void *)&count, 1,
-                   0));
+    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, (void *)test_uc_hook_cached_cb,
+                   (void *)&count, 1, 0));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
@@ -288,9 +288,10 @@ static void test_uc_hook_cached_uaf(void)
     // This will clear deleted hooks and SHOULD clear cache.
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    // Now hooks are deleted and thus this _should not_ call test_uc_hook_cached_cb anymore.
-    // If the hook is allocated like from malloc, and the code region is free-ed, this call _shall not_
-    // call the hook anymore to avoid UAF.
+    // Now hooks are deleted and thus this _should not_ call
+    // test_uc_hook_cached_cb anymore. If the hook is allocated like from
+    // malloc, and the code region is free-ed, this call _shall not_ call the
+    // hook anymore to avoid UAF.
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     // Only 4 calls

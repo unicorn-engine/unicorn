@@ -1981,12 +1981,13 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
         index &
         UC_HOOK_FLAG_MASK; // The index here may contain additional flags. See
                            // the comments of uc_hook_idx for details.
-    // bool not_allow_stop = (size & UC_HOOK_FLAG_NO_STOP) || (hook_flags & UC_HOOK_FLAG_NO_STOP);
+    // bool not_allow_stop = (size & UC_HOOK_FLAG_NO_STOP) || (hook_flags &
+    // UC_HOOK_FLAG_NO_STOP);
     bool not_allow_stop = hook_flags & UC_HOOK_FLAG_NO_STOP;
-    
+
     index = index & UC_HOOK_IDX_MASK;
-    // // Like hook index, only low 6 bits of size is used for representing sizes.
-    // size = size & UC_HOOK_IDX_MASK;
+    // // Like hook index, only low 6 bits of size is used for representing
+    // sizes. size = size & UC_HOOK_IDX_MASK;
 
     // This has been done in tcg code.
     // sync PC in CPUArchState with address
