@@ -55,6 +55,22 @@ typedef enum uc_m68k_reg {
     UC_M68K_REG_SR,
     UC_M68K_REG_PC,
 
+    UC_M68K_REG_CR_SFC,
+    UC_M68K_REG_CR_DFC,
+    UC_M68K_REG_CR_VBR,
+    UC_M68K_REG_CR_CACR,
+    UC_M68K_REG_CR_TC,
+    UC_M68K_REG_CR_MMUSR,
+    UC_M68K_REG_CR_SRP,
+    UC_M68K_REG_CR_USP,
+    UC_M68K_REG_CR_MSP,
+    UC_M68K_REG_CR_ISP,
+    UC_M68K_REG_CR_URP,
+    UC_M68K_REG_CR_ITT0,
+    UC_M68K_REG_CR_ITT1,
+    UC_M68K_REG_CR_DTT0,
+    UC_M68K_REG_CR_DTT1,
+
     UC_M68K_REG_ENDING, // <-- mark the end of the list of registers
 } uc_m68k_reg;
 
