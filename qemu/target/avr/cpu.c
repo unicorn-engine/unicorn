@@ -506,7 +506,7 @@ AVRCPU *cpu_avr_init(struct uc_struct *uc)
     // init address space
     cpu_address_space_init(cs, 0, cs->memory);
 
-    qemu_init_vcpu(cs);
+    //qemu_init_vcpu(cs);
 
     return cpu;
 }
