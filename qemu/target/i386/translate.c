@@ -2914,6 +2914,9 @@ static inline void gen_ldq_env_A0(DisasContext *s, int offset)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ))
+        gen_sync_pc(tcg_ctx, s->prev_pc); // Unicorn: sync EIP
+
     tcg_gen_qemu_ld_i64(tcg_ctx, s->tmp1_i64, s->A0, s->mem_index, MO_LEQ);
     tcg_gen_st_i64(tcg_ctx, s->tmp1_i64, tcg_ctx->cpu_env, offset);
 }
@@ -2921,6 +2924,9 @@ static inline void gen_ldq_env_A0(DisasContext *s, int offset)
 static inline void gen_stq_env_A0(DisasContext *s, int offset)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE))
+        gen_sync_pc(tcg_ctx, s->prev_pc); // Unicorn: sync EIP
 
     tcg_gen_ld_i64(tcg_ctx, s->tmp1_i64, tcg_ctx->cpu_env, offset);
     tcg_gen_qemu_st_i64(tcg_ctx, s->tmp1_i64, s->A0, s->mem_index, MO_LEQ);
@@ -2930,6 +2936,10 @@ static inline void gen_ldo_env_A0(DisasContext *s, int offset)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int mem_index = s->mem_index;
+
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ))
+        gen_sync_pc(tcg_ctx, s->prev_pc); // Unicorn: sync EIP
+
     tcg_gen_qemu_ld_i64(tcg_ctx, s->tmp1_i64, s->A0, mem_index, MO_LEQ);
     tcg_gen_st_i64(tcg_ctx, s->tmp1_i64, tcg_ctx->cpu_env, offset + offsetof(ZMMReg, ZMM_Q(0)));
     tcg_gen_addi_tl(tcg_ctx, s->tmp0, s->A0, 8);
@@ -2941,6 +2951,10 @@ static inline void gen_sto_env_A0(DisasContext *s, int offset)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int mem_index = s->mem_index;
+
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE))
+        gen_sync_pc(tcg_ctx, s->prev_pc); // Unicorn: sync EIP
+
     tcg_gen_ld_i64(tcg_ctx, s->tmp1_i64, tcg_ctx->cpu_env, offset + offsetof(ZMMReg, ZMM_Q(0)));
     tcg_gen_qemu_st_i64(tcg_ctx, s->tmp1_i64, s->A0, mem_index, MO_LEQ);
     tcg_gen_addi_tl(tcg_ctx, s->tmp0, s->A0, 8);
@@ -4834,6 +4848,9 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         gen_uc_tracecode(tcg_ctx, 0xf1f1f1f1, UC_HOOK_CODE_IDX, env->uc, pc_start);
 
         check_exit_request(tcg_ctx);
+
+        // Unicorn: Previous hook might change eflags to any state, let's sync it
+        gen_compute_eflags(s);
     }
 
     s->override = -1;
@@ -9424,6 +9441,13 @@ static void i386_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
+static void i386_sync_pc(DisasContextBase *db, CPUState *cpu)
+{
+    DisasContext *dc = container_of(db, DisasContext, base);
+
+    gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
+}
+
 static const TranslatorOps i386_tr_ops = {
     .init_disas_context = i386_tr_init_disas_context,
     .tb_start           = i386_tr_tb_start,
@@ -9431,6 +9455,7 @@ static const TranslatorOps i386_tr_ops = {
     .breakpoint_check   = i386_tr_breakpoint_check,
     .translate_insn     = i386_tr_translate_insn,
     .tb_stop            = i386_tr_tb_stop,
+    .pc_sync            = i386_sync_pc,
 };
 
 /* generate intermediate code for basic block 'tb'.  */

@@ -181,11 +181,37 @@ static void test_uc_ctl_change_page_size(void)
 {
     uc_engine *uc;
     uc_engine *uc2;
+    uint32_t pg = 0;
 
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc2));
 
     OK(uc_ctl_set_page_size(uc, 4096));
+    OK(uc_ctl_get_page_size(uc, &pg));
+    TEST_CHECK(pg == 4096);
+
+    OK(uc_mem_map(uc2, 1 << 10, 1 << 10, UC_PROT_ALL));
+    uc_assert_err(UC_ERR_ARG, uc_mem_map(uc, 1 << 10, 1 << 10, UC_PROT_ALL));
+
+    OK(uc_close(uc));
+    OK(uc_close(uc2));
+}
+#endif
+
+// Test requires UC_ARCH_ARM64.
+#ifdef UNICORN_HAS_ARM64
+static void test_uc_ctl_change_page_size_arm64(void)
+{
+    uc_engine *uc;
+    uc_engine *uc2;
+    uint32_t pg = 0;
+
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc2));
+
+    OK(uc_ctl_set_page_size(uc, 16384));
+    OK(uc_ctl_get_page_size(uc, &pg));
+    TEST_CHECK(pg == 16384);
 
     OK(uc_mem_map(uc2, 1 << 10, 1 << 10, UC_PROT_ALL));
     uc_assert_err(UC_ERR_ARG, uc_mem_map(uc, 1 << 10, 1 << 10, UC_PROT_ALL));
@@ -236,8 +262,6 @@ static void test_uc_ctl_arm_cpu(void)
 static void test_uc_hook_cached_cb(uc_engine *uc, uint64_t addr, size_t size,
                                    void *user_data)
 {
-    // Don't add any TEST_CHECK here since we can't refer to the global variable
-    // here.
     uint64_t *p = (uint64_t *)user_data;
     (*p)++;
     return;
@@ -250,26 +274,10 @@ static void test_uc_hook_cached_uaf(void)
     char code[] = "\x41\x4a\xeb\x00\x90";
     uc_hook h;
     uint64_t count = 0;
-#ifndef _WIN32
-    // Apple Silicon does not allow RWX pages.
-    void *callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE,
-                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    TEST_CHECK(callback != (void *)-1);
-#else
-    void *callback = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT,
-                                  PAGE_EXECUTE_READWRITE);
-    TEST_CHECK(callback != NULL);
-#endif
-
-    memcpy(callback, (void *)test_uc_hook_cached_cb, 4096);
-
-#ifndef _WIN32
-    TEST_CHECK(mprotect(callback, 4096, PROT_READ | PROT_EXEC) == 0);
-#endif
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
-    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, (void *)callback, (void *)&count, 1,
+    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, (void *)test_uc_hook_cached_cb, (void *)&count, 1,
                    0));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
@@ -280,28 +288,15 @@ static void test_uc_hook_cached_uaf(void)
     // This will clear deleted hooks and SHOULD clear cache.
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-#ifndef _WIN32
-    TEST_CHECK(mprotect(callback, 4096, PROT_READ | PROT_WRITE) == 0);
-#endif
-
-    memset(callback, 0, 4096);
-
-#ifndef _WIN32
-    TEST_CHECK(mprotect(callback, 4096, PROT_READ | PROT_EXEC) == 0);
-#endif
-
-    // Now hooks are deleted and thus this will trigger a UAF
+    // Now hooks are deleted and thus this _should not_ call test_uc_hook_cached_cb anymore.
+    // If the hook is allocated like from malloc, and the code region is free-ed, this call _shall not_
+    // call the hook anymore to avoid UAF.
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
+    // Only 4 calls
     TEST_CHECK(count == 4);
 
     OK(uc_close(uc));
-
-#ifndef _WIN32
-    munmap(callback, 4096);
-#else
-    VirtualFree(callback, 0, MEM_RELEASE);
-#endif
 }
 
 static void test_uc_emu_stop_set_ip_callback(uc_engine *uc, uint64_t address,
@@ -402,18 +397,22 @@ static void test_noexec(void)
     OK(uc_close(uc));
 }
 
-TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
-             {"test_uc_ctl_page_size", test_uc_ctl_page_size},
-             {"test_uc_ctl_arch", test_uc_ctl_arch},
-             {"test_uc_ctl_time_out", test_uc_ctl_time_out},
-             {"test_uc_ctl_exits", test_uc_ctl_exits},
-             {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
+TEST_LIST = {
+    {"test_uc_ctl_mode", test_uc_ctl_mode},
+    {"test_uc_ctl_page_size", test_uc_ctl_page_size},
+    {"test_uc_ctl_arch", test_uc_ctl_arch},
+    {"test_uc_ctl_time_out", test_uc_ctl_time_out},
+    {"test_uc_ctl_exits", test_uc_ctl_exits},
+    {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
 #ifdef UNICORN_HAS_ARM
-             {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
-             {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
+    {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
+    {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
 #endif
-             {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
-             {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
-             {"test_tlb_clear", test_tlb_clear},
-             {"test_noexec", test_noexec},
-             {NULL, NULL}};
+#ifdef UNICORN_HAS_ARM64
+    {"test_uc_ctl_change_page_size_arm64", test_uc_ctl_change_page_size_arm64},
+#endif
+    {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
+    {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
+    {"test_tlb_clear", test_tlb_clear},
+    {"test_noexec", test_noexec},
+    {NULL, NULL}};

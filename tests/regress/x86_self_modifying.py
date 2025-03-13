@@ -1,24 +1,25 @@
-#!/usr/bin/env python
-from unicorn import *
-from unicorn.x86_const import *
-from struct import pack
-
 import os
 import regress
+from unicorn import *
+from unicorn.x86_const import *
 
 # The file we're loading is a full assembled ELF.
 # Source for it, along with assembly instructions, are in x86_self_modifying.s
+filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'x86_self_modifying.elf')
 
 CODE_ADDR = 0x08048000
 STACK_ADDR = 0x2000000
-CODE = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'x86_self_modifying.elf')).read()
-CODE_SIZE = len(CODE) + (0x1000 - len(CODE)%0x1000)
+with open(filename, 'rb') as f:
+    CODE = f.read()
+CODE_SIZE = len(CODE) + (0x1000 - len(CODE) % 0x1000)
 STACK_SIZE = 0x8000
 
 ENTRY_POINT = 0x8048074
 
+
 def hook_intr(uc, intno, data):
     uc.emu_stop()
+
 
 class SelfModifying(regress.RegressTest):
     def test_self_modifying(self):
@@ -35,6 +36,7 @@ class SelfModifying(regress.RegressTest):
 
         retcode = uc.reg_read(UC_X86_REG_EBX)
         self.assertEqual(retcode, 65)
+
 
 if __name__ == '__main__':
     regress.main()

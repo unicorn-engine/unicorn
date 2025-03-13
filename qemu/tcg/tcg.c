@@ -407,7 +407,7 @@ static void tcg_region_assign(TCGContext *s, size_t curr_region)
     s->code_gen_ptr = start;
     s->code_gen_buffer_size = (char *)end - (char *)start;
 
-    memset(s->code_gen_buffer, 0x00, s->code_gen_buffer_size);
+    // memset(s->code_gen_buffer, 0x00, s->code_gen_buffer_size); // Outdated Unicorn hacks
     s->code_gen_highwater = (char *)end - TCG_HIGHWATER;
 }
 
@@ -538,7 +538,14 @@ void tcg_region_init(TCGContext *tcg_ctx)
     }
 
     tcg_ctx->tree = g_tree_new(tb_tc_cmp);
+    // Unicorn: Though this code is taken from CONFIG_USER_ONLY, it is crucial or
+    //          tcg_ctx->region.current is 0 and we will miss a tb_flush when the
+    //          buffer gets full.
+    {
+        bool err = tcg_region_initial_alloc__locked(tcg_ctx);
 
+        g_assert(!err);
+    }
 }
 
 /*
@@ -682,7 +689,7 @@ void uc_add_inline_hook(uc_engine *uc, struct hook *hk, void** args, int args_le
     case UC_HOOK_CODE:
         // (*uc_cb_hookcode_t)(uc_engine *uc, uint64_t address, uint32_t size, void *user_data);
         sizemask = dh_sizemask(void, 0) | dh_sizemask(ptr, 1) | dh_sizemask(i64, 2) | dh_sizemask(i32, 3) | dh_sizemask(ptr, 4);
-        snprintf(name, 63, "hookcode_%d_%" PRIx64 , hk->type, (uint64_t)hk->callback);
+        snprintf(name, 63, "hookcode_%d_%" PRIxPTR , hk->type, (uintptr_t)hk->callback);
         break;
 
     default:
@@ -812,6 +819,7 @@ TranslationBlock *tcg_tb_alloc(TCGContext *s)
     }
     s->code_gen_ptr = next;
     s->data_gen_ptr = NULL;
+    // memset((void*)tb, 0x00, sizeof(TranslationBlock)); // not necessary as both tb and tb->tc.ptr is reused here
     return tb;
 }
 

@@ -20,6 +20,8 @@ macOS:
 brew install cmake pkg-config
 ```
 
+Note you need to install these build dependencies for python bindings on macOS too.
+
 - Build with the following commands.
 
 ```bash

@@ -1,21 +1,23 @@
-#!/usr/bin/python
 import regress
-import unicorn as U
+from unicorn import *
+from unicorn.x86_const import *
+
 
 class WrongConditionalPath(regress.RegressTest):
     def test_eflags(self):
-        # 0:    4d 31 f6                 xor    r14, r14
-        # 3:    45 85 f6                 test   r14d, r14d
-        # 6:    75 fe                    jne    0x6
-        # 8:    f4                       hlt
-        CODE = 'M1\xf6E\x85\xf6u\xfe\xf4'
+        code = (
+            b'\x4d\x31\xf6'     #  xor    r14, r14
+            b'\x45\x85\xf6'     #  test   r14d, r14d
+            b'\x75\xfe'         #  jne    0x6
+            b'\xf4'             #  hlt
+        )
 
-        uc = U.Uc(U.UC_ARCH_X86, U.UC_MODE_64)
-        uc.reg_write(U.x86_const.UC_X86_REG_RIP, 0x6000b0)
-        uc.reg_write(U.x86_const.UC_X86_REG_EFLAGS, 0x246)
+        uc = Uc(UC_ARCH_X86, UC_MODE_64)
+        uc.reg_write(UC_X86_REG_RIP, 0x6000b0)
+        uc.reg_write(UC_X86_REG_EFLAGS, 0x246)
 
         uc.mem_map(0x600000, 0x1000)
-        uc.mem_write(0x6000b0, CODE)
+        uc.mem_write(0x6000b0, code)
 
         uc.emu_start(0x6000b0 + 6, 0, count=1)
 
@@ -33,7 +35,8 @@ class WrongConditionalPath(regress.RegressTest):
         # RIP=00000000006000b6 RFL=00000246 [---Z-P-] CPL=3 II=0 A20=1 SMM=0 HLT=0
         # 0x00000000006000b8:  hlt    
         # RIP=00000000006000b8 RFL=00000246 [---Z-P-] CPL=3 II=0 A20=1 SMM=0 HLT=0
-        self.assertEqual(0x6000b0 + 8, uc.reg_read(U.x86_const.UC_X86_REG_RIP))
+        self.assertEqual(0x6000b0 + 8, uc.reg_read(UC_X86_REG_RIP))
+
 
 if __name__ == '__main__':
     regress.main()

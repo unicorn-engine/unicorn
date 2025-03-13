@@ -335,10 +335,11 @@ RISCVCPU *cpu_riscv_init(struct uc_struct *uc)
     CPUState *cs;
     CPUClass *cc;
 
-    cpu = calloc(1, sizeof(*cpu));
+    cpu = qemu_memalign(8, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
+    memset((void*)cpu, 0, sizeof(*cpu));
 
 #ifdef TARGET_RISCV32
     if (uc->cpu_model == INT_MAX) {

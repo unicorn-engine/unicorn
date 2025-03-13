@@ -129,7 +129,8 @@ void helper_cmpxchg16b(CPUX86State *env, target_ulong a0)
 
     if ((a0 & 0xf) != 0) {
         raise_exception_ra(env, EXCP0D_GPF, ra);
-    } else if (HAVE_CMPXCHG128) {
+    } else {
+#if HAVE_CMPXCHG128 == 1
         int eflags = cpu_cc_compute_all(env, CC_OP);
 
         Int128 cmpv = int128_make128(env->regs[R_EAX], env->regs[R_EDX]);
@@ -148,8 +149,9 @@ void helper_cmpxchg16b(CPUX86State *env, target_ulong a0)
             eflags &= ~CC_Z;
         }
         CC_SRC = eflags;
-    } else {
+#else
         cpu_loop_exit_atomic(env_cpu(env), ra);
+#endif
     }
 }
 #endif

@@ -9297,12 +9297,20 @@ static void tricore_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
+static void tricore_pc_sync(DisasContextBase *db, CPUState *cpu)
+{
+    DisasContext *ctx = container_of(db, DisasContext, base);
+
+    gen_save_pc(ctx, ctx->base.pc_next);
+}
+
 static const TranslatorOps tricore_tr_ops = {
     .init_disas_context = tricore_tr_init_disas_context,
     .tb_start           = tricore_tr_tb_start,
     .insn_start         = tricore_tr_insn_start,
     .translate_insn     = tricore_tr_translate_insn,
     .tb_stop            = tricore_tr_tb_stop,
+    .pc_sync            = tricore_pc_sync
 };
 
 

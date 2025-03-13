@@ -1,12 +1,10 @@
-#!/usr/bin/python
-
+import regress
 from unicorn import *
 from unicorn.x86_const import *
 
-import regress
+binary1 = b'\xb8\x02\x00\x00\x00'  # mov eax, 2
+binary2 = b'\xb8\x01\x00\x00\x00'  # mov eax, 1
 
-binary1 = b'\xb8\x02\x00\x00\x00'    # mov eax, 2
-binary2 = b'\xb8\x01\x00\x00\x00'    # mov eax, 1
 
 class WrongRIP(regress.RegressTest):
 
@@ -40,7 +38,7 @@ class WrongRIP(regress.RegressTest):
         self.assertEqual(0xa, mu.reg_read(UC_X86_REG_RIP))
 
     def test_step3(self):
-        bin3 = b'\x40\x01\xc1\x31\xf6' # inc eax; add ecx, eax; xor esi, esi
+        bin3 = b'\x40\x01\xc1\x31\xf6'  # inc eax; add ecx, eax; xor esi, esi
         mu = Uc(UC_ARCH_X86, UC_MODE_32)
         mu.mem_map(0, 2 * 1024 * 1024)
         # write machine code to be emulated to memory
@@ -51,7 +49,7 @@ class WrongRIP(regress.RegressTest):
         self.assertEqual(0x1, mu.reg_read(UC_X86_REG_EIP))
 
     def test_step_then_fin(self):
-        bin4 = b'\x40\x01\xc1\x31\xf6\x90\x90\x90' # inc eax; add ecx, eax; xor esi, esi
+        bin4 = b'\x40\x01\xc1\x31\xf6\x90\x90\x90'  # inc eax; add ecx, eax; xor esi, esi
         mu = Uc(UC_ARCH_X86, UC_MODE_32)
         mu.mem_map(0, 2 * 1024 * 1024)
         # write machine code to be emulated to memory
@@ -66,6 +64,6 @@ class WrongRIP(regress.RegressTest):
         self.assertEqual(0x1, mu.reg_read(UC_X86_REG_EAX))
         self.assertEqual(len(bin4), mu.reg_read(UC_X86_REG_EIP))
 
+
 if __name__ == '__main__':
     regress.main()
-

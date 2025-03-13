@@ -54,6 +54,7 @@
 #define vm_start vm_start_riscv32
 #define address_space_dispatch_compact address_space_dispatch_compact_riscv32
 #define flatview_translate flatview_translate_riscv32
+#define flatview_copy flatview_copy_riscv32
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_riscv32
 #define qemu_get_cpu qemu_get_cpu_riscv32
 #define cpu_address_space_init cpu_address_space_init_riscv32
@@ -90,6 +91,7 @@
 #define iotlb_to_section iotlb_to_section_riscv32
 #define address_space_dispatch_new address_space_dispatch_new_riscv32
 #define address_space_dispatch_free address_space_dispatch_free_riscv32
+#define address_space_dispatch_clear address_space_dispatch_clear_riscv32
 #define flatview_read_continue flatview_read_continue_riscv32
 #define address_space_read_full address_space_read_full_riscv32
 #define address_space_write address_space_write_riscv32
@@ -1288,6 +1290,8 @@
 #define gen_helper_cpsr_read gen_helper_cpsr_read_riscv32
 #define gen_helper_cpsr_write gen_helper_cpsr_write_riscv32
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_riscv32
+#define helper_stqcx_le_parallel helper_stqcx_le_parallel_riscv32
+#define helper_stqcx_be_parallel helper_stqcx_be_parallel_riscv32
 #define riscv_cpu_mmu_index riscv_cpu_mmu_index_riscv32
 #define riscv_cpu_exec_interrupt riscv_cpu_exec_interrupt_riscv32
 #define riscv_cpu_fp_enabled riscv_cpu_fp_enabled_riscv32

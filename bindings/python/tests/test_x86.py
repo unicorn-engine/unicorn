@@ -1,22 +1,21 @@
 #!/usr/bin/env python
 # Sample code for X86 of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 
-from __future__ import print_function
+import pickle
 from unicorn import *
 from unicorn.x86_const import *
-import pickle
 
-X86_CODE32 = b"\x41\x4a\x66\x0f\xef\xc1" # INC ecx; DEC edx; PXOR xmm0, xmm1
-X86_CODE32_LOOP = b"\x41\x4a\xeb\xfe" # INC ecx; DEC edx; JMP self-loop
-X86_CODE32_JUMP = b"\xeb\x02\x90\x90\x90\x90\x90\x90" # jmp 4; nop; nop; nop; nop; nop; nop
-X86_CODE32_JMP_INVALID = b"\xe9\xe9\xee\xee\xee\x41\x4a" # JMP outside; INC ecx; DEC edx
-X86_CODE32_MEM_READ = b"\x8B\x0D\xAA\xAA\xAA\xAA\x41\x4a" # mov ecx,[0xaaaaaaaa]; INC ecx; DEC edx
-X86_CODE32_MEM_WRITE = b"\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a" # mov [0xaaaaaaaa], ecx; INC ecx; DEC edx
+X86_CODE32 = b"\x41\x4a\x66\x0f\xef\xc1"  # INC ecx; DEC edx; PXOR xmm0, xmm1
+X86_CODE32_LOOP = b"\x41\x4a\xeb\xfe"  # INC ecx; DEC edx; JMP self-loop
+X86_CODE32_JUMP = b"\xeb\x02\x90\x90\x90\x90\x90\x90"  # jmp 4; nop; nop; nop; nop; nop; nop
+X86_CODE32_JMP_INVALID = b"\xe9\xe9\xee\xee\xee\x41\x4a"  # JMP outside; INC ecx; DEC edx
+X86_CODE32_MEM_READ = b"\x8B\x0D\xAA\xAA\xAA\xAA\x41\x4a"  # mov ecx,[0xaaaaaaaa]; INC ecx; DEC edx
+X86_CODE32_MEM_WRITE = b"\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a"  # mov [0xaaaaaaaa], ecx; INC ecx; DEC edx
 X86_CODE64 = b"\x41\xBC\x3B\xB0\x28\x2A\x49\x0F\xC9\x90\x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9\x4D\x29\xF4\x49\x81\xC9\xF6\x8A\xC6\x53\x4D\x87\xED\x48\x0F\xAD\xD2\x49\xF7\xD4\x48\xF7\xE1\x4D\x19\xC5\x4D\x89\xC5\x48\xF7\xD6\x41\xB8\x4F\x8D\x6B\x59\x4D\x87\xD0\x68\x6A\x1E\x09\x3C\x59"
-X86_CODE32_INOUT = b"\x41\xE4\x3F\x4a\xE6\x46\x43" # INC ecx; IN AL, 0x3f; DEC edx; OUT 0x46, AL; INC ebx
-X86_CODE64_SYSCALL = b'\x0f\x05' # SYSCALL
-X86_CODE16 = b'\x00\x00' # add   byte ptr [bx + si], al
-X86_MMIO_CODE = b"\x89\x0d\x04\x00\x02\x00\x8b\x0d\x04\x00\x02\x00" # mov [0x20004], ecx; mov ecx, [0x20004]
+X86_CODE32_INOUT = b"\x41\xE4\x3F\x4a\xE6\x46\x43"  # INC ecx; IN AL, 0x3f; DEC edx; OUT 0x46, AL; INC ebx
+X86_CODE64_SYSCALL = b'\x0f\x05'  # SYSCALL
+X86_CODE16 = b'\x00\x00'  # add   byte ptr [bx + si], al
+X86_MMIO_CODE = b"\x89\x0d\x04\x00\x02\x00\x8b\x0d\x04\x00\x02\x00"  # mov [0x20004], ecx; mov ecx, [0x20004]
 
 # memory address where emulation starts
 ADDRESS = 0x1000000
@@ -24,28 +23,29 @@ ADDRESS = 0x1000000
 
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
-    print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
+    print(">>> Tracing basic block at 0x%x, block size = 0x%x" % (address, size))
 
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
-    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
+    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" % (address, size))
     eflags = uc.reg_read(UC_X86_REG_EFLAGS)
-    print(">>> --- EFLAGS is 0x%x" %eflags)
+    print(">>> --- EFLAGS is 0x%x" % eflags)
+
 
 def hook_code64(uc, address, size, user_data):
-    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
+    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" % (address, size))
     rip = uc.reg_read(UC_X86_REG_RIP)
-    print(">>> RIP is 0x%x" %rip)
+    print(">>> RIP is 0x%x" % rip)
 
 
 # callback for tracing invalid memory access (READ or WRITE)
 def hook_mem_invalid(uc, access, address, size, value, user_data):
     if access == UC_MEM_WRITE_UNMAPPED:
         print(">>> Missing memory is being WRITE at 0x%x, data size = %u, data value = 0x%x" \
-                %(address, size, value))
+              % (address, size, value))
         # map this memory in with 2MB in size
-        uc.mem_map(0xaaaa0000, 2 * 1024*1024)
+        uc.mem_map(0xaaaa0000, 2 * 1024 * 1024)
         # return True to indicate we want to continue emulation
         return True
     else:
@@ -57,16 +57,16 @@ def hook_mem_invalid(uc, access, address, size, value, user_data):
 def hook_mem_access(uc, access, address, size, value, user_data):
     if access == UC_MEM_WRITE:
         print(">>> Memory is being WRITE at 0x%x, data size = %u, data value = 0x%x" \
-                %(address, size, value))
-    else:   # READ
+              % (address, size, value))
+    else:  # READ
         print(">>> Memory is being READ at 0x%x, data size = %u" \
-                %(address, size))
+              % (address, size))
 
 
 # callback for IN instruction
 def hook_in(uc, port, size, user_data):
     eip = uc.reg_read(UC_X86_REG_EIP)
-    print("--- reading from port 0x%x, size: %u, address: 0x%x" %(port, size, eip))
+    print("--- reading from port 0x%x, size: %u, address: 0x%x" % (port, size, eip))
     if size == 1:
         # read 1 byte to AL
         return 0xf1
@@ -83,7 +83,7 @@ def hook_in(uc, port, size, user_data):
 # callback for OUT instruction
 def hook_out(uc, port, size, value, user_data):
     eip = uc.reg_read(UC_X86_REG_EIP)
-    print("--- writing to port 0x%x, size: %u, value: 0x%x, address: 0x%x" %(port, size, value, eip))
+    print("--- writing to port 0x%x, size: %u, value: 0x%x, address: 0x%x" % (port, size, value, eip))
 
     # confirm that value is indeed the value of AL/AX/EAX
     v = 0
@@ -97,7 +97,7 @@ def hook_out(uc, port, size, value, user_data):
         # read 4 bytes in EAX
         v = uc.reg_read(UC_X86_REG_EAX)
 
-    print("--- register value = 0x%x" %v)
+    print("--- register value = 0x%x" % v)
 
 
 # Test X86 32 bit
@@ -134,15 +134,15 @@ def test_i386():
         r_ecx = mu.reg_read(UC_X86_REG_ECX)
         r_edx = mu.reg_read(UC_X86_REG_EDX)
         r_xmm0 = mu.reg_read(UC_X86_REG_XMM0)
-        print(">>> ECX = 0x%x" %r_ecx)
-        print(">>> EDX = 0x%x" %r_edx)
-        print(">>> XMM0 = 0x%.32x" %r_xmm0)
+        print(">>> ECX = 0x%x" % r_ecx)
+        print(">>> EDX = 0x%x" % r_edx)
+        print(">>> XMM0 = 0x%.32x" % r_xmm0)
 
         # read from memory
         tmp = mu.mem_read(ADDRESS, 4)
-        print(">>> Read 4 bytes from [0x%x] = 0x" %(ADDRESS), end="")
+        print(">>> Read 4 bytes from [0x%x] = 0x" % (ADDRESS), end="")
         for i in reversed(tmp):
-            print("%x" %(i), end="")
+            print("%x" % (i), end="")
         print("")
 
     except UcError as e:
@@ -179,14 +179,14 @@ def test_i386_map_ptr():
 
         r_ecx = mu.reg_read(UC_X86_REG_ECX)
         r_edx = mu.reg_read(UC_X86_REG_EDX)
-        print(">>> ECX = 0x%x" %r_ecx)
-        print(">>> EDX = 0x%x" %r_edx)
+        print(">>> ECX = 0x%x" % r_ecx)
+        print(">>> EDX = 0x%x" % r_edx)
 
         # read from memory
         tmp = mu.mem_read(ADDRESS, 4)
-        print(">>> Read 4 bytes from [0x%x] = 0x" %(ADDRESS), end="")
+        print(">>> Read 4 bytes from [0x%x] = 0x" % (ADDRESS), end="")
         for i in reversed(tmp):
-            print("%x" %(i), end="")
+            print("%x" % (i), end="")
         print("")
 
     except UcError as e:
@@ -226,11 +226,12 @@ def test_i386_invalid_mem_read():
 
         r_ecx = mu.reg_read(UC_X86_REG_ECX)
         r_edx = mu.reg_read(UC_X86_REG_EDX)
-        print(">>> ECX = 0x%x" %r_ecx)
-        print(">>> EDX = 0x%x" %r_edx)
+        print(">>> ECX = 0x%x" % r_ecx)
+        print(">>> EDX = 0x%x" % r_edx)
 
     except UcError as e:
         print("ERROR: %s" % e)
+
 
 def test_i386_jump():
     print("Emulate i386 code with jump")
@@ -298,22 +299,22 @@ def test_i386_invalid_mem_write():
 
         r_ecx = mu.reg_read(UC_X86_REG_ECX)
         r_edx = mu.reg_read(UC_X86_REG_EDX)
-        print(">>> ECX = 0x%x" %r_ecx)
-        print(">>> EDX = 0x%x" %r_edx)
+        print(">>> ECX = 0x%x" % r_ecx)
+        print(">>> EDX = 0x%x" % r_edx)
 
         # read from memory
-        print(">>> Read 4 bytes from [0x%x] = 0x" %(0xaaaaaaaa), end="")
+        print(">>> Read 4 bytes from [0x%x] = 0x" % (0xaaaaaaaa), end="")
         tmp = mu.mem_read(0xaaaaaaaa, 4)
         for i in reversed(tmp):
             if i != 0:
-                print("%x" %i, end="")
+                print("%x" % i, end="")
         print("")
 
         try:
             tmp = mu.mem_read(0xffffffaa, 4)
-            print(">>> Read 4 bytes from [0x%x] = 0x" %(0xffffffaa), end="")
+            print(">>> Read 4 bytes from [0x%x] = 0x" % (0xffffffaa), end="")
             for i in reversed(tmp):
-                print("%x" %i, end="")
+                print("%x" % i, end="")
             print("")
 
         except UcError as e:
@@ -321,6 +322,7 @@ def test_i386_invalid_mem_write():
 
     except UcError as e:
         print("ERROR: %s" % e)
+
 
 def test_i386_jump_invalid():
     print("Emulate i386 code that jumps to invalid memory")
@@ -347,17 +349,18 @@ def test_i386_jump_invalid():
         try:
             mu.emu_start(ADDRESS, ADDRESS + len(X86_CODE32_JMP_INVALID))
         except UcError as e:
-            print("Failed on uc_emu_start() with error returned 8: %s" %e)
+            print("Failed on uc_emu_start() with error returned 8: %s" % e)
 
         print(">>> Emulation done. Below is the CPU context")
 
         r_ecx = mu.reg_read(UC_X86_REG_ECX)
         r_edx = mu.reg_read(UC_X86_REG_EDX)
-        print(">>> ECX = 0x%x" %r_ecx)
-        print(">>> EDX = 0x%x" %r_edx)
+        print(">>> ECX = 0x%x" % r_ecx)
+        print(">>> EDX = 0x%x" % r_edx)
 
     except UcError as e:
         print("ERROR %s" % e)
+
 
 def test_i386_loop():
     print("Emulate i386 code that loop forever")
@@ -375,17 +378,18 @@ def test_i386_loop():
         mu.reg_write(UC_X86_REG_ECX, 0x1234)
         mu.reg_write(UC_X86_REG_EDX, 0x7890)
 
-        mu.emu_start(ADDRESS, ADDRESS + len(X86_CODE32_LOOP), timeout=2*UC_SECOND_SCALE)
+        mu.emu_start(ADDRESS, ADDRESS + len(X86_CODE32_LOOP), timeout=2 * UC_SECOND_SCALE)
 
         print(">>> Emulation done. Below is the CPU context")
 
         r_ecx = mu.reg_read(UC_X86_REG_ECX)
         r_edx = mu.reg_read(UC_X86_REG_EDX)
-        print(">>> ECX = 0x%x" %r_ecx)
-        print(">>> EDX = 0x%x" %r_edx)
+        print(">>> ECX = 0x%x" % r_ecx)
+        print(">>> EDX = 0x%x" % r_edx)
 
     except UcError as e:
         print("ERROR: %s" % e)
+
 
 # Test X86 32 bit with IN/OUT instruction
 def test_i386_inout():
@@ -422,8 +426,8 @@ def test_i386_inout():
 
         r_ecx = mu.reg_read(UC_X86_REG_ECX)
         r_eax = mu.reg_read(UC_X86_REG_EAX)
-        print(">>> EAX = 0x%x" %r_eax)
-        print(">>> ECX = 0x%x" %r_ecx)
+        print(">>> EAX = 0x%x" % r_eax)
+        print(">>> ECX = 0x%x" % r_ecx)
     except UcError as e:
         print("ERROR: %s" % e)
 
@@ -446,10 +450,10 @@ def test_i386_context_save():
         mu.reg_write(UC_X86_REG_EAX, 1)
 
         print(">>> Running emulation for the first time")
-        mu.emu_start(address, address+1)
+        mu.emu_start(address, address + 1)
 
         print(">>> Emulation done. Below is the CPU context")
-        print(">>> EAX = 0x%x" %(mu.reg_read(UC_X86_REG_EAX)))
+        print(">>> EAX = 0x%x" % (mu.reg_read(UC_X86_REG_EAX)))
         print(">>> Saving CPU context")
         saved_context = mu.context_save()
 
@@ -457,9 +461,9 @@ def test_i386_context_save():
         pickled_saved_context = pickle.dumps(saved_context)
 
         print(">>> Running emulation for the second time")
-        mu.emu_start(address, address+1)
+        mu.emu_start(address, address + 1)
         print(">>> Emulation done. Below is the CPU context")
-        print(">>> EAX = 0x%x" %(mu.reg_read(UC_X86_REG_EAX)))
+        print(">>> EAX = 0x%x" % (mu.reg_read(UC_X86_REG_EAX)))
 
         print(">>> Unpickling CPU context")
         saved_context = pickle.loads(pickled_saved_context)
@@ -469,10 +473,11 @@ def test_i386_context_save():
 
         print(">>> CPU context restored. Below is the CPU context")
         mu.context_restore(saved_context)
-        print(">>> EAX = 0x%x" %(mu.reg_read(UC_X86_REG_EAX)))
+        print(">>> EAX = 0x%x" % (mu.reg_read(UC_X86_REG_EAX)))
 
     except UcError as e:
         print("ERROR: %s" % e)
+
 
 def test_x86_64():
     print("Emulate x86_64 code")
@@ -509,13 +514,13 @@ def test_x86_64():
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
 
         # tracing all instructions in range [ADDRESS, ADDRESS+20]
-        mu.hook_add(UC_HOOK_CODE, hook_code64, None, ADDRESS, ADDRESS+20)
+        mu.hook_add(UC_HOOK_CODE, hook_code64, None, ADDRESS, ADDRESS + 20)
 
         # tracing all memory READ & WRITE access
         mu.hook_add(UC_HOOK_MEM_WRITE, hook_mem_access)
         mu.hook_add(UC_HOOK_MEM_READ, hook_mem_access)
         # actually you can also use READ_WRITE to trace all memory access
-        #mu.hook_add(UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE, hook_mem_access)
+        # mu.hook_add(UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE, hook_mem_access)
 
         try:
             # emulate machine code in infinite time
@@ -541,20 +546,20 @@ def test_x86_64():
         r14 = mu.reg_read(UC_X86_REG_R14)
         r15 = mu.reg_read(UC_X86_REG_R15)
 
-        print(">>> RAX = 0x%x" %rax)
-        print(">>> RBX = 0x%x" %rbx)
-        print(">>> RCX = 0x%x" %rcx)
-        print(">>> RDX = 0x%x" %rdx)
-        print(">>> RSI = 0x%x" %rsi)
-        print(">>> RDI = 0x%x" %rdi)
-        print(">>> R8 = 0x%x" %r8)
-        print(">>> R9 = 0x%x" %r9)
-        print(">>> R10 = 0x%x" %r10)
-        print(">>> R11 = 0x%x" %r11)
-        print(">>> R12 = 0x%x" %r12)
-        print(">>> R13 = 0x%x" %r13)
-        print(">>> R14 = 0x%x" %r14)
-        print(">>> R15 = 0x%x" %r15)
+        print(">>> RAX = 0x%x" % rax)
+        print(">>> RBX = 0x%x" % rbx)
+        print(">>> RCX = 0x%x" % rcx)
+        print(">>> RDX = 0x%x" % rdx)
+        print(">>> RSI = 0x%x" % rsi)
+        print(">>> RDI = 0x%x" % rdi)
+        print(">>> R8 = 0x%x" % r8)
+        print(">>> R9 = 0x%x" % r9)
+        print(">>> R10 = 0x%x" % r10)
+        print(">>> R11 = 0x%x" % r11)
+        print(">>> R12 = 0x%x" % r12)
+        print(">>> R13 = 0x%x" % r13)
+        print(">>> R14 = 0x%x" % r14)
+        print(">>> R15 = 0x%x" % r15)
 
 
     except UcError as e:
@@ -626,18 +631,24 @@ def test_x86_16():
         print(">>> Emulation done. Below is the CPU context")
 
         tmp = mu.mem_read(11, 1)
-        print(">>> Read 1 bytes from [0x%x] = 0x%x" %(11, tmp[0]))
+        print(">>> Read 1 bytes from [0x%x] = 0x%x" % (11, tmp[0]))
 
     except UcError as e:
         print("ERROR: %s" % e)
 
+
 def mmio_read_cb(uc, offset, size, data):
-    print(f">>> Read IO memory at offset {hex(offset)} with {hex(size)} bytes and return 0x19260817")
+    print(">>> Read IO memory at offset {offset:#x} with {size:#x} bytes and return 0x19260817".format(offset=offset,
+                                                                                                       size=size))
 
     return 0x19260817
 
+
 def mmio_write_cb(uc, offset, size, value, data):
-    print(f">>> Write value {hex(value)} to IO memory at offset {hex(offset)} with {hex(size)} bytes")
+    print(">>> Write value {value:#x} to IO memory at offset {offset:#x} with {size:#x} bytes".format(value=value,
+                                                                                                      offset=offset,
+                                                                                                      size=size))
+
 
 def test_i386_mmio():
     print("Test i386 IO memory")
@@ -659,10 +670,11 @@ def test_i386_mmio():
         mu.emu_start(0x10000, 0x10000 + len(X86_MMIO_CODE))
 
         # now print out some registers
-        print(f">>> Emulation done. ECX={hex(mu.reg_read(UC_X86_REG_ECX))}")
+        print(">>> Emulation done. ECX={reg:#x}".format(reg=mu.reg_read(UC_X86_REG_ECX)))
 
     except UcError as e:
         print("ERROR: %s" % e)
+
 
 if __name__ == '__main__':
     test_x86_16()

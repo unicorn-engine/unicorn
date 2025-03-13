@@ -1,35 +1,39 @@
-#!/usr/bin/python
 # By Ryan Hileman, issue #3
 
-from capstone import *
-from unicorn import *
-from unicorn.x86_const import *
-
 import regress
-code = 'f20f1005aa120000'.decode('hex')
+import sys
+import unittest
+from capstone import Cs, CS_ARCH_X86, CS_MODE_64
+from unicorn import *
 
-def dis(mem, addr):
-    md = Cs(CS_ARCH_X86, CS_MODE_64)
-    return '\n'.join([
-        '%s %s' % (i.mnemonic, i.op_str)
-        for i in md.disasm(str(mem), addr)
-    ])
+CODE = b'\xf2\x0f\x10\x05\xaa\x12\x00\x00'
 
-def hook_code(uc, addr, size, user_data):
+
+def dis(md, mem, addr):
+    return '\n'.join(('%-16s %s' % (insn.mnemonic, insn.op_str) for insn in md.disasm(mem, addr)))
+
+
+def hook_code(uc, addr, size, md):
     mem = uc.mem_read(addr, size)
-    print 'instruction size:', size
-    print 'instruction:', str(mem).encode('hex'), dis(mem, addr)
-    print 'reference:  ', code.encode('hex'), dis(code, addr)
+
+    regress.logger.debug('instruction size: %d', size)
+    regress.logger.debug('instruction: %s %s', mem, dis(md, mem, addr))
+    regress.logger.debug('reference:  %s %s', CODE, dis(md, CODE, addr))
+
 
 class Movsd(regress.RegressTest):
 
+    @unittest.skipIf(sys.version_info < (3, 7), reason="requires python3.7 or higher")
     def runTest(self):
         addr = 0x400000
         mu = Uc(UC_ARCH_X86, UC_MODE_64)
-        mu.hook_add(UC_HOOK_CODE, hook_code)
+        md = Cs(CS_ARCH_X86, CS_MODE_64)
+
+        mu.hook_add(UC_HOOK_CODE, hook_code, md)
         mu.mem_map(addr, 8 * 1024 * 1024)
-        mu.mem_write(addr, code)
-        mu.emu_start(addr, addr + len(code))
+        mu.mem_write(addr, CODE)
+        mu.emu_start(addr, addr + len(CODE))
+
 
 if __name__ == '__main__':
     regress.main()

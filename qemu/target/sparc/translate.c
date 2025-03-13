@@ -5964,6 +5964,7 @@ static void sparc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
 
         // Sync PC in advance
         tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, dc->pc);
+        tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_npc, dc->npc);
 
         gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, uc, dc->pc);
         // the callback might want to stop emulation immediately
@@ -6017,6 +6018,15 @@ static void sparc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
     }
 }
 
+static void sparc_sync_pc(DisasContextBase *db, CPUState *cpu)
+{
+    DisasContext *dc = container_of(db, DisasContext, base);
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+
+    tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, dc->pc);
+    tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_npc, dc->npc);
+}
+
 static const TranslatorOps sparc_tr_ops = {
     .init_disas_context = sparc_tr_init_disas_context,
     .tb_start           = sparc_tr_tb_start,
@@ -6024,6 +6034,7 @@ static const TranslatorOps sparc_tr_ops = {
     .breakpoint_check   = sparc_tr_breakpoint_check,
     .translate_insn     = sparc_tr_translate_insn,
     .tb_stop            = sparc_tr_tb_stop,
+    .pc_sync            = sparc_sync_pc
 };
 
 void gen_intermediate_code(CPUState *cs, TranslationBlock *tb, int max_insns)

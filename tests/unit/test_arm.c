@@ -757,12 +757,15 @@ static void test_arm_context_save(void)
     uc_engine *uc2;
     char code[] = "\x83\xb0"; // sub    sp, #0xc
     uc_context *ctx;
+    uint32_t pc;
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_R5);
 
     OK(uc_context_alloc(uc, &ctx));
     OK(uc_context_save(uc, ctx));
+    OK(uc_context_reg_read(ctx, UC_ARM_REG_PC, (void *)&pc));
+    OK(uc_context_reg_write(ctx, UC_ARM_REG_PC, (void *)&pc));
     OK(uc_context_restore(uc, ctx));
 
     uc_common_setup(&uc2, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
@@ -815,6 +818,144 @@ static void test_armeb_be32_thumb2(void)
     OK(uc_close(uc));
 }
 
+static bool test_arm_mem_read_write_cb(uc_engine *uc, int type,
+                                       uint64_t address, int size,
+                                       int64_t value, void *user_data)
+{
+    uint64_t *count = (uint64_t *)user_data;
+    switch (type) {
+    case UC_MEM_READ:
+        count[0]++;
+        break;
+    case UC_MEM_WRITE:
+        count[1]++;
+        break;
+    }
+
+    return 0;
+}
+static void test_arm_mem_hook_read_write(void)
+{
+    uc_engine *uc;
+    // ldr r1, [sp]
+    // str r1, [sp, #4]
+    // ldr r2, [sp, #4]
+    // str r2, [sp]
+    const char code[] =
+        "\x00\x10\x9d\xe5\x04\x10\x8d\xe5\x04\x20\x9d\xe5\x00\x20\x8d\xe5";
+    uint32_t r_sp;
+    r_sp = 0x9000;
+    uc_hook hk;
+    uint64_t counter[2] = {0, 0};
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
+
+    uc_reg_write(uc, UC_ARM_REG_SP, &r_sp);
+    uc_mem_map(uc, 0x8000, 1024 * 16, UC_PROT_ALL);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_READ, test_arm_mem_read_write_cb,
+                   counter, 1, 0));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_WRITE, test_arm_mem_read_write_cb,
+                   counter, 1, 0));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(counter[0] == 2 && counter[1] == 2);
+    OK(uc_close(uc));
+}
+
+typedef struct {
+    uint64_t v0;
+    uint64_t v1;
+    uint64_t size;
+    uint64_t pc;
+} _last_cmp_info;
+
+static void _uc_hook_sub_cmp(uc_engine *uc, uint64_t address, uint64_t arg1,
+                             uint64_t arg2, uint32_t size,
+                             _last_cmp_info *user_data)
+{
+    user_data->pc = address;
+    user_data->size = size;
+    user_data->v0 = arg1;
+    user_data->v1 = arg2;
+}
+
+static void test_arm_tcg_opcode_cmp(void)
+{
+    uc_engine *uc;
+    const char code[] = "\x04\x00\x9f\xe5" // ldr   r0, [pc, #4]
+                        "\x04\x10\x9f\xe5" // ldr   r1, [pc, #4]
+                        "\x01\x00\x50\xe1" // cmp   r0, r1
+                        "\x05\x00\x00\x00" // (5)
+                        "\x03\x00\x00\x00" // (3)
+        ;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
+
+    uc_hook hook;
+    _last_cmp_info cmp_info = {0};
+
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TCG_OPCODE, (void *)_uc_hook_sub_cmp,
+                   (void *)&cmp_info, 1, 0, UC_TCG_OP_SUB, UC_TCG_OP_FLAG_CMP));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 3));
+    TEST_CHECK(cmp_info.v0 == 5 && cmp_info.v1 == 3);
+    TEST_CHECK(cmp_info.pc == 0x1008);
+    TEST_CHECK(cmp_info.size == 32);
+    OK(uc_close(uc));
+}
+
+static void test_arm_thumb_tcg_opcode_cmn(void)
+{
+    uc_engine *uc;
+    const char code[] = "\x01\x48"         // ldr  r0, [pc, #4]
+                        "\x02\x49"         // ldr  r1, [pc, #8]
+                        "\x00\xbf"         // nop
+                        "\xc8\x42"         // cmn  r0, r1
+                        "\x05\x00\x00\x00" // (5)
+                        "\x03\x00\x00\x00" // (3)
+        ;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
+
+    uc_hook hook;
+    _last_cmp_info cmp_info = {0};
+
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TCG_OPCODE, (void *)_uc_hook_sub_cmp,
+                   (void *)&cmp_info, 1, 0, UC_TCG_OP_SUB, UC_TCG_OP_FLAG_CMP));
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 4));
+    TEST_CHECK(cmp_info.v0 == 5 && cmp_info.v1 == 3);
+    TEST_CHECK(cmp_info.pc == 0x1006);
+    TEST_CHECK(cmp_info.size == 32);
+    OK(uc_close(uc));
+}
+
+static void test_arm_cp15_c1_c0_2(void)
+{
+    uc_engine *uc;
+    uint32_t val = 0x12345678;
+    uint32_t read_val;
+
+    // Initialize emulator in ARM mode
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_A15));
+
+    // Write to CP15 C1_C0_2
+    OK(uc_reg_write(uc, UC_ARM_REG_C1_C0_2, &val));
+
+    // Read from CP15 C1_C0_2
+    OK(uc_reg_read(uc, UC_ARM_REG_C1_C0_2, &read_val));
+
+    TEST_CHECK(read_val == val);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -840,4 +981,8 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_context_save", test_arm_context_save},
              {"test_arm_thumb2", test_arm_thumb2},
              {"test_armeb_be32_thumb2", test_armeb_be32_thumb2},
+             {"test_arm_mem_hook_read_write", test_arm_mem_hook_read_write},
+             {"test_arm_tcg_opcode_cmp", test_arm_tcg_opcode_cmp},
+             {"test_arm_thumb_tcg_opcode_cmn", test_arm_thumb_tcg_opcode_cmn},
+             {"test_arm_cp15_c1_c0_2", test_arm_cp15_c1_c0_2},
              {NULL, NULL}};

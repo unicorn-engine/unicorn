@@ -1587,7 +1587,8 @@ static bool tcg_out_qemu_ld_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
     MemOp opc = get_memop(oi);
     MemOp size = opc & MO_SIZE;
 
-    if (!reloc_pc19(lb->label_ptr[0], s->code_ptr)) {
+    const int type = tcg_uc_has_hookmem(s) ? R_AARCH64_JUMP26 : R_AARCH64_CONDBR19;
+    if (!patch_reloc(lb->label_ptr[0], type, (intptr_t)s->code_ptr, 0)) {
         return false;
     }
 
@@ -1612,7 +1613,8 @@ static bool tcg_out_qemu_st_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
     MemOp opc = get_memop(oi);
     MemOp size = opc & MO_SIZE;
 
-    if (!reloc_pc19(lb->label_ptr[0], s->code_ptr)) {
+    const int type = tcg_uc_has_hookmem(s) ? R_AARCH64_JUMP26 : R_AARCH64_CONDBR19;
+    if (!patch_reloc(lb->label_ptr[0], type, (intptr_t)s->code_ptr, 0)) {
         return false;
     }
 
@@ -1711,7 +1713,11 @@ static void tcg_out_tlb_read(TCGContext *s, TCGReg addr_reg, MemOp opc,
 
     /* If not equal, we jump to the slow path. */
     *label_ptr = s->code_ptr;
-    tcg_out_insn(s, 3202, B_C, TCG_COND_NE, 0);
+    // Unicorn: fast path if hookmem is not enabled
+    if (!tcg_uc_has_hookmem(s))
+        tcg_out_insn(s, 3202, B_C, TCG_COND_NE, 0);
+    else
+        tcg_out_insn(s, 3206, B, 0);
 }
 
 #endif /* CONFIG_SOFTMMU */
@@ -1858,8 +1864,6 @@ static void tcg_out_qemu_st(TCGContext *s, TCGReg data_reg, TCGReg addr_reg,
 #endif /* CONFIG_SOFTMMU */
 }
 
-static tcg_insn_unit *tb_ret_addr;
-
 static void tcg_out_op(TCGContext *s, TCGOpcode opc,
                        const TCGArg args[TCG_MAX_OP_ARGS],
                        const int const_args[TCG_MAX_OP_ARGS])
@@ -1885,7 +1889,7 @@ static void tcg_out_op(TCGContext *s, TCGOpcode opc,
             tcg_out_goto_long(s, s->code_gen_epilogue);
         } else {
             tcg_out_movi(s, TCG_TYPE_I64, TCG_REG_X0, a0);
-            tcg_out_goto_long(s, tb_ret_addr);
+            tcg_out_goto_long(s, s->tb_ret_addr);
         }
         break;
 
@@ -2859,7 +2863,7 @@ static void tcg_target_qemu_prologue(TCGContext *s)
     tcg_out_movi(s, TCG_TYPE_REG, TCG_REG_X0, 0);
 
     /* TB epilogue */
-    tb_ret_addr = s->code_ptr;
+    s->tb_ret_addr = s->code_ptr;
 
     /* Remove TCG locals stack space.  */
     tcg_out_insn(s, 3401, ADDI, TCG_TYPE_I64, TCG_REG_SP, TCG_REG_SP,

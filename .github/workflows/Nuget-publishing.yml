@@ -12,9 +12,16 @@ on:
       - "AUTHORS.TXT"
       - "CHANGELOG"
       - "COPYING"
-    branches:
-      - dev
-      - master
+  workflow_dispatch:
+    inputs:
+      forceRelease:
+        description: 'Force release'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - '0'
+          - '1'
 
 permissions:
   packages: write
@@ -28,30 +35,26 @@ jobs:
       matrix:
         config:
           - {
-            os: windows-2019,
+            os: windows-2022,
             arch: x64,
-            python-arch: x64,
-            python-ver: '3.8',
             name: 'windows-x64 MSVC 64bit shared',
             msvc-arch: x64,
-            artifact: 'windows_msvc64_shared.7z',
+            artifact: 'windows-msvc64-shared.7z',
             shared: 'yes',
             build_type: 'Release',
             archiver: '7z a',
-            generators: 'Visual Studio 16 2019'
+            generators: 'Visual Studio 17 2022'
           }
           - {
-            os: windows-2019,
+            os: windows-2022,
             arch: x86,
-            python-arch: x86,
-            python-ver: '3.8',
             name: 'windows-x86 MSVC 32bit shared',
             msvc-arch: x86,
-            artifact: 'windows_msvc32_shared.7z',
+            artifact: 'windows-msvc32-shared.7z',
             shared: 'yes',
             build_type: 'Release',
             archiver: '7z a',
-            generators: 'Visual Studio 16 2019'
+            generators: 'Visual Studio 17 2022'
           }
         compiler: [ gcc ]
     steps:
@@ -71,7 +74,7 @@ jobs:
         if: contains(matrix.config.name, 'MSVC 64')
         shell: bash
         run: |
-          choco install ninja cmake
+          choco install ninja
           ninja --version
           cmake --version
           mkdir build
@@ -141,8 +144,6 @@ jobs:
           - {
             os: macos-latest,
             arch: x64,
-            python-arch: x64,
-            python-ver: '3.8',
             name: 'macos-x64 cmake shared',
             shared: 'yes',
             artifact: 'macos-cmake-shared-x64.7z',
@@ -199,8 +200,6 @@ jobs:
           - {
             os: ubuntu-latest,
             arch: x64,
-            python-arch: x64,
-            python-ver: '3.8',
             name: 'ubuntu-x64 cmake shared',
             shared: 'yes',
             artifact: 'ubuntu-cmake-shared-x64.7z',
@@ -211,8 +210,6 @@ jobs:
           - {
             os: ubuntu-latest,
             arch: x86,
-            python-arch: x86,
-            python-ver: '3.8',
             name: 'ubuntu-x86 cmake shared',
             shared: 'yes',
             artifact: 'ubuntu-cmake-shared-x86.7z',
@@ -221,28 +218,24 @@ jobs:
             generators: 'Ninja'
           }
           - {
-            os: ubuntu-latest,
+            os: ubuntu-24.04-arm,
             arch: aarch64,
-            python-arch: aarch64,
-            python-ver: '3.8',
             name: 'ubuntu-aarch64 cmake',
             artifact: 'ubuntu-cmake-aarch64.7z',
             build_type: 'Release',
             archiver: '7z a',
             generators: 'Ninja',
-            distro: ubuntu20.04
+            distro: ubuntu24.04
           }
           - {
-            os: ubuntu-latest,
+            os: ubuntu-22.04,
             arch: ppc64le,
-            python-arch: ppc,
-            python-ver: '3.8',
             name: 'ubuntu-ppc64le cmake',
             artifact: 'ubuntu-cmake-ppc64le.7z',
             build_type: 'Release',
             archiver: '7z a',
             generators: 'Ninja',
-            distro: ubuntu20.04
+            distro: ubuntu22.04
           }
         compiler: [ gcc ]
     steps:
@@ -250,14 +243,15 @@ jobs:
 
       - name: '🚧 Linux x64/x86 build'
         if: contains(matrix.config.arch, 'x64') || contains(matrix.config.arch, 'x86')
-        shell: 'script -q -e -c "bash {0}"'
+        shell: bash
         run: |
           if [ ${{ matrix.config.arch }} == 'x64' ]; then
+                sudo apt update -q -y
                 sudo apt install -q -y libcmocka-dev ninja-build
           else
                 export CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
                 sudo dpkg --add-architecture i386
-                sudo apt update
+                sudo apt update -q -y
                 sudo apt install -q -y lib32ncurses-dev lib32z1-dev lib32gcc-9-dev libc6-dev-i386 gcc-multilib \
                   libcmocka-dev:i386 libcmocka0:i386 libc6:i386 libgcc-s1:i386 ninja-build
           fi
@@ -274,9 +268,27 @@ jobs:
           cmake --install . --strip
           ctest -VV -C ${{ matrix.config.build_type }}
 
-      - name: '🚧 Linux ppc64le/aarch64 build'
-        if: contains(matrix.config.arch, 'ppc64le') || contains(matrix.config.arch, 'aarch64')
-        uses: uraimo/run-on-arch-action@v2
+      - name: '🚧 Linux aarch64 build'
+        if: contains(matrix.config.arch, 'aarch64')
+        shell: bash
+        run: |
+          sudo apt-get update -q -y
+          sudo apt-get install -q -y git cmake build-essential automake libcmocka-dev pkg-config ${{ matrix.compiler }} ninja-build
+          mkdir build
+          mkdir instdir
+          cmake \
+            -S . \
+            -B . \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir
+          cmake --build . --config ${{ matrix.config.build_type }}
+          cmake --install . --strip
+          ctest -VV -C ${{ matrix.config.build_type }}
+
+      - name: '🚧 Linux ppc64le build'
+        if: contains(matrix.config.arch, 'ppc64le')
+        uses: uraimo/run-on-arch-action@v3
         with:
           arch: ${{ matrix.config.arch }}
           distro: ${{ matrix.config.distro }}
@@ -316,7 +328,7 @@ jobs:
           name: ${{ matrix.config.artifact }}
 
   publish:
-    needs: ["Windows", "Macos", "Linux"]
+    needs: [ "Windows", "Macos", "Linux" ]
     if: ${{ needs.Windows.result == 'success' && needs.Macos.result == 'success' && needs.Linux.result == 'success' }}
     runs-on: ubuntu-latest
 
@@ -362,13 +374,13 @@ jobs:
               "destDir": "runtimes/osx-x64/native",
               "destFile": "libunicorn.dylib"
             },
-            "windows_msvc64_shared.7z": {
+            "windows-msvc64-shared.7z": {
               "sourceDir": "",
               "sourceFile": "unicorn.dll",
               "destDir": "runtimes/win-x64/native",
               "destFile": "unicorn.dll"
             },
-            "windows_msvc32_shared.7z": {
+            "windows-msvc32-shared.7z": {
               "sourceDir": "",
               "sourceFile": "unicorn.dll",
               "destDir": "runtimes/win-x86/native",
@@ -428,13 +440,15 @@ jobs:
         with:
           path: ${{ github.workspace }}/bindings/dotnet/UnicornEngine/bin/Release/UnicornEngine.Unicorn.*.nupkg
 
+      # We always reach billing limit, allow it fails
       - name: 📦 Publish to Github Packages
-        if: startsWith(github.ref, 'refs/tags')
+        if: (inputs.forceRelease != '' && inputs.forceRelease == 1) || (startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v'))
+        continue-on-error: true
         working-directory: bindings/dotnet/UnicornEngine
         run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" --source "github" --api-key "${{ secrets.GHPR_TOKEN }}"
 
       - name: 📦 Publish Nuget package
-        if: startsWith(github.ref, 'refs/tags')
+        if: (inputs.forceRelease != '' && inputs.forceRelease == 1) || (startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v'))
         working-directory: bindings/dotnet/UnicornEngine
         run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" -k "$NUGET_AUTH_TOKEN" -s https://api.nuget.org/v3/index.json
         env:

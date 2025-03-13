@@ -3,26 +3,24 @@
 # Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
 # AARCH64 Python sample ported by zhangwm <rustydaar@gmail.com>
 
-from __future__ import print_function
 from unicorn import *
 from unicorn.arm64_const import *
 
-
 # code to be emulated
-ARM64_CODE = b"\xab\x05\x00\xb8\xaf\x05\x40\x38" # str x11, [x13]; ldrb x15, [x13]
+ARM64_CODE = b"\xab\x05\x00\xb8\xaf\x05\x40\x38"  # str x11, [x13]; ldrb x15, [x13]
 
 # memory address where emulation starts
-ADDRESS    = 0x10000
+ADDRESS = 0x10000
 
 
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
-    print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
+    print(">>> Tracing basic block at 0x%x, block size = 0x%x" % (address, size))
 
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
-    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
+    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" % (address, size))
 
 
 # Test ARM64
@@ -59,7 +57,7 @@ def test_arm64():
         x11 = mu.reg_read(UC_ARM64_REG_X11)
         x13 = mu.reg_read(UC_ARM64_REG_X13)
         x15 = mu.reg_read(UC_ARM64_REG_X15)
-        print(">>> X15 = 0x%x" %x15)
+        print(">>> X15 = 0x%x" % x15)
 
     except UcError as e:
         print("ERROR: %s" % e)

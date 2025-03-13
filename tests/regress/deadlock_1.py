@@ -1,10 +1,10 @@
-#!/usr/bin/python
 # From issue #1 of Ryan Hileman
 
-from unicorn import *
 import regress
+from unicorn import *
 
 CODE = b"\x90\x91\x92"
+
 
 class DeadLock(regress.RegressTest):
 
@@ -15,6 +15,7 @@ class DeadLock(regress.RegressTest):
 
         with self.assertRaises(UcError):
             mu.emu_start(0x100000, 0x1000 + len(CODE))
+
 
 if __name__ == '__main__':
     regress.main()

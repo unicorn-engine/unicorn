@@ -1,7 +1,4 @@
 on:
-  push:
-    tags:
-    - 'rc*'
   workflow_dispatch:
     
 name: Upload Prerelease Assets

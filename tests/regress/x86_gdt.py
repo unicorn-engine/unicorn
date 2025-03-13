@@ -1,25 +1,23 @@
-#!/usr/bin/env python
+import regress
 from unicorn import *
 from unicorn.x86_const import *
 from struct import pack
 
-import regress
-
-F_GRANULARITY = 0x8
-F_PROT_32 = 0x4
-F_LONG = 0x2
-F_AVAILABLE = 0x1 
+F_GRANULARITY   = 0x8
+F_PROT_32       = 0x4
+F_LONG          = 0x2
+F_AVAILABLE     = 0x1
 
 A_PRESENT = 0x80
 
 A_PRIV_3 = 0x60
 A_PRIV_2 = 0x40
 A_PRIV_1 = 0x20
-A_PRIV_0 = 0x0
+A_PRIV_0 = 0x00
 
 A_CODE = 0x10
 A_DATA = 0x10
-A_TSS = 0x0
+A_TSS  = 0x0
 A_GATE = 0x0
 
 A_DATA_WRITABLE = 0x2
@@ -34,26 +32,32 @@ S_PRIV_2 = 0x2
 S_PRIV_1 = 0x1
 S_PRIV_0 = 0x0
 
-CODE = '65330d18000000'.decode('hex') # xor ecx, dword ptr gs:[0x18]
+CODE = b'\x65\x33\x0d\x18\x00\x00\x00'  # xor ecx, dword ptr gs:[0x18]
+
 
 def create_selector(idx, flags):
     to_ret = flags
     to_ret |= idx << 3
+
     return to_ret
 
+
 def create_gdt_entry(base, limit, access, flags):
+    return pack('<Q', (
+            limit & 0xffff
+            | (base & 0xffffff) << 16
+            | (access & 0xff) << 40
+            | ((limit >> 16) & 0xf) << 48
+            | (flags & 0xff) << 52
+            | ((base >> 24) & 0xff) << 56
+    ))
 
-    to_ret = limit & 0xffff;
-    to_ret |= (base & 0xffffff) << 16;
-    to_ret |= (access & 0xff) << 40;
-    to_ret |= ((limit >> 16) & 0xf) << 48;
-    to_ret |= (flags & 0xff) << 52;
-    to_ret |= ((base >> 24) & 0xff) << 56;
-    return pack('<Q',to_ret)
 
-def hook_mem_read(uc, type, addr,*args):
-    print(hex(addr))
+def hook_mem_read(uc, type, addr, *args):
+    regress.logger.debug("%#x", addr)
+
     return False
+
 
 CODE_ADDR = 0x40000
 CODE_SIZE = 0x1000
@@ -64,6 +68,7 @@ GDT_ENTRY_SIZE = 0x8
 
 SEGMENT_ADDR = 0x5000
 SEGMENT_SIZE = 0x1000
+
 
 class GdtRead(regress.RegressTest):
 
@@ -76,9 +81,10 @@ class GdtRead(regress.RegressTest):
         uc.mem_map(CODE_ADDR, CODE_SIZE)
 
         uc.mem_write(CODE_ADDR, CODE)
-        uc.mem_write(SEGMENT_ADDR+0x18, 'AAAA')
+        uc.mem_write(SEGMENT_ADDR + 0x18, b'AAAA')
 
-        gdt_entry = create_gdt_entry(SEGMENT_ADDR, SEGMENT_SIZE, A_PRESENT | A_DATA | A_DATA_WRITABLE | A_PRIV_3 | A_DIR_CON_BIT, F_PROT_32)
+        gdt_entry = create_gdt_entry(SEGMENT_ADDR, SEGMENT_SIZE,
+                                     A_PRESENT | A_DATA | A_DATA_WRITABLE | A_PRIV_3 | A_DIR_CON_BIT, F_PROT_32)
         uc.mem_write(GDT_ADDR + 8, gdt_entry)
 
         uc.reg_write(UC_X86_REG_GDTR, (0, GDT_ADDR, GDT_LIMIT, 0x0))
@@ -86,9 +92,10 @@ class GdtRead(regress.RegressTest):
         selector = create_selector(1, S_GDT | S_PRIV_3)
         uc.reg_write(UC_X86_REG_GS, selector)
 
-        uc.emu_start(CODE_ADDR, CODE_ADDR+len(CODE))
+        uc.emu_start(CODE_ADDR, CODE_ADDR + len(CODE))
 
         self.assertEqual(uc.reg_read(UC_X86_REG_ECX), 0x41414141)
+
 
 if __name__ == '__main__':
     regress.main()

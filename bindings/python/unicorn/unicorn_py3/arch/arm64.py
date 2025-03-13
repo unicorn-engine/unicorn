@@ -2,7 +2,7 @@
 """
 # @author elicn
 
-from typing import Any, Callable, NamedTuple, Tuple
+from typing import Any, Callable, NamedTuple, Tuple, Type
 
 import ctypes
 
@@ -11,7 +11,7 @@ from unicorn import arm64_const as const
 from unicorn.unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
 
 # newly introduced unicorn imports
-from ..unicorn import Uc, UcError, uccallback
+from ..unicorn import Uc, UcError, uccallback, check_maxbits
 from .types import uc_engine, UcTupledReg, UcReg128
 
 ARM64CPReg = Tuple[int, int, int, int, int, int]
@@ -37,9 +37,20 @@ class UcRegCP64(UcTupledReg[ARM64CPReg]):
         return self.val
 
 
+class CpReg(NamedTuple):
+    crn: int
+    crm: int
+    op0: int
+    op1: int
+    op2: int
+    val: int
+
+
 class UcAArch64(Uc):
     """Unicorn subclass for ARM64 architecture.
     """
+
+    REG_RANGE_CP = (const.UC_ARM64_REG_CP_REG,)
 
     REG_RANGE_Q = range(const.UC_ARM64_REG_Q0, const.UC_ARM64_REG_Q31 + 1)
     REG_RANGE_V = range(const.UC_ARM64_REG_V0, const.UC_ARM64_REG_V31 + 1)
@@ -54,14 +65,6 @@ class UcAArch64(Uc):
             @uccallback(self, HOOK_INSN_SYS_CFUNC)
             def __hook_insn_sys_cb(uc: Uc, reg: int, pcp_reg: Any, key: int) -> int:
                 cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(UcRegCP64)).contents
-
-                class CpReg(NamedTuple):
-                    crn: int
-                    crm: int
-                    op0: int
-                    op1: int
-                    op2: int
-                    val: int
 
                 cp_reg = CpReg(cp_reg.crn, cp_reg.crm, cp_reg.op0, cp_reg.op1, cp_reg.op2, cp_reg.val)
 
@@ -85,45 +88,62 @@ class UcAArch64(Uc):
 
         return getattr(self, '_Uc__do_hook_add')(htype, fptr, begin, end, insn)
 
-    @staticmethod
-    def __select_reg_class(reg_id: int):
-        """Select class for special architectural registers.
+    @classmethod
+    def _select_reg_class(cls, reg_id: int) -> Type:
+        """Select the appropriate class for the specified architectural register.
         """
 
         reg_class = (
-            (UcAArch64.REG_RANGE_Q, UcReg128),
-            (UcAArch64.REG_RANGE_V, UcReg128)
+            (UcAArch64.REG_RANGE_CP, UcRegCP64),
+            (UcAArch64.REG_RANGE_Q,  UcReg128),
+            (UcAArch64.REG_RANGE_V,  UcReg128)
         )
 
-        return next((cls for rng, cls in reg_class if reg_id in rng), None)
+        return next((c for rng, c in reg_class if reg_id in rng), cls._DEFAULT_REGTYPE)
 
-    def reg_read(self, reg_id: int, aux: Any = None):
-        # select register class for special cases
-        reg_cls = UcAArch64.__select_reg_class(reg_id)
+    # to learn more about accessing aarch64 coprocessor registers, refer to:
+    # https://developer.arm.com/documentation/ddi0601/latest/AArch64-Registers
 
-        if reg_cls is None:
-            if reg_id == const.UC_ARM64_REG_CP_REG:
-                return self._reg_read(reg_id, UcRegCP64, *aux)
+    def cpr_read(self, op0: int, op1: int, crn: int, crm: int, op2: int) -> int:
+        """Read a coprocessor register value.
 
-            else:
-                # fallback to default reading method
-                return super().reg_read(reg_id, aux)
+        Args:
+            op0		: opcode 0, value varies between 0 and 3
+            op1 	: opcode 1, value varies between 0 and 7
+            crn 	: coprocessor register to access (CRn), value varies between 0 and 15
+            crm 	: additional coprocessor register to access (CRm), value varies between 0 and 15
+            op2 	: opcode 2, value varies between 0 and 7
 
-        return self._reg_read(reg_id, reg_cls)
+        Returns: value of coprocessor register
+        """
 
-    def reg_write(self, reg_id: int, value) -> None:
-        # select register class for special cases
-        reg_cls = UcAArch64.__select_reg_class(reg_id)
+        assert check_maxbits(op0, 2)
+        assert check_maxbits(op1, 3)
+        assert check_maxbits(crn, 4)
+        assert check_maxbits(crm, 4)
+        assert check_maxbits(op2, 3)
 
-        if reg_cls is None:
-            if reg_id == const.UC_ARM64_REG_CP_REG:
-                self._reg_write(reg_id, UcRegCP64, value)
+        return self.reg_read(const.UC_ARM64_REG_CP_REG, (crn, crm, op0, op1, op2))
 
-            else:
-                # fallback to default writing method
-                super().reg_write(reg_id, value)
+    def cpr_write(self, op0: int, op1: int, crn: int, crm: int, op2: int, value: int) -> None:
+        """Write a coprocessor register value.
 
-        else:
-            self._reg_write(reg_id, reg_cls, value)
+        Args:
+            op0		: opcode 0, value varies between 0 and 3
+            op1 	: opcode 1, value varies between 0 and 7
+            crn 	: coprocessor register to access (CRn), value varies between 0 and 15
+            crm 	: additional coprocessor register to access (CRm), value varies between 0 and 15
+            op2 	: opcode 2, value varies between 0 and 7
+            value	: value to write
+        """
+
+        assert check_maxbits(op0, 2)
+        assert check_maxbits(op1, 3)
+        assert check_maxbits(crn, 4)
+        assert check_maxbits(crm, 4)
+        assert check_maxbits(op2, 3)
+
+        self.reg_write(const.UC_ARM64_REG_CP_REG, (crn, crm, op0, op1, op2, value))
+
 
 __all__ = ['UcRegCP64', 'UcAArch64']

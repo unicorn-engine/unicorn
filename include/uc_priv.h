@@ -109,6 +109,9 @@ typedef MemoryRegion *(*uc_memory_mapping_t)(struct uc_struct *, hwaddr addr);
 
 typedef void (*uc_memory_filter_t)(MemoryRegion *, int32_t);
 
+typedef bool (*uc_flatview_copy_t)(struct uc_struct *, FlatView *, FlatView *,
+                                   bool);
+
 typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
 typedef int (*uc_cpus_init)(struct uc_struct *, const char *);
@@ -289,6 +292,7 @@ struct uc_struct {
     uc_args_uc_ram_size_ptr_t memory_map_ptr;
     uc_memory_mapping_t memory_mapping;
     uc_memory_filter_t memory_filter_subregions;
+    uc_flatview_copy_t flatview_copy;
     uc_mem_unmap_t memory_unmap;
     uc_mem_unmap_t memory_moveout;
     uc_mem_unmap_t memory_movein;
@@ -424,11 +428,14 @@ struct uc_struct {
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
 struct uc_context {
-    size_t context_size; // size of the real internal context structure
-    uc_mode mode;        // the mode of this context
-    uc_arch arch;        // the arch of this context
-    int snapshot_level;  // the memory snapshot level to restore
-    char data[0];        // context
+    size_t context_size;  // size of the real internal context structure
+    uc_mode mode;         // the mode of this context
+    uc_arch arch;         // the arch of this context
+    int snapshot_level;   // the memory snapshot level to restore
+    bool ramblock_freed;  // wheter there was a some ramblock freed
+    RAMBlock *last_block; // The last element of the ramblock list
+    FlatView *fv;         // The current flatview of the memory
+    char data[0];         // context
 };
 
 // We have to support 32bit system so we can't hold uint64_t on void*
@@ -526,6 +533,14 @@ static inline uc_err break_translation_loop(uc_engine *uc)
     }
 
     return UC_ERR_OK;
+}
+
+static inline void revert_uc_emu_stop(uc_engine *uc)
+{
+    uc->stop_request = 0;
+    uc->cpu->exit_request = 0;
+    uc->cpu->tcg_exit_req = 0;
+    uc->cpu->icount_decr_ptr->u16.high = 0;
 }
 
 #ifdef UNICORN_TRACER

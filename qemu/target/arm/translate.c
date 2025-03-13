@@ -31,6 +31,7 @@
 
 #include "exec/helper-proto.h"
 #include "exec/helper-gen.h"
+#include "uc_priv.h"
 
 #define ENABLE_ARCH_4T    arm_dc_feature(s, ARM_FEATURE_V4T)
 #define ENABLE_ARCH_5     arm_dc_feature(s, ARM_FEATURE_V5)
@@ -451,9 +452,34 @@ static void gen_sub_carry(TCGContext *tcg_ctx, TCGv_i32 dest, TCGv_i32 t0, TCGv_
     tcg_gen_subi_i32(tcg_ctx, dest, dest, 1);
 }
 
+static inline void mb_tcg_opcode_cmp_hook(TCGContext *tcg_ctx, TCGv_i32 v0, TCGv_i32 v1, uint32_t size)
+{
+    uc_engine *uc = tcg_ctx->uc;
+    
+    if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_TCG_OPCODE, tcg_ctx->pc_start)) {
+        struct hook *hook;
+        HOOK_FOREACH_VAR_DECLARE;
+        HOOK_FOREACH(uc, hook, UC_HOOK_TCG_OPCODE) {
+            if (hook->to_delete)
+                continue;
+            if (hook->op == UC_TCG_OP_SUB && (hook->op_flags & UC_TCG_OP_FLAG_CMP)) {
+                TCGv_i64 targ1 = tcg_temp_new_i64(tcg_ctx);
+                TCGv_i64 targ2 = tcg_temp_new_i64(tcg_ctx);
+                tcg_gen_extu_i32_i64(tcg_ctx, targ1, v0);
+                tcg_gen_extu_i32_i64(tcg_ctx, targ2, v1);
+                gen_uc_traceopcode(tcg_ctx, hook, targ1, targ2, size, uc, tcg_ctx->pc_start);
+                tcg_temp_free_i64(tcg_ctx, targ1);
+                tcg_temp_free_i64(tcg_ctx, targ2);
+            }
+        }
+    }
+}
+
 /* dest = T0 + T1. Compute C, N, V and Z flags */
 static void gen_add_CC(TCGContext *tcg_ctx, TCGv_i32 dest, TCGv_i32 t0, TCGv_i32 t1)
 {
+    mb_tcg_opcode_cmp_hook(tcg_ctx, t0, t1, 32);
+
     TCGv_i32 tmp = tcg_temp_new_i32(tcg_ctx);
     tcg_gen_movi_i32(tcg_ctx, tmp, 0);
     tcg_gen_add2_i32(tcg_ctx, tcg_ctx->cpu_NF, tcg_ctx->cpu_CF, t0, tmp, t1, tmp);
@@ -496,6 +522,8 @@ static void gen_adc_CC(TCGContext *tcg_ctx, TCGv_i32 dest, TCGv_i32 t0, TCGv_i32
 /* dest = T0 - T1. Compute C, N, V and Z flags */
 static void gen_sub_CC(TCGContext *tcg_ctx, TCGv_i32 dest, TCGv_i32 t0, TCGv_i32 t1)
 {
+    mb_tcg_opcode_cmp_hook(tcg_ctx, t0, t1, 32);
+
     TCGv_i32 tmp;
     tcg_gen_sub_i32(tcg_ctx, tcg_ctx->cpu_NF, t0, t1);
     tcg_gen_mov_i32(tcg_ctx, tcg_ctx->cpu_ZF, tcg_ctx->cpu_NF);
@@ -10904,6 +10932,7 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)
 {
     unsigned int cond = insn >> 28;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    tcg_ctx->pc_start = s->pc_curr;
 
     /* M variants do not implement ARM mode; this must raise the INVSTATE
      * UsageFault exception.
@@ -11576,6 +11605,7 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         check_exit_request(tcg_ctx);
     }
 
+    tcg_ctx->pc_start = dc->base.pc_next - insn_size;
     if (is_16bit) {
         disas_thumb_insn(dc, insn);
     } else {
@@ -11739,6 +11769,12 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
+static void arm_pc_sync(DisasContextBase *db, CPUState *state)
+{
+    DisasContext *dc = container_of(db, DisasContext, base);
+    gen_set_pc_im(dc, dc->base.pc_next);
+}
+
 static const TranslatorOps arm_translator_ops = {
     .init_disas_context = arm_tr_init_disas_context,
     .tb_start           = arm_tr_tb_start,
@@ -11746,6 +11782,7 @@ static const TranslatorOps arm_translator_ops = {
     .breakpoint_check   = arm_tr_breakpoint_check,
     .translate_insn     = arm_tr_translate_insn,
     .tb_stop            = arm_tr_tb_stop,
+    .pc_sync            = arm_pc_sync
 };
 
 static const TranslatorOps thumb_translator_ops = {
@@ -11755,6 +11792,7 @@ static const TranslatorOps thumb_translator_ops = {
     .breakpoint_check   = arm_tr_breakpoint_check,
     .translate_insn     = thumb_tr_translate_insn,
     .tb_stop            = arm_tr_tb_stop,
+    .pc_sync            = arm_pc_sync
 };
 
 /* generate intermediate code for basic block 'tb'.  */

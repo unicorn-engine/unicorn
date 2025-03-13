@@ -165,10 +165,11 @@ TriCoreCPU *cpu_tricore_init(struct uc_struct *uc)
     CPUState *cs;
     CPUClass *cc;
 
-    cpu = calloc(1, sizeof(*cpu));
+    cpu = qemu_memalign(8, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
+    memset((void*)cpu, 0, sizeof(*cpu));
 
     if (uc->cpu_model == INT_MAX) {
         uc->cpu_model = 2; // tc27x

@@ -54,6 +54,7 @@
 #define vm_start vm_start_mipsel
 #define address_space_dispatch_compact address_space_dispatch_compact_mipsel
 #define flatview_translate flatview_translate_mipsel
+#define flatview_copy flatview_copy_mipsel
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_mipsel
 #define qemu_get_cpu qemu_get_cpu_mipsel
 #define cpu_address_space_init cpu_address_space_init_mipsel
@@ -90,6 +91,7 @@
 #define iotlb_to_section iotlb_to_section_mipsel
 #define address_space_dispatch_new address_space_dispatch_new_mipsel
 #define address_space_dispatch_free address_space_dispatch_free_mipsel
+#define address_space_dispatch_clear address_space_dispatch_clear_mipsel
 #define flatview_read_continue flatview_read_continue_mipsel
 #define address_space_read_full address_space_read_full_mipsel
 #define address_space_write address_space_write_mipsel
@@ -1288,6 +1290,8 @@
 #define gen_helper_cpsr_read gen_helper_cpsr_read_mipsel
 #define gen_helper_cpsr_write gen_helper_cpsr_write_mipsel
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_mipsel
+#define helper_stqcx_le_parallel helper_stqcx_le_parallel_mipsel
+#define helper_stqcx_be_parallel helper_stqcx_be_parallel_mipsel
 #define helper_mfc0_mvpcontrol helper_mfc0_mvpcontrol_mipsel
 #define helper_mfc0_mvpconf0 helper_mfc0_mvpconf0_mipsel
 #define helper_mfc0_mvpconf1 helper_mfc0_mvpconf1_mipsel

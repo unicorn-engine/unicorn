@@ -54,6 +54,7 @@ resume_all_vcpus \
 vm_start \
 address_space_dispatch_compact \
 flatview_translate \
+flatview_copy \
 address_space_translate_for_iotlb \
 qemu_get_cpu \
 cpu_address_space_init \
@@ -90,6 +91,7 @@ cpu_check_watchpoint \
 iotlb_to_section \
 address_space_dispatch_new \
 address_space_dispatch_free \
+address_space_dispatch_clear \
 flatview_read_continue \
 address_space_read_full \
 address_space_write \
@@ -1288,6 +1290,8 @@ gen_helper_vfp_set_fpscr \
 gen_helper_cpsr_read \
 gen_helper_cpsr_write \
 tlb_reset_dirty_by_vaddr \
+helper_stqcx_le_parallel \
+helper_stqcx_be_parallel \
 "
 
 x86_64_SYMBOLS="

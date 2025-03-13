@@ -568,6 +568,7 @@ uint64_t HELPER(paired_cmpxchg64_le)(CPUARMState *env, uint64_t addr,
 uint64_t HELPER(paired_cmpxchg64_le_parallel)(CPUARMState *env, uint64_t addr,
                                               uint64_t new_lo, uint64_t new_hi)
 {
+#if HAVE_CMPXCHG128 == 1
     Int128 oldv, cmpv, newv;
     uintptr_t ra = GETPC();
     bool success;
@@ -585,6 +586,10 @@ uint64_t HELPER(paired_cmpxchg64_le_parallel)(CPUARMState *env, uint64_t addr,
 
     success = int128_eq(oldv, cmpv);
     return !success;
+#else
+    g_assert_not_reached();
+    return 0;
+#endif
 }
 
 uint64_t HELPER(paired_cmpxchg64_be)(CPUARMState *env, uint64_t addr,
@@ -620,6 +625,7 @@ uint64_t HELPER(paired_cmpxchg64_be)(CPUARMState *env, uint64_t addr,
 uint64_t HELPER(paired_cmpxchg64_be_parallel)(CPUARMState *env, uint64_t addr,
                                               uint64_t new_lo, uint64_t new_hi)
 {
+#if HAVE_CMPXCHG128 == 1
     Int128 oldv, cmpv, newv;
     uintptr_t ra = GETPC();
     bool success;
@@ -641,12 +647,17 @@ uint64_t HELPER(paired_cmpxchg64_be_parallel)(CPUARMState *env, uint64_t addr,
 
     success = int128_eq(oldv, cmpv);
     return !success;
+#else
+    g_assert_not_reached();
+    return 0;
+#endif
 }
 
 /* Writes back the old data into Rs.  */
 void HELPER(casp_le_parallel)(CPUARMState *env, uint32_t rs, uint64_t addr,
                               uint64_t new_lo, uint64_t new_hi)
 {
+#if HAVE_CMPXCHG128 == 1
     Int128 oldv, cmpv, newv;
     uintptr_t ra = GETPC();
     int mem_idx;
@@ -663,11 +674,15 @@ void HELPER(casp_le_parallel)(CPUARMState *env, uint32_t rs, uint64_t addr,
 
     env->xregs[rs] = int128_getlo(oldv);
     env->xregs[rs + 1] = int128_gethi(oldv);
+#else
+    g_assert_not_reached();
+#endif
 }
 
 void HELPER(casp_be_parallel)(CPUARMState *env, uint32_t rs, uint64_t addr,
                               uint64_t new_hi, uint64_t new_lo)
 {
+#if HAVE_CMPXCHG128 == 1
     Int128 oldv, cmpv, newv;
     uintptr_t ra = GETPC();
     int mem_idx;
@@ -684,6 +699,9 @@ void HELPER(casp_be_parallel)(CPUARMState *env, uint32_t rs, uint64_t addr,
 
     env->xregs[rs + 1] = int128_getlo(oldv);
     env->xregs[rs] = int128_gethi(oldv);
+#else
+    g_assert_not_reached();
+#endif
 }
 
 /*

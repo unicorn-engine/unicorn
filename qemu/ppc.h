@@ -54,6 +54,7 @@
 #define vm_start vm_start_ppc
 #define address_space_dispatch_compact address_space_dispatch_compact_ppc
 #define flatview_translate flatview_translate_ppc
+#define flatview_copy flatview_copy_ppc
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_ppc
 #define qemu_get_cpu qemu_get_cpu_ppc
 #define cpu_address_space_init cpu_address_space_init_ppc
@@ -90,6 +91,7 @@
 #define iotlb_to_section iotlb_to_section_ppc
 #define address_space_dispatch_new address_space_dispatch_new_ppc
 #define address_space_dispatch_free address_space_dispatch_free_ppc
+#define address_space_dispatch_clear address_space_dispatch_clear_ppc
 #define flatview_read_continue flatview_read_continue_ppc
 #define address_space_read_full address_space_read_full_ppc
 #define address_space_write address_space_write_ppc
@@ -1288,6 +1290,8 @@
 #define gen_helper_cpsr_read gen_helper_cpsr_read_ppc
 #define gen_helper_cpsr_write gen_helper_cpsr_write_ppc
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_ppc
+#define helper_stqcx_le_parallel helper_stqcx_le_parallel_ppc
+#define helper_stqcx_be_parallel helper_stqcx_be_parallel_ppc
 #define ppc_cpu_unrealize ppc_cpu_unrealize_ppc
 #define ppc_cpu_instance_finalize ppc_cpu_instance_finalize_ppc
 #define ppc_cpu_do_interrupt ppc_cpu_do_interrupt_ppc

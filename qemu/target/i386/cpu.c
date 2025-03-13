@@ -5076,16 +5076,18 @@ X86CPU *cpu_x86_init(struct uc_struct *uc)
     CPUClass *cc;
     X86CPUClass *xcc;
 
-    cpu = calloc(1, sizeof(*cpu));
+    // env->fpregs
+    cpu = qemu_memalign(16, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
+    memset((void*)cpu, 0, sizeof(*cpu));
 
     if (uc->cpu_model == INT_MAX) {
 #ifdef TARGET_X86_64
-        uc->cpu_model = UC_CPU_X86_QEMU64; // qemu64
+        uc->cpu_model = UC_CPU_X86_HASWELL; // qemu64
 #else
-        uc->cpu_model = UC_CPU_X86_QEMU32; // qemu32
+        uc->cpu_model = UC_CPU_X86_HASWELL; // qemu32
 #endif
     } else if (uc->cpu_model >= ARRAY_SIZE(builtin_x86_defs)) {
         free(cpu);

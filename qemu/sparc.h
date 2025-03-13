@@ -54,6 +54,7 @@
 #define vm_start vm_start_sparc
 #define address_space_dispatch_compact address_space_dispatch_compact_sparc
 #define flatview_translate flatview_translate_sparc
+#define flatview_copy flatview_copy_sparc
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_sparc
 #define qemu_get_cpu qemu_get_cpu_sparc
 #define cpu_address_space_init cpu_address_space_init_sparc
@@ -90,6 +91,7 @@
 #define iotlb_to_section iotlb_to_section_sparc
 #define address_space_dispatch_new address_space_dispatch_new_sparc
 #define address_space_dispatch_free address_space_dispatch_free_sparc
+#define address_space_dispatch_clear address_space_dispatch_clear_sparc
 #define flatview_read_continue flatview_read_continue_sparc
 #define address_space_read_full address_space_read_full_sparc
 #define address_space_write address_space_write_sparc
@@ -1288,6 +1290,8 @@
 #define gen_helper_cpsr_read gen_helper_cpsr_read_sparc
 #define gen_helper_cpsr_write gen_helper_cpsr_write_sparc
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_sparc
+#define helper_stqcx_le_parallel helper_stqcx_le_parallel_sparc
+#define helper_stqcx_be_parallel helper_stqcx_be_parallel_sparc
 #define helper_compute_psr helper_compute_psr_sparc
 #define helper_compute_C_icc helper_compute_C_icc_sparc
 #define cpu_sparc_set_id cpu_sparc_set_id_sparc
