@@ -1,6 +1,7 @@
 unicorn-engine (2.1.3-1~bpo12+1) unstable; urgency=medium
 
   * New upstream version 2.1.3.
+  * Add unicorn.o for Go bindings to produce statically linked binaries.
 
  -- Glenn Baker <glenn.baker@gmx.com>  Thu, 13 Mar 2025 14:18:15 +0000
 
