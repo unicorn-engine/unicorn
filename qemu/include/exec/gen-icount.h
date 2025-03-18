@@ -45,6 +45,8 @@ static inline void gen_tb_start(TCGContext *tcg_ctx, TranslationBlock *tb)
     //    We CANT'T use brcondi_i32 here or we will fail liveness analysis
     //    because it marks the end of BB
     if (tcg_ctx->delay_slot_flag != NULL) {
+        // Initialize delay_slot_flag here
+        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->delay_slot_flag, 0);
         TCGv_i32 tmp = tcg_const_i32(tcg_ctx, 0);
         // dest = (c1 cond c2 ? v1 : v2)
         tcg_gen_movcond_i32(tcg_ctx, TCG_COND_GT, count, tcg_ctx->delay_slot_flag, tmp, tcg_ctx->delay_slot_flag, count);
