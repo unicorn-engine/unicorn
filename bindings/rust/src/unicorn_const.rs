@@ -128,7 +128,7 @@ bitflags! {
 
         const MEM_ALL = Self::MEM_VALID.bits() | Self::MEM_INVALID.bits();
         
-        const TCG_OPCODE = (1<<16);
+        const TCG_OPCODE = (1 << 16);
         const TLB = (1 << 17);
     }
 }
@@ -137,7 +137,7 @@ bitflags! {
     #[repr(C)]
     #[derive(Copy, Clone)]
     pub struct TcgOp: i32 {
-        const SUB = 1;
+        const SUB = 0;
     }
 }
 
