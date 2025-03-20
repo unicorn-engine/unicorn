@@ -2,11 +2,11 @@
 use bitflags::bitflags;
 
 pub const API_MAJOR: u64 = 2;
-pub const API_MINOR: u64 = 0;
+pub const API_MINOR: u64 = 1;
 pub const VERSION_MAJOR: u64 = 2;
-pub const VERSION_MINOR: u64 = 0;
-pub const VERSION_PATCH: u64 = 0;
-pub const VERSION_EXTRA: u64 = 7;
+pub const VERSION_MINOR: u64 = 1;
+pub const VERSION_PATCH: u64 = 3;
+pub const VERSION_EXTRA: u64 = 255;
 pub const SECOND_SCALE: u64 = 1_000_000;
 pub const MILISECOND_SCALE: u64 = 1_000;
 
@@ -127,7 +127,8 @@ bitflags! {
         const MEM_INVALID = Self::MEM_READ_INVALID.bits() | Self::MEM_WRITE_INVALID.bits() | Self::MEM_FETCH_INVALID.bits();
 
         const MEM_ALL = Self::MEM_VALID.bits() | Self::MEM_INVALID.bits();
-
+        
+        const TCG_OPCODE = (1<<16);
         const TLB = (1 << 17);
     }
 }
