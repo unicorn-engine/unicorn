@@ -136,6 +136,14 @@ bitflags! {
 bitflags! {
     #[repr(C)]
     #[derive(Copy, Clone)]
+    pub struct TcgOp: i32 {
+        const SUB = 1;
+    }
+}
+
+bitflags! {
+    #[repr(C)]
+    #[derive(Copy, Clone)]
     pub struct TcgOpFlag: i32 {
         const FLAG_CMP = 1;
         const FLAG_DIRECT = 2;
