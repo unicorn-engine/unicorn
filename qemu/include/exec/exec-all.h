@@ -477,7 +477,7 @@ address_space_translate_for_iotlb(CPUState *cpu, int asidx, hwaddr addr,
 hwaddr memory_region_section_get_iotlb(CPUState *cpu,
                                        MemoryRegionSection *section);
 
-static inline bool uc_mem_hook_installed(struct uc_struct *uc, target_ulong paddr)
+static inline bool uc_mem_hook_installed(struct uc_struct *uc, hwaddr paddr)
 {
     if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_MEM_FETCH_UNMAPPED, paddr))
         return true;
