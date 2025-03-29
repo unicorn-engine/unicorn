@@ -63,6 +63,17 @@ impl Context {
     pub const fn is_initialized(&self) -> bool {
         !self.context.is_null()
     }
+
+    pub fn reg_read<T: Into<i32>>(&self, regid: T) -> Result<u64, uc_error> {
+        let mut value = 0;
+        unsafe { uc_context_reg_read(self.context, regid.into(), (&raw mut value).cast()) }
+            .and(Ok(value))
+    }
+
+    pub fn reg_write<T: Into<i32>>(&mut self, regid: T, value: u64) -> Result<(), uc_error> {
+        unsafe { uc_context_reg_write(self.context, regid.into(), (&raw const value).cast()) }
+            .into()
+    }
 }
 
 impl Drop for Context {
