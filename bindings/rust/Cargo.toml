@@ -1,0 +1,54 @@
+[package]
+name = "unicorn-engine"
+version.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+documentation.workspace = true
+edition.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+description.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+unicorn-engine-sys = { version = "2.1.3", path = "sys", features = [
+], default-features = false }
+
+[build-dependencies]
+bindgen = "0.71.1"
+cc = { version = "1.2.17" }
+cmake = { version = "0.1.54" }
+pkg-config = { version = "0.3.32" }
+
+[dev-dependencies]
+page_size = "0.6.0"
+
+[features]
+default = ["arch_all"]
+dynamic_linkage = ["unicorn-engine-sys/dynamic_linkage"]
+arch_all = [
+	"arch_x86",
+	"arch_arm",
+	"arch_aarch64",
+	"arch_riscv",
+	"arch_mips",
+	"arch_sparc",
+	"arch_m68k",
+	"arch_ppc",
+	"arch_s390x",
+	"arch_tricore",
+]
+arch_x86 = ["unicorn-engine-sys/arch_x86"]
+arch_arm = ["unicorn-engine-sys/arch_arm"]
+arch_aarch64 = ["arch_arm", "unicorn-engine-sys/arch_aarch64"]
+arch_riscv = ["unicorn-engine-sys/arch_riscv"]
+arch_mips = ["unicorn-engine-sys/arch_mips"]
+arch_sparc = ["unicorn-engine-sys/arch_sparc"]
+arch_m68k = ["unicorn-engine-sys/arch_m68k"]
+arch_ppc = ["unicorn-engine-sys/arch_ppc"]
+arch_s390x = ["unicorn-engine-sys/arch_s390x"]
+arch_tricore = ["unicorn-engine-sys/arch_tricore"]

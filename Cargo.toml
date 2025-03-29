@@ -1,57 +1,30 @@
-[package]
-name = "unicorn-engine"
+[workspace]
+default-members = ["bindings/rust"]
+members = ["bindings/rust", "bindings/rust/sys"]
+resolver = "2"
+
+[workspace.package]
 version = "2.1.3"
-authors = ["Ziqiao Kong", "Lukas Seidel"]
+authors = ["Ziqiao Kong", "Lukas Seidel", "Amaan Qureshi <amaanq12@gmail.com>"]
+keywords = ["unicorn", "cpu", "emulator", "bindings"]
+categories = ["api-bindings", "emulators", "no-std", "virtualization"]
 documentation = "https://github.com/unicorn-engine/unicorn/wiki"
-edition = "2021"
+edition = "2024"
 license = "GPL-2.0"
 readme = "README.md"
 repository = "https://github.com/unicorn-engine/unicorn"
 description = "Rust bindings for the Unicorn emulator with utility functions"
-build = "bindings/rust/build.rs"
-links = "unicorn"
-# use `cargo publish --list` to see files to be included
-# the resulting list what cargo uses to check for out-of-date files during build
-exclude = [
-    "/docs",
-    "/bindings/dotnet",
-    "/bindings/go",
-    "/bindings/haskell",
-    "/bindings/java",
-    "/bindings/pascal",
-    "/bindings/python",
-    "/bindings/ruby",
-    "/bindings/vb6",
-    "/bindings/zig",
-    "/samples",
-    "/tests",
-]
 
-[lib]
-path = "bindings/rust/src/lib.rs"
-
-[dependencies]
-bitflags = "2.3.3"
-libc = "0.2"
-
-[build-dependencies]
-cc = { version = "1.0" }
-cmake = { version = "0.1" }
-pkg-config = { version = "0.3" }
-
-[features]
-default = ["arch_all"]
-dynamic_linkage = []
-arch_all = ["arch_x86", "arch_arm", "arch_aarch64", "arch_riscv", "arch_mips", "arch_sparc", "arch_m68k", "arch_ppc", "arch_s390x", "arch_tricore"]
-arch_x86 = []
-arch_arm = []
-# NOTE: unicorn-c only separates on top-level arch name,
-#       not on the bit-length, so we include both arm and aarch64
-arch_aarch64 = ["arch_arm"]
-arch_riscv = []
-arch_mips = []
-arch_sparc = []
-arch_m68k = []
-arch_ppc = []
-arch_s390x = []
-arch_tricore = []
+[workspace.lints.clippy]
+cast_lossless = "allow"
+cast_possible_truncation = "allow"
+cast_possible_wrap = "allow"
+cast_sign_loss = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+similar_names = "allow"
+unreadable_literal = "allow"
+use_self = "allow"
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
