@@ -1,0 +1,55 @@
+[package]
+name = "unicorn-engine-sys"
+version.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories = [
+	"api-bindings",
+	"emulators",
+	"external-ffi-bindings",
+	"no-std",
+	"virtualization",
+]
+documentation.workspace = true
+edition.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+description.workspace = true
+links = "unicorn"
+
+[lints]
+workspace = true
+
+[build-dependencies]
+bindgen = "0.71.1"
+cc = { version = "1.2.17" }
+cmake = { version = "0.1.54" }
+heck = "0.5.0"
+pkg-config = { version = "0.3.32" }
+
+[features]
+default = ["arch_all"]
+dynamic_linkage = []
+arch_all = [
+	"arch_x86",
+	"arch_arm",
+	"arch_aarch64",
+	"arch_riscv",
+	"arch_mips",
+	"arch_sparc",
+	"arch_m68k",
+	"arch_ppc",
+	"arch_s390x",
+	"arch_tricore",
+]
+arch_x86 = []
+arch_arm = []
+arch_aarch64 = ["arch_arm"]
+arch_riscv = []
+arch_mips = []
+arch_sparc = []
+arch_m68k = []
+arch_ppc = []
+arch_s390x = []
+arch_tricore = []
