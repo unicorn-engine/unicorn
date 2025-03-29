@@ -211,6 +211,28 @@ where
 /// # Safety
 ///
 /// This function is unsafe because it dereferences the `user_data` pointer.
+#[cfg(feature = "arch_aarch64")]
+pub unsafe extern "C" fn insn_sys_hook_proxy_arm64<D, F>(
+    uc: *mut uc_engine,
+    reg: sys::RegisterARM64,
+    cp_reg: *const sys::RegisterARM64_CP,
+    user_data: *mut UcHook<D, F>,
+) -> bool
+where
+    F: FnMut(&mut crate::Unicorn<D>, sys::RegisterARM64, &sys::RegisterARM64_CP) -> bool,
+{
+    let user_data = unsafe { &mut *user_data };
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    let cp_reg = unsafe { cp_reg.as_ref() }.unwrap();
+    (user_data.callback)(&mut user_data_uc, reg, cp_reg)
+}
+
+/// # Safety
+///
+/// This function is unsafe because it dereferences the `user_data` pointer.
 pub unsafe extern "C" fn tlb_lookup_hook_proxy<D, F>(
     uc: *mut uc_engine,
     vaddr: u64,

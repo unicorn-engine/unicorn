@@ -902,6 +902,46 @@ impl<'a, D> Unicorn<'a, D> {
         })
     }
 
+    /// Add hook for ARM MRS/MSR/SYS/SYSL instructions.
+    ///
+    /// If the callback returns true, the read/write to system registers would be skipped (even
+    /// though that may cause exceptions!). Note one callback per instruction is allowed.
+    #[cfg(feature = "arch_aarch64")]
+    pub fn add_insn_sys_hook_arm64<F>(
+        &mut self,
+        insn_type: Arm64Insn,
+        begin: u64,
+        end: u64,
+        callback: F,
+    ) -> Result<UcHookId, uc_error>
+    where
+        F: FnMut(&mut Unicorn<D>, RegisterARM64, &RegisterARM64_CP) -> bool + 'a,
+    {
+        let mut hook_id = 0;
+        let mut user_data = Box::new(hook::UcHook {
+            callback,
+            uc: Rc::downgrade(&self.inner),
+        });
+
+        unsafe {
+            uc_hook_add(
+                self.get_handle(),
+                (&raw mut hook_id).cast(),
+                HookType::INSN.0 as i32,
+                hook::insn_sys_hook_proxy_arm64::<D, F> as _,
+                core::ptr::from_mut(user_data.as_mut()).cast(),
+                begin,
+                end,
+                insn_type,
+            )
+        }
+        .and_then(|| {
+            let hook_id = UcHookId(hook_id);
+            self.inner_mut().hooks.push((hook_id, user_data));
+            Ok(hook_id)
+        })
+    }
+
     pub fn add_tlb_hook<F>(
         &mut self,
         begin: u64,
