@@ -975,6 +975,43 @@ impl<'a, D> Unicorn<'a, D> {
         })
     }
 
+    pub fn add_tcg_hook<F>(
+        &mut self,
+        code: TcgOpCode,
+        flag: TcgOpFlag,
+        begin: u64,
+        end: u64,
+        callback: F,
+    ) -> Result<UcHookId, uc_error>
+    where
+        F: FnMut(&mut Unicorn<D>, u64, u64, u64, usize) + 'a,
+    {
+        let mut hook_id = 0;
+        let mut user_data = Box::new(hook::UcHook {
+            callback,
+            uc: Rc::downgrade(&self.inner),
+        });
+
+        unsafe {
+            uc_hook_add(
+                self.get_handle(),
+                (&raw mut hook_id).cast(),
+                HookType::TCG_OPCODE.0 as i32,
+                hook::tcg_proxy::<D, F> as _,
+                core::ptr::from_mut(user_data.as_mut()).cast(),
+                begin,
+                end,
+                code as i32,
+                flag.0 as i32,
+            )
+            .and_then(|| {
+                let hook_id = UcHookId(hook_id);
+                self.inner_mut().hooks.push((hook_id, user_data));
+                Ok(hook_id)
+            })
+        }
+    }
+
     /// Remove a hook.
     ///
     /// `hook_id` is the value returned by `add_*_hook` functions.
