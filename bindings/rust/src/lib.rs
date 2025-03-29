@@ -562,6 +562,47 @@ impl<'a, D> Unicorn<'a, D> {
             .and_then(|| Ok(value.into_boxed_slice()))
     }
 
+    /// Read ARM Coprocessor register
+    pub fn reg_read_arm_coproc(&self, reg: &mut RegisterARM_CP) -> Result<(), uc_error> {
+        let curr_arch = self.get_arch();
+        match curr_arch {
+            #[cfg(feature = "arch_arm")]
+            Arch::ARM => {}
+            _ => return Err(uc_error::ARCH),
+        }
+
+        unsafe {
+            uc_reg_read(
+                self.get_handle(),
+                RegisterARM::CP_REG.into(),
+                core::ptr::from_mut::<RegisterARM_CP>(reg).cast(),
+            )
+        }
+        .into()
+    }
+
+    /// Read ARM64 Coprocessor register
+    pub fn reg_read_arm64_coproc(&self) -> Result<RegisterARM64_CP, uc_error> {
+        let curr_arch = self.get_arch();
+        match curr_arch {
+            #[cfg(feature = "arch_aarch64")]
+            Arch::ARM64 => {}
+            _ => return Err(uc_error::ARCH),
+        }
+
+        let regid = RegisterARM64::CP_REG;
+        let mut reg = RegisterARM64_CP {
+            crn: 0,
+            crm: 0,
+            op0: 0,
+            op1: 0,
+            op2: 0,
+            val: 0,
+        };
+
+        unsafe { uc_reg_read(self.get_handle(), regid as i32, (&raw mut reg).cast()) }.and(Ok(reg))
+    }
+
     #[cfg(feature = "arch_arm")]
     fn value_size_arm64(curr_reg_id: i32) -> Result<usize, uc_error> {
         match curr_reg_id {
