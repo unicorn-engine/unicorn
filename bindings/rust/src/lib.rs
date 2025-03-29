@@ -41,7 +41,6 @@
 
 #[macro_use]
 extern crate alloc;
-extern crate std;
 
 use alloc::{boxed::Box, rc::Rc, vec::Vec};
 use core::{cell::UnsafeCell, ffi::c_void, ptr};
