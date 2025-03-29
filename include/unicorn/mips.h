@@ -61,7 +61,7 @@ typedef enum uc_cpu_mips64 {
 } uc_cpu_mips64;
 
 //> MIPS registers
-typedef enum UC_MIPS_REG {
+typedef enum uc_mips_reg {
     UC_MIPS_REG_INVALID = 0,
     //> General purpose registers
     UC_MIPS_REG_PC,
