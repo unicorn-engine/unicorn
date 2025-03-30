@@ -4,6 +4,7 @@ members = ["bindings/rust", "bindings/rust/sys"]
 resolver = "2"
 
 [workspace.package]
+rust-version = "1.85.0"
 version = "2.1.3"
 authors = ["Ziqiao Kong", "Lukas Seidel", "Amaan Qureshi <amaanq12@gmail.com>"]
 keywords = ["unicorn", "cpu", "emulator", "bindings"]
