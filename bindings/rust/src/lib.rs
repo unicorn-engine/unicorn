@@ -477,13 +477,20 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Write values into batch of registers
-    pub fn reg_write_batch<T: Into<i32>>(
+    pub fn reg_write_batch<T>(
         &self,
         regids: &[T],
         values: &[u64],
         count: i32,
-    ) -> Result<(), uc_error> {
+    ) -> Result<(), uc_error>
+    where
+        T: Copy + Into<i32>,
+    {
         let mut values_ptrs = vec![core::ptr::null::<u64>(); count as usize];
+        let mut regids = regids
+            .iter()
+            .map(|regid| (*regid).into())
+            .collect::<Vec<i32>>();
         for i in 0..values.len() {
             values_ptrs[i] = &raw const values[i];
         }
@@ -518,14 +525,17 @@ impl<'a, D> Unicorn<'a, D> {
     /// Read batch of registers
     ///
     /// Not to be used with registers larger than 64 bit
-    pub fn reg_read_batch<T: Into<i32>>(
-        &self,
-        regids: &mut [T],
-        count: i32,
-    ) -> Result<Vec<u64>, uc_error> {
+    pub fn reg_read_batch<T>(&self, regids: &mut [T], count: i32) -> Result<Vec<u64>, uc_error>
+    where
+        T: Copy + Into<i32>,
+    {
         unsafe {
             let mut addrs_vec = vec![0u64; count as usize];
             let addrs = addrs_vec.as_mut_slice();
+            let mut regids = regids
+                .iter()
+                .map(|regid| (*regid).into())
+                .collect::<Vec<i32>>();
             for i in 0..count {
                 addrs[i as usize] = &raw mut addrs[i as usize] as u64;
             }
