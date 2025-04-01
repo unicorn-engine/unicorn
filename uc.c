@@ -572,7 +572,7 @@ uc_err uc_close(uc_engine *uc)
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_read_batch(uc_engine *uc, int *regs, void **vals, int count)
+uc_err uc_reg_read_batch(uc_engine *uc, int const *regs, void **vals, int count)
 {
     UC_INIT(uc);
     reg_read_t reg_read = uc->reg_read;
@@ -596,7 +596,7 @@ uc_err uc_reg_read_batch(uc_engine *uc, int *regs, void **vals, int count)
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals,
+uc_err uc_reg_write_batch(uc_engine *uc, int const *regs, void *const *vals,
                           int count)
 {
     UC_INIT(uc);
@@ -627,7 +627,7 @@ uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals,
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_read_batch2(uc_engine *uc, int *regs, void *const *vals,
+uc_err uc_reg_read_batch2(uc_engine *uc, int const *regs, void *const *vals,
                           size_t *sizes, int count)
 {
     UC_INIT(uc);
@@ -651,8 +651,8 @@ uc_err uc_reg_read_batch2(uc_engine *uc, int *regs, void *const *vals,
 }
 
 UNICORN_EXPORT
-uc_err uc_reg_write_batch2(uc_engine *uc, int *regs, const void *const *vals,
-                           size_t *sizes, int count)
+uc_err uc_reg_write_batch2(uc_engine *uc, int const *regs,
+                           const void *const *vals, size_t *sizes, int count)
 {
     UC_INIT(uc);
     reg_write_t reg_write = uc->reg_write;
@@ -2344,8 +2344,8 @@ uc_err uc_context_reg_read2(uc_context *ctx, int regid, void *value,
 }
 
 UNICORN_EXPORT
-uc_err uc_context_reg_write_batch(uc_context *ctx, int *regs, void *const *vals,
-                                  int count)
+uc_err uc_context_reg_write_batch(uc_context *ctx, int const *regs,
+                                  void *const *vals, int count)
 {
     reg_write_t reg_write = find_context_reg_rw(ctx->arch, ctx->mode).write;
     void *env = ctx->data;
@@ -2367,7 +2367,7 @@ uc_err uc_context_reg_write_batch(uc_context *ctx, int *regs, void *const *vals,
 }
 
 UNICORN_EXPORT
-uc_err uc_context_reg_read_batch(uc_context *ctx, int *regs, void **vals,
+uc_err uc_context_reg_read_batch(uc_context *ctx, int const *regs, void **vals,
                                  int count)
 {
     reg_read_t reg_read = find_context_reg_rw(ctx->arch, ctx->mode).read;
@@ -2389,7 +2389,7 @@ uc_err uc_context_reg_read_batch(uc_context *ctx, int *regs, void **vals,
 }
 
 UNICORN_EXPORT
-uc_err uc_context_reg_write_batch2(uc_context *ctx, int *regs,
+uc_err uc_context_reg_write_batch2(uc_context *ctx, int const *regs,
                                    const void *const *vals, size_t *sizes,
                                    int count)
 {
@@ -2412,8 +2412,8 @@ uc_err uc_context_reg_write_batch2(uc_context *ctx, int *regs,
 }
 
 UNICORN_EXPORT
-uc_err uc_context_reg_read_batch2(uc_context *ctx, int *regs, void *const *vals,
-                                  size_t *sizes, int count)
+uc_err uc_context_reg_read_batch2(uc_context *ctx, int const *regs,
+                                  void *const *vals, size_t *sizes, int count)
 {
     reg_read_t reg_read = find_context_reg_rw(ctx->arch, ctx->mode).read;
     void *env = ctx->data;
