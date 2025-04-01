@@ -112,7 +112,7 @@ typedef struct CPUTLBEntry {
             target_ulong addr_read;
             target_ulong addr_write;
             target_ulong addr_code;
-            target_ulong paddr;
+            hwaddr paddr;
             /* Addend to virtual address to get host address.  IO accesses
                use the corresponding iotlb value.  */
             uintptr_t addend;
