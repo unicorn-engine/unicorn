@@ -7,7 +7,7 @@ categories.workspace = true
 documentation.workspace = true
 edition.workspace = true
 license.workspace = true
-readme.workspace = true
+readme = "README.md"
 repository.workspace = true
 description.workspace = true
 
@@ -15,8 +15,7 @@ description.workspace = true
 workspace = true
 
 [dependencies]
-unicorn-engine-sys = { version = "2.1.3", path = "sys", features = [
-], default-features = false }
+unicorn-engine-sys = { version = "2.1.3", path = "sys", features = [], default-features = false }
 
 [build-dependencies]
 bindgen = "0.71.1"

@@ -283,7 +283,10 @@ impl ParseCallbacks for Renamer {
 }
 
 fn generate_bindings() {
-    const HEADER_PATH: &str = "../../../include/unicorn/unicorn.h";
+    const HEADER_PATH: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../../include/unicorn/unicorn.h"
+    );
     println!("cargo:rerun-if-changed={HEADER_PATH}");
 
     let bitflag_enums = [
