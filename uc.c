@@ -781,12 +781,6 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, uint64_t size)
 
     UC_INIT(uc);
 
-    // qemu cpu_physical_memory_rw() size is an int
-    if (size > INT_MAX) {
-        restore_jit_state(uc);
-        return UC_ERR_ARG;
-    }
-
     if (!check_mem_area(uc, address, size)) {
         restore_jit_state(uc);
         return UC_ERR_READ_UNMAPPED;
