@@ -536,6 +536,6 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_snapshot_with_vtlb", test_snapshot_with_vtlb},
              {"test_context_snapshot", test_context_snapshot},
              {"test_snapshot_unmap", test_snapshot_unmap},
-	     {"test_mem_read_and_write_large_memory_block", 
+             {"test_mem_read_and_write_large_memory_block",
               test_mem_read_and_write_large_memory_block},
              {NULL, NULL}};

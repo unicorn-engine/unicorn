@@ -1059,7 +1059,8 @@ typedef enum uc_context_content {
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_map(uc_engine *uc, uint64_t address, uint64_t size, uint32_t perms);
+uc_err uc_mem_map(uc_engine *uc, uint64_t address, uint64_t size,
+                  uint32_t perms);
 
 /*
  Map existing host memory in for emulation.
