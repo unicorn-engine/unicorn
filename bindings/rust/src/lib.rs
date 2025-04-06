@@ -431,7 +431,7 @@ impl<'a, D> Unicorn<'a, D> {
         .and_then(|| {
             let rd = read_data.map(|c| c as Box<dyn ffi::IsUcHook>);
             let wd = write_data.map(|c| c as Box<dyn ffi::IsUcHook>);
-            let u64_size : u64 = size.try_into.unwrap();
+            let u64_size : u64 = size.try_into().unwrap();
             self.inner_mut().mmio_callbacks.push(MmioCallbackScope {
                 regions: vec![(address, u64_size)],
                 read_callback: rd,
@@ -494,7 +494,7 @@ impl<'a, D> Unicorn<'a, D> {
         err.into()
     }
 
-    fn mmio_unmap(&mut self, address: u64, size: libc::size_t) {
+    fn mmio_unmap(&mut self, address: u64, size: u64) {
         for scope in self.inner_mut().mmio_callbacks.iter_mut() {
             scope.unmap(address, size);
         }
