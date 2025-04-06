@@ -43,9 +43,7 @@ typedef struct {
 } arg_disas_sve31;
 
 typedef struct {
-#ifdef _MSC_VER
-    int dummy;
-#endif
+    int : 0;
 } arg_disas_sve32;
 
 typedef struct {
