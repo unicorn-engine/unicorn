@@ -6,7 +6,7 @@ import sys, re, os
 
 INCL_DIR = os.path.join('..', 'include', 'unicorn')
 
-include = [ 'arm.h', 'arm64.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'ppc.h', 'riscv.h', 's390x.h', 'tricore.h', 'unicorn.h' ]
+include = [ 'arm.h', 'arm64.h', 'avr.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'ppc.h', 'rh850.h', 'riscv.h', 's390x.h', 'tricore.h', 'unicorn.h' ]
 
 template = {
     'python': {
@@ -17,11 +17,13 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
             'arm64.h': 'arm64',
+            'avr.h': 'avr',
             'mips.h': 'mips',
             'x86.h': 'x86',
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
             'ppc.h': 'ppc',
+            'rh850.h': 'rh850',
             'riscv.h': 'riscv',
             's390x.h' : 's390x',
             'tricore.h' : 'tricore',
@@ -37,12 +39,14 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
             'arm64.h': 'arm64',
+            'avr.h': 'avr',
             'mips.h': 'mips',
             'x86.h': 'x86',
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
             'ppc.h': 'ppc',
             'riscv.h': 'riscv',
+            'rh850.h': 'rh850',
             's390x.h' : 's390x',
             'tricore.h' : 'tricore',
             'unicorn.h': 'unicorn',
@@ -57,11 +61,13 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
             'arm64.h': 'arm64',
+            'avr.h': 'avr',
             'mips.h': 'mips',
             'x86.h': 'x86',
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
             'ppc.h': 'ppc',
+            'rh850.h': 'rh850',
             'riscv.h': 'riscv',
             's390x.h' : 's390x',
             'tricore.h' : 'tricore',
@@ -77,11 +83,13 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
             'arm64.h': 'Arm64',
+            'avr.h': 'AVR',
             'mips.h': 'Mips',
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
             'ppc.h': 'Ppc',
+            'rh850.h': 'Rh850',
             'riscv.h': 'Riscv',
             's390x.h' : 'S390x',
             'tricore.h' : 'TriCore',
@@ -97,11 +105,13 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
             'arm64.h': 'Arm64',
+            'avr.h': 'AVR',
             'mips.h': 'Mips',
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
             'ppc.h': 'Ppc',
+            'rh850.h': 'Rh850',
             'riscv.h': 'Riscv',
             's390x.h' : 'S390x',
             'tricore.h' : 'TriCore',
@@ -117,11 +127,13 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
             'arm64.h': 'Arm64',
+            'avr.h': 'AVR',
             'mips.h': 'Mips',
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
             'ppc.h': 'Ppc',
+            'rh850.h': 'Rh850',
             'riscv.h': 'Riscv',
             's390x.h' : 'S390x',
             'tricore.h' : 'TriCore',
@@ -137,12 +149,14 @@ template = {
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
             'arm64.h': 'arm64',
+            'avr.h': 'AVR',
             'mips.h': 'mips',
             'x86.h': 'x86',
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
             'ppc.h': 'ppc',
             'riscv.h': 'riscv',
+            'rh850.h': 'rh850',
             's390x.h' : 's390x',
             'tricore.h' : 'tricore',
             'unicorn.h': 'unicorn',
