@@ -62,6 +62,10 @@
 
 #include <uc_priv.h>
 
+#if CONFIG_TCG_INTERPRETER
+#include "tcg/tcg.h"
+#endif
+
 /* Forward declarations for functions declared in tcg-target.inc.c and
    used here. */
 static void tcg_target_init(TCGContext *s);
@@ -666,6 +670,7 @@ static const TCGOpDef tcg_op_defs_org[] = {
 #include "tcg/tcg-opc.h"
 #undef DEF
 };
+static const size_t tcg_op_defs_max_org = ARRAY_SIZE(tcg_op_defs_org);
 
 static void process_op_defs(TCGContext *s);
 static TCGTemp *tcg_global_reg_new_internal(TCGContext *s, TCGType type,
@@ -734,6 +739,7 @@ void tcg_context_init(TCGContext *s)
     // copy original tcg_op_defs_org for private usage
     s->tcg_op_defs = g_malloc0(sizeof(tcg_op_defs_org));
     memcpy(s->tcg_op_defs, tcg_op_defs_org, sizeof(tcg_op_defs_org));
+    s->tcg_op_defs_max = tcg_op_defs_max_org;
 
     /* Count total number of arguments and allocate the corresponding
        space */
