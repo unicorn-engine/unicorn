@@ -85,12 +85,12 @@ this code that are retained.
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE floating-point ordering relations
 *----------------------------------------------------------------------------*/
-enum {
+typedef enum {
     float_relation_less      = -1,
     float_relation_equal     =  0,
     float_relation_greater   =  1,
     float_relation_unordered =  2
-};
+} FloatRelation;
 
 #include "fpu/softfloat-types.h"
 #include "fpu/softfloat-helpers.h"
@@ -186,9 +186,9 @@ float32 float16_to_float32(float16, bool ieee, float_status *status);
 float16 float64_to_float16(float64 a, bool ieee, float_status *status);
 float64 float16_to_float64(float16 a, bool ieee, float_status *status);
 
-int16_t float16_to_int16_scalbn(float16, int, int, float_status *status);
-int32_t float16_to_int32_scalbn(float16, int, int, float_status *status);
-int64_t float16_to_int64_scalbn(float16, int, int, float_status *status);
+int16_t float16_to_int16_scalbn(float16, FloatRoundMode, int, float_status *status);
+int32_t float16_to_int32_scalbn(float16, FloatRoundMode, int, float_status *status);
+int64_t float16_to_int64_scalbn(float16, FloatRoundMode, int, float_status *status);
 
 int16_t float16_to_int16(float16, float_status *status);
 int32_t float16_to_int32(float16, float_status *status);
@@ -198,9 +198,9 @@ int16_t float16_to_int16_round_to_zero(float16, float_status *status);
 int32_t float16_to_int32_round_to_zero(float16, float_status *status);
 int64_t float16_to_int64_round_to_zero(float16, float_status *status);
 
-uint16_t float16_to_uint16_scalbn(float16 a, int, int, float_status *status);
-uint32_t float16_to_uint32_scalbn(float16 a, int, int, float_status *status);
-uint64_t float16_to_uint64_scalbn(float16 a, int, int, float_status *status);
+uint16_t float16_to_uint16_scalbn(float16 a, FloatRoundMode, int, float_status *status);
+uint32_t float16_to_uint32_scalbn(float16 a, FloatRoundMode, int, float_status *status);
+uint64_t float16_to_uint64_scalbn(float16 a, FloatRoundMode, int, float_status *status);
 
 uint16_t float16_to_uint16(float16 a, float_status *status);
 uint32_t float16_to_uint32(float16 a, float_status *status);
@@ -228,34 +228,34 @@ float16 float16_maxnum(float16, float16, float_status *status);
 float16 float16_minnummag(float16, float16, float_status *status);
 float16 float16_maxnummag(float16, float16, float_status *status);
 float16 float16_sqrt(float16, float_status *status);
-int float16_compare(float16, float16, float_status *status);
-int float16_compare_quiet(float16, float16, float_status *status);
+FloatRelation float16_compare(float16, float16, float_status *status);
+FloatRelation float16_compare_quiet(float16, float16, float_status *status);
 
-int float16_is_quiet_nan(float16, float_status *status);
-int float16_is_signaling_nan(float16, float_status *status);
+bool float16_is_quiet_nan(float16, float_status *status);
+bool float16_is_signaling_nan(float16, float_status *status);
 float16 float16_silence_nan(float16, float_status *status);
 
-static inline int float16_is_any_nan(float16 a)
+static inline bool float16_is_any_nan(float16 a)
 {
     return ((float16_val(a) & ~0x8000) > 0x7c00);
 }
 
-static inline int float16_is_neg(float16 a)
+static inline bool float16_is_neg(float16 a)
 {
     return float16_val(a) >> 15;
 }
 
-static inline int float16_is_infinity(float16 a)
+static inline bool float16_is_infinity(float16 a)
 {
     return (float16_val(a) & 0x7fff) == 0x7c00;
 }
 
-static inline int float16_is_zero(float16 a)
+static inline bool float16_is_zero(float16 a)
 {
     return (float16_val(a) & 0x7fff) == 0;
 }
 
-static inline int float16_is_zero_or_denormal(float16 a)
+static inline bool float16_is_zero_or_denormal(float16 a)
 {
     return (float16_val(a) & 0x7c00) == 0;
 }
@@ -298,9 +298,9 @@ float16 float16_default_nan(float_status *status);
 | Software IEC/IEEE single-precision conversion routines.
 *----------------------------------------------------------------------------*/
 
-int16_t float32_to_int16_scalbn(float32, int, int, float_status *status);
-int32_t float32_to_int32_scalbn(float32, int, int, float_status *status);
-int64_t float32_to_int64_scalbn(float32, int, int, float_status *status);
+int16_t float32_to_int16_scalbn(float32, FloatRoundMode, int, float_status *status);
+int32_t float32_to_int32_scalbn(float32, FloatRoundMode, int, float_status *status);
+int64_t float32_to_int64_scalbn(float32, FloatRoundMode, int, float_status *status);
 
 int16_t float32_to_int16(float32, float_status *status);
 int32_t float32_to_int32(float32, float_status *status);
@@ -310,9 +310,9 @@ int16_t float32_to_int16_round_to_zero(float32, float_status *status);
 int32_t float32_to_int32_round_to_zero(float32, float_status *status);
 int64_t float32_to_int64_round_to_zero(float32, float_status *status);
 
-uint16_t float32_to_uint16_scalbn(float32, int, int, float_status *status);
-uint32_t float32_to_uint32_scalbn(float32, int, int, float_status *status);
-uint64_t float32_to_uint64_scalbn(float32, int, int, float_status *status);
+uint16_t float32_to_uint16_scalbn(float32, FloatRoundMode, int, float_status *status);
+uint32_t float32_to_uint32_scalbn(float32, FloatRoundMode, int, float_status *status);
+uint64_t float32_to_uint64_scalbn(float32, FloatRoundMode, int, float_status *status);
 
 uint16_t float32_to_uint16(float32, float_status *status);
 uint32_t float32_to_uint32(float32, float_status *status);
@@ -339,24 +339,16 @@ float32 float32_muladd(float32, float32, float32, int, float_status *status);
 float32 float32_sqrt(float32, float_status *status);
 float32 float32_exp2(float32, float_status *status);
 float32 float32_log2(float32, float_status *status);
-int float32_eq(float32, float32, float_status *status);
-int float32_le(float32, float32, float_status *status);
-int float32_lt(float32, float32, float_status *status);
-int float32_unordered(float32, float32, float_status *status);
-int float32_eq_quiet(float32, float32, float_status *status);
-int float32_le_quiet(float32, float32, float_status *status);
-int float32_lt_quiet(float32, float32, float_status *status);
-int float32_unordered_quiet(float32, float32, float_status *status);
-int float32_compare(float32, float32, float_status *status);
-int float32_compare_quiet(float32, float32, float_status *status);
+FloatRelation float32_compare(float32, float32, float_status *status);
+FloatRelation float32_compare_quiet(float32, float32, float_status *status);
 float32 float32_min(float32, float32, float_status *status);
 float32 float32_max(float32, float32, float_status *status);
 float32 float32_minnum(float32, float32, float_status *status);
 float32 float32_maxnum(float32, float32, float_status *status);
 float32 float32_minnummag(float32, float32, float_status *status);
 float32 float32_maxnummag(float32, float32, float_status *status);
-int float32_is_quiet_nan(float32, float_status *status);
-int float32_is_signaling_nan(float32, float_status *status);
+bool float32_is_quiet_nan(float32, float_status *status);
+bool float32_is_signaling_nan(float32, float_status *status);
 float32 float32_silence_nan(float32, float_status *status);
 float32 float32_scalbn(float32, int, float_status *status);
 
@@ -376,27 +368,27 @@ static inline float32 float32_chs(float32 a)
     return make_float32(float32_val(a) ^ 0x80000000);
 }
 
-static inline int float32_is_infinity(float32 a)
+static inline bool float32_is_infinity(float32 a)
 {
     return (float32_val(a) & 0x7fffffff) == 0x7f800000;
 }
 
-static inline int float32_is_neg(float32 a)
+static inline bool float32_is_neg(float32 a)
 {
     return float32_val(a) >> 31;
 }
 
-static inline int float32_is_zero(float32 a)
+static inline bool float32_is_zero(float32 a)
 {
     return (float32_val(a) & 0x7fffffff) == 0;
 }
 
-static inline int float32_is_any_nan(float32 a)
+static inline bool float32_is_any_nan(float32 a)
 {
     return ((float32_val(a) & ~(1 << 31)) > 0x7f800000UL);
 }
 
-static inline int float32_is_zero_or_denormal(float32 a)
+static inline bool float32_is_zero_or_denormal(float32 a)
 {
     return (float32_val(a) & 0x7f800000) == 0;
 }
@@ -421,6 +413,47 @@ static inline float32 float32_set_sign(float32 a, int sign)
     return make_float32((float32_val(a) & 0x7fffffff) | (sign << 31));
 }
 
+static inline bool float32_eq(float32 a, float32 b, float_status *s)
+{
+    return float32_compare(a, b, s) == float_relation_equal;
+}
+
+static inline bool float32_le(float32 a, float32 b, float_status *s)
+{
+    return float32_compare(a, b, s) <= float_relation_equal;
+}
+
+static inline bool float32_lt(float32 a, float32 b, float_status *s)
+{
+    return float32_compare(a, b, s) < float_relation_equal;
+}
+
+static inline bool float32_unordered(float32 a, float32 b, float_status *s)
+{
+    return float32_compare(a, b, s) == float_relation_unordered;
+}
+
+static inline bool float32_eq_quiet(float32 a, float32 b, float_status *s)
+{
+    return float32_compare_quiet(a, b, s) == float_relation_equal;
+}
+
+static inline bool float32_le_quiet(float32 a, float32 b, float_status *s)
+{
+    return float32_compare_quiet(a, b, s) <= float_relation_equal;
+}
+
+static inline bool float32_lt_quiet(float32 a, float32 b, float_status *s)
+{
+    return float32_compare_quiet(a, b, s) < float_relation_equal;
+}
+
+static inline bool float32_unordered_quiet(float32 a, float32 b,
+                                           float_status *s)
+{
+    return float32_compare_quiet(a, b, s) == float_relation_unordered;
+}
+
 #define float32_zero make_float32(0)
 #define float32_half make_float32(0x3f000000)
 #define float32_one make_float32(0x3f800000)
@@ -440,7 +473,7 @@ static inline float32 float32_set_sign(float32 a, int sign)
 | significand.
 *----------------------------------------------------------------------------*/
 
-static inline float32 packFloat32(flag zSign, int zExp, uint32_t zSig)
+static inline float32 packFloat32(bool zSign, int zExp, uint32_t zSig)
 {
     return make_float32(
           (((uint32_t)zSign) << 31) + (((uint32_t)zExp) << 23) + zSig);
@@ -455,9 +488,9 @@ float32 float32_default_nan(float_status *status);
 | Software IEC/IEEE double-precision conversion routines.
 *----------------------------------------------------------------------------*/
 
-int16_t float64_to_int16_scalbn(float64, int, int, float_status *status);
-int32_t float64_to_int32_scalbn(float64, int, int, float_status *status);
-int64_t float64_to_int64_scalbn(float64, int, int, float_status *status);
+int16_t float64_to_int16_scalbn(float64, FloatRoundMode, int, float_status *status);
+int32_t float64_to_int32_scalbn(float64, FloatRoundMode, int, float_status *status);
+int64_t float64_to_int64_scalbn(float64, FloatRoundMode, int, float_status *status);
 
 int16_t float64_to_int16(float64, float_status *status);
 int32_t float64_to_int32(float64, float_status *status);
@@ -467,9 +500,9 @@ int16_t float64_to_int16_round_to_zero(float64, float_status *status);
 int32_t float64_to_int32_round_to_zero(float64, float_status *status);
 int64_t float64_to_int64_round_to_zero(float64, float_status *status);
 
-uint16_t float64_to_uint16_scalbn(float64, int, int, float_status *status);
-uint32_t float64_to_uint32_scalbn(float64, int, int, float_status *status);
-uint64_t float64_to_uint64_scalbn(float64, int, int, float_status *status);
+uint16_t float64_to_uint16_scalbn(float64, FloatRoundMode, int, float_status *status);
+uint32_t float64_to_uint32_scalbn(float64, FloatRoundMode, int, float_status *status);
+uint64_t float64_to_uint64_scalbn(float64, FloatRoundMode, int, float_status *status);
 
 uint16_t float64_to_uint16(float64, float_status *status);
 uint32_t float64_to_uint32(float64, float_status *status);
@@ -495,24 +528,16 @@ float64 float64_rem(float64, float64, float_status *status);
 float64 float64_muladd(float64, float64, float64, int, float_status *status);
 float64 float64_sqrt(float64, float_status *status);
 float64 float64_log2(float64, float_status *status);
-int float64_eq(float64, float64, float_status *status);
-int float64_le(float64, float64, float_status *status);
-int float64_lt(float64, float64, float_status *status);
-int float64_unordered(float64, float64, float_status *status);
-int float64_eq_quiet(float64, float64, float_status *status);
-int float64_le_quiet(float64, float64, float_status *status);
-int float64_lt_quiet(float64, float64, float_status *status);
-int float64_unordered_quiet(float64, float64, float_status *status);
-int float64_compare(float64, float64, float_status *status);
-int float64_compare_quiet(float64, float64, float_status *status);
+FloatRelation float64_compare(float64, float64, float_status *status);
+FloatRelation float64_compare_quiet(float64, float64, float_status *status);
 float64 float64_min(float64, float64, float_status *status);
 float64 float64_max(float64, float64, float_status *status);
 float64 float64_minnum(float64, float64, float_status *status);
 float64 float64_maxnum(float64, float64, float_status *status);
 float64 float64_minnummag(float64, float64, float_status *status);
 float64 float64_maxnummag(float64, float64, float_status *status);
-int float64_is_quiet_nan(float64 a, float_status *status);
-int float64_is_signaling_nan(float64, float_status *status);
+bool float64_is_quiet_nan(float64 a, float_status *status);
+bool float64_is_signaling_nan(float64, float_status *status);
 float64 float64_silence_nan(float64, float_status *status);
 float64 float64_scalbn(float64, int, float_status *status);
 
@@ -532,27 +557,27 @@ static inline float64 float64_chs(float64 a)
     return make_float64(float64_val(a) ^ 0x8000000000000000LL);
 }
 
-static inline int float64_is_infinity(float64 a)
+static inline bool float64_is_infinity(float64 a)
 {
     return (float64_val(a) & 0x7fffffffffffffffLL ) == 0x7ff0000000000000LL;
 }
 
-static inline int float64_is_neg(float64 a)
+static inline bool float64_is_neg(float64 a)
 {
     return float64_val(a) >> 63;
 }
 
-static inline int float64_is_zero(float64 a)
+static inline bool float64_is_zero(float64 a)
 {
     return (float64_val(a) & 0x7fffffffffffffffLL) == 0;
 }
 
-static inline int float64_is_any_nan(float64 a)
+static inline bool float64_is_any_nan(float64 a)
 {
     return ((float64_val(a) & ~(1ULL << 63)) > 0x7ff0000000000000ULL);
 }
 
-static inline int float64_is_zero_or_denormal(float64 a)
+static inline bool float64_is_zero_or_denormal(float64 a)
 {
     return (float64_val(a) & 0x7ff0000000000000LL) == 0;
 }
@@ -576,6 +601,47 @@ static inline float64 float64_set_sign(float64 a, int sign)
 {
     return make_float64((float64_val(a) & 0x7fffffffffffffffULL)
                         | ((int64_t)sign << 63));
+}
+
+static inline bool float64_eq(float64 a, float64 b, float_status *s)
+{
+    return float64_compare(a, b, s) == float_relation_equal;
+}
+
+static inline bool float64_le(float64 a, float64 b, float_status *s)
+{
+    return float64_compare(a, b, s) <= float_relation_equal;
+}
+
+static inline bool float64_lt(float64 a, float64 b, float_status *s)
+{
+    return float64_compare(a, b, s) < float_relation_equal;
+}
+
+static inline bool float64_unordered(float64 a, float64 b, float_status *s)
+{
+    return float64_compare(a, b, s) == float_relation_unordered;
+}
+
+static inline bool float64_eq_quiet(float64 a, float64 b, float_status *s)
+{
+    return float64_compare_quiet(a, b, s) == float_relation_equal;
+}
+
+static inline bool float64_le_quiet(float64 a, float64 b, float_status *s)
+{
+    return float64_compare_quiet(a, b, s) <= float_relation_equal;
+}
+
+static inline bool float64_lt_quiet(float64 a, float64 b, float_status *s)
+{
+    return float64_compare_quiet(a, b, s) < float_relation_equal;
+}
+
+static inline bool float64_unordered_quiet(float64 a, float64 b,
+                                           float_status *s)
+{
+    return float64_compare_quiet(a, b, s) == float_relation_unordered;
 }
 
 #define float64_zero make_float64(0)
@@ -617,18 +683,12 @@ floatx80 floatx80_add(floatx80, floatx80, float_status *status);
 floatx80 floatx80_sub(floatx80, floatx80, float_status *status);
 floatx80 floatx80_mul(floatx80, floatx80, float_status *status);
 floatx80 floatx80_div(floatx80, floatx80, float_status *status);
+floatx80 floatx80_modrem(floatx80, floatx80, bool, uint64_t *, float_status *status);
+floatx80 floatx80_mod(floatx80, floatx80, float_status *status);
 floatx80 floatx80_rem(floatx80, floatx80, float_status *status);
 floatx80 floatx80_sqrt(floatx80, float_status *status);
-int floatx80_eq(floatx80, floatx80, float_status *status);
-int floatx80_le(floatx80, floatx80, float_status *status);
-int floatx80_lt(floatx80, floatx80, float_status *status);
-int floatx80_unordered(floatx80, floatx80, float_status *status);
-int floatx80_eq_quiet(floatx80, floatx80, float_status *status);
-int floatx80_le_quiet(floatx80, floatx80, float_status *status);
-int floatx80_lt_quiet(floatx80, floatx80, float_status *status);
-int floatx80_unordered_quiet(floatx80, floatx80, float_status *status);
-int floatx80_compare(floatx80, floatx80, float_status *status);
-int floatx80_compare_quiet(floatx80, floatx80, float_status *status);
+FloatRelation floatx80_compare(floatx80, floatx80, float_status *status);
+FloatRelation floatx80_compare_quiet(floatx80, floatx80, float_status *status);
 int floatx80_is_quiet_nan(floatx80, float_status *status);
 int floatx80_is_signaling_nan(floatx80, float_status *status);
 floatx80 floatx80_silence_nan(floatx80, float_status *status);
@@ -646,7 +706,7 @@ static inline floatx80 floatx80_chs(floatx80 a)
     return a;
 }
 
-static inline int floatx80_is_infinity(floatx80 a)
+static inline bool floatx80_is_infinity(floatx80 a)
 {
 #if defined(TARGET_M68K)
     return (a.high & 0x7fff) == floatx80_infinity.high && !(a.low << 1);
@@ -656,24 +716,65 @@ static inline int floatx80_is_infinity(floatx80 a)
 #endif
 }
 
-static inline int floatx80_is_neg(floatx80 a)
+static inline bool floatx80_is_neg(floatx80 a)
 {
     return a.high >> 15;
 }
 
-static inline int floatx80_is_zero(floatx80 a)
+static inline bool floatx80_is_zero(floatx80 a)
 {
     return (a.high & 0x7fff) == 0 && a.low == 0;
 }
 
-static inline int floatx80_is_zero_or_denormal(floatx80 a)
+static inline bool floatx80_is_zero_or_denormal(floatx80 a)
 {
     return (a.high & 0x7fff) == 0;
 }
 
-static inline int floatx80_is_any_nan(floatx80 a)
+static inline bool floatx80_is_any_nan(floatx80 a)
 {
     return ((a.high & 0x7fff) == 0x7fff) && (a.low<<1);
+}
+
+static inline bool floatx80_eq(floatx80 a, floatx80 b, float_status *s)
+{
+    return floatx80_compare(a, b, s) == float_relation_equal;
+}
+
+static inline bool floatx80_le(floatx80 a, floatx80 b, float_status *s)
+{
+    return floatx80_compare(a, b, s) <= float_relation_equal;
+}
+
+static inline bool floatx80_lt(floatx80 a, floatx80 b, float_status *s)
+{
+    return floatx80_compare(a, b, s) < float_relation_equal;
+}
+
+static inline bool floatx80_unordered(floatx80 a, floatx80 b, float_status *s)
+{
+    return floatx80_compare(a, b, s) == float_relation_unordered;
+}
+
+static inline bool floatx80_eq_quiet(floatx80 a, floatx80 b, float_status *s)
+{
+    return floatx80_compare_quiet(a, b, s) == float_relation_equal;
+}
+
+static inline bool floatx80_le_quiet(floatx80 a, floatx80 b, float_status *s)
+{
+    return floatx80_compare_quiet(a, b, s) <= float_relation_equal;
+}
+
+static inline bool floatx80_lt_quiet(floatx80 a, floatx80 b, float_status *s)
+{
+    return floatx80_compare_quiet(a, b, s) < float_relation_equal;
+}
+
+static inline bool floatx80_unordered_quiet(floatx80 a, floatx80 b,
+                                           float_status *s)
+{
+    return floatx80_compare_quiet(a, b, s) == float_relation_unordered;
 }
 
 /*----------------------------------------------------------------------------
@@ -688,10 +789,35 @@ static inline int floatx80_is_any_nan(floatx80 a)
 *----------------------------------------------------------------------------*/
 static inline bool floatx80_invalid_encoding(floatx80 a)
 {
+#if defined(TARGET_M68K)
+    /*-------------------------------------------------------------------------
+    | With m68k, the explicit integer bit can be zero in the case of:
+    | - zeros                (exp == 0, mantissa == 0)
+    | - denormalized numbers (exp == 0, mantissa != 0)
+    | - unnormalized numbers (exp != 0, exp < 0x7FFF)
+    | - infinities           (exp == 0x7FFF, mantissa == 0)
+    | - not-a-numbers        (exp == 0x7FFF, mantissa != 0)
+    |
+    | For infinities and NaNs, the explicit integer bit can be either one or
+    | zero.
+    |
+    | The IEEE 754 standard does not define a zero integer bit. Such a number
+    | is an unnormalized number. Hardware does not directly support
+    | denormalized and unnormalized numbers, but implicitly supports them by
+    | trapping them as unimplemented data types, allowing efficient conversion
+    | in software.
+    |
+    | See "M68000 FAMILY PROGRAMMER’S REFERENCE MANUAL",
+    |     "1.6 FLOATING-POINT DATA TYPES"
+    *------------------------------------------------------------------------*/
+    return false;
+#else
     return (a.low & (1ULL << 63)) == 0 && (a.high & 0x7FFF) != 0;
+#endif
 }
 
 #define floatx80_zero make_floatx80(0x0000, 0x0000000000000000LL)
+#define floatx80_zero_init make_floatx80_init(0x0000, 0x0000000000000000LL)
 #define floatx80_one make_floatx80(0x3fff, 0x8000000000000000LL)
 #define floatx80_ln2 make_floatx80(0x3ffe, 0xb17217f7d1cf79acLL)
 #define floatx80_pi make_floatx80(0x4000, 0xc90fdaa22168c235LL)
@@ -722,7 +848,7 @@ static inline int32_t extractFloatx80Exp(floatx80 a)
 | `a'.
 *----------------------------------------------------------------------------*/
 
-static inline flag extractFloatx80Sign(floatx80 a)
+static inline bool extractFloatx80Sign(floatx80 a)
 {
     return a.high >> 15;
 }
@@ -732,7 +858,7 @@ static inline flag extractFloatx80Sign(floatx80 a)
 | extended double-precision floating-point value, returning the result.
 *----------------------------------------------------------------------------*/
 
-static inline floatx80 packFloatx80(flag zSign, int32_t zExp, uint64_t zSig)
+static inline floatx80 packFloatx80(bool zSign, int32_t zExp, uint64_t zSig)
 {
     floatx80 z;
 
@@ -783,7 +909,7 @@ floatx80 propagateFloatx80NaN(floatx80 a, floatx80 b, float_status *status);
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-floatx80 roundAndPackFloatx80(int8_t roundingPrecision, flag zSign,
+floatx80 roundAndPackFloatx80(int8_t roundingPrecision, bool zSign,
                               int32_t zExp, uint64_t zSig0, uint64_t zSig1,
                               float_status *status);
 
@@ -797,7 +923,7 @@ floatx80 roundAndPackFloatx80(int8_t roundingPrecision, flag zSign,
 *----------------------------------------------------------------------------*/
 
 floatx80 normalizeRoundAndPackFloatx80(int8_t roundingPrecision,
-                                       flag zSign, int32_t zExp,
+                                       bool zSign, int32_t zExp,
                                        uint64_t zSig0, uint64_t zSig1,
                                        float_status *status);
 
@@ -831,18 +957,10 @@ float128 float128_mul(float128, float128, float_status *status);
 float128 float128_div(float128, float128, float_status *status);
 float128 float128_rem(float128, float128, float_status *status);
 float128 float128_sqrt(float128, float_status *status);
-int float128_eq(float128, float128, float_status *status);
-int float128_le(float128, float128, float_status *status);
-int float128_lt(float128, float128, float_status *status);
-int float128_unordered(float128, float128, float_status *status);
-int float128_eq_quiet(float128, float128, float_status *status);
-int float128_le_quiet(float128, float128, float_status *status);
-int float128_lt_quiet(float128, float128, float_status *status);
-int float128_unordered_quiet(float128, float128, float_status *status);
-int float128_compare(float128, float128, float_status *status);
-int float128_compare_quiet(float128, float128, float_status *status);
-int float128_is_quiet_nan(float128, float_status *status);
-int float128_is_signaling_nan(float128, float_status *status);
+FloatRelation float128_compare(float128, float128, float_status *status);
+FloatRelation float128_compare_quiet(float128, float128, float_status *status);
+bool float128_is_quiet_nan(float128, float_status *status);
+bool float128_is_signaling_nan(float128, float_status *status);
 float128 float128_silence_nan(float128, float_status *status);
 float128 float128_scalbn(float128, int, float_status *status);
 
@@ -858,22 +976,22 @@ static inline float128 float128_chs(float128 a)
     return a;
 }
 
-static inline int float128_is_infinity(float128 a)
+static inline bool float128_is_infinity(float128 a)
 {
     return (a.high & 0x7fffffffffffffffLL) == 0x7fff000000000000LL && a.low == 0;
 }
 
-static inline int float128_is_neg(float128 a)
+static inline bool float128_is_neg(float128 a)
 {
     return a.high >> 63;
 }
 
-static inline int float128_is_zero(float128 a)
+static inline bool float128_is_zero(float128 a)
 {
     return (a.high & 0x7fffffffffffffffLL) == 0 && a.low == 0;
 }
 
-static inline int float128_is_zero_or_denormal(float128 a)
+static inline bool float128_is_zero_or_denormal(float128 a)
 {
     return (a.high & 0x7fff000000000000LL) == 0;
 }
@@ -888,10 +1006,51 @@ static inline bool float128_is_denormal(float128 a)
     return float128_is_zero_or_denormal(a) && !float128_is_zero(a);
 }
 
-static inline int float128_is_any_nan(float128 a)
+static inline bool float128_is_any_nan(float128 a)
 {
     return ((a.high >> 48) & 0x7fff) == 0x7fff &&
         ((a.low != 0) || ((a.high & 0xffffffffffffLL) != 0));
+}
+
+static inline bool float128_eq(float128 a, float128 b, float_status *s)
+{
+    return float128_compare(a, b, s) == float_relation_equal;
+}
+
+static inline bool float128_le(float128 a, float128 b, float_status *s)
+{
+    return float128_compare(a, b, s) <= float_relation_equal;
+}
+
+static inline bool float128_lt(float128 a, float128 b, float_status *s)
+{
+    return float128_compare(a, b, s) < float_relation_equal;
+}
+
+static inline bool float128_unordered(float128 a, float128 b, float_status *s)
+{
+    return float128_compare(a, b, s) == float_relation_unordered;
+}
+
+static inline bool float128_eq_quiet(float128 a, float128 b, float_status *s)
+{
+    return float128_compare_quiet(a, b, s) == float_relation_equal;
+}
+
+static inline bool float128_le_quiet(float128 a, float128 b, float_status *s)
+{
+    return float128_compare_quiet(a, b, s) <= float_relation_equal;
+}
+
+static inline bool float128_lt_quiet(float128 a, float128 b, float_status *s)
+{
+    return float128_compare_quiet(a, b, s) < float_relation_equal;
+}
+
+static inline bool float128_unordered_quiet(float128 a, float128 b,
+                                           float_status *s)
+{
+    return float128_compare_quiet(a, b, s) == float_relation_unordered;
 }
 
 #define float128_zero make_float128(0, 0)
