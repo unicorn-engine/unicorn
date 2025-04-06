@@ -22,6 +22,7 @@
 #include "qemu/target/mips/unicorn.h"
 #include "qemu/target/sparc/unicorn.h"
 #include "qemu/target/ppc/unicorn.h"
+#include "qemu/target/rh850/unicorn.h"
 #include "qemu/target/riscv/unicorn.h"
 #include "qemu/target/s390x/unicorn.h"
 #include "qemu/target/tricore/unicorn.h"
@@ -224,6 +225,10 @@ bool uc_arch_supported(uc_arch arch)
 #endif
 #ifdef UNICORN_HAS_X86
     case UC_ARCH_X86:
+        return true;
+#endif
+#ifdef UNICORN_HAS_RH850
+    case UC_ARCH_RH850:
         return true;
 #endif
 #ifdef UNICORN_HAS_RISCV
@@ -442,6 +447,15 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
             } else {
                 uc->init_arch = uc_init_ppc;
             }
+            break;
+#endif
+#ifdef UNICORN_HAS_RH850
+        case UC_ARCH_RH850:
+            if (mode != UC_MODE_LITTLE_ENDIAN) {
+                free(uc);
+                return UC_ERR_MODE;
+            }
+            uc->init_arch = rh850_uc_init;
             break;
 #endif
 #ifdef UNICORN_HAS_RISCV
@@ -1055,6 +1069,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         }
         break;
 #endif
+#ifdef UNICORN_HAS_RH850
+    case UC_ARCH_RH850:
+        uc_reg_write(uc, UC_RH850_REG_PC, &begin);
+        break;
+#endif
 #ifdef UNICORN_HAS_RISCV
     case UC_ARCH_RISCV:
         if (uc->mode & UC_MODE_RISCV64) {
@@ -1137,6 +1156,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 
     if (timeout) {
         // wait for the timer to finish
+        printf("Wait VM to finish ...\n");
         qemu_thread_join(&uc->timer);
     }
 
@@ -2297,6 +2317,12 @@ static context_reg_rw_t find_context_reg_rw(uc_arch arch, uc_mode mode)
             rw.read = reg_read_ppc;
             rw.write = reg_write_ppc;
         }
+        break;
+#endif
+#ifdef UNICORN_HAS_RH850
+    case UC_ARCH_RH850:
+        rw.read = reg_read_rh850;
+        rw.write = reg_write_rh850;
         break;
 #endif
 #ifdef UNICORN_HAS_RISCV

@@ -33,6 +33,7 @@ typedef size_t uc_hook;
 #include "mips.h"
 #include "sparc.h"
 #include "ppc.h"
+#include "rh850.h"
 #include "riscv.h"
 #include "s390x.h"
 #include "tricore.h"
@@ -120,6 +121,7 @@ typedef enum uc_arch {
     UC_ARCH_S390X,   // S390X architecture
     UC_ARCH_TRICORE, // TriCore architecture
     UC_ARCH_AVR,     // AVR architecture
+    UC_ARCH_RH850,   // Renesas RH850 architecture (V850e3v2)
     UC_ARCH_MAX,
 } uc_arch;
 
@@ -165,6 +167,9 @@ typedef enum uc_mode {
     UC_MODE_SPARC32 = 1 << 2, // 32-bit mode
     UC_MODE_SPARC64 = 1 << 3, // 64-bit mode
     UC_MODE_V9 = 1 << 4,      // SparcV9 mode (currently unsupported)
+
+    // rh850
+    UC_MODE_RH850 = 1 << 2, // 32-bit mode
 
     // riscv
     UC_MODE_RISCV32 = 1 << 2, // 32-bit mode

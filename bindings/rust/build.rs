@@ -119,6 +119,9 @@ fn build_with_cmake() {
     if std::env::var("CARGO_FEATURE_ARCH_AVR").is_ok() {
         archs.push_str("avr;");
     }
+    if std::env::var("CARGO_FEATURE_ARCH_RH850").is_ok() {
+        archs.push_str("rh850;");
+    }
 
     if !archs.is_empty() {
         archs.pop();

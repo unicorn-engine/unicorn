@@ -6,7 +6,7 @@ import sys, re, os
 
 INCL_DIR = os.path.join('..', 'include', 'unicorn')
 
-include = [ 'arm.h', 'arm64.h', 'avr.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'ppc.h', 'riscv.h', 's390x.h', 'tricore.h', 'unicorn.h' ]
+include = [ 'arm.h', 'arm64.h', 'avr.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'ppc.h', 'rh850.h', 'riscv.h', 's390x.h', 'tricore.h', 'unicorn.h' ]
 
 template = {
     'python': {
@@ -23,6 +23,7 @@ template = {
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
             'ppc.h': 'ppc',
+            'rh850.h': 'rh850',
             'riscv.h': 'riscv',
             's390x.h' : 's390x',
             'tricore.h' : 'tricore',
@@ -45,6 +46,7 @@ template = {
             'm68k.h': 'm68k',
             'ppc.h': 'ppc',
             'riscv.h': 'riscv',
+            'rh850.h': 'rh850',
             's390x.h' : 's390x',
             'tricore.h' : 'tricore',
             'unicorn.h': 'unicorn',
@@ -65,6 +67,7 @@ template = {
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
             'ppc.h': 'ppc',
+            'rh850.h': 'rh850',
             'riscv.h': 'riscv',
             's390x.h' : 's390x',
             'tricore.h' : 'tricore',
@@ -86,6 +89,7 @@ template = {
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
             'ppc.h': 'Ppc',
+            'rh850.h': 'Rh850',
             'riscv.h': 'Riscv',
             's390x.h' : 'S390x',
             'tricore.h' : 'TriCore',
@@ -107,6 +111,7 @@ template = {
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
             'ppc.h': 'Ppc',
+            'rh850.h': 'Rh850',
             'riscv.h': 'Riscv',
             's390x.h' : 'S390x',
             'tricore.h' : 'TriCore',
@@ -128,6 +133,7 @@ template = {
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
             'ppc.h': 'Ppc',
+            'rh850.h': 'Rh850',
             'riscv.h': 'Riscv',
             's390x.h' : 'S390x',
             'tricore.h' : 'TriCore',
@@ -150,6 +156,7 @@ template = {
             'm68k.h': 'm68k',
             'ppc.h': 'ppc',
             'riscv.h': 'riscv',
+            'rh850.h': 'rh850',
             's390x.h' : 's390x',
             'tricore.h' : 'tricore',
             'unicorn.h': 'unicorn',

@@ -873,7 +873,7 @@ QEMU_CFLAGS="$CPU_CFLAGS $QEMU_CFLAGS"
 default_target_list="aarch64-softmmu \
     arm-softmmu m68k-softmmu mips64el-softmmu mips64-softmmu mipsel-softmmu \
     mips-softmmu ppc64-softmmu ppc-softmmu sparc64-softmmu sparc-softmmu \
-    x86_64-softmmu riscv32-softmmu riscv64-softmmu s390x-softmmu \
+    x86_64-softmmu rh850-softmmu riscv32-softmmu riscv64-softmmu s390x-softmmu \
     tricore-softmmu avr-softmmu"
 
 if test x"$show_help" = x"yes" ; then
@@ -2651,7 +2651,7 @@ config_target_mak=$target_dir/config-target.mak
 target_name=$(echo $target | cut -d '-' -f 1)
 target_aligned_only="no"
 case "$target_name" in
-  alpha|hppa|mips64el|mips64|mipsel|mips|mipsn32|mipsn32el|sh4|sh4eb|sparc|sparc64|sparc32plus|xtensa|xtensaeb)
+  alpha|hppa|mips64el|mips64|mipsel|mips|mipsn32|mipsn32el|rh850|sh4|sh4eb|sparc|sparc64|sparc32plus|xtensa|xtensaeb)
   target_aligned_only="yes"
   ;;
 esac
@@ -2766,6 +2766,11 @@ case "$target_name" in
     TARGET_ABI_DIR=ppc
     TARGET_SYSTBL_ABI=common,nospu,32
     echo "TARGET_ABI32=y" >> $config_target_mak
+  ;;
+  rh850)
+    TARGET_ARCH=rh850
+    TARGET_ABI_DIR=rh850
+    mttcg=no              # system emulation is not supported for RH850
   ;;
   riscv32)
     TARGET_BASE_ARCH=riscv

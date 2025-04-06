@@ -24,7 +24,8 @@ public interface UnicornConst {
     public static final int UC_ARCH_S390X = 9;
     public static final int UC_ARCH_TRICORE = 10;
     public static final int UC_ARCH_AVR = 11;
-    public static final int UC_ARCH_MAX = 12;
+    public static final int UC_ARCH_RH850 = 12;
+    public static final int UC_ARCH_MAX = 13;
 
     public static final int UC_MODE_LITTLE_ENDIAN = 0;
     public static final int UC_MODE_BIG_ENDIAN = 1073741824;
@@ -51,6 +52,7 @@ public interface UnicornConst {
     public static final int UC_MODE_SPARC32 = 4;
     public static final int UC_MODE_SPARC64 = 8;
     public static final int UC_MODE_V9 = 16;
+    public static final int UC_MODE_RH850 = 4;
     public static final int UC_MODE_RISCV32 = 4;
     public static final int UC_MODE_RISCV64 = 8;
 

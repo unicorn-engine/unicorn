@@ -101,6 +101,12 @@ mod sparc;
 #[cfg(feature = "arch_sparc")]
 pub use crate::sparc::*;
 
+// include rh850 support if conditionally compiled in
+#[cfg(feature = "arch_rh850")]
+mod rh850;
+#[cfg(feature = "arch_rh850")]
+pub use crate::rh850::*;
+
 // include tricore support if conditionally compiled in
 #[cfg(feature = "arch_tricore")]
 mod tricore;
@@ -1060,6 +1066,8 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::TRICORE => Ok(RegisterTRICORE::PC as i32),
             #[cfg(feature = "arch_avr")]
             Arch::AVR => Ok(RegisterAVR::PC as i32),
+            #[cfg(feature = "arch_rh850")]
+            Arch::RH850 => Ok(RegisterRH850::PC as i32),
             // returns `uc_error::ARCH` for `Arch::MAX`, and any
             // other architecture that are not compiled in
             _ => Err(uc_error::ARCH),

@@ -22,7 +22,8 @@ pub const unicornConst = enum(c_int) {
 	ARCH_S390X = 9,
 	ARCH_TRICORE = 10,
 	ARCH_AVR = 11,
-	ARCH_MAX = 12,
+	ARCH_RH850 = 12,
+	ARCH_MAX = 13,
 
 	MODE_LITTLE_ENDIAN = 0,
 	MODE_BIG_ENDIAN = 1073741824,
@@ -49,6 +50,7 @@ pub const unicornConst = enum(c_int) {
 	MODE_SPARC32 = 4,
 	MODE_SPARC64 = 8,
 	MODE_V9 = 16,
+	MODE_RH850 = 4,
 	MODE_RISCV32 = 4,
 	MODE_RISCV64 = 8,
 
