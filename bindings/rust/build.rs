@@ -116,6 +116,9 @@ fn build_with_cmake() {
     if std::env::var("CARGO_FEATURE_ARCH_TRICORE").is_ok() {
         archs.push_str("tricore;");
     }
+    if std::env::var("CARGO_FEATURE_ARCH_AVR").is_ok() {
+        archs.push_str("avr;");
+    }
 
     if !archs.is_empty() {
         archs.pop();
