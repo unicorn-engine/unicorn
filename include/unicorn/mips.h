@@ -271,7 +271,10 @@ typedef enum uc_mips_reg {
     UC_MIPS_REG_LO1 = UC_MIPS_REG_HI1,
     UC_MIPS_REG_LO2 = UC_MIPS_REG_HI2,
     UC_MIPS_REG_LO3 = UC_MIPS_REG_HI3,
-} UC_MIPS_REG;
+} uc_mips_reg;
+
+// This is only for backwards compatibility
+typedef uc_mips_reg UC_MIPS_REG;
 
 #ifdef __cplusplus
 }
