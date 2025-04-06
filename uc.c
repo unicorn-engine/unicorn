@@ -1697,7 +1697,7 @@ static uc_err uc_mem_unmap_snapshot(struct uc_struct *uc, uint64_t address,
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
+uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, uint64_t size)
 {
     MemoryRegion *mr;
     uint64_t addr;
