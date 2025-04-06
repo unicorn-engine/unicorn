@@ -31,9 +31,6 @@ typedef uintptr_t ram_addr_t;
 
 /* memory API */
 
-typedef void CPUWriteMemoryFunc(void *opaque, hwaddr addr, uint32_t value);
-typedef uint32_t CPUReadMemoryFunc(void *opaque, hwaddr addr);
-
 /* This should not be used by devices.  */
 ram_addr_t qemu_ram_addr_from_host(struct uc_struct *uc, void *ptr);
 RAMBlock *qemu_ram_block_from_host(struct uc_struct *uc, void *ptr,

@@ -368,6 +368,7 @@ static inline bool tlb_hit(struct uc_struct *uc, target_ulong tlb_addr, target_u
     return tlb_hit_page(uc, tlb_addr, addr & TARGET_PAGE_MASK);
 }
 
+/* Returns: 0 on success, -1 on error */
 int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
                         void *ptr, target_ulong len, bool is_write);
 
