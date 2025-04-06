@@ -357,7 +357,7 @@ impl<'a, D> Unicorn<'a, D> {
     pub unsafe fn mem_map_ptr(
         &mut self,
         address: u64,
-        size: usize,
+        size: u64,
         perms: Permission,
         ptr: *mut c_void,
     ) -> Result<(), uc_error> {
