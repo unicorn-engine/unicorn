@@ -233,8 +233,8 @@ static void get_vec_element_ptr_i64(TCGContext *tcg_ctx, TCGv_ptr ptr, uint8_t r
 #define gen_gvec_mov(tcg_ctx, v1, v2) \
     tcg_gen_gvec_mov(tcg_ctx, 0, vec_full_reg_offset(v1), vec_full_reg_offset(v2), 16, \
                      16)
-#define gen_gvec_dup64i(tcg_ctx, v1, c) \
-    tcg_gen_gvec_dup64i(tcg_ctx, vec_full_reg_offset(v1), 16, 16, c)
+#define gen_gvec_dup_imm(tcg_ctx, es, v1, c) \
+    tcg_gen_gvec_dup_imm(tcg_ctx, es, vec_full_reg_offset(v1), 16, 16, c);
 #define gen_gvec_fn_2(tcg_ctx, fn, es, v1, v2) \
     tcg_gen_gvec_##fn(tcg_ctx, es, vec_full_reg_offset(v1), vec_full_reg_offset(v2), \
                       16, 16)
@@ -318,31 +318,6 @@ static void gen_gvec128_4_i64(TCGContext *tcg_ctx, gen_gvec128_4_i64_fn fn, uint
         tcg_temp_free_i64(tcg_ctx, cl);
 }
 
-static void gen_gvec_dupi(TCGContext *tcg_ctx, uint8_t es, uint8_t reg, uint64_t c)
-{
-    switch (es) {
-    case ES_8:
-        tcg_gen_gvec_dup8i(tcg_ctx, vec_full_reg_offset(reg), 16, 16, c);
-        break;
-    case ES_16:
-        tcg_gen_gvec_dup16i(tcg_ctx, vec_full_reg_offset(reg), 16, 16, c);
-        break;
-    case ES_32:
-        tcg_gen_gvec_dup32i(tcg_ctx, vec_full_reg_offset(reg), 16, 16, c);
-        break;
-    case ES_64:
-        gen_gvec_dup64i(tcg_ctx, reg, c);
-        break;
-    default:
-        g_assert_not_reached();
-    }
-}
-
-static void zero_vec(TCGContext *tcg_ctx, uint8_t reg)
-{
-    tcg_gen_gvec_dup8i(tcg_ctx, vec_full_reg_offset(reg), 16, 16, 0);
-}
-
 static void gen_addi2_i64(TCGContext *tcg_ctx, TCGv_i64 dl, TCGv_i64 dh, TCGv_i64 al, TCGv_i64 ah,
                           uint64_t b)
 {
@@ -400,8 +375,8 @@ static DisasJumpType op_vgbm(DisasContext *s, DisasOps *o)
          * Masks for both 64 bit elements of the vector are the same.
          * Trust tcg to produce a good constant loading.
          */
-        gen_gvec_dup64i(tcg_ctx, get_field(s, v1),
-                        generate_byte_mask(i2 & 0xff));
+        gen_gvec_dup_imm(tcg_ctx, ES_64, get_field(s, v1),
+                         generate_byte_mask(i2 & 0xff));
     } else {
         TCGv_i64 t = tcg_temp_new_i64(tcg_ctx);
 
@@ -437,7 +412,7 @@ static DisasJumpType op_vgm(DisasContext *s, DisasOps *o)
         }
     }
 
-    gen_gvec_dupi(tcg_ctx, es, get_field(s, v1), mask);
+    gen_gvec_dup_imm(tcg_ctx, es, get_field(s, v1), mask);
     return DISAS_NEXT;
 }
 
@@ -598,7 +573,7 @@ static DisasJumpType op_vllez(DisasContext *s, DisasOps *o)
 
     t = tcg_temp_new_i64(tcg_ctx);
     tcg_gen_qemu_ld_i64(tcg_ctx, t, o->addr1, get_mem_index(s), MO_TE | es);
-    zero_vec(tcg_ctx, get_field(s, v1));
+    gen_gvec_dup_imm(tcg_ctx, es, get_field(s, v1), 0);
     write_vec_element_i64(tcg_ctx, t, get_field(s, v1), enr, es);
     tcg_temp_free_i64(tcg_ctx, t);
     return DISAS_NEXT;
@@ -917,7 +892,7 @@ static DisasJumpType op_vrepi(DisasContext *s, DisasOps *o)
         return DISAS_NORETURN;
     }
 
-    gen_gvec_dupi(tcg_ctx, es, get_field(s, v1), data);
+    gen_gvec_dup_imm(tcg_ctx, es, get_field(s, v1), data);
     return DISAS_NEXT;
 }
 
@@ -1414,7 +1389,7 @@ static DisasJumpType op_vcksm(DisasContext *s, DisasOps *o)
         read_vec_element_i32(tcg_ctx, tmp, get_field(s, v2), i, ES_32);
         tcg_gen_add2_i32(tcg_ctx, tmp, sum, sum, sum, tmp, tmp);
     }
-    zero_vec(tcg_ctx, get_field(s, v1));
+    gen_gvec_dup_imm(tcg_ctx, ES_32, get_field(s, v1), 0);
     write_vec_element_i32(tcg_ctx, sum, get_field(s, v1), 1, ES_32);
 
     tcg_temp_free_i32(tcg_ctx, tmp);
@@ -1910,65 +1885,6 @@ static DisasJumpType op_vpopct(DisasContext *s, DisasOps *o)
     return DISAS_NEXT;
 }
 
-static void gen_rll_i32(TCGContext *tcg_ctx, TCGv_i32 d, TCGv_i32 a, TCGv_i32 b)
-{
-    TCGv_i32 t0 = tcg_temp_new_i32(tcg_ctx);
-
-    tcg_gen_andi_i32(tcg_ctx, t0, b, 31);
-    tcg_gen_rotl_i32(tcg_ctx, d, a, t0);
-    tcg_temp_free_i32(tcg_ctx, t0);
-}
-
-static void gen_rll_i64(TCGContext *tcg_ctx, TCGv_i64 d, TCGv_i64 a, TCGv_i64 b)
-{
-    TCGv_i64 t0 = tcg_temp_new_i64(tcg_ctx);
-
-    tcg_gen_andi_i64(tcg_ctx, t0, b, 63);
-    tcg_gen_rotl_i64(tcg_ctx, d, a, t0);
-    tcg_temp_free_i64(tcg_ctx, t0);
-}
-
-static DisasJumpType op_verllv(DisasContext *s, DisasOps *o)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    const uint8_t es = get_field(s, m4);
-    static const GVecGen3 g[4] = {
-        { .fno = gen_helper_gvec_verllv8, },
-        { .fno = gen_helper_gvec_verllv16, },
-        { .fni4 = gen_rll_i32, },
-        { .fni8 = gen_rll_i64, },
-    };
-
-    if (es > ES_64) {
-        gen_program_exception(s, PGM_SPECIFICATION);
-        return DISAS_NORETURN;
-    }
-
-    gen_gvec_3(tcg_ctx, get_field(s, v1), get_field(s, v2),
-               get_field(s, v3), &g[es]);
-    return DISAS_NEXT;
-}
-
-static DisasJumpType op_verll(DisasContext *s, DisasOps *o)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    const uint8_t es = get_field(s, m4);
-    static const GVecGen2s g[4] = {
-        { .fno = gen_helper_gvec_verll8, },
-        { .fno = gen_helper_gvec_verll16, },
-        { .fni4 = gen_rll_i32, },
-        { .fni8 = gen_rll_i64, },
-    };
-
-    if (es > ES_64) {
-        gen_program_exception(s, PGM_SPECIFICATION);
-        return DISAS_NORETURN;
-    }
-    gen_gvec_2s(tcg_ctx, get_field(s, v1), get_field(s, v3), o->addr1,
-                &g[es]);
-    return DISAS_NEXT;
-}
-
 static void gen_rim_i32(TCGContext *tcg_ctx, TCGv_i32 d, TCGv_i32 a, TCGv_i32 b, int32_t c)
 {
     TCGv_i32 t = tcg_temp_new_i32(tcg_ctx);
@@ -2035,6 +1951,9 @@ static DisasJumpType op_vesv(DisasContext *s, DisasOps *o)
     case 0x70:
         gen_gvec_fn_3(tcg_ctx, shlv, es, v1, v2, v3);
         break;
+    case 0x73:
+        gen_gvec_fn_3(tcg_ctx, rotlv, es, v1, v2, v3);
+        break;
     case 0x7a:
         gen_gvec_fn_3(tcg_ctx, sarv, es, v1, v2, v3);
         break;
@@ -2067,6 +1986,9 @@ static DisasJumpType op_ves(DisasContext *s, DisasOps *o)
         case 0x30:
             gen_gvec_fn_2i(tcg_ctx, shli, es, v1, v3, d2);
             break;
+        case 0x33:
+            gen_gvec_fn_2i(tcg_ctx, rotli, es, v1, v3, d2);
+            break;
         case 0x3a:
             gen_gvec_fn_2i(tcg_ctx, sari, es, v1, v3, d2);
             break;
@@ -2083,6 +2005,9 @@ static DisasJumpType op_ves(DisasContext *s, DisasOps *o)
         switch (s->fields.op2) {
         case 0x30:
             gen_gvec_fn_2s(tcg_ctx, shls, es, v1, v3, shift);
+            break;
+        case 0x33:
+            gen_gvec_fn_2s(tcg_ctx, rotls, es, v1, v3, shift);
             break;
         case 0x3a:
             gen_gvec_fn_2s(tcg_ctx, sars, es, v1, v3, shift);
