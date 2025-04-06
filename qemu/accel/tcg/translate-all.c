@@ -1694,9 +1694,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
                               target_ulong pc, target_ulong cs_base,
                               uint32_t flags, int cflags)
 {
-#ifdef TARGET_ARM
-    struct uc_struct *uc = cpu->uc;
-#endif
+    UNICORN_UNUSED struct uc_struct *uc = cpu->uc;
     TCGContext *tcg_ctx = cpu->uc->tcg_ctx;
     CPUArchState *env = cpu->env_ptr;
     TranslationBlock *tb, *existing_tb;
@@ -2155,9 +2153,7 @@ static void tb_jmp_cache_clear_page(CPUState *cpu, target_ulong page_addr)
 
 void tb_flush_jmp_cache(CPUState *cpu, target_ulong addr)
 {
-#ifdef TARGET_ARM
-    struct uc_struct *uc = cpu->uc;
-#endif
+    UNICORN_UNUSED struct uc_struct *uc = cpu->uc;
 
     /* Discard jump cache entries for any tb which might potentially
        overlap the flushed page.  */

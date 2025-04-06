@@ -538,9 +538,9 @@ void tcg_gen_rotl_i32(TCGContext *tcg_ctx, TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32
     }
 }
 
-void tcg_gen_rotli_i32(TCGContext *tcg_ctx, TCGv_i32 ret, TCGv_i32 arg1, unsigned arg2)
+void tcg_gen_rotli_i32(TCGContext *tcg_ctx, TCGv_i32 ret, TCGv_i32 arg1, int32_t arg2)
 {
-    tcg_debug_assert(arg2 < 32);
+    tcg_debug_assert(arg2 >= 0 && arg2 < 32);
     /* some cases can be optimized here */
     if (arg2 == 0) {
         tcg_gen_mov_i32(tcg_ctx, ret, arg1);
@@ -578,9 +578,9 @@ void tcg_gen_rotr_i32(TCGContext *tcg_ctx, TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32
     }
 }
 
-void tcg_gen_rotri_i32(TCGContext *tcg_ctx, TCGv_i32 ret, TCGv_i32 arg1, unsigned arg2)
+void tcg_gen_rotri_i32(TCGContext *tcg_ctx, TCGv_i32 ret, TCGv_i32 arg1, int32_t arg2)
 {
-    tcg_debug_assert(arg2 < 32);
+    tcg_debug_assert(arg2 >= 0 && arg2 < 32);
     /* some cases can be optimized here */
     if (arg2 == 0) {
         tcg_gen_mov_i32(tcg_ctx, ret, arg1);
@@ -2000,9 +2000,9 @@ void tcg_gen_rotl_i64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64
 #endif
 }
 
-void tcg_gen_rotli_i64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv_i64 arg1, unsigned arg2)
+void tcg_gen_rotli_i64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv_i64 arg1, int64_t arg2)
 {
-    tcg_debug_assert(arg2 < 64);
+    tcg_debug_assert(arg2 >= 0 && arg2 < 64);
     /* some cases can be optimized here */
     if (arg2 == 0) {
         tcg_gen_mov_i64(tcg_ctx, ret, arg1);
@@ -2041,9 +2041,9 @@ void tcg_gen_rotr_i64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64
 #endif
 }
 
-void tcg_gen_rotri_i64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv_i64 arg1, unsigned arg2)
+void tcg_gen_rotri_i64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv_i64 arg1, int64_t arg2)
 {
-    tcg_debug_assert(arg2 < 64);
+    tcg_debug_assert(arg2 >= 0 && arg2 < 64);
     /* some cases can be optimized here */
     if (arg2 == 0) {
         tcg_gen_mov_i64(tcg_ctx, ret, arg1);

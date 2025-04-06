@@ -262,7 +262,7 @@ float64 VFP_HELPER(sqrt, d)(float64 a, CPUARMState *env)
     return float64_sqrt(a, &env->vfp.fp_status);
 }
 
-static void softfloat_to_vfp_compare(CPUARMState *env, int cmp)
+static void softfloat_to_vfp_compare(CPUARMState *env, FloatRelation cmp)
 {
     uint32_t flags = 0;
     switch (cmp) {
@@ -536,7 +536,7 @@ float32 HELPER(vfp_fcvt_f16_to_f32)(uint32_t a, void *fpstp, uint32_t ahp_mode)
      * it would affect flushing input denormals.
      */
     float_status *fpst = fpstp;
-    flag save = get_flush_inputs_to_zero(fpst);
+    bool save = get_flush_inputs_to_zero(fpst);
     set_flush_inputs_to_zero(false, fpst);
     float32 r = float16_to_float32(a, !ahp_mode, fpst);
     set_flush_inputs_to_zero(save, fpst);
@@ -549,7 +549,7 @@ uint32_t HELPER(vfp_fcvt_f32_to_f16)(float32 a, void *fpstp, uint32_t ahp_mode)
      * it would affect flushing output denormals.
      */
     float_status *fpst = fpstp;
-    flag save = get_flush_to_zero(fpst);
+    bool save = get_flush_to_zero(fpst);
     set_flush_to_zero(false, fpst);
     float16 r = float32_to_float16(a, !ahp_mode, fpst);
     set_flush_to_zero(save, fpst);
@@ -562,7 +562,7 @@ float64 HELPER(vfp_fcvt_f16_to_f64)(uint32_t a, void *fpstp, uint32_t ahp_mode)
      * it would affect flushing input denormals.
      */
     float_status *fpst = fpstp;
-    flag save = get_flush_inputs_to_zero(fpst);
+    bool save = get_flush_inputs_to_zero(fpst);
     set_flush_inputs_to_zero(false, fpst);
     float64 r = float16_to_float64(a, !ahp_mode, fpst);
     set_flush_inputs_to_zero(save, fpst);
@@ -575,7 +575,7 @@ uint32_t HELPER(vfp_fcvt_f64_to_f16)(float64 a, void *fpstp, uint32_t ahp_mode)
      * it would affect flushing output denormals.
      */
     float_status *fpst = fpstp;
-    flag save = get_flush_to_zero(fpst);
+    bool save = get_flush_to_zero(fpst);
     set_flush_to_zero(false, fpst);
     float16 r = float64_to_float16(a, !ahp_mode, fpst);
     set_flush_to_zero(save, fpst);
@@ -586,7 +586,7 @@ uint32_t HELPER(vfp_fcvt_f64_to_f16)(float64 a, void *fpstp, uint32_t ahp_mode)
 #define float32_three make_float32(0x40400000)
 #define float32_one_point_five make_float32(0x3fc00000)
 
-float32 HELPER(recps_f32)(float32 a, float32 b, CPUARMState *env)
+float32 HELPER(recps_f32)(CPUARMState *env, float32 a, float32 b)
 {
     float_status *s = &env->vfp.standard_fp_status;
     if ((float32_is_infinity(a) && float32_is_zero_or_denormal(b)) ||
@@ -599,7 +599,7 @@ float32 HELPER(recps_f32)(float32 a, float32 b, CPUARMState *env)
     return float32_sub(float32_two, float32_mul(a, b, s), s);
 }
 
-float32 HELPER(rsqrts_f32)(float32 a, float32 b, CPUARMState *env)
+float32 HELPER(rsqrts_f32)(CPUARMState *env, float32 a, float32 b)
 {
     float_status *s = &env->vfp.standard_fp_status;
     float32 product;
@@ -702,11 +702,9 @@ static bool round_to_inf(float_status *fpst, bool sign_bit)
         return sign_bit;
     case float_round_to_zero: /* Round to Zero */
         return false;
+    default:
+        g_assert_not_reached();
     }
-
-    g_assert_not_reached();
-    // never reach here
-    return false;
 }
 
 uint32_t HELPER(recpe_f16)(uint32_t input, void *fpstp)
@@ -1030,9 +1028,8 @@ float64 HELPER(rsqrte_f64)(float64 input, void *fpstp)
     return make_float64(val);
 }
 
-uint32_t HELPER(recpe_u32)(uint32_t a, void *fpstp)
+uint32_t HELPER(recpe_u32)(uint32_t a)
 {
-    /* float_status *s = fpstp; */
     int input, estimate;
 
     if ((a & 0x80000000) == 0) {
@@ -1045,7 +1042,7 @@ uint32_t HELPER(recpe_u32)(uint32_t a, void *fpstp)
     return deposit32(0, (32 - 9), 9, estimate);
 }
 
-uint32_t HELPER(rsqrte_u32)(uint32_t a, void *fpstp)
+uint32_t HELPER(rsqrte_u32)(uint32_t a)
 {
     int estimate;
 
