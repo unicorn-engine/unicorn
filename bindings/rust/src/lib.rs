@@ -331,15 +331,8 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Return a range of bytes from memory at the specified emulated physical address as vector.
-    pub fn mem_read_as_vec(&self, address: u64, size: u64) -> Result<Vec<u8>, uc_error> {
-        if size <= usize::MAX as u64 {
-            // Necessary because of the rust type of vec![]
-            // can only handle usize types as argument.
-            // Type coercion using try_into().unwrap() therefore
-            // would supress the addresses larger >= usize::MAX 
-            panic!("mem_read_as_vec can only be used with size <= usize::MAX");
-        }
-        let mut buf = vec![0; size.try_into().unwrap()];
+    pub fn mem_read_as_vec(&self, address: u64, size: usize) -> Result<Vec<u8>, uc_error> {
+        let mut buf = vec![0; size];
         unsafe { ffi::uc_mem_read(self.get_handle(), address, buf.as_mut_ptr(), size.try_into().unwrap()) }.and(Ok(buf))
     }
 
