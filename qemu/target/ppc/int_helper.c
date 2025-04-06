@@ -763,7 +763,7 @@ VCMPNE(w, u32, uint32_t, 0)
                                                                         \
         for (i = 0; i < ARRAY_SIZE(r->f32); i++) {                      \
             uint32_t result;                                            \
-            int rel = float32_compare_quiet(a->f32[i], b->f32[i],       \
+            FloatRelation rel = float32_compare_quiet(a->f32[i], b->f32[i],       \
                                             &env->vec_status);          \
             if (rel == float_relation_unordered) {                      \
                 result = 0;                                             \
@@ -796,14 +796,14 @@ static inline void vcmpbfp_internal(CPUPPCState *env, ppc_avr_t *r,
     int all_in = 0;
 
     for (i = 0; i < ARRAY_SIZE(r->f32); i++) {
-        int le_rel = float32_compare_quiet(a->f32[i], b->f32[i],
+        FloatRelation le_rel = float32_compare_quiet(a->f32[i], b->f32[i],
                                            &env->vec_status);
         if (le_rel == float_relation_unordered) {
             r->u32[i] = 0xc0000000;
             all_in = 1;
         } else {
             float32 bneg = float32_chs(b->f32[i]);
-            int ge_rel = float32_compare_quiet(a->f32[i], bneg,
+            FloatRelation ge_rel = float32_compare_quiet(a->f32[i], bneg,
                                                &env->vec_status);
             int le = le_rel != float_relation_greater;
             int ge = ge_rel != float_relation_less;
@@ -1339,23 +1339,6 @@ VRFI(m, float_round_down)
 VRFI(p, float_round_up)
 VRFI(z, float_round_to_zero)
 #undef VRFI
-
-#define VROTATE(suffix, element, mask)                                  \
-    void helper_vrl##suffix(ppc_avr_t *r, ppc_avr_t *a, ppc_avr_t *b)   \
-    {                                                                   \
-        int i;                                                          \
-                                                                        \
-        for (i = 0; i < ARRAY_SIZE(r->element); i++) {                  \
-            unsigned int shift = b->element[i] & mask;                  \
-            r->element[i] = (a->element[i] << shift) |                  \
-                (a->element[i] >> (sizeof(a->element[0]) * 8 - shift)); \
-        }                                                               \
-    }
-VROTATE(b, u8, 0x7)
-VROTATE(h, u16, 0xF)
-VROTATE(w, u32, 0x1F)
-VROTATE(d, u64, 0x3F)
-#undef VROTATE
 
 void helper_vrsqrtefp(CPUPPCState *env, ppc_avr_t *r, ppc_avr_t *b)
 {
