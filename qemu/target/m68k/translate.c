@@ -5077,6 +5077,20 @@ static void gen_op_fmove_fcr(CPUM68KState *env, DisasContext *s,
             gen_store_fcr(s, AREG(insn, 0), mask);
         }
         return;
+    case 7: /* Immediate */
+        if (REG(insn, 0) == 4) {
+            if (is_write ||
+                (mask != M68K_FPIAR && mask != M68K_FPSR &&
+                 mask != M68K_FPCR)) {
+                gen_exception(s, s->base.pc_next, EXCP_ILLEGAL);
+                return;
+            }
+            tmp = tcg_const_i32(tcg_ctx, read_im32(env, s));
+            gen_store_fcr(s, tmp, mask);
+            tcg_temp_free(tcg_ctx, tmp);
+            return;
+        }
+        break;
     default:
         break;
     }
@@ -5288,6 +5302,9 @@ DISAS_INSN(fpu)
         break;
     case 0x06: /* flognp1 */
         gen_helper_flognp1(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
+        break;
+    case 0x08: /* fetoxm1 */
+        gen_helper_fetoxm1(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
         break;
     case 0x09: /* ftanh */
         gen_helper_ftanh(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
