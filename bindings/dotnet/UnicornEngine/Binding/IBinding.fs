@@ -12,8 +12,8 @@ type IBinding =
         abstract Errono : UIntPtr -> Int32
         abstract RegRead : UIntPtr * Int32 * Byte array -> Int32
         abstract RegWrite : UIntPtr * Int32 * Byte array -> Int32
-        abstract MemRead : UIntPtr * UInt64 * Byte array * UIntPtr -> Int32
-        abstract MemWrite : UIntPtr * UInt64 * Byte array * UIntPtr -> Int32
+        abstract MemRead : UIntPtr * UInt64 * Byte array * UInt64 -> Int32
+        abstract MemWrite : UIntPtr * UInt64 * Byte array * UInt64 -> Int32
         abstract EmuStart : UIntPtr * UInt64 * UInt64 * UInt64 * UInt64 -> Int32
         abstract EmuStop : UIntPtr -> Int32        
         abstract HookDel : UIntPtr * UIntPtr -> Int32
