@@ -503,6 +503,12 @@ static void test_mem_read_and_write_large_memory_block(void)
         // enough memory space.
         return;
     }
+    // Android CI/CD services do not have enough memory capacity for this
+    // test to work. Executing it will result in a permanent loop with the
+    // low memory killer daemon. 
+#ifdef __ANDROID__
+    return;
+#endif 
 
     OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
     OK(uc_mem_map(uc, mem_addr, mem_size, UC_PROT_ALL));
