@@ -23,6 +23,21 @@
         return false;                       \
 } while (0)
 
+/*
+ * RISC-V requires NaN-boxing of narrower width floating
+ * point values.  This applies when a 32-bit value is
+ * assigned to a 64-bit FP register.  Thus this does not
+ * apply when the RVD extension is not present.
+ */
+static void gen_nanbox_fpr(DisasContext *ctx, int regno)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    if (has_ext(ctx, RVD)) {
+        tcg_gen_ori_i64(tcg_ctx, tcg_ctx->cpu_fpr[regno], tcg_ctx->cpu_fpr[regno],
+                        MAKE_64BIT_MASK(32, 32));
+    }
+}
+
 static bool trans_flw(DisasContext *ctx, arg_flw *a)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -33,8 +48,7 @@ static bool trans_flw(DisasContext *ctx, arg_flw *a)
     tcg_gen_addi_tl(tcg_ctx, t0, t0, a->imm);
 
     tcg_gen_qemu_ld_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], t0, ctx->mem_idx, MO_TEUL);
-    /* RISC-V requires NaN-boxing of narrower width floating point values */
-    tcg_gen_ori_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], tcg_ctx->cpu_fpr[a->rd], 0xffffffff00000000ULL);
+    gen_nanbox_fpr(ctx, a->rd);
 
     tcg_temp_free(tcg_ctx, t0);
     mark_fs_dirty(ctx);
@@ -343,7 +357,7 @@ static bool trans_fclass_s(DisasContext *ctx, arg_fclass_s *a)
 
     TCGv t0 = tcg_temp_new(tcg_ctx);
 
-    gen_helper_fclass_s(tcg_ctx, t0, tcg_ctx->cpu_fpr[a->rs1]);
+    glue(gen_helper_fclass_s, UNICORN_ARCH_POSTFIX)(tcg_ctx, t0, tcg_ctx->cpu_fpr[a->rs1]);
 
     gen_set_gpr(tcg_ctx, a->rd, t0);
     tcg_temp_free(tcg_ctx, t0);

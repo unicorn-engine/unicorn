@@ -56,6 +56,13 @@ typedef struct DisasContext {
        to reset this known value.  */
     int frm;
     bool ext_ifencei;
+    /* vector extension */
+    bool vill;
+    uint8_t lmul;
+    uint8_t sew;
+    uint16_t vlen;
+    uint16_t mlen;
+    bool vl_eq_vlmax;
 
     // Unicorn
     struct uc_struct *uc;
@@ -557,6 +564,11 @@ static void decode_RV32_64C(DisasContext *ctx, uint16_t opcode)
     }
 }
 
+static int ex_plus_1(DisasContext *ctx, int nf)
+{
+    return nf + 1;
+}
+
 #define EX_SH(amount) \
     static int ex_shift_##amount(DisasContext *ctx, int imm) \
     {                                         \
@@ -733,6 +745,8 @@ static bool gen_shift(DisasContext *ctx, arg_r *a,
 #include "insn_trans/trans_rva.inc.c"
 #include "insn_trans/trans_rvf.inc.c"
 #include "insn_trans/trans_rvd.inc.c"
+#include "insn_trans/trans_rvh.inc.c"
+#include "insn_trans/trans_rvv.inc.c"
 #include "insn_trans/trans_privileged.inc.c"
 
 /* Include the auto-generated decoder for 16 bit insn */
@@ -779,13 +793,14 @@ static void riscv_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
     DisasContext *ctx = container_of(dcbase, DisasContext, base);
     CPURISCVState *env = cs->env_ptr;
     RISCVCPU *cpu = RISCV_CPU(cs);
+    uint32_t tb_flags = ctx->base.tb->flags;
 
     // unicorn setup
     ctx->uc = cs->uc;
 
     ctx->pc_succ_insn = ctx->base.pc_first;
-    ctx->mem_idx = ctx->base.tb->flags & TB_FLAGS_MMU_MASK;
-    ctx->mstatus_fs = ctx->base.tb->flags & TB_FLAGS_MSTATUS_FS;
+    ctx->mem_idx = tb_flags & TB_FLAGS_MMU_MASK;
+    ctx->mstatus_fs = tb_flags & TB_FLAGS_MSTATUS_FS;
     ctx->priv_ver = env->priv_ver;
 
     if (riscv_has_ext(env, RVH)) {
@@ -807,6 +822,12 @@ static void riscv_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
     ctx->misa = env->misa;
     ctx->frm = -1;  /* unknown rounding mode */
     ctx->ext_ifencei = cpu->cfg.ext_ifencei;
+    ctx->vlen = cpu->cfg.vlen;
+    ctx->vill = FIELD_EX32(tb_flags, TB_FLAGS, VILL);
+    ctx->sew = FIELD_EX32(tb_flags, TB_FLAGS, SEW);
+    ctx->lmul = FIELD_EX32(tb_flags, TB_FLAGS, LMUL);
+    ctx->mlen = 1 << (ctx->sew  + 3 - ctx->lmul);
+    ctx->vl_eq_vlmax = FIELD_EX32(tb_flags, TB_FLAGS, VL_EQ_VLMAX);
 }
 
 static void riscv_tr_tb_start(DisasContextBase *db, CPUState *cpu)
@@ -965,6 +986,7 @@ void riscv_translate_init(struct uc_struct *uc)
     }
 
     tcg_ctx->cpu_pc = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPURISCVState, pc), "pc");
+    tcg_ctx->cpu_vl = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPURISCVState, vl), "vl");
     tcg_ctx->load_res = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPURISCVState, load_res),
                              "load_res");
     tcg_ctx->load_val = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPURISCVState, load_val),

@@ -300,9 +300,6 @@ static int get_physical_address(CPURISCVState *env, hwaddr *physical,
     MemTxAttrs attrs = MEMTXATTRS_UNSPECIFIED;
     int mode = mmu_idx;
     bool use_background = false;
-    hwaddr base;
-    int levels = 0, ptidxbits = 0, ptesize = 0, vm, sum, mxr, widened;
-
 
     /*
      * Check if we should use the background registers for the two
@@ -344,63 +341,45 @@ static int get_physical_address(CPURISCVState *env, hwaddr *physical,
 
     *prot = 0;
 
+    hwaddr base;
+    int levels, ptidxbits, ptesize, vm, sum, mxr, widened;
+
     if (first_stage == true) {
         mxr = get_field(env->mstatus, MSTATUS_MXR);
     } else {
         mxr = get_field(env->vsstatus, MSTATUS_MXR);
     }
 
-    if (env->priv_ver >= PRIV_VERSION_1_10_0) {
-        if (first_stage == true) {
-            if (use_background) {
-                base = (hwaddr)get_field(env->vsatp, SATP_PPN) << PGSHIFT;
-                vm = get_field(env->vsatp, SATP_MODE);
-            } else {
-                base = (hwaddr)get_field(env->satp, SATP_PPN) << PGSHIFT;
-                vm = get_field(env->satp, SATP_MODE);
-            }
-            widened = 0;
+    if (first_stage == true) {
+        if (use_background) {
+            base = (hwaddr)get_field(env->vsatp, SATP_PPN) << PGSHIFT;
+            vm = get_field(env->vsatp, SATP_MODE);
         } else {
-            base = (hwaddr)get_field(env->hgatp, HGATP_PPN) << PGSHIFT;
-            vm = get_field(env->hgatp, HGATP_MODE);
-            widened = 2;
+            base = (hwaddr)get_field(env->satp, SATP_PPN) << PGSHIFT;
+            vm = get_field(env->satp, SATP_MODE);
         }
-        sum = get_field(env->mstatus, MSTATUS_SUM);
-        switch (vm) {
-        case VM_1_10_SV32:
-          levels = 2; ptidxbits = 10; ptesize = 4; break;
-        case VM_1_10_SV39:
-          levels = 3; ptidxbits = 9; ptesize = 8; break;
-        case VM_1_10_SV48:
-          levels = 4; ptidxbits = 9; ptesize = 8; break;
-        case VM_1_10_SV57:
-          levels = 5; ptidxbits = 9; ptesize = 8; break;
-        case VM_1_10_MBARE:
-            *physical = addr;
-            *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
-            return TRANSLATE_SUCCESS;
-        default:
-          g_assert_not_reached();
-        }
-    } else {
         widened = 0;
-        base = (hwaddr)(env->sptbr) << PGSHIFT;
-        sum = !get_field(env->mstatus, MSTATUS_PUM);
-        vm = get_field(env->mstatus, MSTATUS_VM);
-        switch (vm) {
-        case VM_1_09_SV32:
-          levels = 2; ptidxbits = 10; ptesize = 4; break;
-        case VM_1_09_SV39:
-          levels = 3; ptidxbits = 9; ptesize = 8; break;
-        case VM_1_09_SV48:
-          levels = 4; ptidxbits = 9; ptesize = 8; break;
-        case VM_1_09_MBARE:
-            *physical = addr;
-            *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
-            return TRANSLATE_SUCCESS;
-        default:
-          g_assert_not_reached();
-        }
+    } else {
+        base = (hwaddr)get_field(env->hgatp, HGATP_PPN) << PGSHIFT;
+        vm = get_field(env->hgatp, HGATP_MODE);
+        widened = 2;
+    }
+    sum = get_field(env->mstatus, MSTATUS_SUM);
+    switch (vm) {
+    case VM_1_10_SV32:
+      levels = 2; ptidxbits = 10; ptesize = 4; break;
+    case VM_1_10_SV39:
+      levels = 3; ptidxbits = 9; ptesize = 8; break;
+    case VM_1_10_SV48:
+      levels = 4; ptidxbits = 9; ptesize = 8; break;
+    case VM_1_10_SV57:
+      levels = 5; ptidxbits = 9; ptesize = 8; break;
+    case VM_1_10_MBARE:
+        *physical = addr;
+        *prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+        return TRANSLATE_SUCCESS;
+    default:
+      g_assert_not_reached();
     }
 
     CPUState *cs = env_cpu(env);
@@ -438,11 +417,17 @@ restart:
         hwaddr pte_addr;
 
         if (two_stage && first_stage) {
+            int vbase_prot;
             hwaddr vbase;
 
             /* Do the second stage translation on the base PTE address. */
-            get_physical_address(env, &vbase, prot, base, access_type,
-                                 mmu_idx, false, true);
+            int vbase_ret = get_physical_address(env, &vbase, &vbase_prot,
+                                                 base, MMU_DATA_LOAD,
+                                                 mmu_idx, false, true);
+
+            if (vbase_ret != TRANSLATE_SUCCESS) {
+                return vbase_ret;
+            }
 
             pte_addr = vbase + idx * ptesize;
         } else {
@@ -456,17 +441,9 @@ restart:
         }
 
 #if defined(TARGET_RISCV32)
-#ifdef UNICORN_ARCH_POSTFIX
         target_ulong pte = glue(address_space_ldl, UNICORN_ARCH_POSTFIX)(cs->as->uc, cs->as, pte_addr, attrs, &res);
-#else
-        target_ulong pte = address_space_ldl(cs->as->uc, cs->as, pte_addr, attrs, &res);
-#endif
 #elif defined(TARGET_RISCV64)
-#ifdef UNICORN_ARCH_POSTFIX
         target_ulong pte = glue(address_space_ldq, UNICORN_ARCH_POSTFIX)(cs->as->uc, cs->as, pte_addr, attrs, &res);
-#else
-        target_ulong pte = address_space_ldq(cs->as->uc, cs->as, pte_addr, attrs, &res);
-#endif
 #endif
         if (res != MEMTX_OK) {
             return TRANSLATE_FAIL;
@@ -528,18 +505,14 @@ restart:
                     &addr1, &l, false, MEMTXATTRS_UNSPECIFIED);
                 if (memory_region_is_ram(mr)) {
                     target_ulong *pte_pa =
-                        qemu_map_ram_ptr(mr->uc, mr->ram_block, addr1);
+                        qemu_map_ram_ptr(cs->as->uc, mr->ram_block, addr1);
 #if TCG_OVERSIZED_GUEST
                     /* MTTCG is not enabled on oversized TCG guests so
                      * page table updates do not need to be atomic */
                     *pte_pa = pte = updated_pte;
 #else
                     target_ulong old_pte =
-#ifdef _MSC_VER
-                        atomic_cmpxchg((long *)pte_pa, pte, updated_pte);
-#else
                         atomic_cmpxchg(pte_pa, pte, updated_pte);
-#endif
                     if (old_pte != pte) {
                         goto restart;
                     } else {
@@ -556,12 +529,7 @@ restart:
             /* for superpage mappings, make a fake leaf PTE for the TLB's
                benefit. */
             target_ulong vpn = addr >> PGSHIFT;
-            if (i == 0) {
-                *physical = (ppn | (vpn & ((1L << (ptshift + widened)) - 1))) <<
-                             PGSHIFT;
-            } else {
-                *physical = (ppn | (vpn & ((1L << ptshift) - 1))) << PGSHIFT;
-            }
+            *physical = (ppn | (vpn & ((1L << ptshift) - 1))) << PGSHIFT;
 
             /* set permissions on the TLB entry */
             if ((pte & PTE_R) || ((pte & PTE_X) && mxr)) {
@@ -590,7 +558,6 @@ static void raise_mmu_exception(CPURISCVState *env, target_ulong address,
     int page_fault_exceptions;
     if (first_stage) {
         page_fault_exceptions =
-            (env->priv_ver >= PRIV_VERSION_1_10_0) &&
             get_field(env->satp, SATP_MODE) != VM_1_10_MBARE &&
             !pmp_violation;
     } else {
@@ -702,7 +669,7 @@ bool riscv_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
     CPURISCVState *env = &cpu->env;
     vaddr im_address;
     hwaddr pa = 0;
-    int prot;
+    int prot, prot2;
     bool pmp_violation = false;
     bool m_mode_two_stage = false;
     bool hs_mode_two_stage = false;
@@ -752,13 +719,13 @@ bool riscv_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
             /* Second stage lookup */
             im_address = pa;
 
-            ret = get_physical_address(env, &pa, &prot, im_address,
+            ret = get_physical_address(env, &pa, &prot2, im_address,
                                        access_type, mmu_idx, false, true);
 
             qemu_log_mask(CPU_LOG_MMU,
                     "%s 2nd-stage address=%" VADDR_PRIx " ret %d physical "
                     TARGET_FMT_plx " prot %d\n",
-                    __func__, im_address, ret, pa, prot);
+                    __func__, im_address, ret, pa, prot2);
 
             if (riscv_feature(env, RISCV_FEATURE_PMP) &&
                 (ret == TRANSLATE_SUCCESS) &&
@@ -916,8 +883,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         }
 
         s = env->mstatus;
-        s = set_field(s, MSTATUS_SPIE, env->priv_ver >= PRIV_VERSION_1_10_0 ?
-            get_field(s, MSTATUS_SIE) : get_field(s, MSTATUS_UIE << env->priv));
+        s = set_field(s, MSTATUS_SPIE, get_field(s, MSTATUS_SIE));
         s = set_field(s, MSTATUS_SPP, env->priv);
         s = set_field(s, MSTATUS_SIE, 0);
         env->mstatus = s;
@@ -954,8 +920,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         }
 
         s = env->mstatus;
-        s = set_field(s, MSTATUS_MPIE, env->priv_ver >= PRIV_VERSION_1_10_0 ?
-            get_field(s, MSTATUS_MIE) : get_field(s, MSTATUS_UIE << env->priv));
+        s = set_field(s, MSTATUS_MPIE, get_field(s, MSTATUS_MIE));
         s = set_field(s, MSTATUS_MPP, env->priv);
         s = set_field(s, MSTATUS_MIE, 0);
         env->mstatus = s;
