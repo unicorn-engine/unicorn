@@ -448,6 +448,7 @@ static void test_snapshot_unmap(void)
     OK(uc_context_free(ctx));
     OK(uc_close(uc));
 }
+
 static void parts_increment(size_t idx, char parts[3])
 {
     if (idx && idx % 3 == 0) {
