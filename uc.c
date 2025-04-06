@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #endif
 
-#include <time.h> // nanosleep
 #include <string.h>
 
 #include "uc_priv.h"
