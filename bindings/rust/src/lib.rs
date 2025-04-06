@@ -154,13 +154,13 @@ impl<'a> MmioCallbackScope<'a> {
                         vec![(*b, *s)]
                     } else if end >= e {
                         // The unmapped region overlaps with the end of this region
-                        vec![(*b, (begin - *b) as usize)]
+                        vec![(*b, (begin - *b) as u64)]
                     } else {
                         // The unmapped region is in the middle of this region
                         let second_b = end + 1;
                         vec![
-                            (*b, (begin - *b) as usize),
-                            (second_b, (e - second_b) as usize),
+                            (*b, (begin - *b) as u64),
+                            (second_b, (e - second_b) as u64),
                         ]
                     }
                 } else if end > *b {
@@ -169,7 +169,7 @@ impl<'a> MmioCallbackScope<'a> {
                         vec![]
                     } else {
                         // The unmapped region overlaps with the start of this region
-                        vec![(end, (e - end) as usize)]
+                        vec![(end, (e - end) as u64)]
                     }
                 } else {
                     // The unmapped region is completely before this region
