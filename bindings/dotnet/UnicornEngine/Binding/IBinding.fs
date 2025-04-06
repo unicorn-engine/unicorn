@@ -18,7 +18,7 @@ type IBinding =
         abstract EmuStop : UIntPtr -> Int32        
         abstract HookDel : UIntPtr * UIntPtr -> Int32
         abstract MemMap : UIntPtr * UInt64 * UInt64 * UInt32 -> Int32
-        abstract MemMapPtr : UIntPtr * UInt64 * UIn64 * UInt32 * UIntPtr -> Int32
+        abstract MemMapPtr : UIntPtr * UInt64 * UInt64 * UInt32 * UIntPtr -> Int32
         abstract MemUnmap : UIntPtr * UInt64 * UInt64 -> Int32
         abstract MemProtect : UIntPtr * UInt64 * UInt64 * UInt32 -> Int32
         abstract HookAddNoarg : UIntPtr * UIntPtr * Int32 * UIntPtr * IntPtr * UInt64 * UInt64 -> Int32
