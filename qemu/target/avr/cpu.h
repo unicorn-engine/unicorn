@@ -60,16 +60,10 @@
  *
  * It's also useful to know where some things are, like the IO registers.
  */
-#if 1
-// Unicorn:
-#define OFFSET_CODE 0x08000000 /* UC_AVR_MEM_FLASH */
-#define OFFSET_DATA 0x00000000
-#else
 /* Flash program memory */
 #define OFFSET_CODE 0x00000000
 /* CPU registers, IO registers, and SRAM */
 #define OFFSET_DATA 0x00800000
-#endif
 /* CPU registers specifically, these are mapped at the start of data */
 #define OFFSET_CPU_REGISTERS OFFSET_DATA
 /*
@@ -112,8 +106,6 @@ typedef enum AVRFeature {
     AVR_FEATURE_RAMPX,
     AVR_FEATURE_RAMPY,
     AVR_FEATURE_RAMPZ,
-
-    AVR_FEATURE_FLASH, /* Unicorn: was Flash program memory mapped? */
 } AVRFeature;
 
 typedef struct CPUAVRState CPUAVRState;
@@ -134,15 +126,15 @@ struct CPUAVRState {
     uint32_t rampX; /* 0x00ff0000 8 bits */
     uint32_t rampY; /* 0x00ff0000 8 bits */
     uint32_t rampZ; /* 0x00ff0000 8 bits */
-    uint32_t eind; /* 0x00ff0000 8 bits */
+    uint32_t eind;  /* 0x00ff0000 8 bits */
 
     uint32_t r[NUMBER_OF_CPU_REGISTERS]; /* 8 bits each */
-    uint32_t sp; /* 16 bits */
+    uint32_t sp;                         /* 16 bits */
 
     uint32_t skip; /* if set skip instruction */
 
     uint64_t intsrc; /* interrupt sources */
-    bool fullacc; /* CPU/MEM if true MEM only otherwise */
+    bool fullacc;    /* CPU/MEM if true MEM only otherwise */
 
     uint64_t features;
 
@@ -154,7 +146,7 @@ struct CPUAVRState {
  *  AVRCPU:
  *  @env: #CPUAVRState
  *
- *  A AVR CPU.
+ *  An AVR CPU.
  */
 typedef struct AVRCPU {
     /*< private >*/
@@ -167,13 +159,9 @@ typedef struct AVRCPU {
     AVRCPUClass cc;
 } AVRCPU;
 
-extern const struct VMStateDescription vms_avr_cpu;
-
 void avr_cpu_do_interrupt(CPUState *cpu);
 bool avr_cpu_exec_interrupt(CPUState *cpu, int int_req);
 hwaddr avr_cpu_get_phys_page_debug(CPUState *cpu, vaddr addr);
-int avr_cpu_gdb_read_register(CPUState *cpu, GByteArray *buf, int reg);
-int avr_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
 
 static inline int avr_feature(CPUAVRState *env, AVRFeature feature)
 {
@@ -185,28 +173,14 @@ static inline void set_avr_feature(CPUAVRState *env, int feature)
     env->features |= (1U << feature);
 }
 
-#define cpu_list avr_cpu_list
-#define cpu_signal_handler cpu_avr_signal_handler
-#define cpu_mmu_index avr_cpu_mmu_index
-
 static inline int avr_cpu_mmu_index(CPUAVRState *env, bool ifetch)
 {
     return ifetch ? MMU_CODE_IDX : MMU_DATA_IDX;
 }
 
-static inline uint32_t avr_code_base(CPUAVRState *env)
-{
-    return OFFSET_CODE && avr_feature(env, AVR_FEATURE_FLASH) ?
-        OFFSET_CODE : 0;
-}
+#define cpu_mmu_index avr_cpu_mmu_index
 
 void avr_cpu_tcg_init(struct uc_struct *uc);
-
-void avr_cpu_list(void);
-int cpu_avr_exec(CPUState *cpu);
-int cpu_avr_signal_handler(int host_signum, void *pinfo, void *puc);
-int avr_cpu_memory_rw_debug(CPUState *cs, vaddr address, uint8_t *buf,
-                            int len, bool is_write);
 
 enum {
     TB_FLAGS_FULL_ACCESS = 1,
@@ -239,14 +213,9 @@ static inline int cpu_interrupts_enabled(CPUAVRState *env)
 static inline uint8_t cpu_get_sreg(CPUAVRState *env)
 {
     uint8_t sreg;
-    sreg = (env->sregC) << 0
-         | (env->sregZ) << 1
-         | (env->sregN) << 2
-         | (env->sregV) << 3
-         | (env->sregS) << 4
-         | (env->sregH) << 5
-         | (env->sregT) << 6
-         | (env->sregI) << 7;
+    sreg = (env->sregC) << 0 | (env->sregZ) << 1 | (env->sregN) << 2 |
+           (env->sregV) << 3 | (env->sregS) << 4 | (env->sregH) << 5 |
+           (env->sregT) << 6 | (env->sregI) << 7;
     return sreg;
 }
 
@@ -263,8 +232,8 @@ static inline void cpu_set_sreg(CPUAVRState *env, uint8_t sreg)
 }
 
 bool avr_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
-                      MMUAccessType access_type, int mmu_idx,
-                      bool probe, uintptr_t retaddr);
+                      MMUAccessType access_type, int mmu_idx, bool probe,
+                      uintptr_t retaddr);
 
 typedef CPUAVRState CPUArchState;
 typedef AVRCPU ArchCPU;

@@ -17,50 +17,26 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
-//> AVR architectures
-typedef enum uc_avr_arch {
-    UC_AVR_ARCH_AVR1 = 10,
-    UC_AVR_ARCH_AVR2 = 20,
-    UC_AVR_ARCH_AVR25 = 25,
-    UC_AVR_ARCH_AVR3 = 30,
-    UC_AVR_ARCH_AVR4 = 40,
-    UC_AVR_ARCH_AVR5 = 50,
-    UC_AVR_ARCH_AVR51 = 51,
-    UC_AVR_ARCH_AVR6 = 60,
-} uc_avr_arch;
-
-#define UC_CPU_AVR_ARCH 1000
-
 //> AVR CPU
 typedef enum uc_cpu_avr {
-    // Enhanced Core with 16K up to 64K of program memory ("AVR5")
-    UC_CPU_AVR_ATMEGA16 = UC_AVR_ARCH_AVR5*UC_CPU_AVR_ARCH + 16,
-    UC_CPU_AVR_ATMEGA32 = UC_AVR_ARCH_AVR5*UC_CPU_AVR_ARCH + 32,
-    UC_CPU_AVR_ATMEGA64 = UC_AVR_ARCH_AVR5*UC_CPU_AVR_ARCH + 64,
+    // Enhanced Core with 16K up to 64K of program memory (AVR5)
+    UC_CPU_AVR_5,
 
-    // Enhanced Core with 128K of program memory ("AVR5.1")
-    UC_CPU_AVR_ATMEGA128 = UC_AVR_ARCH_AVR51*UC_CPU_AVR_ARCH + 128,
-    UC_CPU_AVR_ATMEGA128RFR2,
-    UC_CPU_AVR_ATMEGA1280,
+    // Enhanced Core with 128K of program memory (AVR5.1)
+    UC_CPU_AVR_51,
 
-    // Enhanced Core with 128K+ of program memory, i.e. 3-byte PC ("AVR6")
-    UC_CPU_AVR_ATMEGA256 = UC_AVR_ARCH_AVR6*UC_CPU_AVR_ARCH + 256,
-    UC_CPU_AVR_ATMEGA256RFR2,
-    UC_CPU_AVR_ATMEGA2560,
+    // Enhanced Core with 128K+ of program memory, i.e. 3-byte PC (AVR6)
+    UC_CPU_AVR_6,
+
+    UC_CPU_AVR_ENDING,
 } uc_cpu_avr;
-
-//> AVR memory
-typedef enum uc_avr_mem {
-    // Flash program memory (code)
-    UC_AVR_MEM_FLASH = 0x08000000,
-} uc_avr_mem;
 
 //> AVR registers
 typedef enum uc_avr_reg {
     UC_AVR_REG_INVALID = 0,
 
     // General purpose registers (GPR)
-    UC_AVR_REG_R0 = 1,
+    UC_AVR_REG_R0,
     UC_AVR_REG_R1,
     UC_AVR_REG_R2,
     UC_AVR_REG_R3,
@@ -96,7 +72,7 @@ typedef enum uc_avr_reg {
     UC_AVR_REG_PC,
     UC_AVR_REG_SP,
 
-    UC_AVR_REG_RAMPD = UC_AVR_REG_PC + 16 + 8,
+    UC_AVR_REG_RAMPD,
     UC_AVR_REG_RAMPX,
     UC_AVR_REG_RAMPY,
     UC_AVR_REG_RAMPZ,
@@ -106,7 +82,7 @@ typedef enum uc_avr_reg {
     UC_AVR_REG_SREG,
 
     //> 16-bit coalesced registers
-    UC_AVR_REG_R0W = UC_AVR_REG_PC + 32,
+    UC_AVR_REG_R0W,
     UC_AVR_REG_R1W,
     UC_AVR_REG_R2W,
     UC_AVR_REG_R3W,
@@ -139,7 +115,7 @@ typedef enum uc_avr_reg {
     UC_AVR_REG_R30W,
 
     //> 32-bit coalesced registers
-    UC_AVR_REG_R0D = UC_AVR_REG_PC + 64,
+    UC_AVR_REG_R0D,
     UC_AVR_REG_R1D,
     UC_AVR_REG_R2D,
     UC_AVR_REG_R3D,

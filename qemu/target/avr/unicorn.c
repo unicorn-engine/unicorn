@@ -18,7 +18,7 @@ AVRCPU *cpu_avr_init(struct uc_struct *uc);
 
 static inline uint32_t get_pc(CPUAVRState *env)
 {
-    return env->pc_w*2;
+    return env->pc_w * 2;
 }
 
 static uint64_t avr_get_pc(struct uc_struct *uc)
@@ -28,7 +28,7 @@ static uint64_t avr_get_pc(struct uc_struct *uc)
 
 static inline void set_pc(CPUAVRState *env, uint32_t value)
 {
-    env->pc_w = value/2;
+    env->pc_w = value / 2;
 }
 
 static void avr_set_pc(struct uc_struct *uc, uint64_t address)
@@ -36,14 +36,13 @@ static void avr_set_pc(struct uc_struct *uc, uint64_t address)
     set_pc((CPUAVRState *)uc->cpu->env_ptr, address);
 }
 
-static void reg_reset(struct uc_struct *uc)
-{
-}
+static void reg_reset(struct uc_struct *uc) {}
 
-#define GET_BYTE(x, n)          (((x) >> (n)*8) & 0xff)
-#define SET_BYTE(x, n, b)       (x = ((x) & ~(0xff << ((n)*8))) | ((b) << ((n)*8)))
-#define GET_RAMP(reg)           GET_BYTE(env->glue(ramp,reg), 2)
-#define SET_RAMP(reg, val)      SET_BYTE(env->glue(ramp,reg), 2, val)
+#define GET_BYTE(x, n) (((x) >> (n) * 8) & 0xff)
+#define SET_BYTE(x, n, b)                                                      \
+    (x = ((x) & ~(0xff << ((n) * 8))) | ((b) << ((n) * 8)))
+#define GET_RAMP(reg) GET_BYTE(env->glue(ramp, reg), 2)
+#define SET_RAMP(reg, val) SET_BYTE(env->glue(ramp, reg), 2, val)
 
 DEFAULT_VISIBILITY
 uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
@@ -78,6 +77,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         CHECK_REG_TYPE(uint8_t);
         *(uint8_t *)value = GET_RAMP(Z);
         break;
+
     case UC_AVR_REG_EIND:
         CHECK_REG_TYPE(uint8_t);
         *(uint8_t *)value = GET_BYTE(env->eind, 2);
@@ -100,15 +100,13 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         if (regid >= UC_AVR_REG_R0 && regid <= UC_AVR_REG_R31) {
             CHECK_REG_TYPE(uint8_t);
             *(int8_t *)value = (int8_t)env->r[regid - UC_AVR_REG_R0];
-        }
-        else if (regid >= UC_AVR_REG_R0W && regid <= UC_AVR_REG_R30W) {
+        } else if (regid >= UC_AVR_REG_R0W && regid <= UC_AVR_REG_R30W) {
             const uint32_t *const r = &env->r[regid - UC_AVR_REG_R0W];
             for (int k = 0; k < 2; k++)
                 SET_BYTE(v, k, (r[k] & 0xff));
             CHECK_REG_TYPE(uint16_t);
             *(int16_t *)value = (int16_t)v;
-        }
-        else if (regid >= UC_AVR_REG_R0D && regid <= UC_AVR_REG_R28D) {
+        } else if (regid >= UC_AVR_REG_R0D && regid <= UC_AVR_REG_R28D) {
             const uint32_t *const r = &env->r[regid - UC_AVR_REG_R0D];
             for (int k = 0; k < 4; k++)
                 SET_BYTE(v, k, (r[k] & 0xff));
@@ -157,6 +155,7 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         CHECK_REG_TYPE(uint8_t);
         SET_RAMP(Z, *(uint8_t *)value);
         break;
+
     case UC_AVR_REG_EIND:
         CHECK_REG_TYPE(uint8_t);
         SET_BYTE(env->eind, 2, *(uint8_t *)value);
@@ -183,14 +182,12 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             r = &env->r[regid - UC_AVR_REG_R0];
             rlen = 1;
             CHECK_REG_TYPE(uint8_t);
-        }
-        else if (regid >= UC_AVR_REG_R0W && regid <= UC_AVR_REG_R30W) {
+        } else if (regid >= UC_AVR_REG_R0W && regid <= UC_AVR_REG_R30W) {
             v = *(uint16_t *)value;
             r = &env->r[regid - UC_AVR_REG_R0W];
             rlen = 2;
             CHECK_REG_TYPE(uint16_t);
-        }
-        else if (regid >= UC_AVR_REG_R0D && regid <= UC_AVR_REG_R28D) {
+        } else if (regid >= UC_AVR_REG_R0D && regid <= UC_AVR_REG_R28D) {
             v = *(uint32_t *)value;
             r = &env->r[regid - UC_AVR_REG_R0D];
             rlen = 4;
@@ -238,31 +235,6 @@ static void avr_release(void *ctx)
     }
 }
 
-static inline bool is_flash_memory(hwaddr addr, size_t size, uint32_t perms)
-{
-    if ((addr ^ UC_AVR_MEM_FLASH) >> 24)
-        return false;
-    if ((perms & UC_PROT_ALL) != (UC_PROT_READ|UC_PROT_EXEC))
-        return false;
-    return true;
-}
-
-static MemoryRegion *avr_memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms)
-{
-    MemoryRegion *const mr = memory_map(uc, begin, size, perms);
-    if (mr && is_flash_memory(begin, size, perms))
-        set_avr_feature(&AVR_CPU(uc->cpu)->env, AVR_FEATURE_FLASH);
-    return mr;
-}
-
-static MemoryRegion *avr_memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms, void *ptr)
-{
-    MemoryRegion *const mr = memory_map_ptr(uc, begin, size, perms, ptr);
-    if (mr && is_flash_memory(begin, size, perms))
-        set_avr_feature(&AVR_CPU(uc->cpu)->env, AVR_FEATURE_FLASH);
-    return mr;
-}
-
 DEFAULT_VISIBILITY
 void uc_init(struct uc_struct *uc)
 {
@@ -275,6 +247,4 @@ void uc_init(struct uc_struct *uc)
     uc->release = avr_release;
     uc->cpu_context_size = offsetof(CPUAVRState, features);
     uc_common_init(uc);
-    uc->memory_map = avr_memory_map;
-    uc->memory_map_ptr = avr_memory_map_ptr;
 }

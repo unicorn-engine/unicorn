@@ -11,8 +11,8 @@
 // functions to read & write registers
 uc_err reg_read_avr(void *env, int mode, unsigned int regid, void *value,
                     size_t *size);
-uc_err reg_write_avr(void *env, int mode, unsigned int regid,
-                     const void *value, size_t *size, int *setpc);
+uc_err reg_write_avr(void *env, int mode, unsigned int regid, const void *value,
+                     size_t *size, int *setpc);
 
 void uc_init_avr(struct uc_struct *uc);
 

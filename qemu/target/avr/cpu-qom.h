@@ -23,33 +23,28 @@
 
 #include "hw/core/cpu.h"
 
-typedef void Object;
-typedef void ObjectClass;
-
-typedef void DeviceState;
-typedef void (*DeviceRealize)(DeviceState *ds);
-typedef void (*DeviceReset)(DeviceState *ds);
-
 #define TYPE_AVR_CPU "avr-cpu"
 
 #define AVR_CPU(obj) ((AVRCPU *)obj)
 #define AVR_CPU_CLASS(klass) ((AVRCPUClass *)klass)
 #define AVR_CPU_GET_CLASS(obj) (&((AVRCPU *)obj)->cc)
 
+typedef struct AVRCPUInfo {
+    const char *name;
+    void (*initfn)(CPUState *obj);
+} AVRCPUInfo;
+
 /**
- *  AVRCPUClass:
- *  @parent_realize: The parent class' realize handler.
- *  @parent_reset: The parent class' reset handler.
- *  @vr: Version Register value.
- *
- *  A AVR CPU model.
+ * AVRCPUClass: An AVR CPU model.
+ * @parent_reset: The parent class' reset handler.
  */
 typedef struct AVRCPUClass {
     /*< private >*/
     CPUClass parent_class;
     /*< public >*/
-    DeviceRealize parent_realize;
-    DeviceReset parent_reset;
+
+    const AVRCPUInfo *info;
+    void (*parent_reset)(CPUState *cpu);
 } AVRCPUClass;
 
 
