@@ -1885,9 +1885,7 @@ static TCGReg tcg_out_tlb_read(TCGContext *s, MemOp opc,
                                TCGReg addrlo, TCGReg addrhi,
                                int mem_index, bool is_read)
 {
-#ifdef TARGET_ARM
-    struct uc_struct *uc = s->uc;
-#endif
+    UNICORN_UNUSED struct uc_struct *uc = s->uc;
     int cmp_off
         = (is_read
            ? offsetof(CPUTLBEntry, addr_read)
@@ -2623,21 +2621,24 @@ static void tcg_out_op(TCGContext *s, TCGOpcode opc, const TCGArg *args,
 
     case INDEX_op_shl_i32:
         if (const_args[2]) {
-            tcg_out_shli32(s, args[0], args[1], args[2]);
+            /* Limit immediate shift count lest we create an illegal insn.  */
+            tcg_out_shli32(s, args[0], args[1], args[2] & 31);
         } else {
             tcg_out32(s, SLW | SAB(args[1], args[0], args[2]));
         }
         break;
     case INDEX_op_shr_i32:
         if (const_args[2]) {
-            tcg_out_shri32(s, args[0], args[1], args[2]);
+            /* Limit immediate shift count lest we create an illegal insn.  */
+            tcg_out_shri32(s, args[0], args[1], args[2] & 31);
         } else {
             tcg_out32(s, SRW | SAB(args[1], args[0], args[2]));
         }
         break;
     case INDEX_op_sar_i32:
         if (const_args[2]) {
-            tcg_out32(s, SRAWI | RS(args[1]) | RA(args[0]) | SH(args[2]));
+            /* Limit immediate shift count lest we create an illegal insn.  */
+            tcg_out32(s, SRAWI | RS(args[1]) | RA(args[0]) | SH(args[2] & 31));
         } else {
             tcg_out32(s, SRAW | SAB(args[1], args[0], args[2]));
         }
@@ -2709,14 +2710,16 @@ static void tcg_out_op(TCGContext *s, TCGOpcode opc, const TCGArg *args,
 
     case INDEX_op_shl_i64:
         if (const_args[2]) {
-            tcg_out_shli64(s, args[0], args[1], args[2]);
+            /* Limit immediate shift count lest we create an illegal insn.  */
+            tcg_out_shli64(s, args[0], args[1], args[2] & 63);
         } else {
             tcg_out32(s, SLD | SAB(args[1], args[0], args[2]));
         }
         break;
     case INDEX_op_shr_i64:
         if (const_args[2]) {
-            tcg_out_shri64(s, args[0], args[1], args[2]);
+            /* Limit immediate shift count lest we create an illegal insn.  */
+            tcg_out_shri64(s, args[0], args[1], args[2] & 63);
         } else {
             tcg_out32(s, SRD | SAB(args[1], args[0], args[2]));
         }
@@ -3008,6 +3011,7 @@ int tcg_can_emit_vec_op(TCGContext *tcg_ctx, TCGOpcode opc, TCGType type, unsign
     case INDEX_op_shlv_vec:
     case INDEX_op_shrv_vec:
     case INDEX_op_sarv_vec:
+    case INDEX_op_rotlv_vec:
         return vece <= MO_32 || have_isa_2_07;
     case INDEX_op_ssadd_vec:
     case INDEX_op_sssub_vec:
@@ -3018,6 +3022,7 @@ int tcg_can_emit_vec_op(TCGContext *tcg_ctx, TCGOpcode opc, TCGType type, unsign
     case INDEX_op_shli_vec:
     case INDEX_op_shri_vec:
     case INDEX_op_sari_vec:
+    case INDEX_op_rotli_vec:
         return vece <= MO_32 || have_isa_2_07 ? -1 : 0;
     case INDEX_op_neg_vec:
         return vece >= MO_32 && have_isa_3_00;
@@ -3032,6 +3037,8 @@ int tcg_can_emit_vec_op(TCGContext *tcg_ctx, TCGOpcode opc, TCGType type, unsign
         return 0;
     case INDEX_op_bitsel_vec:
         return have_vsx;
+    case INDEX_op_rotrv_vec:
+        return -1;
     default:
         return 0;
     }
@@ -3314,7 +3321,7 @@ static void tcg_out_vec_op(TCGContext *s, TCGOpcode opc,
     case INDEX_op_ppc_pkum_vec:
         insn = pkum_op[vece];
         break;
-    case INDEX_op_ppc_rotl_vec:
+    case INDEX_op_rotlv_vec:
         insn = rotl_op[vece];
         break;
     case INDEX_op_ppc_msum_vec:
@@ -3422,7 +3429,7 @@ static void expand_vec_mul(TCGContext *tcg_ctx, TCGType type, unsigned vece, TCG
         t3 = tcg_temp_new_vec(tcg_ctx, type);
         t4 = tcg_temp_new_vec(tcg_ctx, type);
         tcg_gen_dupi_vec(tcg_ctx, MO_8, t4, -16);
-        vec_gen_3(tcg_ctx, INDEX_op_ppc_rotl_vec, type, MO_32, tcgv_vec_arg(tcg_ctx, t1),
+        vec_gen_3(tcg_ctx, INDEX_op_rotlv_vec, type, MO_32, tcgv_vec_arg(tcg_ctx, t1),
                   tcgv_vec_arg(tcg_ctx, v2), tcgv_vec_arg(tcg_ctx, t4));
         vec_gen_3(tcg_ctx, INDEX_op_ppc_mulou_vec, type, MO_16, tcgv_vec_arg(tcg_ctx, t2),
                   tcgv_vec_arg(tcg_ctx, v1), tcgv_vec_arg(tcg_ctx, v2));
@@ -3447,7 +3454,7 @@ void tcg_expand_vec_op(TCGContext *tcg_ctx, TCGOpcode opc, TCGType type, unsigne
                        TCGArg a0, ...)
 {
     va_list va;
-    TCGv_vec v0, v1, v2;
+    TCGv_vec v0, v1, v2, t0;
     TCGArg a2;
 
     va_start(va, a0);
@@ -3465,6 +3472,9 @@ void tcg_expand_vec_op(TCGContext *tcg_ctx, TCGOpcode opc, TCGType type, unsigne
     case INDEX_op_sari_vec:
         expand_vec_shi(tcg_ctx, type, vece, v0, v1, a2, INDEX_op_sarv_vec);
         break;
+    case INDEX_op_rotli_vec:
+        expand_vec_shi(tcg_ctx, type, vece, v0, v1, a2, INDEX_op_rotlv_vec);
+        break;
     case INDEX_op_cmp_vec:
         v2 = temp_tcgv_vec(tcg_ctx, arg_temp(a2));
         expand_vec_cmp(tcg_ctx, type, vece, v0, v1, v2, va_arg(va, TCGArg));
@@ -3472,6 +3482,13 @@ void tcg_expand_vec_op(TCGContext *tcg_ctx, TCGOpcode opc, TCGType type, unsigne
     case INDEX_op_mul_vec:
         v2 = temp_tcgv_vec(tcg_ctx, arg_temp(a2));
         expand_vec_mul(tcg_ctx, type, vece, v0, v1, v2);
+        break;
+    case INDEX_op_rotlv_vec:
+        v2 = temp_tcgv_vec(tcg_ctx, arg_temp(a2));
+        t0 = tcg_temp_new_vec(tcg_ctx, type);
+        tcg_gen_neg_vec(tcg_ctx, vece, t0, v2);
+        tcg_gen_rotlv_vec(tcg_ctx, vece, v0, v1, t0);
+        tcg_temp_free_vec(tcg_ctx, t0);
         break;
     default:
         g_assert_not_reached();
@@ -3677,12 +3694,13 @@ static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
     case INDEX_op_shlv_vec:
     case INDEX_op_shrv_vec:
     case INDEX_op_sarv_vec:
+    case INDEX_op_rotlv_vec:
+    case INDEX_op_rotrv_vec:
     case INDEX_op_ppc_mrgh_vec:
     case INDEX_op_ppc_mrgl_vec:
     case INDEX_op_ppc_muleu_vec:
     case INDEX_op_ppc_mulou_vec:
     case INDEX_op_ppc_pkum_vec:
-    case INDEX_op_ppc_rotl_vec:
     case INDEX_op_dup2_vec:
         return &v_v_v;
     case INDEX_op_not_vec:

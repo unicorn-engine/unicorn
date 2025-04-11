@@ -30,22 +30,20 @@
 
 // static const char riscv_exts[26] = "IEMAFDQCLBJTPVNSUHKORWXYZG";
 
-const char * const riscv_int_regnames[] = {
-  "x0/zero", "x1/ra",  "x2/sp",  "x3/gp",  "x4/tp",  "x5/t0",   "x6/t1",
-  "x7/t2",   "x8/s0",  "x9/s1",  "x10/a0", "x11/a1", "x12/a2",  "x13/a3",
-  "x14/a4",  "x15/a5", "x16/a6", "x17/a7", "x18/s2", "x19/s3",  "x20/s4",
-  "x21/s5",  "x22/s6", "x23/s7", "x24/s8", "x25/s9", "x26/s10", "x27/s11",
-  "x28/t3",  "x29/t4", "x30/t5", "x31/t6"
-};
+const char *const riscv_int_regnames[] = {
+    "x0/zero", "x1/ra",  "x2/sp",  "x3/gp",  "x4/tp",  "x5/t0",   "x6/t1",
+    "x7/t2",   "x8/s0",  "x9/s1",  "x10/a0", "x11/a1", "x12/a2",  "x13/a3",
+    "x14/a4",  "x15/a5", "x16/a6", "x17/a7", "x18/s2", "x19/s3",  "x20/s4",
+    "x21/s5",  "x22/s6", "x23/s7", "x24/s8", "x25/s9", "x26/s10", "x27/s11",
+    "x28/t3",  "x29/t4", "x30/t5", "x31/t6"};
 
-const char * const riscv_fpr_regnames[] = {
-  "f0/ft0",   "f1/ft1",  "f2/ft2",   "f3/ft3",   "f4/ft4",  "f5/ft5",
-  "f6/ft6",   "f7/ft7",  "f8/fs0",   "f9/fs1",   "f10/fa0", "f11/fa1",
-  "f12/fa2",  "f13/fa3", "f14/fa4",  "f15/fa5",  "f16/fa6", "f17/fa7",
-  "f18/fs2",  "f19/fs3", "f20/fs4",  "f21/fs5",  "f22/fs6", "f23/fs7",
-  "f24/fs8",  "f25/fs9", "f26/fs10", "f27/fs11", "f28/ft8", "f29/ft9",
-  "f30/ft10", "f31/ft11"
-};
+const char *const riscv_fpr_regnames[] = {
+    "f0/ft0",   "f1/ft1",  "f2/ft2",   "f3/ft3",   "f4/ft4",  "f5/ft5",
+    "f6/ft6",   "f7/ft7",  "f8/fs0",   "f9/fs1",   "f10/fa0", "f11/fa1",
+    "f12/fa2",  "f13/fa3", "f14/fa4",  "f15/fa5",  "f16/fa6", "f17/fa7",
+    "f18/fs2",  "f19/fs3", "f20/fs4",  "f21/fs5",  "f22/fs6", "f23/fs7",
+    "f24/fs8",  "f25/fs9", "f26/fs10", "f27/fs11", "f28/ft8", "f29/ft9",
+    "f30/ft10", "f31/ft11"};
 
 static void set_misa(CPURISCVState *env, target_ulong misa)
 {
@@ -55,6 +53,11 @@ static void set_misa(CPURISCVState *env, target_ulong misa)
 static void set_priv_version(CPURISCVState *env, int priv_ver)
 {
     env->priv_ver = priv_ver;
+}
+
+static void set_vext_version(CPURISCVState *env, int vext_ver)
+{
+    env->vext_ver = vext_ver;
 }
 
 static void set_feature(CPURISCVState *env, int feature)
@@ -75,65 +78,48 @@ static void riscv_any_cpu_init(CPUState *obj)
     set_resetvec(env, DEFAULT_RSTVEC);
 }
 
+static void riscv_base_cpu_init(CPUState *obj)
+{
+    CPURISCVState *env = &RISCV_CPU(obj)->env;
+    /* We set this in the realise function */
+    set_misa(env, 0);
+    set_resetvec(env, DEFAULT_RSTVEC);
+}
+
+static void rvxx_sifive_u_cpu_init(CPUState *obj)
+{
+    CPURISCVState *env = &RISCV_CPU(obj)->env;
+    set_misa(env, RVXLEN | RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
+    set_priv_version(env, PRIV_VERSION_1_10_0);
+    set_resetvec(env, 0x1004);
+}
+
+static void rvxx_sifive_e_cpu_init(CPUState *obj)
+{
+    CPURISCVState *env = &RISCV_CPU(obj)->env;
+    set_misa(env, RVXLEN | RVI | RVM | RVA | RVC | RVU);
+    set_priv_version(env, PRIV_VERSION_1_10_0);
+    set_resetvec(env, 0x1004);
+}
+
 #if defined(TARGET_RISCV32)
-// rv32
-static void riscv_base32_cpu_init(CPUState *obj)
+
+static void rv32_ibex_cpu_init(CPUState *obj)
 {
     CPURISCVState *env = &RISCV_CPU(obj)->env;
-    /* We set this in the realise function */
-    set_misa(env, 0);
+    set_misa(env, RV32 | RVI | RVM | RVC | RVU);
+    set_priv_version(env, PRIV_VERSION_1_10_0);
+    set_resetvec(env, 0x8090);
 }
 
-// sifive-u34
-static void rv32gcsu_priv1_10_0_cpu_init(CPUState *obj)
+static void rv32_imafcu_nommu_cpu_init(CPUState *obj)
 {
     CPURISCVState *env = &RISCV_CPU(obj)->env;
-    set_misa(env, RV32 | RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
+    set_misa(env, RV32 | RVI | RVM | RVA | RVF | RVC | RVU);
     set_priv_version(env, PRIV_VERSION_1_10_0);
     set_resetvec(env, DEFAULT_RSTVEC);
-    set_feature(env, RISCV_FEATURE_MMU);
-    set_feature(env, RISCV_FEATURE_PMP);
 }
 
-// sifive-e31
-static void rv32imacu_nommu_cpu_init(CPUState *obj)
-{
-    CPURISCVState *env = &RISCV_CPU(obj)->env;
-    set_misa(env, RV32 | RVI | RVM | RVA | RVC | RVU);
-    set_priv_version(env, PRIV_VERSION_1_10_0);
-    set_resetvec(env, DEFAULT_RSTVEC);
-    set_feature(env, RISCV_FEATURE_PMP);
-}
-
-#elif defined(TARGET_RISCV64)
-// rv64
-static void riscv_base64_cpu_init(CPUState *obj)
-{
-    CPURISCVState *env = &RISCV_CPU(obj)->env;
-    /* We set this in the realise function */
-    set_misa(env, 0);
-}
-
-// sifive-u54
-static void rv64gcsu_priv1_10_0_cpu_init(CPUState *obj)
-{
-    CPURISCVState *env = &RISCV_CPU(obj)->env;
-    set_misa(env, RV64 | RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
-    set_priv_version(env, PRIV_VERSION_1_10_0);
-    set_resetvec(env, DEFAULT_RSTVEC);
-    set_feature(env, RISCV_FEATURE_MMU);
-    set_feature(env, RISCV_FEATURE_PMP);
-}
-
-// sifive-e51
-static void rv64imacu_nommu_cpu_init(CPUState *obj)
-{
-    CPURISCVState *env = &RISCV_CPU(obj)->env;
-    set_misa(env, RV64 | RVI | RVM | RVA | RVC | RVU);
-    set_priv_version(env, PRIV_VERSION_1_10_0);
-    set_resetvec(env, DEFAULT_RSTVEC);
-    set_feature(env, RISCV_FEATURE_PMP);
-}
 #endif
 
 static void riscv_cpu_set_pc(CPUState *cs, vaddr value)
@@ -192,6 +178,7 @@ static void riscv_cpu_realize(struct uc_struct *uc, CPUState *dev)
     RISCVCPU *cpu = RISCV_CPU(dev);
     CPURISCVState *env = &cpu->env;
     int priv_version = PRIV_VERSION_1_11_0;
+    int vext_version = VEXT_VERSION_0_07_1;
     target_ulong target_misa = 0;
 
     cpu_exec_realizefn(cs);
@@ -201,16 +188,15 @@ static void riscv_cpu_realize(struct uc_struct *uc, CPUState *dev)
             priv_version = PRIV_VERSION_1_11_0;
         } else if (!g_strcmp0(cpu->cfg.priv_spec, "v1.10.0")) {
             priv_version = PRIV_VERSION_1_10_0;
-        } else if (!g_strcmp0(cpu->cfg.priv_spec, "v1.9.1")) {
-            priv_version = PRIV_VERSION_1_09_1;
         } else {
-            // error_setg(errp, "Unsupported privilege spec version '%s'", cpu->cfg.priv_spec);
+            // error_setg(errp, "Unsupported privilege spec version '%s'",
+            // cpu->cfg.priv_spec);
             return;
         }
     }
 
     set_priv_version(env, priv_version);
-    set_resetvec(env, DEFAULT_RSTVEC);
+    set_vext_version(env, vext_version);
 
     if (cpu->cfg.mmu) {
         set_feature(env, RISCV_FEATURE_MMU);
@@ -224,7 +210,7 @@ static void riscv_cpu_realize(struct uc_struct *uc, CPUState *dev)
     if (!env->misa) {
         /* Do some ISA extension error checking */
         if (cpu->cfg.ext_i && cpu->cfg.ext_e) {
-            //error_setg(errp, "I and E extensions are incompatible");
+            // error_setg(errp, "I and E extensions are incompatible");
             return;
         }
 
@@ -233,8 +219,9 @@ static void riscv_cpu_realize(struct uc_struct *uc, CPUState *dev)
             return;
         }
 
-        if (cpu->cfg.ext_g && !(cpu->cfg.ext_i & cpu->cfg.ext_m &
-                    cpu->cfg.ext_a & cpu->cfg.ext_f & cpu->cfg.ext_d)) {
+        if (cpu->cfg.ext_g &&
+            !(cpu->cfg.ext_i & cpu->cfg.ext_m & cpu->cfg.ext_a &
+              cpu->cfg.ext_f & cpu->cfg.ext_d)) {
             // warn_report("Setting G will also set IMAFD");
             cpu->cfg.ext_i = true;
             cpu->cfg.ext_m = true;
@@ -273,6 +260,45 @@ static void riscv_cpu_realize(struct uc_struct *uc, CPUState *dev)
         }
         if (cpu->cfg.ext_h) {
             target_misa |= RVH;
+        }
+        if (cpu->cfg.ext_v) {
+            target_misa |= RVV;
+            if (!is_power_of_2(cpu->cfg.vlen)) {
+                // error_setg(errp,
+                //         "Vector extension VLEN must be power of 2");
+                return;
+            }
+            if (cpu->cfg.vlen > RV_VLEN_MAX || cpu->cfg.vlen < 128) {
+                // error_setg(errp,
+                //         "Vector extension implementation only supports VLEN "
+                //         "in the range [128, %d]", RV_VLEN_MAX);
+                return;
+            }
+            if (!is_power_of_2(cpu->cfg.elen)) {
+                // error_setg(errp,
+                //         "Vector extension ELEN must be power of 2");
+                return;
+            }
+            if (cpu->cfg.elen > 64 || cpu->cfg.vlen < 8) {
+                // error_setg(errp,
+                //         "Vector extension implementation only supports ELEN "
+                //         "in the range [8, 64]");
+                return;
+            }
+            if (cpu->cfg.vext_spec) {
+                if (!g_strcmp0(cpu->cfg.vext_spec, "v0.7.1")) {
+                    vext_version = VEXT_VERSION_0_07_1;
+                } else {
+                    // error_setg(errp,
+                    //        "Unsupported vector spec version '%s'",
+                    //        cpu->cfg.vext_spec);
+                    return;
+                }
+            } else {
+                // qemu_log("vector verison is not specified, "
+                //         "use the default value v0.7.1\n");
+            }
+            set_vext_version(env, vext_version);
         }
 
         set_misa(env, RVXLEN | target_misa);
@@ -316,16 +342,17 @@ typedef struct CPUModelInfo {
 } CPUModelInfo;
 
 static const CPUModelInfo cpu_models[] = {
-    {TYPE_RISCV_CPU_ANY,  riscv_any_cpu_init},
-#ifdef TARGET_RISCV32
-    {TYPE_RISCV_CPU_BASE32, riscv_base32_cpu_init},
-    {TYPE_RISCV_CPU_SIFIVE_E31, rv32imacu_nommu_cpu_init},
-    {TYPE_RISCV_CPU_SIFIVE_U34, rv32gcsu_priv1_10_0_cpu_init},
-#endif
-#ifdef TARGET_RISCV64
-    {TYPE_RISCV_CPU_BASE64, riscv_base64_cpu_init},
-    {TYPE_RISCV_CPU_SIFIVE_E51, rv64imacu_nommu_cpu_init},
-    {TYPE_RISCV_CPU_SIFIVE_U54, rv64gcsu_priv1_10_0_cpu_init},
+    {TYPE_RISCV_CPU_ANY, riscv_any_cpu_init},
+#if defined(TARGET_RISCV32)
+    {TYPE_RISCV_CPU_BASE32, riscv_base_cpu_init},
+    {TYPE_RISCV_CPU_IBEX, rv32_ibex_cpu_init},
+    {TYPE_RISCV_CPU_SIFIVE_E31, rvxx_sifive_e_cpu_init},
+    {TYPE_RISCV_CPU_SIFIVE_E34, rv32_imafcu_nommu_cpu_init},
+    {TYPE_RISCV_CPU_SIFIVE_U34, rvxx_sifive_u_cpu_init},
+#elif defined(TARGET_RISCV64)
+    {TYPE_RISCV_CPU_BASE64, riscv_base_cpu_init},
+    {TYPE_RISCV_CPU_SIFIVE_E51, rvxx_sifive_e_cpu_init},
+    {TYPE_RISCV_CPU_SIFIVE_U54, rvxx_sifive_u_cpu_init},
 #endif
 };
 
@@ -339,7 +366,7 @@ RISCVCPU *cpu_riscv_init(struct uc_struct *uc)
     if (cpu == NULL) {
         return NULL;
     }
-    memset((void*)cpu, 0, sizeof(*cpu));
+    memset((void *)cpu, 0, sizeof(*cpu));
 
 #ifdef TARGET_RISCV32
     if (uc->cpu_model == INT_MAX) {

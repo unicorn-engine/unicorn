@@ -182,6 +182,9 @@ typedef uint64_t TCGRegSet;
 #define TCG_TARGET_HAS_not_vec          0
 #define TCG_TARGET_HAS_andc_vec         0
 #define TCG_TARGET_HAS_orc_vec          0
+#define TCG_TARGET_HAS_roti_vec         0
+#define TCG_TARGET_HAS_rots_vec         0
+#define TCG_TARGET_HAS_rotv_vec         0
 #define TCG_TARGET_HAS_shi_vec          0
 #define TCG_TARGET_HAS_shs_vec          0
 #define TCG_TARGET_HAS_shv_vec          0
@@ -721,7 +724,7 @@ struct TCGContext {
     void *tb_ret_addr;
 
     /* target/riscv/translate.c */
-    TCGv cpu_gpr[32], cpu_pc; // also target/mips/translate.c
+    TCGv cpu_gpr[32], cpu_pc, cpu_vl; // also target/mips/translate.c
     TCGv_i64 cpu_fpr[32]; /* assume F and D extensions */
     TCGv load_res;
     TCGv load_val;

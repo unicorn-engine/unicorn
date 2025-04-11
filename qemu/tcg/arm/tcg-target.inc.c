@@ -1235,9 +1235,7 @@ QEMU_BUILD_BUG_ON(offsetof(CPUTLBDescFast, table) != 4);
 static TCGReg tcg_out_tlb_read(TCGContext *s, TCGReg addrlo, TCGReg addrhi,
                                MemOp opc, int mem_index, bool is_load)
 {
-#ifdef TARGET_ARM
     struct uc_struct *uc = s->uc;
-#endif
     int cmp_off = (is_load ? offsetof(CPUTLBEntry, addr_read)
                    : offsetof(CPUTLBEntry, addr_write));
     int fast_off = TLB_MASK_TABLE_OFS(mem_index);

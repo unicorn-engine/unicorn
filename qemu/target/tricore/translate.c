@@ -52,7 +52,6 @@ static const char *regnames_d[] = {
 
 typedef struct DisasContext {
     DisasContextBase base;
-    CPUTriCoreState *env;
     target_ulong pc;
     // CCOp cc_op; /* Current CC operation */
     target_ulong pc_succ_insn;
