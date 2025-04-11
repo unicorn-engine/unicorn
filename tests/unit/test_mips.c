@@ -203,7 +203,6 @@ static void test_mips_mips_fpr(void)
 static void test_mips_simple_coredump_2134(void)
 {
     uc_engine *uc;
-    // ks.asm("li $t1, 0x42f6e979;mtc1 $t1, $f1")
     const char code[] = "\x25\xc8\x80\x03\x25\x78\xe0\x03\x09\xf8\x20\x03\x10\x00\x18\x24";
     uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32, code, sizeof(code) - 1);
 
@@ -215,7 +214,6 @@ static void test_mips_simple_coredump_2134(void)
 static void test_mips_simple_coredump_2137(void)
 {
     uc_engine *uc;
-    // ks.asm("li $t1, 0x42f6e979;mtc1 $t1, $f1")
     const char code[] = "\x1c\x00\x40\x54\xe8\x00\xc4\xaf";
     uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32, code, sizeof(code) - 1);
 
