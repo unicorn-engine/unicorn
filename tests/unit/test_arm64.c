@@ -584,15 +584,11 @@ static void test_arm64_mem_prot_regress(void)
                    test_arm64_mem_prot_regress_hook_mem, NULL, 1, 0));
 
     uc_hook hh_prot;
-    OK(uc_hook_add(uc, &hh_prot,
-                   UC_HOOK_MEM_READ_PROT | UC_HOOK_MEM_WRITE_PROT |
-                       UC_HOOK_MEM_FETCH_PROT,
+    OK(uc_hook_add(uc, &hh_prot, UC_HOOK_MEM_PROT,
                    test_arm64_mem_prot_regress_hook_prot, NULL, 1, 0));
 
     uc_hook hh_unm;
-    OK(uc_hook_add(uc, &hh_unm,
-                   UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED |
-                       UC_HOOK_MEM_FETCH_UNMAPPED,
+    OK(uc_hook_add(uc, &hh_unm, UC_HOOK_MEM_UNMAPPED,
                    test_arm64_mem_prot_regress_hook_unm, NULL, 1, 0));
 
     const uint64_t value = 0x801b;

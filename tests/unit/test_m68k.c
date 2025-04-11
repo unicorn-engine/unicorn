@@ -30,6 +30,10 @@ static void test_move_to_sr(void)
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
+    OK(uc_reg_read(uc, UC_M68K_REG_SR, &r_sr));
+
+    TEST_CHECK(r_sr == 0x2700);
+
     OK(uc_close(uc));
 }
 
