@@ -834,9 +834,11 @@ struct TCGContext {
     TCGv cpu_rampX;
     TCGv cpu_rampY;
     TCGv cpu_rampZ;
+    TCGv cpu_r[32];
     TCGv cpu_eind;
     TCGv cpu_sp;
     TCGv cpu_skip;
+    char cpu_avr_reg_names[32][8];
 };
 
 static inline size_t temp_idx(TCGContext *tcg_ctx, TCGTemp *ts)

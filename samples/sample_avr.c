@@ -10,13 +10,12 @@
 
 // Code to be emulated
 static const uint32_t CODE_BASE = 0x0000;
-static const uint8_t CODE[] =
-    "\x86\x0f"          // add  r24, r22
-    "\x97\x1f"          // adc  r25, r23
-    "\x88\x0f"          // add  r24, r24
-    "\x99\x1f"          // adc  r25, r25
-    "\x01\x96"          // adiw r24, 0x01
-    "\x08\x95"          // ret
+static const uint8_t CODE[] = "\x86\x0f" // add  r24, r22
+                              "\x97\x1f" // adc  r25, r23
+                              "\x88\x0f" // add  r24, r24
+                              "\x99\x1f" // adc  r25, r25
+                              "\x01\x96" // adiw r24, 0x01
+                              "\x08\x95" // ret
     ;
 enum {
     CODE_SIZE = sizeof(CODE) - 1,
@@ -41,8 +40,8 @@ static void hook_code(uc_engine *uc, uint64_t address, uint32_t size,
 static bool is_error(uc_err err, const char *what)
 {
     if (err != UC_ERR_OK) {
-        fprintf(stderr, "error: failed on %s() with error %u: %s\n",
-                what, err, uc_strerror(err));
+        fprintf(stderr, "error: failed on %s() with error %u: %s\n", what, err,
+                uc_strerror(err));
         return true;
     }
     return false;
@@ -67,7 +66,8 @@ static bool test_avr(void)
             break;
 
         // Map program code
-        err = uc_mem_map(uc, CODE_BASE, CODE_SIZE_ALIGNED, UC_PROT_READ|UC_PROT_EXEC);
+        err = uc_mem_map(uc, CODE_BASE, CODE_SIZE_ALIGNED,
+                         UC_PROT_READ | UC_PROT_EXEC);
         if (is_error(err, "uc_mem_map"))
             break;
 
@@ -83,14 +83,16 @@ static bool test_avr(void)
 
         // Tracing one instruction at CODE_BASE with customized callback
         err = uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, CODE_BASE,
-            CODE_BASE + 1);
+                          CODE_BASE + 1);
         if (is_error(err, "uc_hook_add[UC_HOOK_CODE]"))
             break;
 
         // Initialize registers
         memset(regs, 0, sizeof(regs));
-        regs[25] = 0; regs[24] = 1;
-        regs[23] = 0; regs[22] = 2;
+        regs[25] = 0;
+        regs[24] = 1;
+        regs[23] = 0;
+        regs[22] = 2;
 
         for (i = 0; i < 4; i++) {
             reg_ids[i] = UC_AVR_REG_R0 + 22 + i;

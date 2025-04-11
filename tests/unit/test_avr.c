@@ -1,174 +1,160 @@
-#include <assert.h>
 #include "unicorn_test.h"
 
-#define ARRAY_ELEMS(a)  (sizeof(a) / sizeof((a)[0]))
+#include <assert.h>
 
-#define PAGE_SIZE       256
-#define PAGE_ALIGN(x)   (((x) + PAGE_SIZE - 1) & -PAGE_SIZE)
+const uint64_t code_start = 0;
+const uint64_t code_len = 0x4000;
 
-enum {
-    ADDR__init__        = 0x0000, // __init__
-    ADDR_test_func      = 0x001a, // test_func()
-    ADDR_test_1         = 0x0030, // test_1()
-    ADDR_main           = 0x0058, // main()
-    ADDR_abort          = 0x0062, // abort()
-    ADDR_exit           = 0x006c, // _exit()
-    ADDR__stop_program  = 0x006e, // __stop_program()
-    ADDR__data__        = 0x0070, // __data__
-    ADDR__data__end     = 0x0072,
-};
+const uint64_t MAIN_ADDR = 0x58;
+const uint64_t STOP_ADDR = 0x6e;
+const uint64_t DATA_ADDR = 0x70;
 
-enum {
-    SIZE__init__        = ADDR_test_func - ADDR__init__,
-    SIZE_test_func      = ADDR_test_1 - ADDR_test_func,
-    SIZE_test_1         = ADDR_main - ADDR_test_1,
-    SIZE_main           = ADDR_abort - ADDR_main,
-    SIZE_abort          = ADDR_exit - ADDR_abort,
-    SIZE_exit           = ADDR__stop_program - ADDR_exit,
-    SIZE__stop_program  = ADDR__data__ - ADDR__stop_program,
-    SIZE__data__        = ADDR__data__end - ADDR__data__,
-};
+const uint64_t MEM_ADDR = 0x800200;
 
-static const uint8_t FLASH[] =
+uint8_t code[] = {
     // 00000000 <__ctors_end>:
-    "\x12\xe0"          // ldi	r17, 0x02
-    "\xa0\xe0"          // ldi	r26, 0x00
-    "\xb2\xe0"          // ldi	r27, 0x02
-    "\xe0\xe7"          // ldi	r30, 0x70
-    "\xf0\xe0"          // ldi	r31, 0x00
-    "\x00\xe0"          // ldi	r16, 0x00
-    "\x0b\xbf"          // out	0x3b, r16
-    "\x02\xc0"          // rjmp	.+4
-    "\x07\x90"          // elpm	r0, Z+
-    "\x0d\x92"          // st	X+, r0
-    "\xa2\x30"          // cpi	r26, 0x02
-    "\xb1\x07"          // cpc	r27, r17
-    "\xd9\xf7"          // brne	.-10
+    0x12, 0xe0, // ldi r17, 0x02
+    0xa0, 0xe0, // ldi r26, 0x00
+    0xb2, 0xe0, // ldi r27, 0x02
+    0xe0, 0xe7, // ldi r30, 0x70
+    0xf0, 0xe0, // ldi r31, 0x00
+    0x00, 0xe0, // ldi r16, 0x00
+    0x0b, 0xbf, // out 0x3b, r16
+    0x02, 0xc0, // rjmp .+4
+    0x07, 0x90, // elpm r0, Z+
+    0x0d, 0x92, // st X+, r0
+    0xa2, 0x30, // cpi r26, 0x02
+    0xb1, 0x07, // cpc r27, r17
+    0xd9, 0xf7, // brne .-10
 
     // 0000001a <test_func>:
-    "\x20\x91\x00\x02"  // lds	r18, 0x0200
-    "\x30\x91\x01\x02"  // lds	r19, 0x0201
-    "\x86\x0f"          // add	r24, r22
-    "\x97\x1f"          // adc	r25, r23
-    "\x88\x0f"          // add	r24, r24
-    "\x99\x1f"          // adc	r25, r25
-    "\x82\x0f"          // add	r24, r18
-    "\x93\x1f"          // adc	r25, r19
-    "\x08\x95"          // ret
+    0x20, 0x91, 0x00, 0x02, // lds r18, 0x0200
+    0x30, 0x91, 0x01, 0x02, // lds r19, 0x0201
+    0x86, 0x0f,             // add r24, r22
+    0x97, 0x1f,             // adc r25, r23
+    0x88, 0x0f,             // add r24, r24
+    0x99, 0x1f,             // adc r25, r25
+    0x82, 0x0f,             // add r24, r18
+    0x93, 0x1f,             // adc r25, r19
+    0x08, 0x95,             // ret
 
     // 00000030 <test_1>:
-    "\x62\xe0"          // ldi	r22, 0x02
-    "\x70\xe0"          // ldi	r23, 0x00
-    "\x81\xe0"          // ldi	r24, 0x01
-    "\x90\xe0"          // ldi	r25, 0x00
-    "\x0e\x94\x0d\x00"  // call	0x1a
-    "\x07\x97"          // sbiw	r24, 0x07
-    "\x11\xf0"          // breq	.+4
-    "\x0e\x94\x31\x00"  // call	0x62
-    "\x60\xe8"          // ldi	r22, 0x80
-    "\x70\xe0"          // ldi	r23, 0x00
-    "\x80\xe4"          // ldi	r24, 0x40
-    "\x90\xe0"          // ldi	r25, 0x00
-    "\x0e\x94\x0d\x00"  // call	0x1a
-    "\x81\x38"          // cpi	r24, 0x81
-    "\x91\x40"          // sbci	r25, 0x01
-    "\xa9\xf7"          // brne	.-22
-    "\x08\x95"          // ret
+    0x62, 0xe0,             // ldi r22, 0x02
+    0x70, 0xe0,             // ldi r23, 0x00
+    0x81, 0xe0,             // ldi r24, 0x01
+    0x90, 0xe0,             // ldi r25, 0x00
+    0x0e, 0x94, 0x0d, 0x00, // call 0x1a
+    0x07, 0x97,             // sbiw r24, 0x07
+    0x11, 0xf0,             // breq .+4
+    0x0e, 0x94, 0x31, 0x00, // call 0x62
+    0x60, 0xe8,             // ldi r22, 0x80
+    0x70, 0xe0,             // ldi r23, 0x00
+    0x80, 0xe4,             // ldi r24, 0x40
+    0x90, 0xe0,             // ldi r25, 0x00
+    0x0e, 0x94, 0x0d, 0x00, // call 0x1a
+    0x81, 0x38,             // cpi r24, 0x81
+    0x91, 0x40,             // sbci r25, 0x01
+    0xa9, 0xf7,             // brne .-22
+    0x08, 0x95,             // ret
 
     // 00000058 <main>:
-    "\x0e\x94\x18\x00"  // call	0x30
-    "\x80\xe0"          // ldi	r24, 0x00
-    "\x90\xe0"          // ldi	r25, 0x00
-    "\x08\x95"          // ret
+    0x0e, 0x94, 0x18, 0x00, // call 0x30
+    0x80, 0xe0,             // ldi r24, 0x00
+    0x90, 0xe0,             // ldi r25, 0x00
+    0x08, 0x95,             // ret
 
     // 00000062 <abort>:
-    "\x81\xe0"          // ldi	r24, 0x01
-    "\x90\xe0"          // ldi	r25, 0x00
-    "\xf8\x94"          // cli
-    "\x0c\x94\x36\x00"  // jmp	0x6c
+    0x81, 0xe0,             // ldi r24, 0x01
+    0x90, 0xe0,             // ldi r25, 0x00
+    0xf8, 0x94,             // cli
+    0x0c, 0x94, 0x36, 0x00, // jmp 0x6c
 
     // 0000006c <_exit>:
-    "\xf8\x94"          // cli
+    0xf8, 0x94, // cli
 
     // 0000006e <__stop_program>:
-    "\xff\xcf"          // rjmp	.-2
+    0xff, 0xcf, // rjmp .-2
 
     // 0x000070 .data
-    "\x01\x00"
-    ;
-const uint64_t FLASH_SIZE = sizeof(FLASH);
+    0x01, 0x00,
 
-const uint64_t MEM_BASE = 0x0200;
-const uint64_t MEM_SIZE = 0x0100;
+    //
+};
 
-static void uc_common_setup(uc_engine **uc, uc_cpu_avr cpu_model,
-    const uint8_t *code, uint64_t code_size)
+static void uc_common_setup(uc_engine **uc, const uint8_t *code, uint64_t size)
 {
     OK(uc_open(UC_ARCH_AVR, UC_MODE_LITTLE_ENDIAN, uc));
-    if (cpu_model != 0)
-        OK(uc_ctl_set_cpu_model(*uc, cpu_model));
-
-    OK(uc_mem_map(*uc, UC_AVR_MEM_FLASH, PAGE_ALIGN(code_size),
-           UC_PROT_READ|UC_PROT_EXEC));
-    OK(uc_mem_write(*uc, UC_AVR_MEM_FLASH, code, code_size));
-    OK(uc_mem_map(*uc, MEM_BASE, MEM_SIZE, UC_PROT_READ|UC_PROT_WRITE));
+    OK(uc_mem_map(*uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(*uc, code_start, code, size));
+    OK(uc_mem_map(*uc, 0x800000, 0x1000, UC_PROT_ALL)); // SRAM
 }
 
 static void test_avr_basic_alu(void)
 {
-    uc_engine *uc = NULL;
+    uc_engine *uc;
 
-    uint8_t r[32] = {0,};
-    uint32_t r_pc;
-    uint16_t r_func_arg0 = 1, r_func_arg1 = 2, r_func_ret;
-    r[24] = 1;
-    r[22] = 2;
+    uint8_t code[] = {
+        0x86, 0x0f, // add r24, r22
+        0x97, 0x1f, // adc r25, r23
+    };
 
-    uc_common_setup(&uc, 0, FLASH, FLASH_SIZE);
-    OK(uc_reg_write(uc, UC_AVR_REG_R24W, &r_func_arg0));
-    OK(uc_reg_write(uc, UC_AVR_REG_R22W, &r_func_arg1));
+    uint32_t pc;
+    uint16_t arg0 = 1;
+    uint16_t arg1 = 2;
+    uint16_t retval;
 
-    const uint64_t code_start = ADDR_test_func + 8;
+    uint8_t r22 = 2;
+    uint8_t r24 = 1;
+
+    uint8_t r23;
+    uint8_t r25;
+
+    uc_common_setup(&uc, code, sizeof(code));
+
+    OK(uc_reg_write(uc, UC_AVR_REG_R24W, &arg0));
+    OK(uc_reg_write(uc, UC_AVR_REG_R22W, &arg1));
+
     OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
 
-    OK(uc_reg_read(uc, UC_AVR_REG_PC, &r_pc));
-    OK(uc_reg_read(uc, UC_AVR_REG_R25, &r[25]));
-    OK(uc_reg_read(uc, UC_AVR_REG_R24, &r[24]));
-    OK(uc_reg_read(uc, UC_AVR_REG_R23, &r[23]));
-    OK(uc_reg_read(uc, UC_AVR_REG_R22, &r[22]));
+    OK(uc_reg_read(uc, UC_AVR_REG_PC, &pc));
+    OK(uc_reg_read(uc, UC_AVR_REG_R25, &r25));
+    OK(uc_reg_read(uc, UC_AVR_REG_R24, &r24));
+    OK(uc_reg_read(uc, UC_AVR_REG_R23, &r23));
+    OK(uc_reg_read(uc, UC_AVR_REG_R22, &r22));
 
-    TEST_CHECK(r_pc == code_start + 4);
-    TEST_CHECK(r[25] == 0 && r[24] == 3);
-    TEST_CHECK(r[23] == 0 && r[22] == 2);
+    TEST_CHECK(pc == code_start + 4);
+    TEST_CHECK(r25 == 0 && r24 == 3);
+    TEST_CHECK(r23 == 0 && r22 == 2);
 
-    OK(uc_reg_read(uc, UC_AVR_REG_R24W, &r_func_ret));
-    OK(uc_reg_read(uc, UC_AVR_REG_R22W, &r_func_arg1));
+    OK(uc_reg_read(uc, UC_AVR_REG_R24W, &retval));
+    OK(uc_reg_read(uc, UC_AVR_REG_R22W, &arg1));
 
-    TEST_CHECK(r_func_ret == r[24]);
-    TEST_CHECK(r_func_arg1 == r[22]);
+    TEST_CHECK(retval == r24);
+    TEST_CHECK(arg1 == r22);
 
     OK(uc_close(uc));
 }
 
-typedef struct MEM_HOOK_RESULT_s {
+typedef struct MemHookResult {
     uc_mem_type type;
     uint64_t address;
     int size;
     uint64_t value;
-} MEM_HOOK_RESULT;
+} MemHookResult;
 
-typedef struct MEM_HOOK_RESULTS_s {
+typedef struct MemHookResults {
     uint64_t count;
-    MEM_HOOK_RESULT results[16];
-} MEM_HOOK_RESULTS;
+    MemHookResult results[16];
+} MemHookResults;
 
 static bool test_avr_basic_mem_cb_eventmem(uc_engine *uc, uc_mem_type type,
-    uint64_t address, int size, int64_t value, void *user_data)
+                                           uint64_t address, int size,
+                                           int64_t value, void *user_data)
 {
-    MEM_HOOK_RESULTS *const r = user_data;
+    MemHookResults *const r = user_data;
 
     uint64_t count = r->count;
-    if (count >= ARRAY_ELEMS(r->results)) {
+    if (count >= 16) {
         TEST_ASSERT(false);
     }
 
@@ -184,41 +170,40 @@ static void test_avr_basic_mem(void)
 {
     uc_engine *uc = NULL;
     uc_hook eventmem_hook;
-    MEM_HOOK_RESULTS eventmem_trace = {0};
+    MemHookResults eventmem_trace = {0};
 
-    const uint8_t *const DATA = &FLASH[ADDR__data__];
-    uint8_t mem[SIZE__data__];
+    uint8_t data[] = {0x01, 0x00};
+    uint8_t mem[2];
 
-    uint32_t r_pc;
+    uint32_t pc;
     int i;
 
-    uc_common_setup(&uc, 0, FLASH, FLASH_SIZE);
+    uc_common_setup(&uc, code, sizeof(code));
     OK(uc_hook_add(uc, &eventmem_hook, UC_HOOK_MEM_VALID,
-           test_avr_basic_mem_cb_eventmem, &eventmem_trace, 1, 0));
+                   test_avr_basic_mem_cb_eventmem, &eventmem_trace, 1, 0));
 
-    const uint64_t code_start = ADDR__init__;
-    OK(uc_emu_start(uc, code_start, ADDR__init__ + SIZE__init__, 0, 0));
+    OK(uc_emu_start(uc, code_start, code_start + 26, 0, 0));
 
-    OK(uc_reg_read(uc, UC_AVR_REG_PC, &r_pc));
-    TEST_CHECK(r_pc == ADDR__init__ + SIZE__init__);
+    OK(uc_reg_read(uc, UC_AVR_REG_PC, &pc));
+    TEST_CHECK(pc == code_start + 26);
 
-    // Check SRAM was correctly initialized with data from Flash program memory
-    OK(uc_mem_read(uc, MEM_BASE, mem, sizeof(mem)));
-    TEST_CHECK(memcmp(mem, DATA, SIZE__data__) == 0);
+    // Check SRAM was correctly initialized with data from Flash program
+    OK(uc_mem_read(uc, MEM_ADDR, mem, sizeof(mem)));
+    TEST_CHECK(memcmp(mem, data, 2) == 0);
 
-    TEST_CHECK(eventmem_trace.count == 2*SIZE__data__);
-    for (i = 0; i < SIZE__data__; i++) {
-        const MEM_HOOK_RESULT *const mr = &eventmem_trace.results[2*i];
+    TEST_CHECK(eventmem_trace.count == 2 * 2);
+    for (i = 0; i < 2; i++) {
+        MemHookResult *mr = &eventmem_trace.results[2 * i];
         TEST_CHECK(mr->type == UC_MEM_READ);
-        TEST_CHECK(mr->address == (UC_AVR_MEM_FLASH|(ADDR__data__+i)));
+        TEST_CHECK(mr->address == DATA_ADDR + i);
         TEST_CHECK(mr->size == 1);
         TEST_CHECK(mr->value == 0);
 
-        const MEM_HOOK_RESULT *const mw = &eventmem_trace.results[2*i+1];
+        MemHookResult *mw = &eventmem_trace.results[(2 * i) + 1];
         TEST_CHECK(mw->type == UC_MEM_WRITE);
-        TEST_CHECK(mw->address == MEM_BASE+i);
+        TEST_CHECK(mw->address == MEM_ADDR + i);
         TEST_CHECK(mw->size == 1);
-        TEST_CHECK(mw->value == DATA[i]);
+        TEST_CHECK(mw->value == data[i]);
     }
 
     OK(uc_close(uc));
@@ -228,41 +213,34 @@ static void test_avr_full_exec(void)
 {
     uc_engine *uc = NULL;
 
-    uint8_t r[32] = {0,};
-    uint32_t r_pc;
-    uint32_t r_sp;
+    uint32_t pc;
+    uint32_t sp;
+    uint8_t r24, r25;
 
-    uc_common_setup(&uc, 0, FLASH, FLASH_SIZE);
+    uc_common_setup(&uc, code, sizeof(code));
 
-    const uint64_t code_start = ADDR__init__;
-    OK(uc_emu_start(uc, code_start, ADDR__init__ + SIZE__init__, 0, 0));
+    OK(uc_emu_start(uc, code_start, code_start + 26, 0, 0));
 
-    OK(uc_reg_read(uc, UC_AVR_REG_PC, &r_pc));
-    TEST_CHECK(r_pc == ADDR__init__ + SIZE__init__);
+    OK(uc_reg_read(uc, UC_AVR_REG_PC, &pc));
+    TEST_CHECK(pc == code_start + 26);
 
-    r_sp = MEM_BASE + MEM_SIZE - 1;
-    OK(uc_reg_write(uc, UC_AVR_REG_SP, &r_sp));
+    sp = 0x2ff;
+    OK(uc_reg_write(uc, UC_AVR_REG_SP, &sp));
 
-    const uint64_t exits[] = {
-        ADDR_main,
-        ADDR__stop_program
-    };
+    const uint64_t exits[] = {MAIN_ADDR, STOP_ADDR};
     OK(uc_ctl_exits_enable(uc));
-    OK(uc_ctl_set_exits(uc, exits, ARRAY_ELEMS(exits)));
+    OK(uc_ctl_set_exits(uc, exits, 2));
 
-    const uint64_t code_main = ADDR_main;
-    OK(uc_emu_start(uc, code_main, 0, 0, 0));
+    OK(uc_emu_start(uc, MAIN_ADDR, STOP_ADDR, 0, 0));
 
-    OK(uc_reg_read(uc, UC_AVR_REG_R25, &r[25]));
-    OK(uc_reg_read(uc, UC_AVR_REG_R24, &r[24]));
-    TEST_CHECK(r[25] == 0 && r[24] == 0);
+    OK(uc_reg_read(uc, UC_AVR_REG_R25, &r25));
+    OK(uc_reg_read(uc, UC_AVR_REG_R24, &r24));
+    TEST_CHECK(r25 == 0 && r24 == 0);
 
     OK(uc_close(uc));
 }
 
-TEST_LIST = {
-    {"test_avr_basic_alu", test_avr_basic_alu},
-    {"test_avr_basic_mem", test_avr_basic_mem},
-    {"test_avr_full_exec", test_avr_full_exec},
-    {NULL, NULL}
-};
+TEST_LIST = {{"test_avr_basic_alu", test_avr_basic_alu},
+             {"test_avr_basic_mem", test_avr_basic_mem},
+             {"test_avr_full_exec", test_avr_full_exec},
+             {NULL, NULL}};

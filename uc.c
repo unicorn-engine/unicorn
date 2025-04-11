@@ -207,6 +207,10 @@ bool uc_arch_supported(uc_arch arch)
     case UC_ARCH_ARM64:
         return true;
 #endif
+#ifdef UNICORN_HAS_AVR
+    case UC_ARCH_AVR:
+        return true;
+#endif
 #ifdef UNICORN_HAS_M68K
     case UC_ARCH_M68K:
         return true;
@@ -241,10 +245,6 @@ bool uc_arch_supported(uc_arch arch)
 #endif
 #ifdef UNICORN_HAS_TRICORE
     case UC_ARCH_TRICORE:
-        return true;
-#endif
-#ifdef UNICORN_HAS_AVR
-    case UC_ARCH_AVR:
         return true;
 #endif
     /* Invalid or disabled arch */
@@ -386,7 +386,15 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
             uc->init_arch = uc_init_aarch64;
             break;
 #endif
-
+#ifdef UNICORN_HAS_AVR
+        case UC_ARCH_AVR:
+            if ((mode & ~UC_MODE_AVR_MASK)) {
+                free(uc);
+                return UC_ERR_MODE;
+            }
+            uc->init_arch = uc_init_avr;
+            break;
+#endif
 #if defined(UNICORN_HAS_MIPS) || defined(UNICORN_HAS_MIPSEL) ||                \
     defined(UNICORN_HAS_MIPS64) || defined(UNICORN_HAS_MIPS64EL)
         case UC_ARCH_MIPS:
@@ -491,15 +499,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 return UC_ERR_MODE;
             }
             uc->init_arch = uc_init_tricore;
-            break;
-#endif
-#ifdef UNICORN_HAS_AVR
-        case UC_ARCH_AVR:
-            if ((mode & ~UC_MODE_AVR_MASK)) {
-                free(uc);
-                return UC_ERR_MODE;
-            }
-            uc->init_arch = uc_init_avr;
             break;
 #endif
         }
@@ -1045,6 +1044,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         uc_reg_write(uc, UC_ARM64_REG_PC, &begin);
         break;
 #endif
+#ifdef UNICORN_HAS_AVR
+    case UC_ARCH_AVR:
+        uc_reg_write(uc, UC_AVR_REG_PC, &begin_pc32);
+        break;
+#endif
 #ifdef UNICORN_HAS_MIPS
     case UC_ARCH_MIPS:
         if (uc->mode & UC_MODE_MIPS64) {
@@ -1091,11 +1095,6 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 #ifdef UNICORN_HAS_TRICORE
     case UC_ARCH_TRICORE:
         uc_reg_write(uc, UC_TRICORE_REG_PC, &begin_pc32);
-        break;
-#endif
-#ifdef UNICORN_HAS_AVR
-    case UC_ARCH_AVR:
-        uc_reg_write(uc, UC_AVR_REG_PC, &begin_pc32);
         break;
 #endif
     }
@@ -2263,7 +2262,12 @@ static context_reg_rw_t find_context_reg_rw(uc_arch arch, uc_mode mode)
         rw.write = reg_write_aarch64;
         break;
 #endif
-
+#ifdef UNICORN_HAS_AVR
+    case UC_ARCH_AVR:
+        rw.read = reg_read_avr;
+        rw.write = reg_write_avr;
+        break;
+#endif
 #if defined(UNICORN_HAS_MIPS) || defined(UNICORN_HAS_MIPSEL) ||                \
     defined(UNICORN_HAS_MIPS64) || defined(UNICORN_HAS_MIPS64EL)
     case UC_ARCH_MIPS:
@@ -2346,12 +2350,6 @@ static context_reg_rw_t find_context_reg_rw(uc_arch arch, uc_mode mode)
     case UC_ARCH_TRICORE:
         rw.read = reg_read_tricore;
         rw.write = reg_write_tricore;
-        break;
-#endif
-#ifdef UNICORN_HAS_AVR
-    case UC_ARCH_AVR:
-        rw.read = reg_read_avr;
-        rw.write = reg_write_avr;
         break;
 #endif
     }
@@ -2732,6 +2730,11 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                     err = UC_ERR_ARG;
                     break;
                 }
+            } else if (uc->arch == UC_ARCH_AVR) {
+                if (model >= UC_CPU_AVR_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
             } else if (uc->arch == UC_ARCH_MIPS) {
                 if (uc->mode & UC_MODE_32 && model >= UC_CPU_MIPS32_ENDING) {
                     err = UC_ERR_ARG;
@@ -2779,11 +2782,6 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 }
             } else if (uc->arch == UC_ARCH_M68K) {
                 if (model >= UC_CPU_M68K_ENDING) {
-                    err = UC_ERR_ARG;
-                    break;
-                }
-            } else if (uc->arch == UC_ARCH_AVR) {
-                if (!avr_cpu_model_valid(model)) {
                     err = UC_ERR_ARG;
                     break;
                 }

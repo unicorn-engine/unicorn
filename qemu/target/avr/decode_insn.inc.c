@@ -23,7 +23,7 @@ typedef struct {
 } arg_decode_insn5;
 
 typedef struct {
-    int noarg_;
+    int : 0;
 } arg_decode_insn6;
 
 typedef struct {
@@ -386,95 +386,81 @@ bool decode_insn(DisasContext *ctx, uint16_t insn)
                 switch (insn & 0x000000ff) {
                 case 0x00000000:
                     /* 00000000 00000000 */
-                    /* insn.decode:185 */
                     if (trans_NOP(ctx, &u.f_decode_insn6)) return true;
-                    break;
+                    return false;
                 }
-                break;
+                return false;
             case 0x1:
                 /* 00000001 ........ */
-                /* insn.decode:128 */
                 decode_insn_extract_decode_insn_Fmt_17(ctx, &u.f_rd_rr, insn);
                 if (trans_MOVW(ctx, &u.f_rd_rr)) return true;
-                break;
+                return false;
             case 0x2:
                 /* 00000010 ........ */
-                /* insn.decode:71 */
                 decode_insn_extract_decode_insn_Fmt_5(ctx, &u.f_rd_rr, insn);
                 if (trans_MULS(ctx, &u.f_rd_rr)) return true;
-                break;
+                return false;
             case 0x3:
                 /* 00000011 ........ */
                 decode_insn_extract_fmul(ctx, &u.f_rd_rr, insn);
                 switch (insn & 0x00000088) {
                 case 0x00000000:
                     /* 00000011 0...0... */
-                    /* insn.decode:72 */
                     if (trans_MULSU(ctx, &u.f_rd_rr)) return true;
-                    break;
+                    return false;
                 case 0x00000008:
                     /* 00000011 0...1... */
-                    /* insn.decode:73 */
                     if (trans_FMUL(ctx, &u.f_rd_rr)) return true;
-                    break;
+                    return false;
                 case 0x00000080:
                     /* 00000011 1...0... */
-                    /* insn.decode:74 */
                     if (trans_FMULS(ctx, &u.f_rd_rr)) return true;
-                    break;
+                    return false;
                 case 0x00000088:
                     /* 00000011 1...1... */
-                    /* insn.decode:75 */
                     if (trans_FMULSU(ctx, &u.f_rd_rr)) return true;
-                    break;
+                    return false;
                 }
-                break;
+                return false;
             }
-            break;
+            return false;
         case 0x00000400:
             /* 000001.. ........ */
-            /* insn.decode:102 */
             decode_insn_extract_op_rd_rr(ctx, &u.f_rd_rr, insn);
             if (trans_CPC(ctx, &u.f_rd_rr)) return true;
-            break;
+            return false;
         case 0x00000800:
             /* 000010.. ........ */
-            /* insn.decode:58 */
             decode_insn_extract_op_rd_rr(ctx, &u.f_rd_rr, insn);
             if (trans_SBC(ctx, &u.f_rd_rr)) return true;
-            break;
+            return false;
         case 0x00000c00:
             /* 000011.. ........ */
-            /* insn.decode:53 */
             decode_insn_extract_op_rd_rr(ctx, &u.f_rd_rr, insn);
             if (trans_ADD(ctx, &u.f_rd_rr)) return true;
-            break;
+            return false;
         case 0x00002000:
             /* 001000.. ........ */
-            /* insn.decode:61 */
             decode_insn_extract_op_rd_rr(ctx, &u.f_rd_rr, insn);
             if (trans_AND(ctx, &u.f_rd_rr)) return true;
-            break;
+            return false;
         case 0x00002400:
             /* 001001.. ........ */
-            /* insn.decode:65 */
             decode_insn_extract_op_rd_rr(ctx, &u.f_rd_rr, insn);
             if (trans_EOR(ctx, &u.f_rd_rr)) return true;
-            break;
+            return false;
         case 0x00002800:
             /* 001010.. ........ */
-            /* insn.decode:63 */
             decode_insn_extract_op_rd_rr(ctx, &u.f_rd_rr, insn);
             if (trans_OR(ctx, &u.f_rd_rr)) return true;
-            break;
+            return false;
         case 0x00002c00:
             /* 001011.. ........ */
-            /* insn.decode:127 */
             decode_insn_extract_op_rd_rr(ctx, &u.f_rd_rr, insn);
             if (trans_MOV(ctx, &u.f_rd_rr)) return true;
-            break;
+            return false;
         }
-        break;
+        return false;
     case 0x00001000:
         /* 00.1.... ........ */
         switch ((insn >> 13) & 0x1) {
@@ -484,92 +470,79 @@ bool decode_insn(DisasContext *ctx, uint16_t insn)
             switch ((insn >> 10) & 0x3) {
             case 0x0:
                 /* 000100.. ........ */
-                /* insn.decode:100 */
                 if (trans_CPSE(ctx, &u.f_rd_rr)) return true;
-                break;
+                return false;
             case 0x1:
                 /* 000101.. ........ */
-                /* insn.decode:101 */
                 if (trans_CP(ctx, &u.f_rd_rr)) return true;
-                break;
+                return false;
             case 0x2:
                 /* 000110.. ........ */
-                /* insn.decode:56 */
                 if (trans_SUB(ctx, &u.f_rd_rr)) return true;
-                break;
+                return false;
             case 0x3:
                 /* 000111.. ........ */
-                /* insn.decode:54 */
                 if (trans_ADC(ctx, &u.f_rd_rr)) return true;
-                break;
+                return false;
             }
-            break;
+            return false;
         case 0x1:
             /* 0011.... ........ */
-            /* insn.decode:103 */
             decode_insn_extract_op_rd_imm8(ctx, &u.f_rd_imm, insn);
             if (trans_CPI(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         }
-        break;
+        return false;
     case 0x00004000:
         /* 01.0.... ........ */
         decode_insn_extract_op_rd_imm8(ctx, &u.f_rd_imm, insn);
         switch ((insn >> 13) & 0x1) {
         case 0x0:
             /* 0100.... ........ */
-            /* insn.decode:59 */
             if (trans_SBCI(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         case 0x1:
             /* 0110.... ........ */
-            /* insn.decode:64 */
             if (trans_ORI(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         }
-        break;
+        return false;
     case 0x00005000:
         /* 01.1.... ........ */
         decode_insn_extract_op_rd_imm8(ctx, &u.f_rd_imm, insn);
         switch ((insn >> 13) & 0x1) {
         case 0x0:
             /* 0101.... ........ */
-            /* insn.decode:57 */
             if (trans_SUBI(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         case 0x1:
             /* 0111.... ........ */
-            /* insn.decode:62 */
             if (trans_ANDI(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         }
-        break;
+        return false;
     case 0x00008000:
         /* 10.0.... ........ */
         decode_insn_extract_ldst_d(ctx, &u.f_rd_imm, insn);
         switch (insn & 0x00000208) {
         case 0x00000000:
             /* 10.0..0. ....0... */
-            /* insn.decode:139 */
             if (trans_LDDZ(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         case 0x00000008:
             /* 10.0..0. ....1... */
-            /* insn.decode:138 */
             if (trans_LDDY(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         case 0x00000200:
             /* 10.0..1. ....0... */
-            /* insn.decode:149 */
             if (trans_STDZ(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         case 0x00000208:
             /* 10.0..1. ....1... */
-            /* insn.decode:148 */
             if (trans_STDY(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         }
-        break;
+        return false;
     case 0x00009000:
         /* 10.1.... ........ */
         switch (insn & 0x00002800) {
@@ -581,167 +554,141 @@ bool decode_insn(DisasContext *ctx, uint16_t insn)
                 switch (insn & 0x0000000f) {
                 case 0x00000000:
                     /* 1001000. ....0000 */
-                    /* insn.decode:130 */
                     decode_insn_extract_ldst_s(ctx, &u.f_rd_imm, insn);
                     if (trans_LDS(ctx, &u.f_rd_imm)) return true;
-                    break;
+                    return false;
                 case 0x00000001:
                     /* 1001000. ....0001 */
-                    /* insn.decode:136 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LDZ2(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000002:
                     /* 1001000. ....0010 */
-                    /* insn.decode:137 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LDZ3(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000004:
                     /* 1001000. ....0100 */
-                    /* insn.decode:151 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LPM2(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000005:
                     /* 1001000. ....0101 */
-                    /* insn.decode:152 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LPMX(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000006:
                     /* 1001000. ....0110 */
-                    /* insn.decode:154 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_ELPM2(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000007:
                     /* 1001000. ....0111 */
-                    /* insn.decode:155 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_ELPMX(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000009:
                     /* 1001000. ....1001 */
-                    /* insn.decode:134 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LDY2(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x0000000a:
                     /* 1001000. ....1010 */
-                    /* insn.decode:135 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LDY3(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x0000000c:
                     /* 1001000. ....1100 */
-                    /* insn.decode:131 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LDX1(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x0000000d:
                     /* 1001000. ....1101 */
-                    /* insn.decode:132 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LDX2(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x0000000e:
                     /* 1001000. ....1110 */
-                    /* insn.decode:133 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LDX3(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x0000000f:
                     /* 1001000. ....1111 */
-                    /* insn.decode:161 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_POP(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 }
-                break;
+                return false;
             case 0x1:
                 /* 1001001. ........ */
                 switch (insn & 0x0000000f) {
                 case 0x00000000:
                     /* 1001001. ....0000 */
-                    /* insn.decode:140 */
                     decode_insn_extract_ldst_s(ctx, &u.f_rd_imm, insn);
                     if (trans_STS(ctx, &u.f_rd_imm)) return true;
-                    break;
+                    return false;
                 case 0x00000001:
                     /* 1001001. ....0001 */
-                    /* insn.decode:146 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_STZ2(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000002:
                     /* 1001001. ....0010 */
-                    /* insn.decode:147 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_STZ3(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000004:
                     /* 1001001. ....0100 */
-                    /* insn.decode:162 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_XCH(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000005:
                     /* 1001001. ....0101 */
-                    /* insn.decode:164 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LAS(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000006:
                     /* 1001001. ....0110 */
-                    /* insn.decode:163 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LAC(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000007:
                     /* 1001001. ....0111 */
-                    /* insn.decode:165 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_LAT(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x00000009:
                     /* 1001001. ....1001 */
-                    /* insn.decode:144 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_STY2(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x0000000a:
                     /* 1001001. ....1010 */
-                    /* insn.decode:145 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_STY3(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 case 0x0000000c:
                     /* 1001001. ....1100 */
-                    /* insn.decode:141 */
                     decode_insn_extract_decode_insn_Fmt_18(ctx, &u.f_decode_insn9, insn);
                     if (trans_STX1(ctx, &u.f_decode_insn9)) return true;
-                    break;
+                    return false;
                 case 0x0000000d:
                     /* 1001001. ....1101 */
-                    /* insn.decode:142 */
                     decode_insn_extract_decode_insn_Fmt_18(ctx, &u.f_decode_insn9, insn);
                     if (trans_STX2(ctx, &u.f_decode_insn9)) return true;
-                    break;
+                    return false;
                 case 0x0000000e:
                     /* 1001001. ....1110 */
-                    /* insn.decode:143 */
                     decode_insn_extract_decode_insn_Fmt_18(ctx, &u.f_decode_insn9, insn);
                     if (trans_STX3(ctx, &u.f_decode_insn9)) return true;
-                    break;
+                    return false;
                 case 0x0000000f:
                     /* 1001001. ....1111 */
-                    /* insn.decode:160 */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     if (trans_PUSH(ctx, &u.f_decode_insn2)) return true;
-                    break;
+                    return false;
                 }
-                break;
+                return false;
             case 0x2:
                 /* 1001010. ........ */
                 switch ((insn >> 1) & 0x7) {
@@ -751,219 +698,191 @@ bool decode_insn(DisasContext *ctx, uint16_t insn)
                     switch (insn & 0x00000001) {
                     case 0x00000000:
                         /* 1001010. ....0000 */
-                        /* insn.decode:66 */
                         if (trans_COM(ctx, &u.f_decode_insn2)) return true;
-                        break;
+                        return false;
                     case 0x00000001:
                         /* 1001010. ....0001 */
-                        /* insn.decode:67 */
                         if (trans_NEG(ctx, &u.f_decode_insn2)) return true;
-                        break;
+                        return false;
                     }
-                    break;
+                    return false;
                 case 0x1:
                     /* 1001010. ....001. */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     switch (insn & 0x00000001) {
                     case 0x00000000:
                         /* 1001010. ....0010 */
-                        /* insn.decode:173 */
                         if (trans_SWAP(ctx, &u.f_decode_insn2)) return true;
-                        break;
+                        return false;
                     case 0x00000001:
                         /* 1001010. ....0011 */
-                        /* insn.decode:68 */
                         if (trans_INC(ctx, &u.f_decode_insn2)) return true;
-                        break;
+                        return false;
                     }
-                    break;
+                    return false;
                 case 0x2:
                     /* 1001010. ....010. */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     switch (insn & 0x00000001) {
                     case 0x00000001:
                         /* 1001010. ....0101 */
-                        /* insn.decode:172 */
                         if (trans_ASR(ctx, &u.f_decode_insn2)) return true;
-                        break;
+                        return false;
                     }
-                    break;
+                    return false;
                 case 0x3:
                     /* 1001010. ....011. */
                     decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                     switch (insn & 0x00000001) {
                     case 0x00000000:
                         /* 1001010. ....0110 */
-                        /* insn.decode:170 */
                         if (trans_LSR(ctx, &u.f_decode_insn2)) return true;
-                        break;
+                        return false;
                     case 0x00000001:
                         /* 1001010. ....0111 */
-                        /* insn.decode:171 */
                         if (trans_ROR(ctx, &u.f_decode_insn2)) return true;
-                        break;
+                        return false;
                     }
-                    break;
+                    return false;
                 case 0x4:
                     /* 1001010. ....100. */
                     switch (insn & 0x00000181) {
                     case 0x00000000:
                         /* 10010100 0...1000 */
-                        /* insn.decode:178 */
                         decode_insn_extract_op_bit(ctx, &u.f_decode_insn4, insn);
                         if (trans_BSET(ctx, &u.f_decode_insn4)) return true;
-                        break;
+                        return false;
                     case 0x00000001:
                         /* 10010100 0...1001 */
                         decode_insn_extract_decode_insn_Fmt_10(ctx, &u.f_decode_insn6, insn);
                         switch ((insn >> 4) & 0x7) {
                         case 0x0:
                             /* 10010100 00001001 */
-                            /* insn.decode:91 */
                             if (trans_IJMP(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         case 0x1:
                             /* 10010100 00011001 */
-                            /* insn.decode:92 */
                             if (trans_EIJMP(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         }
-                        break;
+                        return false;
                     case 0x00000080:
                         /* 10010100 1...1000 */
-                        /* insn.decode:179 */
                         decode_insn_extract_op_bit(ctx, &u.f_decode_insn4, insn);
                         if (trans_BCLR(ctx, &u.f_decode_insn4)) return true;
-                        break;
+                        return false;
                     case 0x00000100:
                         /* 10010101 0...1000 */
                         decode_insn_extract_decode_insn_Fmt_10(ctx, &u.f_decode_insn6, insn);
                         switch ((insn >> 4) & 0x7) {
                         case 0x0:
                             /* 10010101 00001000 */
-                            /* insn.decode:98 */
                             if (trans_RET(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         case 0x1:
                             /* 10010101 00011000 */
-                            /* insn.decode:99 */
                             if (trans_RETI(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         }
-                        break;
+                        return false;
                     case 0x00000101:
                         /* 10010101 0...1001 */
                         decode_insn_extract_decode_insn_Fmt_10(ctx, &u.f_decode_insn6, insn);
                         switch ((insn >> 4) & 0x7) {
                         case 0x0:
                             /* 10010101 00001001 */
-                            /* insn.decode:95 */
                             if (trans_ICALL(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         case 0x1:
                             /* 10010101 00011001 */
-                            /* insn.decode:96 */
                             if (trans_EICALL(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         }
-                        break;
+                        return false;
                     case 0x00000180:
                         /* 10010101 1...1000 */
                         decode_insn_extract_decode_insn_Fmt_10(ctx, &u.f_decode_insn6, insn);
                         switch ((insn >> 4) & 0x7) {
                         case 0x0:
                             /* 10010101 10001000 */
-                            /* insn.decode:186 */
                             if (trans_SLEEP(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         case 0x1:
                             /* 10010101 10011000 */
-                            /* insn.decode:184 */
                             if (trans_BREAK(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         case 0x2:
                             /* 10010101 10101000 */
-                            /* insn.decode:187 */
                             if (trans_WDR(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         case 0x4:
                             /* 10010101 11001000 */
-                            /* insn.decode:150 */
                             if (trans_LPM1(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         case 0x5:
                             /* 10010101 11011000 */
-                            /* insn.decode:153 */
                             if (trans_ELPM1(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         case 0x6:
                             /* 10010101 11101000 */
-                            /* insn.decode:156 */
                             if (trans_SPM(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         case 0x7:
                             /* 10010101 11111000 */
-                            /* insn.decode:157 */
                             if (trans_SPMX(ctx, &u.f_decode_insn6)) return true;
-                            break;
+                            return false;
                         }
-                        break;
+                        return false;
                     }
-                    break;
+                    return false;
                 case 0x5:
                     /* 1001010. ....101. */
                     switch (insn & 0x00000001) {
                     case 0x00000000:
                         /* 1001010. ....1010 */
-                        /* insn.decode:69 */
                         decode_insn_extract_decode_insn_Fmt_4(ctx, &u.f_decode_insn2, insn);
                         if (trans_DEC(ctx, &u.f_decode_insn2)) return true;
-                        break;
+                        return false;
                     case 0x00000001:
                         /* 1001010. ....1011 */
                         decode_insn_extract_decode_insn_Fmt_6(ctx, &u.f_decode_insn3, insn);
                         switch ((insn >> 8) & 0x1) {
                         case 0x0:
                             /* 10010100 ....1011 */
-                            /* insn.decode:76 */
                             if (trans_DES(ctx, &u.f_decode_insn3)) return true;
-                            break;
+                            return false;
                         }
-                        break;
+                        return false;
                     }
-                    break;
+                    return false;
                 case 0x6:
                     /* 1001010. ....110. */
-                    /* insn.decode:93 */
                     decode_insn_extract_decode_insn_Fmt_11(ctx, &u.f_decode_insn3, insn);
                     if (trans_JMP(ctx, &u.f_decode_insn3)) return true;
-                    break;
+                    return false;
                 case 0x7:
                     /* 1001010. ....111. */
-                    /* insn.decode:97 */
                     decode_insn_extract_decode_insn_Fmt_11(ctx, &u.f_decode_insn3, insn);
                     if (trans_CALL(ctx, &u.f_decode_insn3)) return true;
-                    break;
+                    return false;
                 }
-                break;
+                return false;
             case 0x3:
                 /* 1001011. ........ */
                 decode_insn_extract_op_rd_imm6(ctx, &u.f_rd_imm, insn);
                 switch ((insn >> 8) & 0x1) {
                 case 0x0:
                     /* 10010110 ........ */
-                    /* insn.decode:55 */
                     if (trans_ADIW(ctx, &u.f_rd_imm)) return true;
-                    break;
+                    return false;
                 case 0x1:
                     /* 10010111 ........ */
-                    /* insn.decode:60 */
                     if (trans_SBIW(ctx, &u.f_rd_imm)) return true;
-                    break;
+                    return false;
                 }
-                break;
+                return false;
             }
-            break;
+            return false;
         case 0x00000800:
             /* 10011... ........ */
             switch ((insn >> 10) & 0x1) {
@@ -973,125 +892,109 @@ bool decode_insn(DisasContext *ctx, uint16_t insn)
                 switch ((insn >> 8) & 0x3) {
                 case 0x0:
                     /* 10011000 ........ */
-                    /* insn.decode:175 */
                     if (trans_CBI(ctx, &u.f_decode_insn8)) return true;
-                    break;
+                    return false;
                 case 0x1:
                     /* 10011001 ........ */
-                    /* insn.decode:106 */
                     if (trans_SBIC(ctx, &u.f_decode_insn8)) return true;
-                    break;
+                    return false;
                 case 0x2:
                     /* 10011010 ........ */
-                    /* insn.decode:174 */
                     if (trans_SBI(ctx, &u.f_decode_insn8)) return true;
-                    break;
+                    return false;
                 case 0x3:
                     /* 10011011 ........ */
-                    /* insn.decode:107 */
                     if (trans_SBIS(ctx, &u.f_decode_insn8)) return true;
-                    break;
+                    return false;
                 }
-                break;
+                return false;
             case 0x1:
                 /* 100111.. ........ */
-                /* insn.decode:70 */
                 decode_insn_extract_op_rd_rr(ctx, &u.f_rd_rr, insn);
                 if (trans_MUL(ctx, &u.f_rd_rr)) return true;
-                break;
+                return false;
             }
-            break;
+            return false;
         case 0x00002000:
             /* 10110... ........ */
-            /* insn.decode:158 */
             decode_insn_extract_io_rd_imm(ctx, &u.f_rd_imm, insn);
             if (trans_IN(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         case 0x00002800:
             /* 10111... ........ */
-            /* insn.decode:159 */
             decode_insn_extract_io_rd_imm(ctx, &u.f_rd_imm, insn);
             if (trans_OUT(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         }
-        break;
+        return false;
     case 0x0000c000:
         /* 11.0.... ........ */
         switch ((insn >> 13) & 0x1) {
         case 0x0:
             /* 1100.... ........ */
-            /* insn.decode:90 */
             decode_insn_extract_decode_insn_Fmt_9(ctx, &u.f_decode_insn3, insn);
             if (trans_RJMP(ctx, &u.f_decode_insn3)) return true;
-            break;
+            return false;
         case 0x1:
             /* 1110.... ........ */
-            /* insn.decode:129 */
             decode_insn_extract_op_rd_imm8(ctx, &u.f_rd_imm, insn);
             if (trans_LDI(ctx, &u.f_rd_imm)) return true;
-            break;
+            return false;
         }
-        break;
+        return false;
     case 0x0000d000:
         /* 11.1.... ........ */
         switch ((insn >> 13) & 0x1) {
         case 0x0:
             /* 1101.... ........ */
-            /* insn.decode:94 */
             decode_insn_extract_decode_insn_Fmt_9(ctx, &u.f_decode_insn3, insn);
             if (trans_RCALL(ctx, &u.f_decode_insn3)) return true;
-            break;
+            return false;
         case 0x1:
             /* 1111.... ........ */
             switch ((insn >> 10) & 0x3) {
             case 0x0:
                 /* 111100.. ........ */
-                /* insn.decode:108 */
                 decode_insn_extract_op_bit_imm(ctx, &u.f_decode_insn5, insn);
                 if (trans_BRBS(ctx, &u.f_decode_insn5)) return true;
-                break;
+                return false;
             case 0x1:
                 /* 111101.. ........ */
-                /* insn.decode:109 */
                 decode_insn_extract_op_bit_imm(ctx, &u.f_decode_insn5, insn);
                 if (trans_BRBC(ctx, &u.f_decode_insn5)) return true;
-                break;
+                return false;
             case 0x2:
                 /* 111110.. ........ */
                 decode_insn_extract_decode_insn_Fmt_19(ctx, &u.f_decode_insn10, insn);
                 switch (insn & 0x00000208) {
                 case 0x00000000:
                     /* 1111100. ....0... */
-                    /* insn.decode:177 */
                     if (trans_BLD(ctx, &u.f_decode_insn10)) return true;
-                    break;
+                    return false;
                 case 0x00000200:
                     /* 1111101. ....0... */
-                    /* insn.decode:176 */
                     if (trans_BST(ctx, &u.f_decode_insn10)) return true;
-                    break;
+                    return false;
                 }
-                break;
+                return false;
             case 0x3:
                 /* 111111.. ........ */
                 decode_insn_extract_decode_insn_Fmt_12(ctx, &u.f_decode_insn7, insn);
                 switch (insn & 0x00000208) {
                 case 0x00000000:
                     /* 1111110. ....0... */
-                    /* insn.decode:104 */
                     if (trans_SBRC(ctx, &u.f_decode_insn7)) return true;
-                    break;
+                    return false;
                 case 0x00000200:
                     /* 1111111. ....0... */
-                    /* insn.decode:105 */
                     if (trans_SBRS(ctx, &u.f_decode_insn7)) return true;
-                    break;
+                    return false;
                 }
-                break;
+                return false;
             }
-            break;
+            return false;
         }
-        break;
+        return false;
     }
     return false;
 }

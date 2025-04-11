@@ -22,7 +22,6 @@
 #include "cpu.h"
 #include "exec/exec-all.h"
 #include "exec/helper-proto.h"
-#include "unicorn_helper.h"
 
 bool avr_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 {
@@ -105,21 +104,15 @@ bool avr_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                       bool probe, uintptr_t retaddr)
 {
     int prot = 0;
-    MemTxAttrs attrs = {0};
+    MemTxAttrs attrs = { 0 };
     uint32_t paddr;
 
     address &= TARGET_PAGE_MASK;
 
     if (mmu_idx == MMU_CODE_IDX) {
         /* access to code in flash */
-        paddr = avr_code_base(&AVR_CPU(cs)->env) | address;
+        paddr = OFFSET_CODE + address;
         prot = PAGE_READ | PAGE_EXEC;
-#if 0
-        if (paddr + TARGET_PAGE_SIZE > OFFSET_DATA) {
-            error_report("execution left flash memory");
-            abort();
-        }
-#endif
     } else if (address < NUMBER_OF_CPU_REGISTERS + NUMBER_OF_IO_REGISTERS) {
         /*
          * access to CPU registers, exit and rebuilt this TB to use full access
@@ -131,7 +124,7 @@ bool avr_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
         cpu_loop_exit_restore(cs, retaddr);
     } else {
         /* access to memory. nothing special */
-        paddr = OFFSET_DATA | address;
+        paddr = OFFSET_DATA + address;
         prot = PAGE_READ | PAGE_WRITE;
     }
 
@@ -162,12 +155,6 @@ void helper_unsupported(CPUAVRState *env)
      *  it's EXCP_DEBUG for meanwhile
      */
     cs->exception_index = EXCP_DEBUG;
-#if 0
-    if (qemu_loglevel_mask(LOG_UNIMP)) {
-        qemu_log("UNSUPPORTED\n");
-        cpu_dump_state(cs, stderr, 0);
-    }
-#endif
     cpu_loop_exit(cs);
 }
 
@@ -208,9 +195,7 @@ void helper_wdr(CPUAVRState *env)
  */
 target_ulong helper_inb(CPUAVRState *env, uint32_t port)
 {
-    CPUAVRState *const cpu = env;
-    struct uc_struct *const uc = env->uc;
-
+    CPUState *cs = env_cpu(env);
     target_ulong data = 0;
 
     switch (port) {
@@ -240,9 +225,8 @@ target_ulong helper_inb(CPUAVRState *env, uint32_t port)
         break;
     default:
         /* not a special register, pass to normal memory access */
-        data = address_space_ldub(&address_space_memory,
-                                  OFFSET_IO_REGISTERS + port,
-                                  MEMTXATTRS_UNSPECIFIED, NULL);
+        data = glue(address_space_ldub, UNICORN_ARCH_POSTFIX)(cs->as->uc, cs->as, OFFSET_IO_REGISTERS + port,
+                                      MEMTXATTRS_UNSPECIFIED, NULL);
     }
 
     return data;
@@ -260,9 +244,7 @@ target_ulong helper_inb(CPUAVRState *env, uint32_t port)
  */
 void helper_outb(CPUAVRState *env, uint32_t port, uint32_t data)
 {
-    CPUAVRState *const cpu = env;
-    struct uc_struct *const uc = env->uc;
-
+    CPUState *cs = env_cpu(env);
     data &= 0x000000ff;
 
     switch (port) {
@@ -302,7 +284,7 @@ void helper_outb(CPUAVRState *env, uint32_t port, uint32_t data)
         break;
     default:
         /* not a special register, pass to normal memory access */
-        address_space_stb(&address_space_memory, OFFSET_IO_REGISTERS + port,
+        glue(address_space_stb, UNICORN_ARCH_POSTFIX)(cs->as->uc, cs->as, OFFSET_IO_REGISTERS + port,
                           data, MEMTXATTRS_UNSPECIFIED, NULL);
     }
 }
@@ -313,9 +295,7 @@ void helper_outb(CPUAVRState *env, uint32_t port, uint32_t data)
  */
 target_ulong helper_fullrd(CPUAVRState *env, uint32_t addr)
 {
-    CPUAVRState *const cpu = env;
-    struct uc_struct *const uc = env->uc;
-
+    CPUState *cs = env_cpu(env);
     uint8_t data;
 
     env->fullacc = false;
@@ -328,7 +308,7 @@ target_ulong helper_fullrd(CPUAVRState *env, uint32_t addr)
         data = helper_inb(env, addr - NUMBER_OF_CPU_REGISTERS);
     } else {
         /* memory */
-        data = address_space_ldub(&address_space_memory, OFFSET_DATA | addr,
+        data = glue(address_space_ldub, UNICORN_ARCH_POSTFIX)(cs->as->uc, cs->as, OFFSET_DATA + addr,
                                   MEMTXATTRS_UNSPECIFIED, NULL);
     }
     return data;
@@ -340,9 +320,7 @@ target_ulong helper_fullrd(CPUAVRState *env, uint32_t addr)
  */
 void helper_fullwr(CPUAVRState *env, uint32_t data, uint32_t addr)
 {
-    CPUAVRState *const cpu = env;
-    struct uc_struct *const uc = env->uc;
-
+    CPUState *cs = env_cpu(env);
     env->fullacc = false;
 
     /* Following logic assumes this: */
@@ -358,7 +336,7 @@ void helper_fullwr(CPUAVRState *env, uint32_t data, uint32_t addr)
         helper_outb(env, addr - NUMBER_OF_CPU_REGISTERS, data);
     } else {
         /* memory */
-        address_space_stb(&address_space_memory, OFFSET_DATA | addr, data,
+        glue(address_space_stb, UNICORN_ARCH_POSTFIX)(cs->as->uc, cs->as, OFFSET_DATA + addr, data,
                           MEMTXATTRS_UNSPECIFIED, NULL);
     }
 }
