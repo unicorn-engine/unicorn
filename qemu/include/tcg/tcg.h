@@ -721,7 +721,7 @@ struct TCGContext {
     void *tb_ret_addr;
 
     /* target/riscv/translate.c */
-    TCGv cpu_gpr[32], cpu_pc; // also target/mips/translate.c
+    TCGv cpu_gpr[32], cpu_pc; // also target/mips/translate.c, target/avr/translate.c
     TCGv_i64 cpu_fpr[32]; /* assume F and D extensions */
     TCGv load_res;
     TCGv load_val;
@@ -816,6 +816,23 @@ struct TCGContext {
 
     char s390x_cpu_reg_names[16][4]; // renamed from original cpu_reg_names[][] to avoid name clash with m68k
     TCGv_i64 regs[16];
+
+    // target/avr/translate.c
+    TCGv cpu_Cf;
+    TCGv cpu_Zf;
+    TCGv cpu_Nf;
+    TCGv cpu_Vf;
+    TCGv cpu_Sf;
+    TCGv cpu_Hf;
+    TCGv cpu_Tf;
+    TCGv cpu_If;
+    TCGv cpu_rampD;
+    TCGv cpu_rampX;
+    TCGv cpu_rampY;
+    TCGv cpu_rampZ;
+    TCGv cpu_eind;
+    TCGv cpu_sp;
+    TCGv cpu_skip;
 };
 
 static inline size_t temp_idx(TCGContext *tcg_ctx, TCGTemp *ts)
