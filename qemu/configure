@@ -272,6 +272,7 @@ supported_cpu="no"
 supported_os="no"
 bogus_os="no"
 malloc_trim=""
+interpreter="yes"
 
 # parse CC options first
 for opt do
@@ -307,6 +308,10 @@ for opt do
                 cc_archs="$cc_archs $cc_arch"
                 eval "cross_cc_${cc_arch}=\$optarg"
                 cross_cc_vars="$cross_cc_vars cross_cc_${cc_arch}"
+  ;;
+  --enable-interpreter) interpreter="yes"
+  ;;
+  --disable-interpreter) interpreter="no"
   ;;
   esac
 done
@@ -491,6 +496,10 @@ elif check_define __aarch64__ ; then
   cpu="aarch64"
 elif check_define __tricore__ ; then
   cpu="tricore"
+elif check_define __AVR__ ; then
+  cpu="avr"
+elif check_define __loongarch64 ; then
+  cpu="loongarch64"
 else
   cpu=$(uname -m)
 fi
@@ -532,6 +541,14 @@ case "$cpu" in
   ;;
   tricore)
     cpu="tricore"
+    supported_cpu="yes"
+  ;;
+  avr)
+    cpu="avr"
+    supported_cpu="yes"
+  ;;
+  loongarch64)
+    cpu="loongarch64"
     supported_cpu="yes"
   ;;
   *)
@@ -689,6 +706,10 @@ for opt do
   ;;
   --disable-debug-info)
   ;;
+  --enable-interpreter)
+  ;;
+  --disable-interpreter)
+  ;;
   --cross-cc-*)
   ;;
   --cpu=*)
@@ -844,6 +865,11 @@ case "$cpu" in
            CPU_CFLAGS="-m64 -mcx16"
            QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
            ;;
+    loongarch*)
+	   CPU_CFLAGS=""
+           QEMU_LDFLAGS=" $QEMU_LDFLAGS"
+           ;;
+
     x32)
            CPU_CFLAGS="-mx32"
            QEMU_LDFLAGS="-mx32 $QEMU_LDFLAGS"
@@ -858,8 +884,8 @@ QEMU_CFLAGS="$CPU_CFLAGS $QEMU_CFLAGS"
 default_target_list="aarch64-softmmu \
     arm-softmmu m68k-softmmu mips64el-softmmu mips64-softmmu mipsel-softmmu \
     mips-softmmu ppc64-softmmu ppc-softmmu sparc64-softmmu sparc-softmmu \
-    x86_64-softmmu riscv32-softmmu riscv64-softmmu s390x-softmmu \
-    tricore-softmmu"
+    x86_64-softmmu rh850-softmmu riscv32-softmmu riscv64-softmmu s390x-softmmu \
+    tricore-softmmu avr-softmmu"
 
 if test x"$show_help" = x"yes" ; then
 cat << EOF
@@ -922,6 +948,7 @@ disabled with --disable-FEATURE, default is enabled if available:
   jemalloc        jemalloc support
   avx2            AVX2 optimization support
   avx512f         AVX512F optimization support
+  interpreter     Interpreter mode
 
 NOTE: The object files are built at the place where configure is launched
 EOF
@@ -2137,7 +2164,7 @@ fi
 ##########################################
 # check for Apple Silicon JIT function
 
-if [ "$darwin" = "yes" ] ; then
+if [ "$darwin" = "yes" ]   && [ "$interpreter" = "no" ] ; then
   cat > $TMPC << EOF
 #include <pthread.h>
 int main() { pthread_jit_write_protect_np(0); return 0;}
@@ -2313,6 +2340,7 @@ echo "tcmalloc support  $tcmalloc"
 echo "jemalloc support  $jemalloc"
 echo "avx2 optimization $avx2_opt"
 echo "avx512f optimization $avx512f_opt"
+echo "interpreter $interpreter"
 
 if test "$supported_cpu" = "no"; then
     echo
@@ -2557,6 +2585,10 @@ if test "$have_sprr_mrs" = "yes" ; then
   echo "HAVE_SPRR_MRS=y" >> $config_host_mak
 fi
 
+if test "$interpreter" = "yes" ; then
+  echo "CONFIG_TCG_INTERPRETER=y" >> $config_host_mak
+fi
+
 # Hold two types of flag:
 #   CONFIG_THREAD_SETNAME_BYTHREAD  - we've got a way of setting the name on
 #                                     a thread we have a handle to
@@ -2630,7 +2662,7 @@ config_target_mak=$target_dir/config-target.mak
 target_name=$(echo $target | cut -d '-' -f 1)
 target_aligned_only="no"
 case "$target_name" in
-  alpha|hppa|mips64el|mips64|mipsel|mips|mipsn32|mipsn32el|sh4|sh4eb|sparc|sparc64|sparc32plus|xtensa|xtensaeb)
+  alpha|hppa|mips64el|mips64|mipsel|mips|mipsn32|mipsn32el|rh850|sh4|sh4eb|sparc|sparc64|sparc32plus|xtensa|xtensaeb)
   target_aligned_only="yes"
   ;;
 esac
@@ -2658,6 +2690,11 @@ case "$target_name" in
   i386)
     mttcg="yes"
     TARGET_SYSTBL_ABI=i386
+  ;;
+  loongarch64)
+    mttcg="yes"
+    TARGET_ARCH=loongarch64
+    TARGET_SYSTBL_ABI=common,64
   ;;
   x86_64)
     TARGET_BASE_ARCH=i386
@@ -2746,6 +2783,11 @@ case "$target_name" in
     TARGET_SYSTBL_ABI=common,nospu,32
     echo "TARGET_ABI32=y" >> $config_target_mak
   ;;
+  rh850)
+    TARGET_ARCH=rh850
+    TARGET_ABI_DIR=rh850
+    mttcg=no              # system emulation is not supported for RH850
+  ;;
   riscv32)
     TARGET_BASE_ARCH=riscv
     TARGET_ABI_DIR=riscv
@@ -2787,6 +2829,10 @@ case "$target_name" in
   tricore)
     TARGET_ARCH=tricore
     TARGET_BASE_ARCH=tricore
+  ;;
+  avr)
+    TARGET_ARCH=avr
+    TARGET_BASE_ARCH=avr
   ;;
   unicore32)
   ;;

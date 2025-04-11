@@ -1629,7 +1629,7 @@ static void gen_xxspltib(DisasContext *ctx)
             return;
         }
     }
-    tcg_gen_gvec_dup8i(tcg_ctx, vsr_full_offset(rt), 16, 16, uim8);
+    tcg_gen_gvec_dup_imm(tcg_ctx, MO_8, vsr_full_offset(rt), 16, 16, uim8);
 }
 
 static void gen_xxsldwi(DisasContext *ctx)

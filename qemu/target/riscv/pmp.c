@@ -169,7 +169,7 @@ static void pmp_update_rule(CPURISCVState *env, uint32_t pmp_index)
 
     case PMP_AMATCH_NA4:
         sa = this_addr << 2; /* shift up from [xx:0] to [xx+2:2] */
-        ea = (this_addr + 4u) - 1u;
+        ea = (sa + 4u) - 1u;
         break;
 
     case PMP_AMATCH_NAPOT:
@@ -231,16 +231,20 @@ bool pmp_hart_has_privs(CPURISCVState *env, target_ulong addr,
         return true;
     }
 
-    /*
-     * if size is unknown (0), assume that all bytes
-     * from addr to the end of the page will be accessed.
-     */
     if (size == 0) {
+        if (riscv_feature(env, RISCV_FEATURE_MMU)) {
+            /*
+             * If size is unknown (0), assume that all bytes
+             * from addr to the end of the page will be accessed.
+             */
 #ifdef _MSC_VER
-        pmp_size = 0 - (addr | TARGET_PAGE_MASK);
+            pmp_size = 0 - (addr | TARGET_PAGE_MASK);
 #else
-        pmp_size = -(addr | TARGET_PAGE_MASK);
+            pmp_size = -(addr | TARGET_PAGE_MASK);
 #endif
+        } else {
+            pmp_size = sizeof(target_ulong);
+        }
     } else {
         pmp_size = size;
     }

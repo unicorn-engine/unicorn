@@ -3936,8 +3936,7 @@ static DisasJumpType op_risbg(DisasContext *s, DisasOps *o)
         pmask = 0x00000000ffffffffull;
         break;
     default:
-        // g_assert_not_reached();
-        break;
+        g_assert_not_reached();
     }
 
     /* MASK is the set of bits to be inserted from R2.

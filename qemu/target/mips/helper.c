@@ -68,6 +68,7 @@ int fixed_mmu_map_address(CPUMIPSState *env, hwaddr *physical, int *prot,
 int r4k_map_address(CPUMIPSState *env, hwaddr *physical, int *prot,
                     target_ulong address, int rw, int access_type)
 {
+    struct uc_struct *uc = env->uc;
     uint16_t ASID = env->CP0_EntryHi & env->CP0_EntryHi_ASID_mask;
     uint32_t MMID = env->CP0_MemoryMapID;
     bool mi = !!((env->CP0_Config5 >> CP0C5_MI) & 1);
@@ -461,6 +462,7 @@ void cpu_mips_store_cause(CPUMIPSState *env, target_ulong val)
 static void raise_mmu_exception(CPUMIPSState *env, target_ulong address,
                                 int rw, int tlb_error)
 {
+    struct uc_struct *uc = env->uc;
     CPUState *cs = env_cpu(env);
     int exception = 0, error_code = 0;
 
@@ -903,6 +905,7 @@ bool mips_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
 {
     MIPSCPU *cpu = MIPS_CPU(cs);
     CPUMIPSState *env = &cpu->env;
+    struct uc_struct *uc = env->uc;
     hwaddr physical;
     int prot;
     int mips_access_type;
@@ -1424,6 +1427,7 @@ bool mips_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 
 void r4k_invalidate_tlb(CPUMIPSState *env, int idx, int use_extra)
 {
+    struct uc_struct *uc = env->uc;
     CPUState *cs = env_cpu(env);
     r4k_tlb_t *tlb;
     target_ulong addr;

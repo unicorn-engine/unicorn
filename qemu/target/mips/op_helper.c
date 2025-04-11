@@ -618,6 +618,7 @@ static inline uint64_t get_tlb_pfn_from_entrylo(uint64_t entrylo)
 
 static void r4k_fill_tlb(CPUMIPSState *env, int idx)
 {
+    struct uc_struct *uc = env->uc;
     r4k_tlb_t *tlb;
     uint64_t mask = env->CP0_PageMask >> (TARGET_PAGE_BITS + 1);
 
@@ -682,6 +683,7 @@ void r4k_helper_tlbinvf(CPUMIPSState *env)
 
 void r4k_helper_tlbwi(CPUMIPSState *env)
 {
+    struct uc_struct *uc = env->uc;
     bool mi = !!((env->CP0_Config5 >> CP0C5_MI) & 1);
     target_ulong VPN;
     uint16_t ASID = env->CP0_EntryHi & env->CP0_EntryHi_ASID_mask;
@@ -738,6 +740,7 @@ void r4k_helper_tlbwr(CPUMIPSState *env)
 
 void r4k_helper_tlbp(CPUMIPSState *env)
 {
+    struct uc_struct *uc = env->uc;
     bool mi = !!((env->CP0_Config5 >> CP0C5_MI) & 1);
     r4k_tlb_t *tlb;
     target_ulong mask;
@@ -1241,6 +1244,7 @@ static inline void ensure_writable_pages(CPUMIPSState *env,
                                          int mmu_idx,
                                          uintptr_t retaddr)
 {
+    struct uc_struct *uc = env->uc;
     /* FIXME: Probe the actual accesses (pass and use a size) */
     if (unlikely(MSA_PAGESPAN(addr))) {
         /* first page */

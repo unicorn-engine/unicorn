@@ -89,6 +89,8 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define QEMU_FLATTEN
 #define QEMU_ALWAYS_INLINE  __declspec(inline)
 
+#define qemu_build_not_reached() __assume(0)
+
 #else  // Unix compilers
 
 #ifndef NAN

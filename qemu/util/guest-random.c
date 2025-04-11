@@ -78,4 +78,3 @@ void qemu_guest_random_seed_thread_part2(uint64_t seed)
     }
 #endif
 }
-

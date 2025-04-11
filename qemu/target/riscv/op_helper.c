@@ -81,8 +81,7 @@ target_ulong helper_sret(CPURISCVState *env, target_ulong cpu_pc_deb)
         riscv_raise_exception(env, RISCV_EXCP_INST_ADDR_MIS, GETPC());
     }
 
-    if (env->priv_ver >= PRIV_VERSION_1_10_0 &&
-        get_field(env->mstatus, MSTATUS_TSR) && !(env->priv >= PRV_M)) {
+    if (get_field(env->mstatus, MSTATUS_TSR) && !(env->priv >= PRV_M)) {
         riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, GETPC());
     }
 
@@ -116,10 +115,8 @@ target_ulong helper_sret(CPURISCVState *env, target_ulong cpu_pc_deb)
     } else {
         prev_priv = get_field(mstatus, MSTATUS_SPP);
 
-        mstatus = set_field(mstatus,
-            env->priv_ver >= PRIV_VERSION_1_10_0 ?
-            MSTATUS_SIE : MSTATUS_UIE << prev_priv,
-            get_field(mstatus, MSTATUS_SPIE));
+        mstatus = set_field(mstatus, MSTATUS_SIE,
+                            get_field(mstatus, MSTATUS_SPIE));
         mstatus = set_field(mstatus, MSTATUS_SPIE, 1);
         mstatus = set_field(mstatus, MSTATUS_SPP, PRV_U);
         env->mstatus = mstatus;
@@ -144,10 +141,8 @@ target_ulong helper_mret(CPURISCVState *env, target_ulong cpu_pc_deb)
     target_ulong mstatus = env->mstatus;
     target_ulong prev_priv = get_field(mstatus, MSTATUS_MPP);
     target_ulong prev_virt = MSTATUS_MPV_ISSET(env);
-    mstatus = set_field(mstatus,
-        env->priv_ver >= PRIV_VERSION_1_10_0 ?
-        MSTATUS_MIE : MSTATUS_UIE << prev_priv,
-        get_field(mstatus, MSTATUS_MPIE));
+    mstatus = set_field(mstatus, MSTATUS_MIE,
+                        get_field(mstatus, MSTATUS_MPIE));
     mstatus = set_field(mstatus, MSTATUS_MPIE, 1);
     mstatus = set_field(mstatus, MSTATUS_MPP, PRV_U);
 #ifdef TARGET_RISCV32
@@ -194,12 +189,24 @@ void helper_tlb_flush(CPURISCVState *env)
     CPUState *cs = env_cpu(env);
     if (!(env->priv >= PRV_S) ||
         (env->priv == PRV_S &&
-         env->priv_ver >= PRIV_VERSION_1_10_0 &&
          get_field(env->mstatus, MSTATUS_TVM))) {
         riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, GETPC());
     } else {
         tlb_flush(cs);
     }
+}
+
+void helper_hyp_tlb_flush(CPURISCVState *env)
+{
+    CPUState *cs = env_cpu(env);
+
+    if (env->priv == PRV_M ||
+        (env->priv == PRV_S && !riscv_cpu_virt_enabled(env))) {
+        tlb_flush(cs);
+        return;
+    }
+
+    riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, GETPC());
 }
 
 void helper_uc_riscv_exit(CPURISCVState *env)

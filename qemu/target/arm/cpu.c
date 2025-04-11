@@ -596,16 +596,6 @@ void arm_cpu_update_vfiq(ARMCPU *cpu)
     }
 }
 
-static inline void set_feature(CPUARMState *env, int feature)
-{
-    env->features |= 1ULL << feature;
-}
-
-static inline void unset_feature(CPUARMState *env, int feature)
-{
-    env->features &= ~(1ULL << feature);
-}
-
 static uint64_t arm_cpu_mp_affinity(int idx, uint8_t clustersz)
 {
     uint32_t Aff1 = idx / clustersz;
@@ -2003,6 +1993,7 @@ static void arm_max_initfn(struct uc_struct *uc, CPUState *obj)
             FIELD_DP32(t, ID_MMFR4, HPDS, 1, t); /* AA32HPD */
             FIELD_DP32(t, ID_MMFR4, AC2, 1, t); /* ACTLR2, HACTLR2 */
             FIELD_DP32(t, ID_MMFR4, CNP, 1, t); /* TTCNP */
+            FIELD_DP32(t, ID_MMFR4, XNX, 1, t); /* TTS2UXN */
             cpu->isar.id_mmfr4 = t;
         }
 //#endif
@@ -2011,12 +2002,6 @@ static void arm_max_initfn(struct uc_struct *uc, CPUState *obj)
 #endif
 
 #endif /* !defined(TARGET_AARCH64) */
-
-struct ARMCPUInfo {
-    const char *name;
-    void (*initfn)(struct uc_struct *uc, CPUState *obj);
-    void (*class_init)(struct uc_struct *uc, CPUClass *oc, void *data);
-};
 
 #if !defined(TARGET_AARCH64)
 static struct ARMCPUInfo arm_cpus[] = {

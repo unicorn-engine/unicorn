@@ -28,12 +28,6 @@ void arm_cpu_post_init(CPUState *obj);
 void arm_cpu_initfn(struct uc_struct *uc, CPUState *obj);
 ARMCPU *cpu_arm_init(struct uc_struct *uc);
 
-
-static inline void set_feature(CPUARMState *env, int feature)
-{
-    env->features |= 1ULL << feature;
-}
-
 static void aarch64_a57_initfn(struct uc_struct *uc, CPUState *obj)
 {
     ARMCPU *cpu = ARM_CPU(obj);
@@ -262,6 +256,7 @@ static void aarch64_max_initfn(struct uc_struct *uc, CPUState *obj)
     FIELD_DP64(t, ID_AA64MMFR1, VH, 1, t);
     FIELD_DP64(t, ID_AA64MMFR1, PAN, 2, t); /* ATS1E1 */
     FIELD_DP64(t, ID_AA64MMFR1, VMIDBITS, 2, t); /* VMID16 */
+    FIELD_DP64(t, ID_AA64MMFR1, XNX, 1, t); /* TTS2UXN */
     cpu->isar.id_aa64mmfr1 = t;
 
     t = cpu->isar.id_aa64mmfr2;
@@ -295,21 +290,17 @@ static void aarch64_max_initfn(struct uc_struct *uc, CPUState *obj)
     FIELD_DP32(u, ID_MMFR4, HPDS, 1, u); /* AA32HPD */
     FIELD_DP32(u, ID_MMFR4, AC2, 1, u); /* ACTLR2, HACTLR2 */
     FIELD_DP32(u, ID_MMFR4, CNP, 1, u); /* TTCNP */
+    FIELD_DP32(u, ID_MMFR4, XNX, 1, t); /* TTS2UXN */
     cpu->isar.id_mmfr4 = u;
 
-    u = cpu->isar.id_aa64dfr0;
-    FIELD_DP64(u, ID_AA64DFR0, PMUVER, 5, u); /* v8.4-PMU */
-    cpu->isar.id_aa64dfr0 = u;
+    t = cpu->isar.id_aa64dfr0;
+    FIELD_DP64(t, ID_AA64DFR0, PMUVER, 5, t); /* v8.4-PMU */
+    cpu->isar.id_aa64dfr0 = t;
 
     u = cpu->isar.id_dfr0;
     FIELD_DP32(u, ID_DFR0, PERFMON, 5, u); /* v8.4-PMU */
     cpu->isar.id_dfr0 = u;
 }
-
-struct ARMCPUInfo {
-    const char *name;
-    void (*initfn)(struct uc_struct *uc, CPUState *obj);
-};
 
 static const ARMCPUInfo aarch64_cpus[] = {
     { .name = "cortex-a57",         .initfn = aarch64_a57_initfn },

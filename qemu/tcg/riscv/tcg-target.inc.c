@@ -502,10 +502,8 @@ static bool patch_reloc(tcg_insn_unit *code_ptr, int type,
         break;
     case R_RISCV_JAL:
         return reloc_jimm20(code_ptr, (tcg_insn_unit *)value);
-        break;
     case R_RISCV_CALL:
         return reloc_call(code_ptr, (tcg_insn_unit *)value);
-        break;
     default:
         tcg_abort();
     }
@@ -970,9 +968,7 @@ static void tcg_out_tlb_load(TCGContext *s, TCGReg addrl,
                              TCGReg addrh, TCGMemOpIdx oi,
                              tcg_insn_unit **label_ptr, bool is_load)
 {
-#ifdef TARGET_ARM
     struct uc_struct *uc = s->uc;
-#endif
     MemOp opc = get_memop(oi);
     unsigned s_bits = opc & MO_SIZE;
     unsigned a_bits = get_alignment_bits(opc);

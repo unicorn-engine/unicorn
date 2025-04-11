@@ -314,7 +314,7 @@ static bool trans_fclass_d(DisasContext *ctx, arg_fclass_d *a)
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 
     TCGv t0 = tcg_temp_new(tcg_ctx);
-    gen_helper_fclass_d(tcg_ctx, t0, tcg_ctx->cpu_fpr[a->rs1]);
+    glue(gen_helper_fclass_d, UNICORN_ARCH_POSTFIX)(tcg_ctx, t0, tcg_ctx->cpu_fpr[a->rs1]);
     gen_set_gpr(tcg_ctx, a->rd, t0);
     tcg_temp_free(tcg_ctx, t0);
     return true;

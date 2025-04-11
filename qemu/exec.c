@@ -171,9 +171,7 @@ static void phys_page_set(AddressSpaceDispatch *d,
                           hwaddr index, uint64_t nb,
                           uint16_t leaf)
 {
-#ifdef TARGET_ARM
-    struct uc_struct *uc = d->uc;
-#endif
+    UNICORN_UNUSED struct uc_struct *uc = d->uc;
     /* Wildly overreserve - it doesn't matter much. */
     phys_map_node_reserve(d, &d->map, 3 * P_L2_LEVELS);
 
@@ -254,9 +252,7 @@ static inline bool section_covers_addr(const MemoryRegionSection *section,
 
 static MemoryRegionSection *phys_page_find(AddressSpaceDispatch *d, hwaddr addr)
 {
-#ifdef TARGET_ARM
-    struct uc_struct *uc = d->uc;
-#endif
+    UNICORN_UNUSED struct uc_struct *uc = d->uc;
     PhysPageEntry lp = d->phys_map, *p;
     Node *nodes = d->map.nodes;
     MemoryRegionSection *sections = d->map.sections;
@@ -283,9 +279,7 @@ static MemoryRegionSection *address_space_lookup_region(AddressSpaceDispatch *d,
                                                         hwaddr addr,
                                                         bool resolve_subpage)
 {
-#ifdef TARGET_ARM
-    struct uc_struct *uc = d->uc;
-#endif
+    UNICORN_UNUSED struct uc_struct *uc = d->uc;
     MemoryRegionSection *section = d->mru_section;
     subpage_t *subpage;
 
@@ -1421,9 +1415,7 @@ static uint16_t dummy_section(struct uc_struct *uc, PhysPageMap *map, FlatView *
 MemoryRegionSection *iotlb_to_section(CPUState *cpu,
                                       hwaddr index, MemTxAttrs attrs)
 {
-#ifdef TARGET_ARM
-    struct uc_struct *uc = cpu->uc;
-#endif
+    UNICORN_UNUSED struct uc_struct *uc = cpu->uc;
     int asidx = cpu_asidx_from_attrs(cpu, attrs);
     CPUAddressSpace *cpuas = &cpu->cpu_ases[asidx];
     AddressSpaceDispatch *d = cpuas->memory_dispatch;
@@ -1459,7 +1451,7 @@ AddressSpaceDispatch *address_space_dispatch_new(struct uc_struct *uc, FlatView 
 void address_space_dispatch_clear(AddressSpaceDispatch *d)
 {
     MemoryRegionSection *section;
-    struct uc_struct *uc = d->uc;
+    UNICORN_UNUSED struct uc_struct *uc = d->uc;
     while (d->map.sections_nb > 0) {
         d->map.sections_nb--;
         section = &d->map.sections[d->map.sections_nb];
@@ -1891,7 +1883,7 @@ void *address_space_map(AddressSpace *as,
     MemoryRegion *mr;
     void *ptr;
     FlatView *fv;
-    struct uc_struct *uc = as->uc;
+    UNICORN_UNUSED struct uc_struct *uc = as->uc;
 
     if (len == 0) {
         return NULL;
@@ -2020,9 +2012,7 @@ static inline MemoryRegion *address_space_translate_cached(
 int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
                         void *ptr, target_ulong len, bool is_write)
 {
-#ifdef TARGET_ARM
-    struct uc_struct *uc = cpu->uc;
-#endif
+    UNICORN_UNUSED struct uc_struct *uc = cpu->uc;
     hwaddr phys_addr;
     target_ulong l, page;
     uint8_t *buf = ptr;
@@ -2030,6 +2020,7 @@ int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
     while (len > 0) {
         int asidx;
         MemTxAttrs attrs;
+        MemTxResult res;
 
         page = addr & TARGET_PAGE_MASK;
         phys_addr = cpu_get_phys_page_attrs_debug(cpu, page, &attrs);
@@ -2042,11 +2033,14 @@ int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
             l = len;
         phys_addr += (addr & ~TARGET_PAGE_MASK);
         if (is_write) {
-            address_space_write_rom(cpu->cpu_ases[asidx].as, phys_addr,
+            res = address_space_write_rom(cpu->cpu_ases[asidx].as, phys_addr,
                                     attrs, buf, l);
         } else {
-            address_space_read(cpu->cpu_ases[asidx].as, phys_addr, attrs, buf,
+            res = address_space_read(cpu->cpu_ases[asidx].as, phys_addr, attrs, buf,
                                l);
+        }
+        if (res != MEMTX_OK) {
+            return -1;
         }
         len -= l;
         buf += l;

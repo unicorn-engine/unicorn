@@ -26,7 +26,9 @@ module Common =
     let UC_ARCH_RISCV = 8
     let UC_ARCH_S390X = 9
     let UC_ARCH_TRICORE = 10
-    let UC_ARCH_MAX = 11
+    let UC_ARCH_AVR = 11
+    let UC_ARCH_RH850 = 12
+    let UC_ARCH_MAX = 13
 
     let UC_MODE_LITTLE_ENDIAN = 0
     let UC_MODE_BIG_ENDIAN = 1073741824
@@ -53,6 +55,7 @@ module Common =
     let UC_MODE_SPARC32 = 4
     let UC_MODE_SPARC64 = 8
     let UC_MODE_V9 = 16
+    let UC_MODE_RH850 = 4
     let UC_MODE_RISCV32 = 4
     let UC_MODE_RISCV64 = 8
 

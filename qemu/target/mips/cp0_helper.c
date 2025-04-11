@@ -378,16 +378,9 @@ target_ulong helper_mftc0_entryhi(CPUMIPSState *env)
 target_ulong helper_mftc0_cause(CPUMIPSState *env)
 {
     int other_tc = env->CP0_VPEControl & (0xff << CP0VPECo_TargTC);
-    int32_t tccause;
     CPUMIPSState *other = mips_cpu_map_tc(env, &other_tc);
 
-    if (other_tc == other->current_tc) {
-        tccause = other->CP0_Cause;
-    } else {
-        tccause = other->CP0_Cause;
-    }
-
-    return tccause;
+    return other->CP0_Cause;
 }
 
 target_ulong helper_mftc0_status(CPUMIPSState *env)
@@ -877,6 +870,7 @@ void helper_mtc0_memorymapid(CPUMIPSState *env, target_ulong arg1)
 
 void update_pagemask(CPUMIPSState *env, target_ulong arg1, int32_t *pagemask)
 {
+    struct uc_struct *uc = env->uc;
     uint64_t mask = arg1 >> (TARGET_PAGE_BITS + 1);
     if (!(env->insn_flags & ISA_MIPS32R6) || (arg1 == ~0) ||
         (mask == 0x0000 || mask == 0x0003 || mask == 0x000F ||
@@ -1113,6 +1107,7 @@ void helper_mthc0_saar(CPUMIPSState *env, target_ulong arg1)
 
 void helper_mtc0_entryhi(CPUMIPSState *env, target_ulong arg1)
 {
+    struct uc_struct *uc = env->uc;
     target_ulong old, val, mask;
     mask = (TARGET_PAGE_MASK << 1) | env->CP0_EntryHi_ASID_mask;
     if (((env->CP0_Config4 >> CP0C4_IE) & 0x3) >= 2) {

@@ -21,9 +21,7 @@ typedef struct {
 } arg_disas_a3226;
 
 typedef struct {
-#ifdef _MSC_VER
-    int dummy;
-#endif
+    int : 0;
 } arg_empty;
 
 typedef struct {

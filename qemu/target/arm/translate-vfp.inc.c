@@ -122,15 +122,14 @@ static bool full_vfp_access_check(DisasContext *s, bool ignore_vfp_enabled)
         if (s->v7m_lspact) {
             /*
              * Lazy state saving affects external memory and also the NVIC,
-             * so we must mark it as an IO operation for icount.
+             * so we must mark it as an IO operation for icount (and cause
+             * this to be the last insn in the TB).
              */
             if (tb_cflags(s->base.tb) & CF_USE_ICOUNT) {
+                s->base.is_jmp = DISAS_UPDATE_EXIT;
                 gen_io_start(tcg_ctx);
             }
             gen_helper_v7m_preserve_fp_state(tcg_ctx, tcg_ctx->cpu_env);
-            if (tb_cflags(s->base.tb) & CF_USE_ICOUNT) {
-                gen_io_end(tcg_ctx);
-            }
             /*
              * If the preserve_fp_state helper doesn't throw an exception
              * then it will clear LSPACT; we don't need to repeat this for
@@ -1911,12 +1910,6 @@ static bool do_vfm_dp(DisasContext *s, arg_VFMA_dp *a, bool neg_n, bool neg_d)
         return false;
     }
 
-    /* UNDEF accesses to D16-D31 if they don't exist. */
-    if (!dc_isar_feature(aa32_simd_r32, s) &&
-        ((a->vd | a->vn | a->vm) & 0x10)) {
-        return false;
-    }
-
     if (!vfp_access_check(s)) {
         return true;
     }
@@ -2930,6 +2923,6 @@ static bool trans_VLLDM_VLSTM(DisasContext *s, arg_VLLDM_VLSTM *a)
     tcg_temp_free_i32(tcg_ctx, fptr);
 
     /* End the TB, because we have updated FP control bits */
-    s->base.is_jmp = DISAS_UPDATE;
+    s->base.is_jmp = DISAS_UPDATE_EXIT;
     return true;
 }

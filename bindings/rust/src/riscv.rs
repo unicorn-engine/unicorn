@@ -349,8 +349,10 @@ impl From<RegisterRISCV> for i32 {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Riscv32CpuModel {
     UC_CPU_RISCV32_ANY = 0,
-    UC_CPU_RISCV32_BASE32,
+    UC_CPU_RISCV32_BASE,
+    UC_CPU_RISCV32_IBEX,
     UC_CPU_RISCV32_SIFIVE_E31,
+    UC_CPU_RISCV32_SIFIVE_E34,
     UC_CPU_RISCV32_SIFIVE_U34,
 }
 
@@ -370,7 +372,7 @@ impl From<&Riscv32CpuModel> for i32 {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Riscv64CpuModel {
     UC_CPU_RISCV64_ANY = 0,
-    UC_CPU_RISCV64_BASE64,
+    UC_CPU_RISCV64_BASE,
     UC_CPU_RISCV64_SIFIVE_E51,
     UC_CPU_RISCV64_SIFIVE_U54,
 }

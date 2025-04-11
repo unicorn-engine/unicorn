@@ -15,7 +15,7 @@
  * ------------------------------------------------
  */
 /*
- *   bits 0-31: MIPS base instruction sets
+ *   bits 0-23: MIPS base instruction sets
  */
 #define ISA_MIPS1         0x0000000000000001ULL
 #define ISA_MIPS2         0x0000000000000002ULL
@@ -34,30 +34,37 @@
 #define ISA_MIPS64R6      0x0000000000004000ULL
 #define ISA_NANOMIPS32    0x0000000000008000ULL
 /*
- *   bits 32-47: MIPS ASEs
+ *   bits 24-39: MIPS ASEs
  */
-#define ASE_MIPS16        0x0000000100000000ULL
-#define ASE_MIPS3D        0x0000000200000000ULL
-#define ASE_MDMX          0x0000000400000000ULL
-#define ASE_DSP           0x0000000800000000ULL
-#define ASE_DSP_R2        0x0000001000000000ULL
-#define ASE_DSP_R3        0x0000002000000000ULL
-#define ASE_MT            0x0000004000000000ULL
-#define ASE_SMARTMIPS     0x0000008000000000ULL
-#define ASE_MICROMIPS     0x0000010000000000ULL
-#define ASE_MSA           0x0000020000000000ULL
+#define ASE_MIPS16        0x0000000001000000ULL
+#define ASE_MIPS3D        0x0000000002000000ULL
+#define ASE_MDMX          0x0000000004000000ULL
+#define ASE_DSP           0x0000000008000000ULL
+#define ASE_DSP_R2        0x0000000010000000ULL
+#define ASE_DSP_R3        0x0000000020000000ULL
+#define ASE_MT            0x0000000040000000ULL
+#define ASE_SMARTMIPS     0x0000000080000000ULL
+#define ASE_MICROMIPS     0x0000000100000000ULL
+#define ASE_MSA           0x0000000200000000ULL
 /*
- *   bits 48-55: vendor-specific base instruction sets
+ *   bits 40-51: vendor-specific base instruction sets
  */
-#define INSN_LOONGSON2E   0x0001000000000000ULL
-#define INSN_LOONGSON2F   0x0002000000000000ULL
-#define INSN_VR54XX       0x0004000000000000ULL
-#define INSN_R5900        0x0008000000000000ULL
+#define INSN_VR54XX       0x0000010000000000ULL
+#define INSN_R5900        0x0000020000000000ULL
+#define INSN_LOONGSON2E   0x0000040000000000ULL
+#define INSN_LOONGSON2F   0x0000080000000000ULL
+#define INSN_LOONGSON3A   0x0000100000000000ULL
 /*
- *   bits 56-63: vendor-specific ASEs
+ *   bits 52-63: vendor-specific ASEs
  */
-#define ASE_MMI           0x0100000000000000ULL
-#define ASE_MXU           0x0200000000000000ULL
+/* MultiMedia Instructions defined by R5900 */
+#define ASE_MMI           0x0010000000000000ULL
+/* MIPS eXtension/enhanced Unit defined by Ingenic */
+#define ASE_MXU           0x0020000000000000ULL
+/* Loongson MultiMedia Instructions */
+#define ASE_LMMI          0x0040000000000000ULL
+/* Loongson EXTensions */
+#define ASE_LEXT          0x0080000000000000ULL
 
 /* MIPS CPU defines. */
 #define CPU_MIPS1       (ISA_MIPS1)
@@ -67,7 +74,7 @@
 #define CPU_VR54XX      (CPU_MIPS4 | INSN_VR54XX)
 #define CPU_R5900       (CPU_MIPS3 | INSN_R5900)
 #define CPU_LOONGSON2E  (CPU_MIPS3 | INSN_LOONGSON2E)
-#define CPU_LOONGSON2F  (CPU_MIPS3 | INSN_LOONGSON2F)
+#define CPU_LOONGSON2F  (CPU_MIPS3 | INSN_LOONGSON2F | ASE_LMMI)
 
 #define CPU_MIPS5       (CPU_MIPS4 | ISA_MIPS5)
 
@@ -93,6 +100,8 @@
 
 /* Wave Computing: "nanoMIPS" */
 #define CPU_NANOMIPS32  (CPU_MIPS32R6 | ISA_NANOMIPS32)
+
+#define CPU_LOONGSON3A  (CPU_MIPS64R2 | INSN_LOONGSON3A | ASE_LMMI | ASE_LEXT)
 
 /*
  * Strictly follow the architecture standard:

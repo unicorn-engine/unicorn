@@ -15,55 +15,69 @@ typedef struct {
 } arg_b;
 
 typedef struct {
+    int csr;
+    int rd;
+    int rs1;
+} arg_decode_insn3214;
+
+typedef struct {
     int rd;
     int rm;
     int rs1;
     int rs2;
     int rs3;
-} arg_decode_insn3210;
-
-typedef struct {
-    int rd;
-    int rm;
-    int rs1;
-    int rs2;
-} arg_decode_insn3211;
-
-typedef struct {
-    int rd;
-    int rm;
-    int rs1;
-} arg_decode_insn3212;
-
-typedef struct {
-    int rd;
-    int rs1;
-} arg_decode_insn3213;
-
-typedef struct {
-    int rs1;
-    int rs2;
-} arg_decode_insn3214;
-
-typedef struct {
-    int rs1;
 } arg_decode_insn3215;
+
+typedef struct {
+    int rd;
+    int rm;
+    int rs1;
+    int rs2;
+} arg_decode_insn3216;
+
+typedef struct {
+    int rd;
+    int rm;
+    int rs1;
+} arg_decode_insn3217;
+
+typedef struct {
+    int rd;
+    int rs1;
+} arg_decode_insn3218;
+
+typedef struct {
+    int rd;
+    int vm;
+} arg_decode_insn3219;
+
+typedef struct {
+    int rd;
+    int rs2;
+} arg_decode_insn3220;
+
+typedef struct {
+    int rd;
+    int rs1;
+    int zimm;
+} arg_decode_insn3221;
+
+typedef struct {
+    int rs1;
+    int rs2;
+} arg_decode_insn3222;
+
+typedef struct {
+    int rs1;
+} arg_decode_insn3223;
 
 typedef struct {
     int pred;
     int succ;
-} arg_decode_insn3216;
+} arg_decode_insn3224;
 
 typedef struct {
-    int csr;
-    int rd;
-    int rs1;
-} arg_decode_insn329;
-
-typedef struct {
-#ifdef _MSC_VER
-    int dummy;  // MSVC does not allow empty struct
-#endif
+    int : 0;
 } arg_empty;
 
 typedef struct {
@@ -82,6 +96,42 @@ typedef struct {
     int rs1;
     int rs2;
 } arg_r;
+
+typedef struct {
+    int nf;
+    int rd;
+    int rs1;
+    int vm;
+} arg_r2nfvm;
+
+typedef struct {
+    int rd;
+    int rs2;
+    int vm;
+} arg_rmr;
+
+typedef struct {
+    int rd;
+    int rs1;
+    int rs2;
+    int vm;
+} arg_rmrr;
+
+typedef struct {
+    int nf;
+    int rd;
+    int rs1;
+    int rs2;
+    int vm;
+} arg_rnfvm;
+
+typedef struct {
+    int rd;
+    int rs1;
+    int rs2;
+    int vm;
+    int wd;
+} arg_rwdvm;
 
 typedef struct {
     int imm;
@@ -112,13 +162,9 @@ typedef arg_empty arg_mret;
 static bool trans_mret(DisasContext *ctx, arg_mret *a);
 typedef arg_empty arg_wfi;
 static bool trans_wfi(DisasContext *ctx, arg_wfi *a);
-typedef arg_decode_insn3214 arg_hfence_gvma;
-static bool trans_hfence_gvma(DisasContext *ctx, arg_hfence_gvma *a);
-typedef arg_decode_insn3214 arg_hfence_bvma;
-static bool trans_hfence_bvma(DisasContext *ctx, arg_hfence_bvma *a);
-typedef arg_decode_insn3214 arg_sfence_vma;
+typedef arg_decode_insn3222 arg_sfence_vma;
 static bool trans_sfence_vma(DisasContext *ctx, arg_sfence_vma *a);
-typedef arg_decode_insn3215 arg_sfence_vm;
+typedef arg_decode_insn3223 arg_sfence_vm;
 static bool trans_sfence_vm(DisasContext *ctx, arg_sfence_vm *a);
 typedef arg_u arg_lui;
 static bool trans_lui(DisasContext *ctx, arg_lui *a);
@@ -194,21 +240,21 @@ typedef arg_r arg_or;
 static bool trans_or(DisasContext *ctx, arg_or *a);
 typedef arg_r arg_and;
 static bool trans_and(DisasContext *ctx, arg_and *a);
-typedef arg_decode_insn3216 arg_fence;
+typedef arg_decode_insn3224 arg_fence;
 static bool trans_fence(DisasContext *ctx, arg_fence *a);
 typedef arg_empty arg_fence_i;
 static bool trans_fence_i(DisasContext *ctx, arg_fence_i *a);
-typedef arg_decode_insn329 arg_csrrw;
+typedef arg_decode_insn3214 arg_csrrw;
 static bool trans_csrrw(DisasContext *ctx, arg_csrrw *a);
-typedef arg_decode_insn329 arg_csrrs;
+typedef arg_decode_insn3214 arg_csrrs;
 static bool trans_csrrs(DisasContext *ctx, arg_csrrs *a);
-typedef arg_decode_insn329 arg_csrrc;
+typedef arg_decode_insn3214 arg_csrrc;
 static bool trans_csrrc(DisasContext *ctx, arg_csrrc *a);
-typedef arg_decode_insn329 arg_csrrwi;
+typedef arg_decode_insn3214 arg_csrrwi;
 static bool trans_csrrwi(DisasContext *ctx, arg_csrrwi *a);
-typedef arg_decode_insn329 arg_csrrsi;
+typedef arg_decode_insn3214 arg_csrrsi;
 static bool trans_csrrsi(DisasContext *ctx, arg_csrrsi *a);
-typedef arg_decode_insn329 arg_csrrci;
+typedef arg_decode_insn3214 arg_csrrci;
 static bool trans_csrrci(DisasContext *ctx, arg_csrrci *a);
 typedef arg_r arg_mul;
 static bool trans_mul(DisasContext *ctx, arg_mul *a);
@@ -252,23 +298,23 @@ typedef arg_i arg_flw;
 static bool trans_flw(DisasContext *ctx, arg_flw *a);
 typedef arg_s arg_fsw;
 static bool trans_fsw(DisasContext *ctx, arg_fsw *a);
-typedef arg_decode_insn3210 arg_fmadd_s;
+typedef arg_decode_insn3215 arg_fmadd_s;
 static bool trans_fmadd_s(DisasContext *ctx, arg_fmadd_s *a);
-typedef arg_decode_insn3210 arg_fmsub_s;
+typedef arg_decode_insn3215 arg_fmsub_s;
 static bool trans_fmsub_s(DisasContext *ctx, arg_fmsub_s *a);
-typedef arg_decode_insn3210 arg_fnmsub_s;
+typedef arg_decode_insn3215 arg_fnmsub_s;
 static bool trans_fnmsub_s(DisasContext *ctx, arg_fnmsub_s *a);
-typedef arg_decode_insn3210 arg_fnmadd_s;
+typedef arg_decode_insn3215 arg_fnmadd_s;
 static bool trans_fnmadd_s(DisasContext *ctx, arg_fnmadd_s *a);
-typedef arg_decode_insn3211 arg_fadd_s;
+typedef arg_decode_insn3216 arg_fadd_s;
 static bool trans_fadd_s(DisasContext *ctx, arg_fadd_s *a);
-typedef arg_decode_insn3211 arg_fsub_s;
+typedef arg_decode_insn3216 arg_fsub_s;
 static bool trans_fsub_s(DisasContext *ctx, arg_fsub_s *a);
-typedef arg_decode_insn3211 arg_fmul_s;
+typedef arg_decode_insn3216 arg_fmul_s;
 static bool trans_fmul_s(DisasContext *ctx, arg_fmul_s *a);
-typedef arg_decode_insn3211 arg_fdiv_s;
+typedef arg_decode_insn3216 arg_fdiv_s;
 static bool trans_fdiv_s(DisasContext *ctx, arg_fdiv_s *a);
-typedef arg_decode_insn3212 arg_fsqrt_s;
+typedef arg_decode_insn3217 arg_fsqrt_s;
 static bool trans_fsqrt_s(DisasContext *ctx, arg_fsqrt_s *a);
 typedef arg_r arg_fsgnj_s;
 static bool trans_fsgnj_s(DisasContext *ctx, arg_fsgnj_s *a);
@@ -280,11 +326,11 @@ typedef arg_r arg_fmin_s;
 static bool trans_fmin_s(DisasContext *ctx, arg_fmin_s *a);
 typedef arg_r arg_fmax_s;
 static bool trans_fmax_s(DisasContext *ctx, arg_fmax_s *a);
-typedef arg_decode_insn3212 arg_fcvt_w_s;
+typedef arg_decode_insn3217 arg_fcvt_w_s;
 static bool trans_fcvt_w_s(DisasContext *ctx, arg_fcvt_w_s *a);
-typedef arg_decode_insn3212 arg_fcvt_wu_s;
+typedef arg_decode_insn3217 arg_fcvt_wu_s;
 static bool trans_fcvt_wu_s(DisasContext *ctx, arg_fcvt_wu_s *a);
-typedef arg_decode_insn3213 arg_fmv_x_w;
+typedef arg_decode_insn3218 arg_fmv_x_w;
 static bool trans_fmv_x_w(DisasContext *ctx, arg_fmv_x_w *a);
 typedef arg_r arg_feq_s;
 static bool trans_feq_s(DisasContext *ctx, arg_feq_s *a);
@@ -292,35 +338,35 @@ typedef arg_r arg_flt_s;
 static bool trans_flt_s(DisasContext *ctx, arg_flt_s *a);
 typedef arg_r arg_fle_s;
 static bool trans_fle_s(DisasContext *ctx, arg_fle_s *a);
-typedef arg_decode_insn3213 arg_fclass_s;
+typedef arg_decode_insn3218 arg_fclass_s;
 static bool trans_fclass_s(DisasContext *ctx, arg_fclass_s *a);
-typedef arg_decode_insn3212 arg_fcvt_s_w;
+typedef arg_decode_insn3217 arg_fcvt_s_w;
 static bool trans_fcvt_s_w(DisasContext *ctx, arg_fcvt_s_w *a);
-typedef arg_decode_insn3212 arg_fcvt_s_wu;
+typedef arg_decode_insn3217 arg_fcvt_s_wu;
 static bool trans_fcvt_s_wu(DisasContext *ctx, arg_fcvt_s_wu *a);
-typedef arg_decode_insn3213 arg_fmv_w_x;
+typedef arg_decode_insn3218 arg_fmv_w_x;
 static bool trans_fmv_w_x(DisasContext *ctx, arg_fmv_w_x *a);
 typedef arg_i arg_fld;
 static bool trans_fld(DisasContext *ctx, arg_fld *a);
 typedef arg_s arg_fsd;
 static bool trans_fsd(DisasContext *ctx, arg_fsd *a);
-typedef arg_decode_insn3210 arg_fmadd_d;
+typedef arg_decode_insn3215 arg_fmadd_d;
 static bool trans_fmadd_d(DisasContext *ctx, arg_fmadd_d *a);
-typedef arg_decode_insn3210 arg_fmsub_d;
+typedef arg_decode_insn3215 arg_fmsub_d;
 static bool trans_fmsub_d(DisasContext *ctx, arg_fmsub_d *a);
-typedef arg_decode_insn3210 arg_fnmsub_d;
+typedef arg_decode_insn3215 arg_fnmsub_d;
 static bool trans_fnmsub_d(DisasContext *ctx, arg_fnmsub_d *a);
-typedef arg_decode_insn3210 arg_fnmadd_d;
+typedef arg_decode_insn3215 arg_fnmadd_d;
 static bool trans_fnmadd_d(DisasContext *ctx, arg_fnmadd_d *a);
-typedef arg_decode_insn3211 arg_fadd_d;
+typedef arg_decode_insn3216 arg_fadd_d;
 static bool trans_fadd_d(DisasContext *ctx, arg_fadd_d *a);
-typedef arg_decode_insn3211 arg_fsub_d;
+typedef arg_decode_insn3216 arg_fsub_d;
 static bool trans_fsub_d(DisasContext *ctx, arg_fsub_d *a);
-typedef arg_decode_insn3211 arg_fmul_d;
+typedef arg_decode_insn3216 arg_fmul_d;
 static bool trans_fmul_d(DisasContext *ctx, arg_fmul_d *a);
-typedef arg_decode_insn3211 arg_fdiv_d;
+typedef arg_decode_insn3216 arg_fdiv_d;
 static bool trans_fdiv_d(DisasContext *ctx, arg_fdiv_d *a);
-typedef arg_decode_insn3212 arg_fsqrt_d;
+typedef arg_decode_insn3217 arg_fsqrt_d;
 static bool trans_fsqrt_d(DisasContext *ctx, arg_fsqrt_d *a);
 typedef arg_r arg_fsgnj_d;
 static bool trans_fsgnj_d(DisasContext *ctx, arg_fsgnj_d *a);
@@ -332,9 +378,9 @@ typedef arg_r arg_fmin_d;
 static bool trans_fmin_d(DisasContext *ctx, arg_fmin_d *a);
 typedef arg_r arg_fmax_d;
 static bool trans_fmax_d(DisasContext *ctx, arg_fmax_d *a);
-typedef arg_decode_insn3212 arg_fcvt_s_d;
+typedef arg_decode_insn3217 arg_fcvt_s_d;
 static bool trans_fcvt_s_d(DisasContext *ctx, arg_fcvt_s_d *a);
-typedef arg_decode_insn3212 arg_fcvt_d_s;
+typedef arg_decode_insn3217 arg_fcvt_d_s;
 static bool trans_fcvt_d_s(DisasContext *ctx, arg_fcvt_d_s *a);
 typedef arg_r arg_feq_d;
 static bool trans_feq_d(DisasContext *ctx, arg_feq_d *a);
@@ -342,16 +388,704 @@ typedef arg_r arg_flt_d;
 static bool trans_flt_d(DisasContext *ctx, arg_flt_d *a);
 typedef arg_r arg_fle_d;
 static bool trans_fle_d(DisasContext *ctx, arg_fle_d *a);
-typedef arg_decode_insn3213 arg_fclass_d;
+typedef arg_decode_insn3218 arg_fclass_d;
 static bool trans_fclass_d(DisasContext *ctx, arg_fclass_d *a);
-typedef arg_decode_insn3212 arg_fcvt_w_d;
+typedef arg_decode_insn3217 arg_fcvt_w_d;
 static bool trans_fcvt_w_d(DisasContext *ctx, arg_fcvt_w_d *a);
-typedef arg_decode_insn3212 arg_fcvt_wu_d;
+typedef arg_decode_insn3217 arg_fcvt_wu_d;
 static bool trans_fcvt_wu_d(DisasContext *ctx, arg_fcvt_wu_d *a);
-typedef arg_decode_insn3212 arg_fcvt_d_w;
+typedef arg_decode_insn3217 arg_fcvt_d_w;
 static bool trans_fcvt_d_w(DisasContext *ctx, arg_fcvt_d_w *a);
-typedef arg_decode_insn3212 arg_fcvt_d_wu;
+typedef arg_decode_insn3217 arg_fcvt_d_wu;
 static bool trans_fcvt_d_wu(DisasContext *ctx, arg_fcvt_d_wu *a);
+typedef arg_decode_insn3222 arg_hfence_gvma;
+static bool trans_hfence_gvma(DisasContext *ctx, arg_hfence_gvma *a);
+typedef arg_decode_insn3222 arg_hfence_vvma;
+static bool trans_hfence_vvma(DisasContext *ctx, arg_hfence_vvma *a);
+typedef arg_r2nfvm arg_vlb_v;
+static bool trans_vlb_v(DisasContext *ctx, arg_vlb_v *a);
+typedef arg_r2nfvm arg_vlh_v;
+static bool trans_vlh_v(DisasContext *ctx, arg_vlh_v *a);
+typedef arg_r2nfvm arg_vlw_v;
+static bool trans_vlw_v(DisasContext *ctx, arg_vlw_v *a);
+typedef arg_r2nfvm arg_vle_v;
+static bool trans_vle_v(DisasContext *ctx, arg_vle_v *a);
+typedef arg_r2nfvm arg_vlbu_v;
+static bool trans_vlbu_v(DisasContext *ctx, arg_vlbu_v *a);
+typedef arg_r2nfvm arg_vlhu_v;
+static bool trans_vlhu_v(DisasContext *ctx, arg_vlhu_v *a);
+typedef arg_r2nfvm arg_vlwu_v;
+static bool trans_vlwu_v(DisasContext *ctx, arg_vlwu_v *a);
+typedef arg_r2nfvm arg_vlbff_v;
+static bool trans_vlbff_v(DisasContext *ctx, arg_vlbff_v *a);
+typedef arg_r2nfvm arg_vlhff_v;
+static bool trans_vlhff_v(DisasContext *ctx, arg_vlhff_v *a);
+typedef arg_r2nfvm arg_vlwff_v;
+static bool trans_vlwff_v(DisasContext *ctx, arg_vlwff_v *a);
+typedef arg_r2nfvm arg_vleff_v;
+static bool trans_vleff_v(DisasContext *ctx, arg_vleff_v *a);
+typedef arg_r2nfvm arg_vlbuff_v;
+static bool trans_vlbuff_v(DisasContext *ctx, arg_vlbuff_v *a);
+typedef arg_r2nfvm arg_vlhuff_v;
+static bool trans_vlhuff_v(DisasContext *ctx, arg_vlhuff_v *a);
+typedef arg_r2nfvm arg_vlwuff_v;
+static bool trans_vlwuff_v(DisasContext *ctx, arg_vlwuff_v *a);
+typedef arg_r2nfvm arg_vsb_v;
+static bool trans_vsb_v(DisasContext *ctx, arg_vsb_v *a);
+typedef arg_r2nfvm arg_vsh_v;
+static bool trans_vsh_v(DisasContext *ctx, arg_vsh_v *a);
+typedef arg_r2nfvm arg_vsw_v;
+static bool trans_vsw_v(DisasContext *ctx, arg_vsw_v *a);
+typedef arg_r2nfvm arg_vse_v;
+static bool trans_vse_v(DisasContext *ctx, arg_vse_v *a);
+typedef arg_rnfvm arg_vlsb_v;
+static bool trans_vlsb_v(DisasContext *ctx, arg_vlsb_v *a);
+typedef arg_rnfvm arg_vlsh_v;
+static bool trans_vlsh_v(DisasContext *ctx, arg_vlsh_v *a);
+typedef arg_rnfvm arg_vlsw_v;
+static bool trans_vlsw_v(DisasContext *ctx, arg_vlsw_v *a);
+typedef arg_rnfvm arg_vlse_v;
+static bool trans_vlse_v(DisasContext *ctx, arg_vlse_v *a);
+typedef arg_rnfvm arg_vlsbu_v;
+static bool trans_vlsbu_v(DisasContext *ctx, arg_vlsbu_v *a);
+typedef arg_rnfvm arg_vlshu_v;
+static bool trans_vlshu_v(DisasContext *ctx, arg_vlshu_v *a);
+typedef arg_rnfvm arg_vlswu_v;
+static bool trans_vlswu_v(DisasContext *ctx, arg_vlswu_v *a);
+typedef arg_rnfvm arg_vssb_v;
+static bool trans_vssb_v(DisasContext *ctx, arg_vssb_v *a);
+typedef arg_rnfvm arg_vssh_v;
+static bool trans_vssh_v(DisasContext *ctx, arg_vssh_v *a);
+typedef arg_rnfvm arg_vssw_v;
+static bool trans_vssw_v(DisasContext *ctx, arg_vssw_v *a);
+typedef arg_rnfvm arg_vsse_v;
+static bool trans_vsse_v(DisasContext *ctx, arg_vsse_v *a);
+typedef arg_rnfvm arg_vlxb_v;
+static bool trans_vlxb_v(DisasContext *ctx, arg_vlxb_v *a);
+typedef arg_rnfvm arg_vlxh_v;
+static bool trans_vlxh_v(DisasContext *ctx, arg_vlxh_v *a);
+typedef arg_rnfvm arg_vlxw_v;
+static bool trans_vlxw_v(DisasContext *ctx, arg_vlxw_v *a);
+typedef arg_rnfvm arg_vlxe_v;
+static bool trans_vlxe_v(DisasContext *ctx, arg_vlxe_v *a);
+typedef arg_rnfvm arg_vlxbu_v;
+static bool trans_vlxbu_v(DisasContext *ctx, arg_vlxbu_v *a);
+typedef arg_rnfvm arg_vlxhu_v;
+static bool trans_vlxhu_v(DisasContext *ctx, arg_vlxhu_v *a);
+typedef arg_rnfvm arg_vlxwu_v;
+static bool trans_vlxwu_v(DisasContext *ctx, arg_vlxwu_v *a);
+typedef arg_rnfvm arg_vsxb_v;
+static bool trans_vsxb_v(DisasContext *ctx, arg_vsxb_v *a);
+typedef arg_rnfvm arg_vsxh_v;
+static bool trans_vsxh_v(DisasContext *ctx, arg_vsxh_v *a);
+typedef arg_rnfvm arg_vsxw_v;
+static bool trans_vsxw_v(DisasContext *ctx, arg_vsxw_v *a);
+typedef arg_rnfvm arg_vsxe_v;
+static bool trans_vsxe_v(DisasContext *ctx, arg_vsxe_v *a);
+typedef arg_rwdvm arg_vamoswapw_v;
+static bool trans_vamoswapw_v(DisasContext *ctx, arg_vamoswapw_v *a);
+typedef arg_rwdvm arg_vamoaddw_v;
+static bool trans_vamoaddw_v(DisasContext *ctx, arg_vamoaddw_v *a);
+typedef arg_rwdvm arg_vamoxorw_v;
+static bool trans_vamoxorw_v(DisasContext *ctx, arg_vamoxorw_v *a);
+typedef arg_rwdvm arg_vamoandw_v;
+static bool trans_vamoandw_v(DisasContext *ctx, arg_vamoandw_v *a);
+typedef arg_rwdvm arg_vamoorw_v;
+static bool trans_vamoorw_v(DisasContext *ctx, arg_vamoorw_v *a);
+typedef arg_rwdvm arg_vamominw_v;
+static bool trans_vamominw_v(DisasContext *ctx, arg_vamominw_v *a);
+typedef arg_rwdvm arg_vamomaxw_v;
+static bool trans_vamomaxw_v(DisasContext *ctx, arg_vamomaxw_v *a);
+typedef arg_rwdvm arg_vamominuw_v;
+static bool trans_vamominuw_v(DisasContext *ctx, arg_vamominuw_v *a);
+typedef arg_rwdvm arg_vamomaxuw_v;
+static bool trans_vamomaxuw_v(DisasContext *ctx, arg_vamomaxuw_v *a);
+typedef arg_rmrr arg_vadd_vv;
+static bool trans_vadd_vv(DisasContext *ctx, arg_vadd_vv *a);
+typedef arg_rmrr arg_vadd_vx;
+static bool trans_vadd_vx(DisasContext *ctx, arg_vadd_vx *a);
+typedef arg_rmrr arg_vadd_vi;
+static bool trans_vadd_vi(DisasContext *ctx, arg_vadd_vi *a);
+typedef arg_rmrr arg_vsub_vv;
+static bool trans_vsub_vv(DisasContext *ctx, arg_vsub_vv *a);
+typedef arg_rmrr arg_vsub_vx;
+static bool trans_vsub_vx(DisasContext *ctx, arg_vsub_vx *a);
+typedef arg_rmrr arg_vrsub_vx;
+static bool trans_vrsub_vx(DisasContext *ctx, arg_vrsub_vx *a);
+typedef arg_rmrr arg_vrsub_vi;
+static bool trans_vrsub_vi(DisasContext *ctx, arg_vrsub_vi *a);
+typedef arg_rmrr arg_vwaddu_vv;
+static bool trans_vwaddu_vv(DisasContext *ctx, arg_vwaddu_vv *a);
+typedef arg_rmrr arg_vwaddu_vx;
+static bool trans_vwaddu_vx(DisasContext *ctx, arg_vwaddu_vx *a);
+typedef arg_rmrr arg_vwadd_vv;
+static bool trans_vwadd_vv(DisasContext *ctx, arg_vwadd_vv *a);
+typedef arg_rmrr arg_vwadd_vx;
+static bool trans_vwadd_vx(DisasContext *ctx, arg_vwadd_vx *a);
+typedef arg_rmrr arg_vwsubu_vv;
+static bool trans_vwsubu_vv(DisasContext *ctx, arg_vwsubu_vv *a);
+typedef arg_rmrr arg_vwsubu_vx;
+static bool trans_vwsubu_vx(DisasContext *ctx, arg_vwsubu_vx *a);
+typedef arg_rmrr arg_vwsub_vv;
+static bool trans_vwsub_vv(DisasContext *ctx, arg_vwsub_vv *a);
+typedef arg_rmrr arg_vwsub_vx;
+static bool trans_vwsub_vx(DisasContext *ctx, arg_vwsub_vx *a);
+typedef arg_rmrr arg_vwaddu_wv;
+static bool trans_vwaddu_wv(DisasContext *ctx, arg_vwaddu_wv *a);
+typedef arg_rmrr arg_vwaddu_wx;
+static bool trans_vwaddu_wx(DisasContext *ctx, arg_vwaddu_wx *a);
+typedef arg_rmrr arg_vwadd_wv;
+static bool trans_vwadd_wv(DisasContext *ctx, arg_vwadd_wv *a);
+typedef arg_rmrr arg_vwadd_wx;
+static bool trans_vwadd_wx(DisasContext *ctx, arg_vwadd_wx *a);
+typedef arg_rmrr arg_vwsubu_wv;
+static bool trans_vwsubu_wv(DisasContext *ctx, arg_vwsubu_wv *a);
+typedef arg_rmrr arg_vwsubu_wx;
+static bool trans_vwsubu_wx(DisasContext *ctx, arg_vwsubu_wx *a);
+typedef arg_rmrr arg_vwsub_wv;
+static bool trans_vwsub_wv(DisasContext *ctx, arg_vwsub_wv *a);
+typedef arg_rmrr arg_vwsub_wx;
+static bool trans_vwsub_wx(DisasContext *ctx, arg_vwsub_wx *a);
+typedef arg_rmrr arg_vadc_vvm;
+static bool trans_vadc_vvm(DisasContext *ctx, arg_vadc_vvm *a);
+typedef arg_rmrr arg_vadc_vxm;
+static bool trans_vadc_vxm(DisasContext *ctx, arg_vadc_vxm *a);
+typedef arg_rmrr arg_vadc_vim;
+static bool trans_vadc_vim(DisasContext *ctx, arg_vadc_vim *a);
+typedef arg_rmrr arg_vmadc_vvm;
+static bool trans_vmadc_vvm(DisasContext *ctx, arg_vmadc_vvm *a);
+typedef arg_rmrr arg_vmadc_vxm;
+static bool trans_vmadc_vxm(DisasContext *ctx, arg_vmadc_vxm *a);
+typedef arg_rmrr arg_vmadc_vim;
+static bool trans_vmadc_vim(DisasContext *ctx, arg_vmadc_vim *a);
+typedef arg_rmrr arg_vsbc_vvm;
+static bool trans_vsbc_vvm(DisasContext *ctx, arg_vsbc_vvm *a);
+typedef arg_rmrr arg_vsbc_vxm;
+static bool trans_vsbc_vxm(DisasContext *ctx, arg_vsbc_vxm *a);
+typedef arg_rmrr arg_vmsbc_vvm;
+static bool trans_vmsbc_vvm(DisasContext *ctx, arg_vmsbc_vvm *a);
+typedef arg_rmrr arg_vmsbc_vxm;
+static bool trans_vmsbc_vxm(DisasContext *ctx, arg_vmsbc_vxm *a);
+typedef arg_rmrr arg_vand_vv;
+static bool trans_vand_vv(DisasContext *ctx, arg_vand_vv *a);
+typedef arg_rmrr arg_vand_vx;
+static bool trans_vand_vx(DisasContext *ctx, arg_vand_vx *a);
+typedef arg_rmrr arg_vand_vi;
+static bool trans_vand_vi(DisasContext *ctx, arg_vand_vi *a);
+typedef arg_rmrr arg_vor_vv;
+static bool trans_vor_vv(DisasContext *ctx, arg_vor_vv *a);
+typedef arg_rmrr arg_vor_vx;
+static bool trans_vor_vx(DisasContext *ctx, arg_vor_vx *a);
+typedef arg_rmrr arg_vor_vi;
+static bool trans_vor_vi(DisasContext *ctx, arg_vor_vi *a);
+typedef arg_rmrr arg_vxor_vv;
+static bool trans_vxor_vv(DisasContext *ctx, arg_vxor_vv *a);
+typedef arg_rmrr arg_vxor_vx;
+static bool trans_vxor_vx(DisasContext *ctx, arg_vxor_vx *a);
+typedef arg_rmrr arg_vxor_vi;
+static bool trans_vxor_vi(DisasContext *ctx, arg_vxor_vi *a);
+typedef arg_rmrr arg_vsll_vv;
+static bool trans_vsll_vv(DisasContext *ctx, arg_vsll_vv *a);
+typedef arg_rmrr arg_vsll_vx;
+static bool trans_vsll_vx(DisasContext *ctx, arg_vsll_vx *a);
+typedef arg_rmrr arg_vsll_vi;
+static bool trans_vsll_vi(DisasContext *ctx, arg_vsll_vi *a);
+typedef arg_rmrr arg_vsrl_vv;
+static bool trans_vsrl_vv(DisasContext *ctx, arg_vsrl_vv *a);
+typedef arg_rmrr arg_vsrl_vx;
+static bool trans_vsrl_vx(DisasContext *ctx, arg_vsrl_vx *a);
+typedef arg_rmrr arg_vsrl_vi;
+static bool trans_vsrl_vi(DisasContext *ctx, arg_vsrl_vi *a);
+typedef arg_rmrr arg_vsra_vv;
+static bool trans_vsra_vv(DisasContext *ctx, arg_vsra_vv *a);
+typedef arg_rmrr arg_vsra_vx;
+static bool trans_vsra_vx(DisasContext *ctx, arg_vsra_vx *a);
+typedef arg_rmrr arg_vsra_vi;
+static bool trans_vsra_vi(DisasContext *ctx, arg_vsra_vi *a);
+typedef arg_rmrr arg_vnsrl_vv;
+static bool trans_vnsrl_vv(DisasContext *ctx, arg_vnsrl_vv *a);
+typedef arg_rmrr arg_vnsrl_vx;
+static bool trans_vnsrl_vx(DisasContext *ctx, arg_vnsrl_vx *a);
+typedef arg_rmrr arg_vnsrl_vi;
+static bool trans_vnsrl_vi(DisasContext *ctx, arg_vnsrl_vi *a);
+typedef arg_rmrr arg_vnsra_vv;
+static bool trans_vnsra_vv(DisasContext *ctx, arg_vnsra_vv *a);
+typedef arg_rmrr arg_vnsra_vx;
+static bool trans_vnsra_vx(DisasContext *ctx, arg_vnsra_vx *a);
+typedef arg_rmrr arg_vnsra_vi;
+static bool trans_vnsra_vi(DisasContext *ctx, arg_vnsra_vi *a);
+typedef arg_rmrr arg_vmseq_vv;
+static bool trans_vmseq_vv(DisasContext *ctx, arg_vmseq_vv *a);
+typedef arg_rmrr arg_vmseq_vx;
+static bool trans_vmseq_vx(DisasContext *ctx, arg_vmseq_vx *a);
+typedef arg_rmrr arg_vmseq_vi;
+static bool trans_vmseq_vi(DisasContext *ctx, arg_vmseq_vi *a);
+typedef arg_rmrr arg_vmsne_vv;
+static bool trans_vmsne_vv(DisasContext *ctx, arg_vmsne_vv *a);
+typedef arg_rmrr arg_vmsne_vx;
+static bool trans_vmsne_vx(DisasContext *ctx, arg_vmsne_vx *a);
+typedef arg_rmrr arg_vmsne_vi;
+static bool trans_vmsne_vi(DisasContext *ctx, arg_vmsne_vi *a);
+typedef arg_rmrr arg_vmsltu_vv;
+static bool trans_vmsltu_vv(DisasContext *ctx, arg_vmsltu_vv *a);
+typedef arg_rmrr arg_vmsltu_vx;
+static bool trans_vmsltu_vx(DisasContext *ctx, arg_vmsltu_vx *a);
+typedef arg_rmrr arg_vmslt_vv;
+static bool trans_vmslt_vv(DisasContext *ctx, arg_vmslt_vv *a);
+typedef arg_rmrr arg_vmslt_vx;
+static bool trans_vmslt_vx(DisasContext *ctx, arg_vmslt_vx *a);
+typedef arg_rmrr arg_vmsleu_vv;
+static bool trans_vmsleu_vv(DisasContext *ctx, arg_vmsleu_vv *a);
+typedef arg_rmrr arg_vmsleu_vx;
+static bool trans_vmsleu_vx(DisasContext *ctx, arg_vmsleu_vx *a);
+typedef arg_rmrr arg_vmsleu_vi;
+static bool trans_vmsleu_vi(DisasContext *ctx, arg_vmsleu_vi *a);
+typedef arg_rmrr arg_vmsle_vv;
+static bool trans_vmsle_vv(DisasContext *ctx, arg_vmsle_vv *a);
+typedef arg_rmrr arg_vmsle_vx;
+static bool trans_vmsle_vx(DisasContext *ctx, arg_vmsle_vx *a);
+typedef arg_rmrr arg_vmsle_vi;
+static bool trans_vmsle_vi(DisasContext *ctx, arg_vmsle_vi *a);
+typedef arg_rmrr arg_vmsgtu_vx;
+static bool trans_vmsgtu_vx(DisasContext *ctx, arg_vmsgtu_vx *a);
+typedef arg_rmrr arg_vmsgtu_vi;
+static bool trans_vmsgtu_vi(DisasContext *ctx, arg_vmsgtu_vi *a);
+typedef arg_rmrr arg_vmsgt_vx;
+static bool trans_vmsgt_vx(DisasContext *ctx, arg_vmsgt_vx *a);
+typedef arg_rmrr arg_vmsgt_vi;
+static bool trans_vmsgt_vi(DisasContext *ctx, arg_vmsgt_vi *a);
+typedef arg_rmrr arg_vminu_vv;
+static bool trans_vminu_vv(DisasContext *ctx, arg_vminu_vv *a);
+typedef arg_rmrr arg_vminu_vx;
+static bool trans_vminu_vx(DisasContext *ctx, arg_vminu_vx *a);
+typedef arg_rmrr arg_vmin_vv;
+static bool trans_vmin_vv(DisasContext *ctx, arg_vmin_vv *a);
+typedef arg_rmrr arg_vmin_vx;
+static bool trans_vmin_vx(DisasContext *ctx, arg_vmin_vx *a);
+typedef arg_rmrr arg_vmaxu_vv;
+static bool trans_vmaxu_vv(DisasContext *ctx, arg_vmaxu_vv *a);
+typedef arg_rmrr arg_vmaxu_vx;
+static bool trans_vmaxu_vx(DisasContext *ctx, arg_vmaxu_vx *a);
+typedef arg_rmrr arg_vmax_vv;
+static bool trans_vmax_vv(DisasContext *ctx, arg_vmax_vv *a);
+typedef arg_rmrr arg_vmax_vx;
+static bool trans_vmax_vx(DisasContext *ctx, arg_vmax_vx *a);
+typedef arg_rmrr arg_vmul_vv;
+static bool trans_vmul_vv(DisasContext *ctx, arg_vmul_vv *a);
+typedef arg_rmrr arg_vmul_vx;
+static bool trans_vmul_vx(DisasContext *ctx, arg_vmul_vx *a);
+typedef arg_rmrr arg_vmulh_vv;
+static bool trans_vmulh_vv(DisasContext *ctx, arg_vmulh_vv *a);
+typedef arg_rmrr arg_vmulh_vx;
+static bool trans_vmulh_vx(DisasContext *ctx, arg_vmulh_vx *a);
+typedef arg_rmrr arg_vmulhu_vv;
+static bool trans_vmulhu_vv(DisasContext *ctx, arg_vmulhu_vv *a);
+typedef arg_rmrr arg_vmulhu_vx;
+static bool trans_vmulhu_vx(DisasContext *ctx, arg_vmulhu_vx *a);
+typedef arg_rmrr arg_vmulhsu_vv;
+static bool trans_vmulhsu_vv(DisasContext *ctx, arg_vmulhsu_vv *a);
+typedef arg_rmrr arg_vmulhsu_vx;
+static bool trans_vmulhsu_vx(DisasContext *ctx, arg_vmulhsu_vx *a);
+typedef arg_rmrr arg_vdivu_vv;
+static bool trans_vdivu_vv(DisasContext *ctx, arg_vdivu_vv *a);
+typedef arg_rmrr arg_vdivu_vx;
+static bool trans_vdivu_vx(DisasContext *ctx, arg_vdivu_vx *a);
+typedef arg_rmrr arg_vdiv_vv;
+static bool trans_vdiv_vv(DisasContext *ctx, arg_vdiv_vv *a);
+typedef arg_rmrr arg_vdiv_vx;
+static bool trans_vdiv_vx(DisasContext *ctx, arg_vdiv_vx *a);
+typedef arg_rmrr arg_vremu_vv;
+static bool trans_vremu_vv(DisasContext *ctx, arg_vremu_vv *a);
+typedef arg_rmrr arg_vremu_vx;
+static bool trans_vremu_vx(DisasContext *ctx, arg_vremu_vx *a);
+typedef arg_rmrr arg_vrem_vv;
+static bool trans_vrem_vv(DisasContext *ctx, arg_vrem_vv *a);
+typedef arg_rmrr arg_vrem_vx;
+static bool trans_vrem_vx(DisasContext *ctx, arg_vrem_vx *a);
+typedef arg_rmrr arg_vwmulu_vv;
+static bool trans_vwmulu_vv(DisasContext *ctx, arg_vwmulu_vv *a);
+typedef arg_rmrr arg_vwmulu_vx;
+static bool trans_vwmulu_vx(DisasContext *ctx, arg_vwmulu_vx *a);
+typedef arg_rmrr arg_vwmulsu_vv;
+static bool trans_vwmulsu_vv(DisasContext *ctx, arg_vwmulsu_vv *a);
+typedef arg_rmrr arg_vwmulsu_vx;
+static bool trans_vwmulsu_vx(DisasContext *ctx, arg_vwmulsu_vx *a);
+typedef arg_rmrr arg_vwmul_vv;
+static bool trans_vwmul_vv(DisasContext *ctx, arg_vwmul_vv *a);
+typedef arg_rmrr arg_vwmul_vx;
+static bool trans_vwmul_vx(DisasContext *ctx, arg_vwmul_vx *a);
+typedef arg_rmrr arg_vmacc_vv;
+static bool trans_vmacc_vv(DisasContext *ctx, arg_vmacc_vv *a);
+typedef arg_rmrr arg_vmacc_vx;
+static bool trans_vmacc_vx(DisasContext *ctx, arg_vmacc_vx *a);
+typedef arg_rmrr arg_vnmsac_vv;
+static bool trans_vnmsac_vv(DisasContext *ctx, arg_vnmsac_vv *a);
+typedef arg_rmrr arg_vnmsac_vx;
+static bool trans_vnmsac_vx(DisasContext *ctx, arg_vnmsac_vx *a);
+typedef arg_rmrr arg_vmadd_vv;
+static bool trans_vmadd_vv(DisasContext *ctx, arg_vmadd_vv *a);
+typedef arg_rmrr arg_vmadd_vx;
+static bool trans_vmadd_vx(DisasContext *ctx, arg_vmadd_vx *a);
+typedef arg_rmrr arg_vnmsub_vv;
+static bool trans_vnmsub_vv(DisasContext *ctx, arg_vnmsub_vv *a);
+typedef arg_rmrr arg_vnmsub_vx;
+static bool trans_vnmsub_vx(DisasContext *ctx, arg_vnmsub_vx *a);
+typedef arg_rmrr arg_vwmaccu_vv;
+static bool trans_vwmaccu_vv(DisasContext *ctx, arg_vwmaccu_vv *a);
+typedef arg_rmrr arg_vwmaccu_vx;
+static bool trans_vwmaccu_vx(DisasContext *ctx, arg_vwmaccu_vx *a);
+typedef arg_rmrr arg_vwmacc_vv;
+static bool trans_vwmacc_vv(DisasContext *ctx, arg_vwmacc_vv *a);
+typedef arg_rmrr arg_vwmacc_vx;
+static bool trans_vwmacc_vx(DisasContext *ctx, arg_vwmacc_vx *a);
+typedef arg_rmrr arg_vwmaccsu_vv;
+static bool trans_vwmaccsu_vv(DisasContext *ctx, arg_vwmaccsu_vv *a);
+typedef arg_rmrr arg_vwmaccsu_vx;
+static bool trans_vwmaccsu_vx(DisasContext *ctx, arg_vwmaccsu_vx *a);
+typedef arg_rmrr arg_vwmaccus_vx;
+static bool trans_vwmaccus_vx(DisasContext *ctx, arg_vwmaccus_vx *a);
+typedef arg_decode_insn3218 arg_vmv_v_v;
+static bool trans_vmv_v_v(DisasContext *ctx, arg_vmv_v_v *a);
+typedef arg_decode_insn3218 arg_vmv_v_x;
+static bool trans_vmv_v_x(DisasContext *ctx, arg_vmv_v_x *a);
+typedef arg_decode_insn3218 arg_vmv_v_i;
+static bool trans_vmv_v_i(DisasContext *ctx, arg_vmv_v_i *a);
+typedef arg_rmrr arg_vmerge_vvm;
+static bool trans_vmerge_vvm(DisasContext *ctx, arg_vmerge_vvm *a);
+typedef arg_rmrr arg_vmerge_vxm;
+static bool trans_vmerge_vxm(DisasContext *ctx, arg_vmerge_vxm *a);
+typedef arg_rmrr arg_vmerge_vim;
+static bool trans_vmerge_vim(DisasContext *ctx, arg_vmerge_vim *a);
+typedef arg_rmrr arg_vsaddu_vv;
+static bool trans_vsaddu_vv(DisasContext *ctx, arg_vsaddu_vv *a);
+typedef arg_rmrr arg_vsaddu_vx;
+static bool trans_vsaddu_vx(DisasContext *ctx, arg_vsaddu_vx *a);
+typedef arg_rmrr arg_vsaddu_vi;
+static bool trans_vsaddu_vi(DisasContext *ctx, arg_vsaddu_vi *a);
+typedef arg_rmrr arg_vsadd_vv;
+static bool trans_vsadd_vv(DisasContext *ctx, arg_vsadd_vv *a);
+typedef arg_rmrr arg_vsadd_vx;
+static bool trans_vsadd_vx(DisasContext *ctx, arg_vsadd_vx *a);
+typedef arg_rmrr arg_vsadd_vi;
+static bool trans_vsadd_vi(DisasContext *ctx, arg_vsadd_vi *a);
+typedef arg_rmrr arg_vssubu_vv;
+static bool trans_vssubu_vv(DisasContext *ctx, arg_vssubu_vv *a);
+typedef arg_rmrr arg_vssubu_vx;
+static bool trans_vssubu_vx(DisasContext *ctx, arg_vssubu_vx *a);
+typedef arg_rmrr arg_vssub_vv;
+static bool trans_vssub_vv(DisasContext *ctx, arg_vssub_vv *a);
+typedef arg_rmrr arg_vssub_vx;
+static bool trans_vssub_vx(DisasContext *ctx, arg_vssub_vx *a);
+typedef arg_rmrr arg_vaadd_vv;
+static bool trans_vaadd_vv(DisasContext *ctx, arg_vaadd_vv *a);
+typedef arg_rmrr arg_vaadd_vx;
+static bool trans_vaadd_vx(DisasContext *ctx, arg_vaadd_vx *a);
+typedef arg_rmrr arg_vaadd_vi;
+static bool trans_vaadd_vi(DisasContext *ctx, arg_vaadd_vi *a);
+typedef arg_rmrr arg_vasub_vv;
+static bool trans_vasub_vv(DisasContext *ctx, arg_vasub_vv *a);
+typedef arg_rmrr arg_vasub_vx;
+static bool trans_vasub_vx(DisasContext *ctx, arg_vasub_vx *a);
+typedef arg_rmrr arg_vsmul_vv;
+static bool trans_vsmul_vv(DisasContext *ctx, arg_vsmul_vv *a);
+typedef arg_rmrr arg_vsmul_vx;
+static bool trans_vsmul_vx(DisasContext *ctx, arg_vsmul_vx *a);
+typedef arg_rmrr arg_vwsmaccu_vv;
+static bool trans_vwsmaccu_vv(DisasContext *ctx, arg_vwsmaccu_vv *a);
+typedef arg_rmrr arg_vwsmaccu_vx;
+static bool trans_vwsmaccu_vx(DisasContext *ctx, arg_vwsmaccu_vx *a);
+typedef arg_rmrr arg_vwsmacc_vv;
+static bool trans_vwsmacc_vv(DisasContext *ctx, arg_vwsmacc_vv *a);
+typedef arg_rmrr arg_vwsmacc_vx;
+static bool trans_vwsmacc_vx(DisasContext *ctx, arg_vwsmacc_vx *a);
+typedef arg_rmrr arg_vwsmaccsu_vv;
+static bool trans_vwsmaccsu_vv(DisasContext *ctx, arg_vwsmaccsu_vv *a);
+typedef arg_rmrr arg_vwsmaccsu_vx;
+static bool trans_vwsmaccsu_vx(DisasContext *ctx, arg_vwsmaccsu_vx *a);
+typedef arg_rmrr arg_vwsmaccus_vx;
+static bool trans_vwsmaccus_vx(DisasContext *ctx, arg_vwsmaccus_vx *a);
+typedef arg_rmrr arg_vssrl_vv;
+static bool trans_vssrl_vv(DisasContext *ctx, arg_vssrl_vv *a);
+typedef arg_rmrr arg_vssrl_vx;
+static bool trans_vssrl_vx(DisasContext *ctx, arg_vssrl_vx *a);
+typedef arg_rmrr arg_vssrl_vi;
+static bool trans_vssrl_vi(DisasContext *ctx, arg_vssrl_vi *a);
+typedef arg_rmrr arg_vssra_vv;
+static bool trans_vssra_vv(DisasContext *ctx, arg_vssra_vv *a);
+typedef arg_rmrr arg_vssra_vx;
+static bool trans_vssra_vx(DisasContext *ctx, arg_vssra_vx *a);
+typedef arg_rmrr arg_vssra_vi;
+static bool trans_vssra_vi(DisasContext *ctx, arg_vssra_vi *a);
+typedef arg_rmrr arg_vnclipu_vv;
+static bool trans_vnclipu_vv(DisasContext *ctx, arg_vnclipu_vv *a);
+typedef arg_rmrr arg_vnclipu_vx;
+static bool trans_vnclipu_vx(DisasContext *ctx, arg_vnclipu_vx *a);
+typedef arg_rmrr arg_vnclipu_vi;
+static bool trans_vnclipu_vi(DisasContext *ctx, arg_vnclipu_vi *a);
+typedef arg_rmrr arg_vnclip_vv;
+static bool trans_vnclip_vv(DisasContext *ctx, arg_vnclip_vv *a);
+typedef arg_rmrr arg_vnclip_vx;
+static bool trans_vnclip_vx(DisasContext *ctx, arg_vnclip_vx *a);
+typedef arg_rmrr arg_vnclip_vi;
+static bool trans_vnclip_vi(DisasContext *ctx, arg_vnclip_vi *a);
+typedef arg_rmrr arg_vfadd_vv;
+static bool trans_vfadd_vv(DisasContext *ctx, arg_vfadd_vv *a);
+typedef arg_rmrr arg_vfadd_vf;
+static bool trans_vfadd_vf(DisasContext *ctx, arg_vfadd_vf *a);
+typedef arg_rmrr arg_vfsub_vv;
+static bool trans_vfsub_vv(DisasContext *ctx, arg_vfsub_vv *a);
+typedef arg_rmrr arg_vfsub_vf;
+static bool trans_vfsub_vf(DisasContext *ctx, arg_vfsub_vf *a);
+typedef arg_rmrr arg_vfrsub_vf;
+static bool trans_vfrsub_vf(DisasContext *ctx, arg_vfrsub_vf *a);
+typedef arg_rmrr arg_vfwadd_vv;
+static bool trans_vfwadd_vv(DisasContext *ctx, arg_vfwadd_vv *a);
+typedef arg_rmrr arg_vfwadd_vf;
+static bool trans_vfwadd_vf(DisasContext *ctx, arg_vfwadd_vf *a);
+typedef arg_rmrr arg_vfwadd_wv;
+static bool trans_vfwadd_wv(DisasContext *ctx, arg_vfwadd_wv *a);
+typedef arg_rmrr arg_vfwadd_wf;
+static bool trans_vfwadd_wf(DisasContext *ctx, arg_vfwadd_wf *a);
+typedef arg_rmrr arg_vfwsub_vv;
+static bool trans_vfwsub_vv(DisasContext *ctx, arg_vfwsub_vv *a);
+typedef arg_rmrr arg_vfwsub_vf;
+static bool trans_vfwsub_vf(DisasContext *ctx, arg_vfwsub_vf *a);
+typedef arg_rmrr arg_vfwsub_wv;
+static bool trans_vfwsub_wv(DisasContext *ctx, arg_vfwsub_wv *a);
+typedef arg_rmrr arg_vfwsub_wf;
+static bool trans_vfwsub_wf(DisasContext *ctx, arg_vfwsub_wf *a);
+typedef arg_rmrr arg_vfmul_vv;
+static bool trans_vfmul_vv(DisasContext *ctx, arg_vfmul_vv *a);
+typedef arg_rmrr arg_vfmul_vf;
+static bool trans_vfmul_vf(DisasContext *ctx, arg_vfmul_vf *a);
+typedef arg_rmrr arg_vfdiv_vv;
+static bool trans_vfdiv_vv(DisasContext *ctx, arg_vfdiv_vv *a);
+typedef arg_rmrr arg_vfdiv_vf;
+static bool trans_vfdiv_vf(DisasContext *ctx, arg_vfdiv_vf *a);
+typedef arg_rmrr arg_vfrdiv_vf;
+static bool trans_vfrdiv_vf(DisasContext *ctx, arg_vfrdiv_vf *a);
+typedef arg_rmrr arg_vfwmul_vv;
+static bool trans_vfwmul_vv(DisasContext *ctx, arg_vfwmul_vv *a);
+typedef arg_rmrr arg_vfwmul_vf;
+static bool trans_vfwmul_vf(DisasContext *ctx, arg_vfwmul_vf *a);
+typedef arg_rmrr arg_vfmacc_vv;
+static bool trans_vfmacc_vv(DisasContext *ctx, arg_vfmacc_vv *a);
+typedef arg_rmrr arg_vfnmacc_vv;
+static bool trans_vfnmacc_vv(DisasContext *ctx, arg_vfnmacc_vv *a);
+typedef arg_rmrr arg_vfnmacc_vf;
+static bool trans_vfnmacc_vf(DisasContext *ctx, arg_vfnmacc_vf *a);
+typedef arg_rmrr arg_vfmacc_vf;
+static bool trans_vfmacc_vf(DisasContext *ctx, arg_vfmacc_vf *a);
+typedef arg_rmrr arg_vfmsac_vv;
+static bool trans_vfmsac_vv(DisasContext *ctx, arg_vfmsac_vv *a);
+typedef arg_rmrr arg_vfmsac_vf;
+static bool trans_vfmsac_vf(DisasContext *ctx, arg_vfmsac_vf *a);
+typedef arg_rmrr arg_vfnmsac_vv;
+static bool trans_vfnmsac_vv(DisasContext *ctx, arg_vfnmsac_vv *a);
+typedef arg_rmrr arg_vfnmsac_vf;
+static bool trans_vfnmsac_vf(DisasContext *ctx, arg_vfnmsac_vf *a);
+typedef arg_rmrr arg_vfmadd_vv;
+static bool trans_vfmadd_vv(DisasContext *ctx, arg_vfmadd_vv *a);
+typedef arg_rmrr arg_vfmadd_vf;
+static bool trans_vfmadd_vf(DisasContext *ctx, arg_vfmadd_vf *a);
+typedef arg_rmrr arg_vfnmadd_vv;
+static bool trans_vfnmadd_vv(DisasContext *ctx, arg_vfnmadd_vv *a);
+typedef arg_rmrr arg_vfnmadd_vf;
+static bool trans_vfnmadd_vf(DisasContext *ctx, arg_vfnmadd_vf *a);
+typedef arg_rmrr arg_vfmsub_vv;
+static bool trans_vfmsub_vv(DisasContext *ctx, arg_vfmsub_vv *a);
+typedef arg_rmrr arg_vfmsub_vf;
+static bool trans_vfmsub_vf(DisasContext *ctx, arg_vfmsub_vf *a);
+typedef arg_rmrr arg_vfnmsub_vv;
+static bool trans_vfnmsub_vv(DisasContext *ctx, arg_vfnmsub_vv *a);
+typedef arg_rmrr arg_vfnmsub_vf;
+static bool trans_vfnmsub_vf(DisasContext *ctx, arg_vfnmsub_vf *a);
+typedef arg_rmrr arg_vfwmacc_vv;
+static bool trans_vfwmacc_vv(DisasContext *ctx, arg_vfwmacc_vv *a);
+typedef arg_rmrr arg_vfwmacc_vf;
+static bool trans_vfwmacc_vf(DisasContext *ctx, arg_vfwmacc_vf *a);
+typedef arg_rmrr arg_vfwnmacc_vv;
+static bool trans_vfwnmacc_vv(DisasContext *ctx, arg_vfwnmacc_vv *a);
+typedef arg_rmrr arg_vfwnmacc_vf;
+static bool trans_vfwnmacc_vf(DisasContext *ctx, arg_vfwnmacc_vf *a);
+typedef arg_rmrr arg_vfwmsac_vv;
+static bool trans_vfwmsac_vv(DisasContext *ctx, arg_vfwmsac_vv *a);
+typedef arg_rmrr arg_vfwmsac_vf;
+static bool trans_vfwmsac_vf(DisasContext *ctx, arg_vfwmsac_vf *a);
+typedef arg_rmrr arg_vfwnmsac_vv;
+static bool trans_vfwnmsac_vv(DisasContext *ctx, arg_vfwnmsac_vv *a);
+typedef arg_rmrr arg_vfwnmsac_vf;
+static bool trans_vfwnmsac_vf(DisasContext *ctx, arg_vfwnmsac_vf *a);
+typedef arg_rmr arg_vfsqrt_v;
+static bool trans_vfsqrt_v(DisasContext *ctx, arg_vfsqrt_v *a);
+typedef arg_rmrr arg_vfmin_vv;
+static bool trans_vfmin_vv(DisasContext *ctx, arg_vfmin_vv *a);
+typedef arg_rmrr arg_vfmin_vf;
+static bool trans_vfmin_vf(DisasContext *ctx, arg_vfmin_vf *a);
+typedef arg_rmrr arg_vfmax_vv;
+static bool trans_vfmax_vv(DisasContext *ctx, arg_vfmax_vv *a);
+typedef arg_rmrr arg_vfmax_vf;
+static bool trans_vfmax_vf(DisasContext *ctx, arg_vfmax_vf *a);
+typedef arg_rmrr arg_vfsgnj_vv;
+static bool trans_vfsgnj_vv(DisasContext *ctx, arg_vfsgnj_vv *a);
+typedef arg_rmrr arg_vfsgnj_vf;
+static bool trans_vfsgnj_vf(DisasContext *ctx, arg_vfsgnj_vf *a);
+typedef arg_rmrr arg_vfsgnjn_vv;
+static bool trans_vfsgnjn_vv(DisasContext *ctx, arg_vfsgnjn_vv *a);
+typedef arg_rmrr arg_vfsgnjn_vf;
+static bool trans_vfsgnjn_vf(DisasContext *ctx, arg_vfsgnjn_vf *a);
+typedef arg_rmrr arg_vfsgnjx_vv;
+static bool trans_vfsgnjx_vv(DisasContext *ctx, arg_vfsgnjx_vv *a);
+typedef arg_rmrr arg_vfsgnjx_vf;
+static bool trans_vfsgnjx_vf(DisasContext *ctx, arg_vfsgnjx_vf *a);
+typedef arg_rmrr arg_vmfeq_vv;
+static bool trans_vmfeq_vv(DisasContext *ctx, arg_vmfeq_vv *a);
+typedef arg_rmrr arg_vmfeq_vf;
+static bool trans_vmfeq_vf(DisasContext *ctx, arg_vmfeq_vf *a);
+typedef arg_rmrr arg_vmfne_vv;
+static bool trans_vmfne_vv(DisasContext *ctx, arg_vmfne_vv *a);
+typedef arg_rmrr arg_vmfne_vf;
+static bool trans_vmfne_vf(DisasContext *ctx, arg_vmfne_vf *a);
+typedef arg_rmrr arg_vmflt_vv;
+static bool trans_vmflt_vv(DisasContext *ctx, arg_vmflt_vv *a);
+typedef arg_rmrr arg_vmflt_vf;
+static bool trans_vmflt_vf(DisasContext *ctx, arg_vmflt_vf *a);
+typedef arg_rmrr arg_vmfle_vv;
+static bool trans_vmfle_vv(DisasContext *ctx, arg_vmfle_vv *a);
+typedef arg_rmrr arg_vmfle_vf;
+static bool trans_vmfle_vf(DisasContext *ctx, arg_vmfle_vf *a);
+typedef arg_rmrr arg_vmfgt_vf;
+static bool trans_vmfgt_vf(DisasContext *ctx, arg_vmfgt_vf *a);
+typedef arg_rmrr arg_vmfge_vf;
+static bool trans_vmfge_vf(DisasContext *ctx, arg_vmfge_vf *a);
+typedef arg_rmrr arg_vmford_vv;
+static bool trans_vmford_vv(DisasContext *ctx, arg_vmford_vv *a);
+typedef arg_rmrr arg_vmford_vf;
+static bool trans_vmford_vf(DisasContext *ctx, arg_vmford_vf *a);
+typedef arg_rmr arg_vfclass_v;
+static bool trans_vfclass_v(DisasContext *ctx, arg_vfclass_v *a);
+typedef arg_rmrr arg_vfmerge_vfm;
+static bool trans_vfmerge_vfm(DisasContext *ctx, arg_vfmerge_vfm *a);
+typedef arg_decode_insn3218 arg_vfmv_v_f;
+static bool trans_vfmv_v_f(DisasContext *ctx, arg_vfmv_v_f *a);
+typedef arg_rmr arg_vfcvt_xu_f_v;
+static bool trans_vfcvt_xu_f_v(DisasContext *ctx, arg_vfcvt_xu_f_v *a);
+typedef arg_rmr arg_vfcvt_x_f_v;
+static bool trans_vfcvt_x_f_v(DisasContext *ctx, arg_vfcvt_x_f_v *a);
+typedef arg_rmr arg_vfcvt_f_xu_v;
+static bool trans_vfcvt_f_xu_v(DisasContext *ctx, arg_vfcvt_f_xu_v *a);
+typedef arg_rmr arg_vfcvt_f_x_v;
+static bool trans_vfcvt_f_x_v(DisasContext *ctx, arg_vfcvt_f_x_v *a);
+typedef arg_rmr arg_vfwcvt_xu_f_v;
+static bool trans_vfwcvt_xu_f_v(DisasContext *ctx, arg_vfwcvt_xu_f_v *a);
+typedef arg_rmr arg_vfwcvt_x_f_v;
+static bool trans_vfwcvt_x_f_v(DisasContext *ctx, arg_vfwcvt_x_f_v *a);
+typedef arg_rmr arg_vfwcvt_f_xu_v;
+static bool trans_vfwcvt_f_xu_v(DisasContext *ctx, arg_vfwcvt_f_xu_v *a);
+typedef arg_rmr arg_vfwcvt_f_x_v;
+static bool trans_vfwcvt_f_x_v(DisasContext *ctx, arg_vfwcvt_f_x_v *a);
+typedef arg_rmr arg_vfwcvt_f_f_v;
+static bool trans_vfwcvt_f_f_v(DisasContext *ctx, arg_vfwcvt_f_f_v *a);
+typedef arg_rmr arg_vfncvt_xu_f_v;
+static bool trans_vfncvt_xu_f_v(DisasContext *ctx, arg_vfncvt_xu_f_v *a);
+typedef arg_rmr arg_vfncvt_x_f_v;
+static bool trans_vfncvt_x_f_v(DisasContext *ctx, arg_vfncvt_x_f_v *a);
+typedef arg_rmr arg_vfncvt_f_xu_v;
+static bool trans_vfncvt_f_xu_v(DisasContext *ctx, arg_vfncvt_f_xu_v *a);
+typedef arg_rmr arg_vfncvt_f_x_v;
+static bool trans_vfncvt_f_x_v(DisasContext *ctx, arg_vfncvt_f_x_v *a);
+typedef arg_rmr arg_vfncvt_f_f_v;
+static bool trans_vfncvt_f_f_v(DisasContext *ctx, arg_vfncvt_f_f_v *a);
+typedef arg_rmrr arg_vredsum_vs;
+static bool trans_vredsum_vs(DisasContext *ctx, arg_vredsum_vs *a);
+typedef arg_rmrr arg_vredand_vs;
+static bool trans_vredand_vs(DisasContext *ctx, arg_vredand_vs *a);
+typedef arg_rmrr arg_vredor_vs;
+static bool trans_vredor_vs(DisasContext *ctx, arg_vredor_vs *a);
+typedef arg_rmrr arg_vredxor_vs;
+static bool trans_vredxor_vs(DisasContext *ctx, arg_vredxor_vs *a);
+typedef arg_rmrr arg_vredminu_vs;
+static bool trans_vredminu_vs(DisasContext *ctx, arg_vredminu_vs *a);
+typedef arg_rmrr arg_vredmin_vs;
+static bool trans_vredmin_vs(DisasContext *ctx, arg_vredmin_vs *a);
+typedef arg_rmrr arg_vredmaxu_vs;
+static bool trans_vredmaxu_vs(DisasContext *ctx, arg_vredmaxu_vs *a);
+typedef arg_rmrr arg_vredmax_vs;
+static bool trans_vredmax_vs(DisasContext *ctx, arg_vredmax_vs *a);
+typedef arg_rmrr arg_vwredsumu_vs;
+static bool trans_vwredsumu_vs(DisasContext *ctx, arg_vwredsumu_vs *a);
+typedef arg_rmrr arg_vwredsum_vs;
+static bool trans_vwredsum_vs(DisasContext *ctx, arg_vwredsum_vs *a);
+typedef arg_rmrr arg_vfredsum_vs;
+static bool trans_vfredsum_vs(DisasContext *ctx, arg_vfredsum_vs *a);
+typedef arg_rmrr arg_vfredmin_vs;
+static bool trans_vfredmin_vs(DisasContext *ctx, arg_vfredmin_vs *a);
+typedef arg_rmrr arg_vfredmax_vs;
+static bool trans_vfredmax_vs(DisasContext *ctx, arg_vfredmax_vs *a);
+typedef arg_rmrr arg_vfwredsum_vs;
+static bool trans_vfwredsum_vs(DisasContext *ctx, arg_vfwredsum_vs *a);
+typedef arg_r arg_vmand_mm;
+static bool trans_vmand_mm(DisasContext *ctx, arg_vmand_mm *a);
+typedef arg_r arg_vmnand_mm;
+static bool trans_vmnand_mm(DisasContext *ctx, arg_vmnand_mm *a);
+typedef arg_r arg_vmandnot_mm;
+static bool trans_vmandnot_mm(DisasContext *ctx, arg_vmandnot_mm *a);
+typedef arg_r arg_vmxor_mm;
+static bool trans_vmxor_mm(DisasContext *ctx, arg_vmxor_mm *a);
+typedef arg_r arg_vmor_mm;
+static bool trans_vmor_mm(DisasContext *ctx, arg_vmor_mm *a);
+typedef arg_r arg_vmnor_mm;
+static bool trans_vmnor_mm(DisasContext *ctx, arg_vmnor_mm *a);
+typedef arg_r arg_vmornot_mm;
+static bool trans_vmornot_mm(DisasContext *ctx, arg_vmornot_mm *a);
+typedef arg_r arg_vmxnor_mm;
+static bool trans_vmxnor_mm(DisasContext *ctx, arg_vmxnor_mm *a);
+typedef arg_rmr arg_vmpopc_m;
+static bool trans_vmpopc_m(DisasContext *ctx, arg_vmpopc_m *a);
+typedef arg_rmr arg_vmfirst_m;
+static bool trans_vmfirst_m(DisasContext *ctx, arg_vmfirst_m *a);
+typedef arg_rmr arg_vmsbf_m;
+static bool trans_vmsbf_m(DisasContext *ctx, arg_vmsbf_m *a);
+typedef arg_rmr arg_vmsif_m;
+static bool trans_vmsif_m(DisasContext *ctx, arg_vmsif_m *a);
+typedef arg_rmr arg_vmsof_m;
+static bool trans_vmsof_m(DisasContext *ctx, arg_vmsof_m *a);
+typedef arg_rmr arg_viota_m;
+static bool trans_viota_m(DisasContext *ctx, arg_viota_m *a);
+typedef arg_decode_insn3219 arg_vid_v;
+static bool trans_vid_v(DisasContext *ctx, arg_vid_v *a);
+typedef arg_r arg_vext_x_v;
+static bool trans_vext_x_v(DisasContext *ctx, arg_vext_x_v *a);
+typedef arg_decode_insn3218 arg_vmv_s_x;
+static bool trans_vmv_s_x(DisasContext *ctx, arg_vmv_s_x *a);
+typedef arg_decode_insn3220 arg_vfmv_f_s;
+static bool trans_vfmv_f_s(DisasContext *ctx, arg_vfmv_f_s *a);
+typedef arg_decode_insn3218 arg_vfmv_s_f;
+static bool trans_vfmv_s_f(DisasContext *ctx, arg_vfmv_s_f *a);
+typedef arg_rmrr arg_vslideup_vx;
+static bool trans_vslideup_vx(DisasContext *ctx, arg_vslideup_vx *a);
+typedef arg_rmrr arg_vslideup_vi;
+static bool trans_vslideup_vi(DisasContext *ctx, arg_vslideup_vi *a);
+typedef arg_rmrr arg_vslide1up_vx;
+static bool trans_vslide1up_vx(DisasContext *ctx, arg_vslide1up_vx *a);
+typedef arg_rmrr arg_vslidedown_vx;
+static bool trans_vslidedown_vx(DisasContext *ctx, arg_vslidedown_vx *a);
+typedef arg_rmrr arg_vslidedown_vi;
+static bool trans_vslidedown_vi(DisasContext *ctx, arg_vslidedown_vi *a);
+typedef arg_rmrr arg_vslide1down_vx;
+static bool trans_vslide1down_vx(DisasContext *ctx, arg_vslide1down_vx *a);
+typedef arg_rmrr arg_vrgather_vv;
+static bool trans_vrgather_vv(DisasContext *ctx, arg_vrgather_vv *a);
+typedef arg_rmrr arg_vrgather_vx;
+static bool trans_vrgather_vx(DisasContext *ctx, arg_vrgather_vx *a);
+typedef arg_rmrr arg_vrgather_vi;
+static bool trans_vrgather_vi(DisasContext *ctx, arg_vrgather_vi *a);
+typedef arg_r arg_vcompress_vm;
+static bool trans_vcompress_vm(DisasContext *ctx, arg_vcompress_vm *a);
+typedef arg_decode_insn3221 arg_vsetvli;
+static bool trans_vsetvli(DisasContext *ctx, arg_vsetvli *a);
+typedef arg_r arg_vsetvl;
+static bool trans_vsetvl(DisasContext *ctx, arg_vsetvl *a);
 typedef arg_i arg_lwu;
 static bool trans_lwu(DisasContext *ctx, arg_lwu *a);
 typedef arg_i arg_ld;
@@ -408,25 +1142,43 @@ typedef arg_atomic arg_amominu_d;
 static bool trans_amominu_d(DisasContext *ctx, arg_amominu_d *a);
 typedef arg_atomic arg_amomaxu_d;
 static bool trans_amomaxu_d(DisasContext *ctx, arg_amomaxu_d *a);
-typedef arg_decode_insn3212 arg_fcvt_l_s;
+typedef arg_rwdvm arg_vamoswapd_v;
+static bool trans_vamoswapd_v(DisasContext *ctx, arg_vamoswapd_v *a);
+typedef arg_rwdvm arg_vamoaddd_v;
+static bool trans_vamoaddd_v(DisasContext *ctx, arg_vamoaddd_v *a);
+typedef arg_rwdvm arg_vamoxord_v;
+static bool trans_vamoxord_v(DisasContext *ctx, arg_vamoxord_v *a);
+typedef arg_rwdvm arg_vamoandd_v;
+static bool trans_vamoandd_v(DisasContext *ctx, arg_vamoandd_v *a);
+typedef arg_rwdvm arg_vamoord_v;
+static bool trans_vamoord_v(DisasContext *ctx, arg_vamoord_v *a);
+typedef arg_rwdvm arg_vamomind_v;
+static bool trans_vamomind_v(DisasContext *ctx, arg_vamomind_v *a);
+typedef arg_rwdvm arg_vamomaxd_v;
+static bool trans_vamomaxd_v(DisasContext *ctx, arg_vamomaxd_v *a);
+typedef arg_rwdvm arg_vamominud_v;
+static bool trans_vamominud_v(DisasContext *ctx, arg_vamominud_v *a);
+typedef arg_rwdvm arg_vamomaxud_v;
+static bool trans_vamomaxud_v(DisasContext *ctx, arg_vamomaxud_v *a);
+typedef arg_decode_insn3217 arg_fcvt_l_s;
 static bool trans_fcvt_l_s(DisasContext *ctx, arg_fcvt_l_s *a);
-typedef arg_decode_insn3212 arg_fcvt_lu_s;
+typedef arg_decode_insn3217 arg_fcvt_lu_s;
 static bool trans_fcvt_lu_s(DisasContext *ctx, arg_fcvt_lu_s *a);
-typedef arg_decode_insn3212 arg_fcvt_s_l;
+typedef arg_decode_insn3217 arg_fcvt_s_l;
 static bool trans_fcvt_s_l(DisasContext *ctx, arg_fcvt_s_l *a);
-typedef arg_decode_insn3212 arg_fcvt_s_lu;
+typedef arg_decode_insn3217 arg_fcvt_s_lu;
 static bool trans_fcvt_s_lu(DisasContext *ctx, arg_fcvt_s_lu *a);
-typedef arg_decode_insn3212 arg_fcvt_l_d;
+typedef arg_decode_insn3217 arg_fcvt_l_d;
 static bool trans_fcvt_l_d(DisasContext *ctx, arg_fcvt_l_d *a);
-typedef arg_decode_insn3212 arg_fcvt_lu_d;
+typedef arg_decode_insn3217 arg_fcvt_lu_d;
 static bool trans_fcvt_lu_d(DisasContext *ctx, arg_fcvt_lu_d *a);
-typedef arg_decode_insn3213 arg_fmv_x_d;
+typedef arg_decode_insn3218 arg_fmv_x_d;
 static bool trans_fmv_x_d(DisasContext *ctx, arg_fmv_x_d *a);
-typedef arg_decode_insn3212 arg_fcvt_d_l;
+typedef arg_decode_insn3217 arg_fcvt_d_l;
 static bool trans_fcvt_d_l(DisasContext *ctx, arg_fcvt_d_l *a);
-typedef arg_decode_insn3212 arg_fcvt_d_lu;
+typedef arg_decode_insn3217 arg_fcvt_d_lu;
 static bool trans_fcvt_d_lu(DisasContext *ctx, arg_fcvt_d_lu *a);
-typedef arg_decode_insn3213 arg_fmv_d_x;
+typedef arg_decode_insn3218 arg_fmv_d_x;
 static bool trans_fmv_d_x(DisasContext *ctx, arg_fmv_d_x *a);
 
 static void decode_insn32_extract_atom_ld(DisasContext *ctx, arg_atomic *a, uint32_t insn)
@@ -454,30 +1206,30 @@ static void decode_insn32_extract_b(DisasContext *ctx, arg_b *a, uint32_t insn)
     a->rs1 = extract32(insn, 15, 5);
 }
 
-static void decode_insn32_extract_csr(DisasContext *ctx, arg_decode_insn329 *a, uint32_t insn)
+static void decode_insn32_extract_csr(DisasContext *ctx, arg_decode_insn3214 *a, uint32_t insn)
 {
     a->csr = extract32(insn, 20, 12);
     a->rs1 = extract32(insn, 15, 5);
     a->rd = extract32(insn, 7, 5);
 }
 
-static void decode_insn32_extract_decode_insn32_Fmt_18(DisasContext *ctx, arg_empty *a, uint32_t insn)
+static void decode_insn32_extract_decode_insn32_Fmt_28(DisasContext *ctx, arg_empty *a, uint32_t insn)
 {
 }
 
-static void decode_insn32_extract_decode_insn32_Fmt_19(DisasContext *ctx, arg_decode_insn3216 *a, uint32_t insn)
+static void decode_insn32_extract_decode_insn32_Fmt_29(DisasContext *ctx, arg_decode_insn3224 *a, uint32_t insn)
 {
     a->pred = extract32(insn, 24, 4);
     a->succ = extract32(insn, 20, 4);
 }
 
-static void decode_insn32_extract_hfence_bvma(DisasContext *ctx, arg_decode_insn3214 *a, uint32_t insn)
+static void decode_insn32_extract_hfence_gvma(DisasContext *ctx, arg_decode_insn3222 *a, uint32_t insn)
 {
     a->rs2 = extract32(insn, 20, 5);
     a->rs1 = extract32(insn, 15, 5);
 }
 
-static void decode_insn32_extract_hfence_gvma(DisasContext *ctx, arg_decode_insn3214 *a, uint32_t insn)
+static void decode_insn32_extract_hfence_vvma(DisasContext *ctx, arg_decode_insn3222 *a, uint32_t insn)
 {
     a->rs2 = extract32(insn, 20, 5);
     a->rs1 = extract32(insn, 15, 5);
@@ -503,20 +1255,54 @@ static void decode_insn32_extract_r(DisasContext *ctx, arg_r *a, uint32_t insn)
     a->rd = extract32(insn, 7, 5);
 }
 
-static void decode_insn32_extract_r2(DisasContext *ctx, arg_decode_insn3213 *a, uint32_t insn)
+static void decode_insn32_extract_r1_vm(DisasContext *ctx, arg_decode_insn3219 *a, uint32_t insn)
+{
+    a->vm = extract32(insn, 25, 1);
+    a->rd = extract32(insn, 7, 5);
+}
+
+static void decode_insn32_extract_r2(DisasContext *ctx, arg_decode_insn3218 *a, uint32_t insn)
 {
     a->rs1 = extract32(insn, 15, 5);
     a->rd = extract32(insn, 7, 5);
 }
 
-static void decode_insn32_extract_r2_rm(DisasContext *ctx, arg_decode_insn3212 *a, uint32_t insn)
+static void decode_insn32_extract_r2_nfvm(DisasContext *ctx, arg_r2nfvm *a, uint32_t insn)
+{
+    a->vm = extract32(insn, 25, 1);
+    a->nf = ex_plus_1(ctx, extract32(insn, 29, 3));
+    a->rs1 = extract32(insn, 15, 5);
+    a->rd = extract32(insn, 7, 5);
+}
+
+static void decode_insn32_extract_r2_rm(DisasContext *ctx, arg_decode_insn3217 *a, uint32_t insn)
 {
     a->rs1 = extract32(insn, 15, 5);
     a->rm = extract32(insn, 12, 3);
     a->rd = extract32(insn, 7, 5);
 }
 
-static void decode_insn32_extract_r4_rm(DisasContext *ctx, arg_decode_insn3210 *a, uint32_t insn)
+static void decode_insn32_extract_r2_vm(DisasContext *ctx, arg_rmr *a, uint32_t insn)
+{
+    a->vm = extract32(insn, 25, 1);
+    a->rs2 = extract32(insn, 20, 5);
+    a->rd = extract32(insn, 7, 5);
+}
+
+static void decode_insn32_extract_r2_zimm(DisasContext *ctx, arg_decode_insn3221 *a, uint32_t insn)
+{
+    a->zimm = extract32(insn, 20, 11);
+    a->rs1 = extract32(insn, 15, 5);
+    a->rd = extract32(insn, 7, 5);
+}
+
+static void decode_insn32_extract_r2rd(DisasContext *ctx, arg_decode_insn3220 *a, uint32_t insn)
+{
+    a->rs2 = extract32(insn, 20, 5);
+    a->rd = extract32(insn, 7, 5);
+}
+
+static void decode_insn32_extract_r4_rm(DisasContext *ctx, arg_decode_insn3215 *a, uint32_t insn)
 {
     a->rs3 = extract32(insn, 27, 5);
     a->rs2 = extract32(insn, 20, 5);
@@ -525,11 +1311,53 @@ static void decode_insn32_extract_r4_rm(DisasContext *ctx, arg_decode_insn3210 *
     a->rd = extract32(insn, 7, 5);
 }
 
-static void decode_insn32_extract_r_rm(DisasContext *ctx, arg_decode_insn3211 *a, uint32_t insn)
+static void decode_insn32_extract_r_nfvm(DisasContext *ctx, arg_rnfvm *a, uint32_t insn)
+{
+    a->vm = extract32(insn, 25, 1);
+    a->nf = ex_plus_1(ctx, extract32(insn, 29, 3));
+    a->rs2 = extract32(insn, 20, 5);
+    a->rs1 = extract32(insn, 15, 5);
+    a->rd = extract32(insn, 7, 5);
+}
+
+static void decode_insn32_extract_r_rm(DisasContext *ctx, arg_decode_insn3216 *a, uint32_t insn)
 {
     a->rs2 = extract32(insn, 20, 5);
     a->rs1 = extract32(insn, 15, 5);
     a->rm = extract32(insn, 12, 3);
+    a->rd = extract32(insn, 7, 5);
+}
+
+static void decode_insn32_extract_r_vm(DisasContext *ctx, arg_rmrr *a, uint32_t insn)
+{
+    a->vm = extract32(insn, 25, 1);
+    a->rs2 = extract32(insn, 20, 5);
+    a->rs1 = extract32(insn, 15, 5);
+    a->rd = extract32(insn, 7, 5);
+}
+
+static void decode_insn32_extract_r_vm_0(DisasContext *ctx, arg_rmrr *a, uint32_t insn)
+{
+    a->vm = 0;
+    a->rs2 = extract32(insn, 20, 5);
+    a->rs1 = extract32(insn, 15, 5);
+    a->rd = extract32(insn, 7, 5);
+}
+
+static void decode_insn32_extract_r_vm_1(DisasContext *ctx, arg_rmrr *a, uint32_t insn)
+{
+    a->vm = 1;
+    a->rs2 = extract32(insn, 20, 5);
+    a->rs1 = extract32(insn, 15, 5);
+    a->rd = extract32(insn, 7, 5);
+}
+
+static void decode_insn32_extract_r_wdvm(DisasContext *ctx, arg_rwdvm *a, uint32_t insn)
+{
+    a->wd = extract32(insn, 26, 1);
+    a->vm = extract32(insn, 25, 1);
+    a->rs2 = extract32(insn, 20, 5);
+    a->rs1 = extract32(insn, 15, 5);
     a->rd = extract32(insn, 7, 5);
 }
 
@@ -540,12 +1368,12 @@ static void decode_insn32_extract_s(DisasContext *ctx, arg_s *a, uint32_t insn)
     a->rs1 = extract32(insn, 15, 5);
 }
 
-static void decode_insn32_extract_sfence_vm(DisasContext *ctx, arg_decode_insn3215 *a, uint32_t insn)
+static void decode_insn32_extract_sfence_vm(DisasContext *ctx, arg_decode_insn3223 *a, uint32_t insn)
 {
     a->rs1 = extract32(insn, 15, 5);
 }
 
-static void decode_insn32_extract_sfence_vma(DisasContext *ctx, arg_decode_insn3214 *a, uint32_t insn)
+static void decode_insn32_extract_sfence_vma(DisasContext *ctx, arg_decode_insn3222 *a, uint32_t insn)
 {
     a->rs2 = extract32(insn, 20, 5);
     a->rs1 = extract32(insn, 15, 5);
@@ -576,18 +1404,26 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
     union {
         arg_atomic f_atomic;
         arg_b f_b;
-        arg_decode_insn3210 f_decode_insn3210;
-        arg_decode_insn3211 f_decode_insn3211;
-        arg_decode_insn3212 f_decode_insn3212;
-        arg_decode_insn3213 f_decode_insn3213;
         arg_decode_insn3214 f_decode_insn3214;
         arg_decode_insn3215 f_decode_insn3215;
         arg_decode_insn3216 f_decode_insn3216;
-        arg_decode_insn329 f_decode_insn329;
+        arg_decode_insn3217 f_decode_insn3217;
+        arg_decode_insn3218 f_decode_insn3218;
+        arg_decode_insn3219 f_decode_insn3219;
+        arg_decode_insn3220 f_decode_insn3220;
+        arg_decode_insn3221 f_decode_insn3221;
+        arg_decode_insn3222 f_decode_insn3222;
+        arg_decode_insn3223 f_decode_insn3223;
+        arg_decode_insn3224 f_decode_insn3224;
         arg_empty f_empty;
         arg_i f_i;
         arg_j f_j;
         arg_r f_r;
+        arg_r2nfvm f_r2nfvm;
+        arg_rmr f_rmr;
+        arg_rmrr f_rmrr;
+        arg_rnfvm f_rnfvm;
+        arg_rwdvm f_rwdvm;
         arg_s f_s;
         arg_shift f_shift;
         arg_u f_u;
@@ -600,54 +1436,234 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch ((insn >> 12) & 0x7) {
         case 0x0:
             /* ........ ........ .000.... .0000011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:96 */
             if (trans_lb(ctx, &u.f_i)) return true;
             return false;
         case 0x1:
             /* ........ ........ .001.... .0000011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:97 */
             if (trans_lh(ctx, &u.f_i)) return true;
             return false;
         case 0x2:
             /* ........ ........ .010.... .0000011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:98 */
             if (trans_lw(ctx, &u.f_i)) return true;
             return false;
         case 0x3:
             /* ........ ........ .011.... .0000011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:28 */
             if (trans_ld(ctx, &u.f_i)) return true;
             return false;
         case 0x4:
             /* ........ ........ .100.... .0000011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:99 */
             if (trans_lbu(ctx, &u.f_i)) return true;
             return false;
         case 0x5:
             /* ........ ........ .101.... .0000011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:100 */
             if (trans_lhu(ctx, &u.f_i)) return true;
             return false;
         case 0x6:
             /* ........ ........ .110.... .0000011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:27 */
             if (trans_lwu(ctx, &u.f_i)) return true;
             return false;
         }
         return false;
     case 0x00000007:
         /* ........ ........ ........ .0000111 */
-        decode_insn32_extract_i(ctx, &u.f_i, insn);
         switch ((insn >> 12) & 0x7) {
+        case 0x0:
+            /* ........ ........ .000.... .0000111 */
+            switch ((insn >> 26) & 0x7) {
+            case 0x0:
+                /* ...000.. ........ .000.... .0000111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch ((insn >> 20) & 0x1f) {
+                case 0x0:
+                    /* ...000.0 0000.... .000.... .0000111 */
+                    if (trans_vlbu_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                case 0x10:
+                    /* ...000.1 0000.... .000.... .0000111 */
+                    if (trans_vlbuff_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x2:
+                /* ...010.. ........ .000.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlsbu_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            case 0x3:
+                /* ...011.. ........ .000.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlxbu_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            case 0x4:
+                /* ...100.. ........ .000.... .0000111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch ((insn >> 20) & 0x1f) {
+                case 0x0:
+                    /* ...100.0 0000.... .000.... .0000111 */
+                    if (trans_vlb_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                case 0x10:
+                    /* ...100.1 0000.... .000.... .0000111 */
+                    if (trans_vlbff_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x6:
+                /* ...110.. ........ .000.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlsb_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            case 0x7:
+                /* ...111.. ........ .000.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlxb_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            }
+            return false;
         case 0x2:
             /* ........ ........ .010.... .0000111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:156 */
+            decode_insn32_extract_i(ctx, &u.f_i, insn);
             if (trans_flw(ctx, &u.f_i)) return true;
             return false;
         case 0x3:
             /* ........ ........ .011.... .0000111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:184 */
+            decode_insn32_extract_i(ctx, &u.f_i, insn);
             if (trans_fld(ctx, &u.f_i)) return true;
+            return false;
+        case 0x5:
+            /* ........ ........ .101.... .0000111 */
+            switch ((insn >> 26) & 0x7) {
+            case 0x0:
+                /* ...000.. ........ .101.... .0000111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch ((insn >> 20) & 0x1f) {
+                case 0x0:
+                    /* ...000.0 0000.... .101.... .0000111 */
+                    if (trans_vlhu_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                case 0x10:
+                    /* ...000.1 0000.... .101.... .0000111 */
+                    if (trans_vlhuff_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x2:
+                /* ...010.. ........ .101.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlshu_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            case 0x3:
+                /* ...011.. ........ .101.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlxhu_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            case 0x4:
+                /* ...100.. ........ .101.... .0000111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch ((insn >> 20) & 0x1f) {
+                case 0x0:
+                    /* ...100.0 0000.... .101.... .0000111 */
+                    if (trans_vlh_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                case 0x10:
+                    /* ...100.1 0000.... .101.... .0000111 */
+                    if (trans_vlhff_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x6:
+                /* ...110.. ........ .101.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlsh_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            case 0x7:
+                /* ...111.. ........ .101.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlxh_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            }
+            return false;
+        case 0x6:
+            /* ........ ........ .110.... .0000111 */
+            switch ((insn >> 26) & 0x7) {
+            case 0x0:
+                /* ...000.. ........ .110.... .0000111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch ((insn >> 20) & 0x1f) {
+                case 0x0:
+                    /* ...000.0 0000.... .110.... .0000111 */
+                    if (trans_vlwu_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                case 0x10:
+                    /* ...000.1 0000.... .110.... .0000111 */
+                    if (trans_vlwuff_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x2:
+                /* ...010.. ........ .110.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlswu_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            case 0x3:
+                /* ...011.. ........ .110.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlxwu_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            case 0x4:
+                /* ...100.. ........ .110.... .0000111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch ((insn >> 20) & 0x1f) {
+                case 0x0:
+                    /* ...100.0 0000.... .110.... .0000111 */
+                    if (trans_vlw_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                case 0x10:
+                    /* ...100.1 0000.... .110.... .0000111 */
+                    if (trans_vlwff_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x6:
+                /* ...110.. ........ .110.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlsw_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            case 0x7:
+                /* ...111.. ........ .110.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlxw_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            }
+            return false;
+        case 0x7:
+            /* ........ ........ .111.... .0000111 */
+            switch ((insn >> 26) & 0x7) {
+            case 0x0:
+                /* ...000.. ........ .111.... .0000111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch ((insn >> 20) & 0x1f) {
+                case 0x0:
+                    /* ...000.0 0000.... .111.... .0000111 */
+                    if (trans_vle_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                case 0x10:
+                    /* ...000.1 0000.... .111.... .0000111 */
+                    if (trans_vleff_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x2:
+                /* ...010.. ........ .111.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlse_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            case 0x3:
+                /* ...011.. ........ .111.... .0000111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vlxe_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            }
             return false;
         }
         return false;
@@ -656,14 +1672,12 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch ((insn >> 12) & 0x7) {
         case 0x0:
             /* ........ ........ .000.... .0001111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:123 */
-            decode_insn32_extract_decode_insn32_Fmt_19(ctx, &u.f_decode_insn3216, insn);
-            if (trans_fence(ctx, &u.f_decode_insn3216)) return true;
+            decode_insn32_extract_decode_insn32_Fmt_29(ctx, &u.f_decode_insn3224, insn);
+            if (trans_fence(ctx, &u.f_decode_insn3224)) return true;
             return false;
         case 0x1:
             /* ........ ........ .001.... .0001111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:124 */
-            decode_insn32_extract_decode_insn32_Fmt_18(ctx, &u.f_empty, insn);
+            decode_insn32_extract_decode_insn32_Fmt_28(ctx, &u.f_empty, insn);
             if (trans_fence_i(ctx, &u.f_empty)) return true;
             return false;
         }
@@ -673,7 +1687,6 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch ((insn >> 12) & 0x7) {
         case 0x0:
             /* ........ ........ .000.... .0010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:104 */
             decode_insn32_extract_i(ctx, &u.f_i, insn);
             if (trans_addi(ctx, &u.f_i)) return true;
             return false;
@@ -683,26 +1696,22 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 30) & 0x3) {
             case 0x0:
                 /* 00...... ........ .001.... .0010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:110 */
                 if (trans_slli(ctx, &u.f_shift)) return true;
                 return false;
             }
             return false;
         case 0x2:
             /* ........ ........ .010.... .0010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:105 */
             decode_insn32_extract_i(ctx, &u.f_i, insn);
             if (trans_slti(ctx, &u.f_i)) return true;
             return false;
         case 0x3:
             /* ........ ........ .011.... .0010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:106 */
             decode_insn32_extract_i(ctx, &u.f_i, insn);
             if (trans_sltiu(ctx, &u.f_i)) return true;
             return false;
         case 0x4:
             /* ........ ........ .100.... .0010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:107 */
             decode_insn32_extract_i(ctx, &u.f_i, insn);
             if (trans_xori(ctx, &u.f_i)) return true;
             return false;
@@ -712,25 +1721,21 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 30) & 0x3) {
             case 0x0:
                 /* 00...... ........ .101.... .0010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:111 */
                 if (trans_srli(ctx, &u.f_shift)) return true;
                 return false;
             case 0x1:
                 /* 01...... ........ .101.... .0010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:112 */
                 if (trans_srai(ctx, &u.f_shift)) return true;
                 return false;
             }
             return false;
         case 0x6:
             /* ........ ........ .110.... .0010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:108 */
             decode_insn32_extract_i(ctx, &u.f_i, insn);
             if (trans_ori(ctx, &u.f_i)) return true;
             return false;
         case 0x7:
             /* ........ ........ .111.... .0010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:109 */
             decode_insn32_extract_i(ctx, &u.f_i, insn);
             if (trans_andi(ctx, &u.f_i)) return true;
             return false;
@@ -738,7 +1743,6 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         return false;
     case 0x00000017:
         /* ........ ........ ........ .0010111 */
-        /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:87 */
         decode_insn32_extract_u(ctx, &u.f_u, insn);
         if (trans_auipc(ctx, &u.f_u)) return true;
         return false;
@@ -747,7 +1751,6 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch ((insn >> 12) & 0x7) {
         case 0x0:
             /* ........ ........ .000.... .0011011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:30 */
             decode_insn32_extract_i(ctx, &u.f_i, insn);
             if (trans_addiw(ctx, &u.f_i)) return true;
             return false;
@@ -757,7 +1760,6 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 25) & 0x7f) {
             case 0x0:
                 /* 0000000. ........ .001.... .0011011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:31 */
                 if (trans_slliw(ctx, &u.f_shift)) return true;
                 return false;
             }
@@ -768,12 +1770,10 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 25) & 0x7f) {
             case 0x0:
                 /* 0000000. ........ .101.... .0011011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:32 */
                 if (trans_srliw(ctx, &u.f_shift)) return true;
                 return false;
             case 0x20:
                 /* 0100000. ........ .101.... .0011011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:33 */
                 if (trans_sraiw(ctx, &u.f_shift)) return true;
                 return false;
             }
@@ -786,39 +1786,154 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch ((insn >> 12) & 0x7) {
         case 0x0:
             /* ........ ........ .000.... .0100011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:101 */
             if (trans_sb(ctx, &u.f_s)) return true;
             return false;
         case 0x1:
             /* ........ ........ .001.... .0100011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:102 */
             if (trans_sh(ctx, &u.f_s)) return true;
             return false;
         case 0x2:
             /* ........ ........ .010.... .0100011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:103 */
             if (trans_sw(ctx, &u.f_s)) return true;
             return false;
         case 0x3:
             /* ........ ........ .011.... .0100011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:29 */
             if (trans_sd(ctx, &u.f_s)) return true;
             return false;
         }
         return false;
     case 0x00000027:
         /* ........ ........ ........ .0100111 */
-        decode_insn32_extract_s(ctx, &u.f_s, insn);
         switch ((insn >> 12) & 0x7) {
+        case 0x0:
+            /* ........ ........ .000.... .0100111 */
+            switch ((insn >> 26) & 0x3) {
+            case 0x0:
+                /* ....00.. ........ .000.... .0100111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch (insn & 0x11f00000) {
+                case 0x00000000:
+                    /* ...000.0 0000.... .000.... .0100111 */
+                    if (trans_vsb_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x2:
+                /* ....10.. ........ .000.... .0100111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                switch ((insn >> 28) & 0x1) {
+                case 0x0:
+                    /* ...010.. ........ .000.... .0100111 */
+                    if (trans_vssb_v(ctx, &u.f_rnfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x3:
+                /* ....11.. ........ .000.... .0100111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vsxb_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            }
+            return false;
         case 0x2:
             /* ........ ........ .010.... .0100111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:157 */
+            decode_insn32_extract_s(ctx, &u.f_s, insn);
             if (trans_fsw(ctx, &u.f_s)) return true;
             return false;
         case 0x3:
             /* ........ ........ .011.... .0100111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:185 */
+            decode_insn32_extract_s(ctx, &u.f_s, insn);
             if (trans_fsd(ctx, &u.f_s)) return true;
+            return false;
+        case 0x5:
+            /* ........ ........ .101.... .0100111 */
+            switch ((insn >> 26) & 0x3) {
+            case 0x0:
+                /* ....00.. ........ .101.... .0100111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch (insn & 0x11f00000) {
+                case 0x00000000:
+                    /* ...000.0 0000.... .101.... .0100111 */
+                    if (trans_vsh_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x2:
+                /* ....10.. ........ .101.... .0100111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                switch ((insn >> 28) & 0x1) {
+                case 0x0:
+                    /* ...010.. ........ .101.... .0100111 */
+                    if (trans_vssh_v(ctx, &u.f_rnfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x3:
+                /* ....11.. ........ .101.... .0100111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vsxh_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            }
+            return false;
+        case 0x6:
+            /* ........ ........ .110.... .0100111 */
+            switch ((insn >> 26) & 0x3) {
+            case 0x0:
+                /* ....00.. ........ .110.... .0100111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch (insn & 0x11f00000) {
+                case 0x00000000:
+                    /* ...000.0 0000.... .110.... .0100111 */
+                    if (trans_vsw_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x2:
+                /* ....10.. ........ .110.... .0100111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                switch ((insn >> 28) & 0x1) {
+                case 0x0:
+                    /* ...010.. ........ .110.... .0100111 */
+                    if (trans_vssw_v(ctx, &u.f_rnfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x3:
+                /* ....11.. ........ .110.... .0100111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vsxw_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            }
+            return false;
+        case 0x7:
+            /* ........ ........ .111.... .0100111 */
+            switch ((insn >> 26) & 0x3) {
+            case 0x0:
+                /* ....00.. ........ .111.... .0100111 */
+                decode_insn32_extract_r2_nfvm(ctx, &u.f_r2nfvm, insn);
+                switch (insn & 0x11f00000) {
+                case 0x00000000:
+                    /* ...000.0 0000.... .111.... .0100111 */
+                    if (trans_vse_v(ctx, &u.f_r2nfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x2:
+                /* ....10.. ........ .111.... .0100111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                switch ((insn >> 28) & 0x1) {
+                case 0x0:
+                    /* ...010.. ........ .111.... .0100111 */
+                    if (trans_vsse_v(ctx, &u.f_rnfvm)) return true;
+                    return false;
+                }
+                return false;
+            case 0x3:
+                /* ....11.. ........ .111.... .0100111 */
+                decode_insn32_extract_r_nfvm(ctx, &u.f_rnfvm, insn);
+                if (trans_vsxe_v(ctx, &u.f_rnfvm)) return true;
+                return false;
+            }
             return false;
         }
         return false;
@@ -827,27 +1942,43 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch (insn & 0xf8007000) {
         case 0x00002000:
             /* 00000... ........ .010.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:146 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amoadd_w(ctx, &u.f_atomic)) return true;
             return false;
         case 0x00003000:
             /* 00000... ........ .011.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:51 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amoadd_d(ctx, &u.f_atomic)) return true;
             return false;
+        case 0x00006000:
+            /* 00000... ........ .110.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamoaddw_v(ctx, &u.f_rwdvm)) return true;
+            return false;
+        case 0x00007000:
+            /* 00000... ........ .111.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamoaddd_v(ctx, &u.f_rwdvm)) return true;
+            return false;
         case 0x08002000:
             /* 00001... ........ .010.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:145 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amoswap_w(ctx, &u.f_atomic)) return true;
             return false;
         case 0x08003000:
             /* 00001... ........ .011.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:50 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amoswap_d(ctx, &u.f_atomic)) return true;
+            return false;
+        case 0x08006000:
+            /* 00001... ........ .110.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamoswapw_v(ctx, &u.f_rwdvm)) return true;
+            return false;
+        case 0x08007000:
+            /* 00001... ........ .111.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamoswapd_v(ctx, &u.f_rwdvm)) return true;
             return false;
         case 0x10002000:
             /* 00010... ........ .010.... .0101111 */
@@ -855,7 +1986,6 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 20) & 0x1f) {
             case 0x0:
                 /* 00010..0 0000.... .010.... .0101111 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:143 */
                 if (trans_lr_w(ctx, &u.f_atomic)) return true;
                 return false;
             }
@@ -866,106 +1996,159 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 20) & 0x1f) {
             case 0x0:
                 /* 00010..0 0000.... .011.... .0101111 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:48 */
                 if (trans_lr_d(ctx, &u.f_atomic)) return true;
                 return false;
             }
             return false;
         case 0x18002000:
             /* 00011... ........ .010.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:144 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_sc_w(ctx, &u.f_atomic)) return true;
             return false;
         case 0x18003000:
             /* 00011... ........ .011.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:49 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_sc_d(ctx, &u.f_atomic)) return true;
             return false;
         case 0x20002000:
             /* 00100... ........ .010.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:147 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amoxor_w(ctx, &u.f_atomic)) return true;
             return false;
         case 0x20003000:
             /* 00100... ........ .011.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:52 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amoxor_d(ctx, &u.f_atomic)) return true;
             return false;
+        case 0x20006000:
+            /* 00100... ........ .110.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamoxorw_v(ctx, &u.f_rwdvm)) return true;
+            return false;
+        case 0x20007000:
+            /* 00100... ........ .111.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamoxord_v(ctx, &u.f_rwdvm)) return true;
+            return false;
         case 0x40002000:
             /* 01000... ........ .010.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:149 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amoor_w(ctx, &u.f_atomic)) return true;
             return false;
         case 0x40003000:
             /* 01000... ........ .011.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:54 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amoor_d(ctx, &u.f_atomic)) return true;
             return false;
+        case 0x40006000:
+            /* 01000... ........ .110.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamoorw_v(ctx, &u.f_rwdvm)) return true;
+            return false;
+        case 0x40007000:
+            /* 01000... ........ .111.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamoord_v(ctx, &u.f_rwdvm)) return true;
+            return false;
         case 0x60002000:
             /* 01100... ........ .010.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:148 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amoand_w(ctx, &u.f_atomic)) return true;
             return false;
         case 0x60003000:
             /* 01100... ........ .011.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:53 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amoand_d(ctx, &u.f_atomic)) return true;
             return false;
+        case 0x60006000:
+            /* 01100... ........ .110.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamoandw_v(ctx, &u.f_rwdvm)) return true;
+            return false;
+        case 0x60007000:
+            /* 01100... ........ .111.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamoandd_v(ctx, &u.f_rwdvm)) return true;
+            return false;
         case 0x80002000:
             /* 10000... ........ .010.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:150 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amomin_w(ctx, &u.f_atomic)) return true;
             return false;
         case 0x80003000:
             /* 10000... ........ .011.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:55 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amomin_d(ctx, &u.f_atomic)) return true;
             return false;
+        case 0x80006000:
+            /* 10000... ........ .110.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamominw_v(ctx, &u.f_rwdvm)) return true;
+            return false;
+        case 0x80007000:
+            /* 10000... ........ .111.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamomind_v(ctx, &u.f_rwdvm)) return true;
+            return false;
         case 0xa0002000:
             /* 10100... ........ .010.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:151 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amomax_w(ctx, &u.f_atomic)) return true;
             return false;
         case 0xa0003000:
             /* 10100... ........ .011.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:56 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amomax_d(ctx, &u.f_atomic)) return true;
             return false;
+        case 0xa0006000:
+            /* 10100... ........ .110.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamomaxw_v(ctx, &u.f_rwdvm)) return true;
+            return false;
+        case 0xa0007000:
+            /* 10100... ........ .111.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamomaxd_v(ctx, &u.f_rwdvm)) return true;
+            return false;
         case 0xc0002000:
             /* 11000... ........ .010.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:152 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amominu_w(ctx, &u.f_atomic)) return true;
             return false;
         case 0xc0003000:
             /* 11000... ........ .011.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:57 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amominu_d(ctx, &u.f_atomic)) return true;
             return false;
+        case 0xc0006000:
+            /* 11000... ........ .110.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamominuw_v(ctx, &u.f_rwdvm)) return true;
+            return false;
+        case 0xc0007000:
+            /* 11000... ........ .111.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamominud_v(ctx, &u.f_rwdvm)) return true;
+            return false;
         case 0xe0002000:
             /* 11100... ........ .010.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:153 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amomaxu_w(ctx, &u.f_atomic)) return true;
             return false;
         case 0xe0003000:
             /* 11100... ........ .011.... .0101111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:58 */
             decode_insn32_extract_atom_st(ctx, &u.f_atomic, insn);
             if (trans_amomaxu_d(ctx, &u.f_atomic)) return true;
+            return false;
+        case 0xe0006000:
+            /* 11100... ........ .110.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamomaxuw_v(ctx, &u.f_rwdvm)) return true;
+            return false;
+        case 0xe0007000:
+            /* 11100... ........ .111.... .0101111 */
+            decode_insn32_extract_r_wdvm(ctx, &u.f_rwdvm, insn);
+            if (trans_vamomaxud_v(ctx, &u.f_rwdvm)) return true;
             return false;
         }
         return false;
@@ -975,99 +2158,80 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch (insn & 0xfe007000) {
         case 0x00000000:
             /* 0000000. ........ .000.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:113 */
             if (trans_add(ctx, &u.f_r)) return true;
             return false;
         case 0x00001000:
             /* 0000000. ........ .001.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:115 */
             if (trans_sll(ctx, &u.f_r)) return true;
             return false;
         case 0x00002000:
             /* 0000000. ........ .010.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:116 */
             if (trans_slt(ctx, &u.f_r)) return true;
             return false;
         case 0x00003000:
             /* 0000000. ........ .011.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:117 */
             if (trans_sltu(ctx, &u.f_r)) return true;
             return false;
         case 0x00004000:
             /* 0000000. ........ .100.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:118 */
             if (trans_xor(ctx, &u.f_r)) return true;
             return false;
         case 0x00005000:
             /* 0000000. ........ .101.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:119 */
             if (trans_srl(ctx, &u.f_r)) return true;
             return false;
         case 0x00006000:
             /* 0000000. ........ .110.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:121 */
             if (trans_or(ctx, &u.f_r)) return true;
             return false;
         case 0x00007000:
             /* 0000000. ........ .111.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:122 */
             if (trans_and(ctx, &u.f_r)) return true;
             return false;
         case 0x02000000:
             /* 0000001. ........ .000.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:133 */
             if (trans_mul(ctx, &u.f_r)) return true;
             return false;
         case 0x02001000:
             /* 0000001. ........ .001.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:134 */
             if (trans_mulh(ctx, &u.f_r)) return true;
             return false;
         case 0x02002000:
             /* 0000001. ........ .010.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:135 */
             if (trans_mulhsu(ctx, &u.f_r)) return true;
             return false;
         case 0x02003000:
             /* 0000001. ........ .011.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:136 */
             if (trans_mulhu(ctx, &u.f_r)) return true;
             return false;
         case 0x02004000:
             /* 0000001. ........ .100.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:137 */
             if (trans_div(ctx, &u.f_r)) return true;
             return false;
         case 0x02005000:
             /* 0000001. ........ .101.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:138 */
             if (trans_divu(ctx, &u.f_r)) return true;
             return false;
         case 0x02006000:
             /* 0000001. ........ .110.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:139 */
             if (trans_rem(ctx, &u.f_r)) return true;
             return false;
         case 0x02007000:
             /* 0000001. ........ .111.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:140 */
             if (trans_remu(ctx, &u.f_r)) return true;
             return false;
         case 0x40000000:
             /* 0100000. ........ .000.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:114 */
             if (trans_sub(ctx, &u.f_r)) return true;
             return false;
         case 0x40005000:
             /* 0100000. ........ .101.... .0110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:120 */
             if (trans_sra(ctx, &u.f_r)) return true;
             return false;
         }
         return false;
     case 0x00000037:
         /* ........ ........ ........ .0110111 */
-        /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:86 */
         decode_insn32_extract_u(ctx, &u.f_u, insn);
         if (trans_lui(ctx, &u.f_u)) return true;
         return false;
@@ -1077,117 +2241,99 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch (insn & 0xfe007000) {
         case 0x00000000:
             /* 0000000. ........ .000.... .0111011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:34 */
             if (trans_addw(ctx, &u.f_r)) return true;
             return false;
         case 0x00001000:
             /* 0000000. ........ .001.... .0111011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:36 */
             if (trans_sllw(ctx, &u.f_r)) return true;
             return false;
         case 0x00005000:
             /* 0000000. ........ .101.... .0111011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:37 */
             if (trans_srlw(ctx, &u.f_r)) return true;
             return false;
         case 0x02000000:
             /* 0000001. ........ .000.... .0111011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:41 */
             if (trans_mulw(ctx, &u.f_r)) return true;
             return false;
         case 0x02004000:
             /* 0000001. ........ .100.... .0111011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:42 */
             if (trans_divw(ctx, &u.f_r)) return true;
             return false;
         case 0x02005000:
             /* 0000001. ........ .101.... .0111011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:43 */
             if (trans_divuw(ctx, &u.f_r)) return true;
             return false;
         case 0x02006000:
             /* 0000001. ........ .110.... .0111011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:44 */
             if (trans_remw(ctx, &u.f_r)) return true;
             return false;
         case 0x02007000:
             /* 0000001. ........ .111.... .0111011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:45 */
             if (trans_remuw(ctx, &u.f_r)) return true;
             return false;
         case 0x40000000:
             /* 0100000. ........ .000.... .0111011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:35 */
             if (trans_subw(ctx, &u.f_r)) return true;
             return false;
         case 0x40005000:
             /* 0100000. ........ .101.... .0111011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:38 */
             if (trans_sraw(ctx, &u.f_r)) return true;
             return false;
         }
         return false;
     case 0x00000043:
         /* ........ ........ ........ .1000011 */
-        decode_insn32_extract_r4_rm(ctx, &u.f_decode_insn3210, insn);
+        decode_insn32_extract_r4_rm(ctx, &u.f_decode_insn3215, insn);
         switch ((insn >> 25) & 0x3) {
         case 0x0:
             /* .....00. ........ ........ .1000011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:158 */
-            if (trans_fmadd_s(ctx, &u.f_decode_insn3210)) return true;
+            if (trans_fmadd_s(ctx, &u.f_decode_insn3215)) return true;
             return false;
         case 0x1:
             /* .....01. ........ ........ .1000011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:186 */
-            if (trans_fmadd_d(ctx, &u.f_decode_insn3210)) return true;
+            if (trans_fmadd_d(ctx, &u.f_decode_insn3215)) return true;
             return false;
         }
         return false;
     case 0x00000047:
         /* ........ ........ ........ .1000111 */
-        decode_insn32_extract_r4_rm(ctx, &u.f_decode_insn3210, insn);
+        decode_insn32_extract_r4_rm(ctx, &u.f_decode_insn3215, insn);
         switch ((insn >> 25) & 0x3) {
         case 0x0:
             /* .....00. ........ ........ .1000111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:159 */
-            if (trans_fmsub_s(ctx, &u.f_decode_insn3210)) return true;
+            if (trans_fmsub_s(ctx, &u.f_decode_insn3215)) return true;
             return false;
         case 0x1:
             /* .....01. ........ ........ .1000111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:187 */
-            if (trans_fmsub_d(ctx, &u.f_decode_insn3210)) return true;
+            if (trans_fmsub_d(ctx, &u.f_decode_insn3215)) return true;
             return false;
         }
         return false;
     case 0x0000004b:
         /* ........ ........ ........ .1001011 */
-        decode_insn32_extract_r4_rm(ctx, &u.f_decode_insn3210, insn);
+        decode_insn32_extract_r4_rm(ctx, &u.f_decode_insn3215, insn);
         switch ((insn >> 25) & 0x3) {
         case 0x0:
             /* .....00. ........ ........ .1001011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:160 */
-            if (trans_fnmsub_s(ctx, &u.f_decode_insn3210)) return true;
+            if (trans_fnmsub_s(ctx, &u.f_decode_insn3215)) return true;
             return false;
         case 0x1:
             /* .....01. ........ ........ .1001011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:188 */
-            if (trans_fnmsub_d(ctx, &u.f_decode_insn3210)) return true;
+            if (trans_fnmsub_d(ctx, &u.f_decode_insn3215)) return true;
             return false;
         }
         return false;
     case 0x0000004f:
         /* ........ ........ ........ .1001111 */
-        decode_insn32_extract_r4_rm(ctx, &u.f_decode_insn3210, insn);
+        decode_insn32_extract_r4_rm(ctx, &u.f_decode_insn3215, insn);
         switch ((insn >> 25) & 0x3) {
         case 0x0:
             /* .....00. ........ ........ .1001111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:161 */
-            if (trans_fnmadd_s(ctx, &u.f_decode_insn3210)) return true;
+            if (trans_fnmadd_s(ctx, &u.f_decode_insn3215)) return true;
             return false;
         case 0x1:
             /* .....01. ........ ........ .1001111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:189 */
-            if (trans_fnmadd_d(ctx, &u.f_decode_insn3210)) return true;
+            if (trans_fnmadd_d(ctx, &u.f_decode_insn3215)) return true;
             return false;
         }
         return false;
@@ -1196,51 +2342,43 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch ((insn >> 25) & 0x7f) {
         case 0x0:
             /* 0000000. ........ ........ .1010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:162 */
-            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3211, insn);
-            if (trans_fadd_s(ctx, &u.f_decode_insn3211)) return true;
+            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3216, insn);
+            if (trans_fadd_s(ctx, &u.f_decode_insn3216)) return true;
             return false;
         case 0x1:
             /* 0000001. ........ ........ .1010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:190 */
-            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3211, insn);
-            if (trans_fadd_d(ctx, &u.f_decode_insn3211)) return true;
+            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3216, insn);
+            if (trans_fadd_d(ctx, &u.f_decode_insn3216)) return true;
             return false;
         case 0x4:
             /* 0000100. ........ ........ .1010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:163 */
-            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3211, insn);
-            if (trans_fsub_s(ctx, &u.f_decode_insn3211)) return true;
+            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3216, insn);
+            if (trans_fsub_s(ctx, &u.f_decode_insn3216)) return true;
             return false;
         case 0x5:
             /* 0000101. ........ ........ .1010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:191 */
-            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3211, insn);
-            if (trans_fsub_d(ctx, &u.f_decode_insn3211)) return true;
+            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3216, insn);
+            if (trans_fsub_d(ctx, &u.f_decode_insn3216)) return true;
             return false;
         case 0x8:
             /* 0001000. ........ ........ .1010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:164 */
-            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3211, insn);
-            if (trans_fmul_s(ctx, &u.f_decode_insn3211)) return true;
+            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3216, insn);
+            if (trans_fmul_s(ctx, &u.f_decode_insn3216)) return true;
             return false;
         case 0x9:
             /* 0001001. ........ ........ .1010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:192 */
-            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3211, insn);
-            if (trans_fmul_d(ctx, &u.f_decode_insn3211)) return true;
+            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3216, insn);
+            if (trans_fmul_d(ctx, &u.f_decode_insn3216)) return true;
             return false;
         case 0xc:
             /* 0001100. ........ ........ .1010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:165 */
-            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3211, insn);
-            if (trans_fdiv_s(ctx, &u.f_decode_insn3211)) return true;
+            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3216, insn);
+            if (trans_fdiv_s(ctx, &u.f_decode_insn3216)) return true;
             return false;
         case 0xd:
             /* 0001101. ........ ........ .1010011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:193 */
-            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3211, insn);
-            if (trans_fdiv_d(ctx, &u.f_decode_insn3211)) return true;
+            decode_insn32_extract_r_rm(ctx, &u.f_decode_insn3216, insn);
+            if (trans_fdiv_d(ctx, &u.f_decode_insn3216)) return true;
             return false;
         case 0x10:
             /* 0010000. ........ ........ .1010011 */
@@ -1248,17 +2386,14 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 12) & 0x7) {
             case 0x0:
                 /* 0010000. ........ .000.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:167 */
                 if (trans_fsgnj_s(ctx, &u.f_r)) return true;
                 return false;
             case 0x1:
                 /* 0010000. ........ .001.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:168 */
                 if (trans_fsgnjn_s(ctx, &u.f_r)) return true;
                 return false;
             case 0x2:
                 /* 0010000. ........ .010.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:169 */
                 if (trans_fsgnjx_s(ctx, &u.f_r)) return true;
                 return false;
             }
@@ -1269,17 +2404,14 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 12) & 0x7) {
             case 0x0:
                 /* 0010001. ........ .000.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:195 */
                 if (trans_fsgnj_d(ctx, &u.f_r)) return true;
                 return false;
             case 0x1:
                 /* 0010001. ........ .001.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:196 */
                 if (trans_fsgnjn_d(ctx, &u.f_r)) return true;
                 return false;
             case 0x2:
                 /* 0010001. ........ .010.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:197 */
                 if (trans_fsgnjx_d(ctx, &u.f_r)) return true;
                 return false;
             }
@@ -1290,12 +2422,10 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 12) & 0x7) {
             case 0x0:
                 /* 0010100. ........ .000.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:170 */
                 if (trans_fmin_s(ctx, &u.f_r)) return true;
                 return false;
             case 0x1:
                 /* 0010100. ........ .001.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:171 */
                 if (trans_fmax_s(ctx, &u.f_r)) return true;
                 return false;
             }
@@ -1306,57 +2436,51 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 12) & 0x7) {
             case 0x0:
                 /* 0010101. ........ .000.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:198 */
                 if (trans_fmin_d(ctx, &u.f_r)) return true;
                 return false;
             case 0x1:
                 /* 0010101. ........ .001.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:199 */
                 if (trans_fmax_d(ctx, &u.f_r)) return true;
                 return false;
             }
             return false;
         case 0x20:
             /* 0100000. ........ ........ .1010011 */
-            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3212, insn);
+            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3217, insn);
             switch ((insn >> 20) & 0x1f) {
             case 0x1:
                 /* 01000000 0001.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:200 */
-                if (trans_fcvt_s_d(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_s_d(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             }
             return false;
         case 0x21:
             /* 0100001. ........ ........ .1010011 */
-            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3212, insn);
+            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3217, insn);
             switch ((insn >> 20) & 0x1f) {
             case 0x0:
                 /* 01000010 0000.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:201 */
-                if (trans_fcvt_d_s(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_d_s(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             }
             return false;
         case 0x2c:
             /* 0101100. ........ ........ .1010011 */
-            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3212, insn);
+            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3217, insn);
             switch ((insn >> 20) & 0x1f) {
             case 0x0:
                 /* 01011000 0000.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:166 */
-                if (trans_fsqrt_s(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fsqrt_s(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             }
             return false;
         case 0x2d:
             /* 0101101. ........ ........ .1010011 */
-            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3212, insn);
+            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3217, insn);
             switch ((insn >> 20) & 0x1f) {
             case 0x0:
                 /* 01011010 0000.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:194 */
-                if (trans_fsqrt_d(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fsqrt_d(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             }
             return false;
@@ -1366,17 +2490,14 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 12) & 0x7) {
             case 0x0:
                 /* 1010000. ........ .000.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:177 */
                 if (trans_fle_s(ctx, &u.f_r)) return true;
                 return false;
             case 0x1:
                 /* 1010000. ........ .001.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:176 */
                 if (trans_flt_s(ctx, &u.f_r)) return true;
                 return false;
             case 0x2:
                 /* 1010000. ........ .010.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:175 */
                 if (trans_feq_s(ctx, &u.f_r)) return true;
                 return false;
             }
@@ -1387,176 +2508,1772 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch ((insn >> 12) & 0x7) {
             case 0x0:
                 /* 1010001. ........ .000.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:204 */
                 if (trans_fle_d(ctx, &u.f_r)) return true;
                 return false;
             case 0x1:
                 /* 1010001. ........ .001.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:203 */
                 if (trans_flt_d(ctx, &u.f_r)) return true;
                 return false;
             case 0x2:
                 /* 1010001. ........ .010.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:202 */
                 if (trans_feq_d(ctx, &u.f_r)) return true;
                 return false;
             }
             return false;
         case 0x60:
             /* 1100000. ........ ........ .1010011 */
-            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3212, insn);
+            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3217, insn);
             switch ((insn >> 20) & 0x1f) {
             case 0x0:
                 /* 11000000 0000.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:172 */
-                if (trans_fcvt_w_s(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_w_s(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x1:
                 /* 11000000 0001.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:173 */
-                if (trans_fcvt_wu_s(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_wu_s(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x2:
                 /* 11000000 0010.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:61 */
-                if (trans_fcvt_l_s(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_l_s(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x3:
                 /* 11000000 0011.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:62 */
-                if (trans_fcvt_lu_s(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_lu_s(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             }
             return false;
         case 0x61:
             /* 1100001. ........ ........ .1010011 */
-            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3212, insn);
+            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3217, insn);
             switch ((insn >> 20) & 0x1f) {
             case 0x0:
                 /* 11000010 0000.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:206 */
-                if (trans_fcvt_w_d(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_w_d(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x1:
                 /* 11000010 0001.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:207 */
-                if (trans_fcvt_wu_d(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_wu_d(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x2:
                 /* 11000010 0010.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:67 */
-                if (trans_fcvt_l_d(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_l_d(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x3:
                 /* 11000010 0011.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:68 */
-                if (trans_fcvt_lu_d(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_lu_d(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             }
             return false;
         case 0x68:
             /* 1101000. ........ ........ .1010011 */
-            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3212, insn);
+            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3217, insn);
             switch ((insn >> 20) & 0x1f) {
             case 0x0:
                 /* 11010000 0000.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:179 */
-                if (trans_fcvt_s_w(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_s_w(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x1:
                 /* 11010000 0001.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:180 */
-                if (trans_fcvt_s_wu(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_s_wu(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x2:
                 /* 11010000 0010.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:63 */
-                if (trans_fcvt_s_l(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_s_l(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x3:
                 /* 11010000 0011.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:64 */
-                if (trans_fcvt_s_lu(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_s_lu(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             }
             return false;
         case 0x69:
             /* 1101001. ........ ........ .1010011 */
-            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3212, insn);
+            decode_insn32_extract_r2_rm(ctx, &u.f_decode_insn3217, insn);
             switch ((insn >> 20) & 0x1f) {
             case 0x0:
                 /* 11010010 0000.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:208 */
-                if (trans_fcvt_d_w(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_d_w(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x1:
                 /* 11010010 0001.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:209 */
-                if (trans_fcvt_d_wu(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_d_wu(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x2:
                 /* 11010010 0010.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:70 */
-                if (trans_fcvt_d_l(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_d_l(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             case 0x3:
                 /* 11010010 0011.... ........ .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:71 */
-                if (trans_fcvt_d_lu(ctx, &u.f_decode_insn3212)) return true;
+                if (trans_fcvt_d_lu(ctx, &u.f_decode_insn3217)) return true;
                 return false;
             }
             return false;
         case 0x70:
             /* 1110000. ........ ........ .1010011 */
-            decode_insn32_extract_r2(ctx, &u.f_decode_insn3213, insn);
+            decode_insn32_extract_r2(ctx, &u.f_decode_insn3218, insn);
             switch (insn & 0x01f07000) {
             case 0x00000000:
                 /* 11100000 0000.... .000.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:174 */
-                if (trans_fmv_x_w(ctx, &u.f_decode_insn3213)) return true;
+                if (trans_fmv_x_w(ctx, &u.f_decode_insn3218)) return true;
                 return false;
             case 0x00001000:
                 /* 11100000 0000.... .001.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:178 */
-                if (trans_fclass_s(ctx, &u.f_decode_insn3213)) return true;
+                if (trans_fclass_s(ctx, &u.f_decode_insn3218)) return true;
                 return false;
             }
             return false;
         case 0x71:
             /* 1110001. ........ ........ .1010011 */
-            decode_insn32_extract_r2(ctx, &u.f_decode_insn3213, insn);
+            decode_insn32_extract_r2(ctx, &u.f_decode_insn3218, insn);
             switch (insn & 0x01f07000) {
             case 0x00000000:
                 /* 11100010 0000.... .000.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:69 */
-                if (trans_fmv_x_d(ctx, &u.f_decode_insn3213)) return true;
+                if (trans_fmv_x_d(ctx, &u.f_decode_insn3218)) return true;
                 return false;
             case 0x00001000:
                 /* 11100010 0000.... .001.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:205 */
-                if (trans_fclass_d(ctx, &u.f_decode_insn3213)) return true;
+                if (trans_fclass_d(ctx, &u.f_decode_insn3218)) return true;
                 return false;
             }
             return false;
         case 0x78:
             /* 1111000. ........ ........ .1010011 */
-            decode_insn32_extract_r2(ctx, &u.f_decode_insn3213, insn);
+            decode_insn32_extract_r2(ctx, &u.f_decode_insn3218, insn);
             switch (insn & 0x01f07000) {
             case 0x00000000:
                 /* 11110000 0000.... .000.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:181 */
-                if (trans_fmv_w_x(ctx, &u.f_decode_insn3213)) return true;
+                if (trans_fmv_w_x(ctx, &u.f_decode_insn3218)) return true;
                 return false;
             }
             return false;
         case 0x79:
             /* 1111001. ........ ........ .1010011 */
-            decode_insn32_extract_r2(ctx, &u.f_decode_insn3213, insn);
+            decode_insn32_extract_r2(ctx, &u.f_decode_insn3218, insn);
             switch (insn & 0x01f07000) {
             case 0x00000000:
                 /* 11110010 0000.... .000.... .1010011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32-64.decode:72 */
-                if (trans_fmv_d_x(ctx, &u.f_decode_insn3213)) return true;
+                if (trans_fmv_d_x(ctx, &u.f_decode_insn3218)) return true;
+                return false;
+            }
+            return false;
+        }
+        return false;
+    case 0x00000057:
+        /* ........ ........ ........ .1010111 */
+        switch (insn & 0x80007000) {
+        case 0x00000000:
+            /* 0....... ........ .000.... .1010111 */
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 000000.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vadd_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x2:
+                /* 000010.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vsub_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x4:
+                /* 000100.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vminu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x5:
+                /* 000101.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmin_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x6:
+                /* 000110.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmaxu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x7:
+                /* 000111.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmax_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x9:
+                /* 001001.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vand_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xa:
+                /* 001010.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vor_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xb:
+                /* 001011.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vxor_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xc:
+                /* 001100.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vrgather_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x10:
+                /* 010000.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm_1(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0100001. ........ .000.... .1010111 */
+                    if (trans_vadc_vvm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x11:
+                /* 010001.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm_1(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0100011. ........ .000.... .1010111 */
+                    if (trans_vmadc_vvm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x12:
+                /* 010010.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm_1(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0100101. ........ .000.... .1010111 */
+                    if (trans_vsbc_vvm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x13:
+                /* 010011.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm_1(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0100111. ........ .000.... .1010111 */
+                    if (trans_vmsbc_vvm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x17:
+                /* 010111.. ........ .000.... .1010111 */
+                switch ((insn >> 25) & 0x1) {
+                case 0x0:
+                    /* 0101110. ........ .000.... .1010111 */
+                    decode_insn32_extract_r_vm_0(ctx, &u.f_rmrr, insn);
+                    if (trans_vmerge_vvm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 0101111. ........ .000.... .1010111 */
+                    decode_insn32_extract_r2(ctx, &u.f_decode_insn3218, insn);
+                    switch ((insn >> 20) & 0x1f) {
+                    case 0x0:
+                        /* 01011110 0000.... .000.... .1010111 */
+                        if (trans_vmv_v_v(ctx, &u.f_decode_insn3218)) return true;
+                        return false;
+                    }
+                    return false;
+                }
+                return false;
+            case 0x18:
+                /* 011000.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmseq_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x19:
+                /* 011001.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsne_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1a:
+                /* 011010.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsltu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1b:
+                /* 011011.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmslt_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1c:
+                /* 011100.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsleu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1d:
+                /* 011101.. ........ .000.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsle_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x00001000:
+            /* 0....... ........ .001.... .1010111 */
+            switch (insn & 0x74000000) {
+            case 0x00000000:
+                /* 0000.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 000000.. ........ .001.... .1010111 */
+                    if (trans_vfadd_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 000010.. ........ .001.... .1010111 */
+                    if (trans_vfsub_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x04000000:
+                /* 0000.1.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vfredsum_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x10000000:
+                /* 0001.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 000100.. ........ .001.... .1010111 */
+                    if (trans_vfmin_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 000110.. ........ .001.... .1010111 */
+                    if (trans_vfmax_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x14000000:
+                /* 0001.1.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 000101.. ........ .001.... .1010111 */
+                    if (trans_vfredmin_vs(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 000111.. ........ .001.... .1010111 */
+                    if (trans_vfredmax_vs(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x20000000:
+                /* 0010.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 001000.. ........ .001.... .1010111 */
+                    if (trans_vfsgnj_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 001010.. ........ .001.... .1010111 */
+                    if (trans_vfsgnjx_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x24000000:
+                /* 0010.1.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 001001.. ........ .001.... .1010111 */
+                    if (trans_vfsgnjn_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x30000000:
+                /* 0011.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r2rd(ctx, &u.f_decode_insn3220, insn);
+                switch (insn & 0x0a0f8000) {
+                case 0x02000000:
+                    /* 0011001. ....0000 0001.... .1010111 */
+                    if (trans_vfmv_f_s(ctx, &u.f_decode_insn3220)) return true;
+                    return false;
+                }
+                return false;
+            case 0x60000000:
+                /* 0110.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 011000.. ........ .001.... .1010111 */
+                    if (trans_vmfeq_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 011010.. ........ .001.... .1010111 */
+                    if (trans_vmford_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x64000000:
+                /* 0110.1.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 011001.. ........ .001.... .1010111 */
+                    if (trans_vmfle_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 011011.. ........ .001.... .1010111 */
+                    if (trans_vmflt_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x70000000:
+                /* 0111.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 011100.. ........ .001.... .1010111 */
+                    if (trans_vmfne_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            }
+            return false;
+        case 0x00002000:
+            /* 0....... ........ .010.... .1010111 */
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 000000.. ........ .010.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vredsum_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1:
+                /* 000001.. ........ .010.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vredand_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x2:
+                /* 000010.. ........ .010.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vredor_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x3:
+                /* 000011.. ........ .010.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vredxor_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x4:
+                /* 000100.. ........ .010.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vredminu_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x5:
+                /* 000101.. ........ .010.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vredmin_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x6:
+                /* 000110.. ........ .010.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vredmaxu_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x7:
+                /* 000111.. ........ .010.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vredmax_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xc:
+                /* 001100.. ........ .010.... .1010111 */
+                decode_insn32_extract_r(ctx, &u.f_r, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0011001. ........ .010.... .1010111 */
+                    if (trans_vext_x_v(ctx, &u.f_r)) return true;
+                    return false;
+                }
+                return false;
+            case 0x14:
+                /* 010100.. ........ .010.... .1010111 */
+                decode_insn32_extract_r2_vm(ctx, &u.f_rmr, insn);
+                if (trans_vmpopc_m(ctx, &u.f_rmr)) return true;
+                return false;
+            case 0x15:
+                /* 010101.. ........ .010.... .1010111 */
+                decode_insn32_extract_r2_vm(ctx, &u.f_rmr, insn);
+                if (trans_vmfirst_m(ctx, &u.f_rmr)) return true;
+                return false;
+            case 0x16:
+                /* 010110.. ........ .010.... .1010111 */
+                switch ((insn >> 15) & 0x1f) {
+                case 0x1:
+                    /* 010110.. ....0000 1010.... .1010111 */
+                    decode_insn32_extract_r2_vm(ctx, &u.f_rmr, insn);
+                    if (trans_vmsbf_m(ctx, &u.f_rmr)) return true;
+                    return false;
+                case 0x2:
+                    /* 010110.. ....0001 0010.... .1010111 */
+                    decode_insn32_extract_r2_vm(ctx, &u.f_rmr, insn);
+                    if (trans_vmsof_m(ctx, &u.f_rmr)) return true;
+                    return false;
+                case 0x3:
+                    /* 010110.. ....0001 1010.... .1010111 */
+                    decode_insn32_extract_r2_vm(ctx, &u.f_rmr, insn);
+                    if (trans_vmsif_m(ctx, &u.f_rmr)) return true;
+                    return false;
+                case 0x10:
+                    /* 010110.. ....1000 0010.... .1010111 */
+                    decode_insn32_extract_r2_vm(ctx, &u.f_rmr, insn);
+                    if (trans_viota_m(ctx, &u.f_rmr)) return true;
+                    return false;
+                case 0x11:
+                    /* 010110.. ....1000 1010.... .1010111 */
+                    decode_insn32_extract_r1_vm(ctx, &u.f_decode_insn3219, insn);
+                    switch ((insn >> 20) & 0x1f) {
+                    case 0x0:
+                        /* 010110.0 00001000 1010.... .1010111 */
+                        if (trans_vid_v(ctx, &u.f_decode_insn3219)) return true;
+                        return false;
+                    }
+                    return false;
+                }
+                return false;
+            case 0x17:
+                /* 010111.. ........ .010.... .1010111 */
+                decode_insn32_extract_r(ctx, &u.f_r, insn);
+                if (trans_vcompress_vm(ctx, &u.f_r)) return true;
+                return false;
+            case 0x18:
+                /* 011000.. ........ .010.... .1010111 */
+                decode_insn32_extract_r(ctx, &u.f_r, insn);
+                if (trans_vmandnot_mm(ctx, &u.f_r)) return true;
+                return false;
+            case 0x19:
+                /* 011001.. ........ .010.... .1010111 */
+                decode_insn32_extract_r(ctx, &u.f_r, insn);
+                if (trans_vmand_mm(ctx, &u.f_r)) return true;
+                return false;
+            case 0x1a:
+                /* 011010.. ........ .010.... .1010111 */
+                decode_insn32_extract_r(ctx, &u.f_r, insn);
+                if (trans_vmor_mm(ctx, &u.f_r)) return true;
+                return false;
+            case 0x1b:
+                /* 011011.. ........ .010.... .1010111 */
+                decode_insn32_extract_r(ctx, &u.f_r, insn);
+                if (trans_vmxor_mm(ctx, &u.f_r)) return true;
+                return false;
+            case 0x1c:
+                /* 011100.. ........ .010.... .1010111 */
+                decode_insn32_extract_r(ctx, &u.f_r, insn);
+                if (trans_vmornot_mm(ctx, &u.f_r)) return true;
+                return false;
+            case 0x1d:
+                /* 011101.. ........ .010.... .1010111 */
+                decode_insn32_extract_r(ctx, &u.f_r, insn);
+                if (trans_vmnand_mm(ctx, &u.f_r)) return true;
+                return false;
+            case 0x1e:
+                /* 011110.. ........ .010.... .1010111 */
+                decode_insn32_extract_r(ctx, &u.f_r, insn);
+                if (trans_vmnor_mm(ctx, &u.f_r)) return true;
+                return false;
+            case 0x1f:
+                /* 011111.. ........ .010.... .1010111 */
+                decode_insn32_extract_r(ctx, &u.f_r, insn);
+                if (trans_vmxnor_mm(ctx, &u.f_r)) return true;
+                return false;
+            }
+            return false;
+        case 0x00003000:
+            /* 0....... ........ .011.... .1010111 */
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 000000.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vadd_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x3:
+                /* 000011.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vrsub_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x9:
+                /* 001001.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vand_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xa:
+                /* 001010.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vor_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xb:
+                /* 001011.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vxor_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xc:
+                /* 001100.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vrgather_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xe:
+                /* 001110.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vslideup_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xf:
+                /* 001111.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vslidedown_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x10:
+                /* 010000.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm_1(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0100001. ........ .011.... .1010111 */
+                    if (trans_vadc_vim(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x11:
+                /* 010001.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm_1(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0100011. ........ .011.... .1010111 */
+                    if (trans_vmadc_vim(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x17:
+                /* 010111.. ........ .011.... .1010111 */
+                switch ((insn >> 25) & 0x1) {
+                case 0x0:
+                    /* 0101110. ........ .011.... .1010111 */
+                    decode_insn32_extract_r_vm_0(ctx, &u.f_rmrr, insn);
+                    if (trans_vmerge_vim(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 0101111. ........ .011.... .1010111 */
+                    decode_insn32_extract_r2(ctx, &u.f_decode_insn3218, insn);
+                    switch ((insn >> 20) & 0x1f) {
+                    case 0x0:
+                        /* 01011110 0000.... .011.... .1010111 */
+                        if (trans_vmv_v_i(ctx, &u.f_decode_insn3218)) return true;
+                        return false;
+                    }
+                    return false;
+                }
+                return false;
+            case 0x18:
+                /* 011000.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmseq_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x19:
+                /* 011001.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsne_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1c:
+                /* 011100.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsleu_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1d:
+                /* 011101.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsle_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1e:
+                /* 011110.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsgtu_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1f:
+                /* 011111.. ........ .011.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsgt_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x00004000:
+            /* 0....... ........ .100.... .1010111 */
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 000000.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vadd_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x2:
+                /* 000010.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vsub_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x3:
+                /* 000011.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vrsub_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x4:
+                /* 000100.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vminu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x5:
+                /* 000101.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmin_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x6:
+                /* 000110.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmaxu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x7:
+                /* 000111.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmax_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x9:
+                /* 001001.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vand_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xa:
+                /* 001010.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vor_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xb:
+                /* 001011.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vxor_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xc:
+                /* 001100.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vrgather_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xe:
+                /* 001110.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vslideup_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xf:
+                /* 001111.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vslidedown_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x10:
+                /* 010000.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm_1(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0100001. ........ .100.... .1010111 */
+                    if (trans_vadc_vxm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x11:
+                /* 010001.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm_1(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0100011. ........ .100.... .1010111 */
+                    if (trans_vmadc_vxm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x12:
+                /* 010010.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm_1(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0100101. ........ .100.... .1010111 */
+                    if (trans_vsbc_vxm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x13:
+                /* 010011.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm_1(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 25) & 0x1) {
+                case 0x1:
+                    /* 0100111. ........ .100.... .1010111 */
+                    if (trans_vmsbc_vxm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x17:
+                /* 010111.. ........ .100.... .1010111 */
+                switch ((insn >> 25) & 0x1) {
+                case 0x0:
+                    /* 0101110. ........ .100.... .1010111 */
+                    decode_insn32_extract_r_vm_0(ctx, &u.f_rmrr, insn);
+                    if (trans_vmerge_vxm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 0101111. ........ .100.... .1010111 */
+                    decode_insn32_extract_r2(ctx, &u.f_decode_insn3218, insn);
+                    switch ((insn >> 20) & 0x1f) {
+                    case 0x0:
+                        /* 01011110 0000.... .100.... .1010111 */
+                        if (trans_vmv_v_x(ctx, &u.f_decode_insn3218)) return true;
+                        return false;
+                    }
+                    return false;
+                }
+                return false;
+            case 0x18:
+                /* 011000.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmseq_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x19:
+                /* 011001.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsne_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1a:
+                /* 011010.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsltu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1b:
+                /* 011011.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmslt_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1c:
+                /* 011100.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsleu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1d:
+                /* 011101.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsle_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1e:
+                /* 011110.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsgtu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1f:
+                /* 011111.. ........ .100.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmsgt_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x00005000:
+            /* 0....... ........ .101.... .1010111 */
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 000000.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vfadd_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x2:
+                /* 000010.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vfsub_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x4:
+                /* 000100.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vfmin_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x6:
+                /* 000110.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vfmax_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x8:
+                /* 001000.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vfsgnj_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x9:
+                /* 001001.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vfsgnjn_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xa:
+                /* 001010.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vfsgnjx_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xd:
+                /* 001101.. ........ .101.... .1010111 */
+                decode_insn32_extract_r2(ctx, &u.f_decode_insn3218, insn);
+                switch ((insn >> 20) & 0x3f) {
+                case 0x20:
+                    /* 00110110 0000.... .101.... .1010111 */
+                    if (trans_vfmv_s_f(ctx, &u.f_decode_insn3218)) return true;
+                    return false;
+                }
+                return false;
+            case 0x17:
+                /* 010111.. ........ .101.... .1010111 */
+                switch ((insn >> 25) & 0x1) {
+                case 0x0:
+                    /* 0101110. ........ .101.... .1010111 */
+                    decode_insn32_extract_r_vm_0(ctx, &u.f_rmrr, insn);
+                    if (trans_vfmerge_vfm(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 0101111. ........ .101.... .1010111 */
+                    decode_insn32_extract_r2(ctx, &u.f_decode_insn3218, insn);
+                    switch ((insn >> 20) & 0x1f) {
+                    case 0x0:
+                        /* 01011110 0000.... .101.... .1010111 */
+                        if (trans_vfmv_v_f(ctx, &u.f_decode_insn3218)) return true;
+                        return false;
+                    }
+                    return false;
+                }
+                return false;
+            case 0x18:
+                /* 011000.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmfeq_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x19:
+                /* 011001.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmfle_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1a:
+                /* 011010.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmford_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1b:
+                /* 011011.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmflt_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1c:
+                /* 011100.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmfne_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1d:
+                /* 011101.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmfgt_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1f:
+                /* 011111.. ........ .101.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vmfge_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x00006000:
+            /* 0....... ........ .110.... .1010111 */
+            switch ((insn >> 26) & 0x1f) {
+            case 0xd:
+                /* 001101.. ........ .110.... .1010111 */
+                decode_insn32_extract_r2(ctx, &u.f_decode_insn3218, insn);
+                switch ((insn >> 20) & 0x3f) {
+                case 0x20:
+                    /* 00110110 0000.... .110.... .1010111 */
+                    if (trans_vmv_s_x(ctx, &u.f_decode_insn3218)) return true;
+                    return false;
+                }
+                return false;
+            case 0xe:
+                /* 001110.. ........ .110.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vslide1up_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xf:
+                /* 001111.. ........ .110.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vslide1down_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x00007000:
+            /* 0....... ........ .111.... .1010111 */
+            decode_insn32_extract_r2_zimm(ctx, &u.f_decode_insn3221, insn);
+            if (trans_vsetvli(ctx, &u.f_decode_insn3221)) return true;
+            return false;
+        case 0x80000000:
+            /* 1....... ........ .000.... .1010111 */
+            decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 100000.. ........ .000.... .1010111 */
+                if (trans_vsaddu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1:
+                /* 100001.. ........ .000.... .1010111 */
+                if (trans_vsadd_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x2:
+                /* 100010.. ........ .000.... .1010111 */
+                if (trans_vssubu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x3:
+                /* 100011.. ........ .000.... .1010111 */
+                if (trans_vssub_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x4:
+                /* 100100.. ........ .000.... .1010111 */
+                if (trans_vaadd_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x5:
+                /* 100101.. ........ .000.... .1010111 */
+                if (trans_vsll_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x6:
+                /* 100110.. ........ .000.... .1010111 */
+                if (trans_vasub_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x7:
+                /* 100111.. ........ .000.... .1010111 */
+                if (trans_vsmul_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x8:
+                /* 101000.. ........ .000.... .1010111 */
+                if (trans_vsrl_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x9:
+                /* 101001.. ........ .000.... .1010111 */
+                if (trans_vsra_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xa:
+                /* 101010.. ........ .000.... .1010111 */
+                if (trans_vssrl_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xb:
+                /* 101011.. ........ .000.... .1010111 */
+                if (trans_vssra_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xc:
+                /* 101100.. ........ .000.... .1010111 */
+                if (trans_vnsrl_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xd:
+                /* 101101.. ........ .000.... .1010111 */
+                if (trans_vnsra_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xe:
+                /* 101110.. ........ .000.... .1010111 */
+                if (trans_vnclipu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xf:
+                /* 101111.. ........ .000.... .1010111 */
+                if (trans_vnclip_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x10:
+                /* 110000.. ........ .000.... .1010111 */
+                if (trans_vwredsumu_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x11:
+                /* 110001.. ........ .000.... .1010111 */
+                if (trans_vwredsum_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1c:
+                /* 111100.. ........ .000.... .1010111 */
+                if (trans_vwsmaccu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1d:
+                /* 111101.. ........ .000.... .1010111 */
+                if (trans_vwsmacc_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1e:
+                /* 111110.. ........ .000.... .1010111 */
+                if (trans_vwsmaccsu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x80001000:
+            /* 1....... ........ .001.... .1010111 */
+            switch (insn & 0x74000000) {
+            case 0x00000000:
+                /* 1000.0.. ........ .001.... .1010111 */
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 100000.. ........ .001.... .1010111 */
+                    decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                    if (trans_vfdiv_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 100010.. ........ .001.... .1010111 */
+                    decode_insn32_extract_r2_vm(ctx, &u.f_rmr, insn);
+                    switch ((insn >> 15) & 0x1f) {
+                    case 0x0:
+                        /* 100010.. ....0000 0001.... .1010111 */
+                        if (trans_vfcvt_xu_f_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0x1:
+                        /* 100010.. ....0000 1001.... .1010111 */
+                        if (trans_vfcvt_x_f_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0x2:
+                        /* 100010.. ....0001 0001.... .1010111 */
+                        if (trans_vfcvt_f_xu_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0x3:
+                        /* 100010.. ....0001 1001.... .1010111 */
+                        if (trans_vfcvt_f_x_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0x8:
+                        /* 100010.. ....0100 0001.... .1010111 */
+                        if (trans_vfwcvt_xu_f_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0x9:
+                        /* 100010.. ....0100 1001.... .1010111 */
+                        if (trans_vfwcvt_x_f_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0xa:
+                        /* 100010.. ....0101 0001.... .1010111 */
+                        if (trans_vfwcvt_f_xu_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0xb:
+                        /* 100010.. ....0101 1001.... .1010111 */
+                        if (trans_vfwcvt_f_x_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0xc:
+                        /* 100010.. ....0110 0001.... .1010111 */
+                        if (trans_vfwcvt_f_f_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0x10:
+                        /* 100010.. ....1000 0001.... .1010111 */
+                        if (trans_vfncvt_xu_f_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0x11:
+                        /* 100010.. ....1000 1001.... .1010111 */
+                        if (trans_vfncvt_x_f_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0x12:
+                        /* 100010.. ....1001 0001.... .1010111 */
+                        if (trans_vfncvt_f_xu_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0x13:
+                        /* 100010.. ....1001 1001.... .1010111 */
+                        if (trans_vfncvt_f_x_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    case 0x14:
+                        /* 100010.. ....1010 0001.... .1010111 */
+                        if (trans_vfncvt_f_f_v(ctx, &u.f_rmr)) return true;
+                        return false;
+                    }
+                    return false;
+                }
+                return false;
+            case 0x04000000:
+                /* 1000.1.. ........ .001.... .1010111 */
+                decode_insn32_extract_r2_vm(ctx, &u.f_rmr, insn);
+                switch (insn & 0x080f8000) {
+                case 0x08000000:
+                    /* 100011.. ....0000 0001.... .1010111 */
+                    if (trans_vfsqrt_v(ctx, &u.f_rmr)) return true;
+                    return false;
+                case 0x08080000:
+                    /* 100011.. ....1000 0001.... .1010111 */
+                    if (trans_vfclass_v(ctx, &u.f_rmr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x10000000:
+                /* 1001.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 100100.. ........ .001.... .1010111 */
+                    if (trans_vfmul_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x20000000:
+                /* 1010.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 101000.. ........ .001.... .1010111 */
+                    if (trans_vfmadd_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 101010.. ........ .001.... .1010111 */
+                    if (trans_vfmsub_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x24000000:
+                /* 1010.1.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 101001.. ........ .001.... .1010111 */
+                    if (trans_vfnmadd_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 101011.. ........ .001.... .1010111 */
+                    if (trans_vfnmsub_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x30000000:
+                /* 1011.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 101100.. ........ .001.... .1010111 */
+                    if (trans_vfmacc_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 101110.. ........ .001.... .1010111 */
+                    if (trans_vfmsac_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x34000000:
+                /* 1011.1.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 101101.. ........ .001.... .1010111 */
+                    if (trans_vfnmacc_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 101111.. ........ .001.... .1010111 */
+                    if (trans_vfnmsac_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x40000000:
+                /* 1100.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 110000.. ........ .001.... .1010111 */
+                    if (trans_vfwadd_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 110010.. ........ .001.... .1010111 */
+                    if (trans_vfwsub_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x44000000:
+                /* 1100.1.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                if (trans_vfwredsum_vs(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x50000000:
+                /* 1101.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 110100.. ........ .001.... .1010111 */
+                    if (trans_vfwadd_wv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 110110.. ........ .001.... .1010111 */
+                    if (trans_vfwsub_wv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x60000000:
+                /* 1110.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 111000.. ........ .001.... .1010111 */
+                    if (trans_vfwmul_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x70000000:
+                /* 1111.0.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 111100.. ........ .001.... .1010111 */
+                    if (trans_vfwmacc_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 111110.. ........ .001.... .1010111 */
+                    if (trans_vfwmsac_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            case 0x74000000:
+                /* 1111.1.. ........ .001.... .1010111 */
+                decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+                switch ((insn >> 27) & 0x1) {
+                case 0x0:
+                    /* 111101.. ........ .001.... .1010111 */
+                    if (trans_vfwnmacc_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                case 0x1:
+                    /* 111111.. ........ .001.... .1010111 */
+                    if (trans_vfwnmsac_vv(ctx, &u.f_rmrr)) return true;
+                    return false;
+                }
+                return false;
+            }
+            return false;
+        case 0x80002000:
+            /* 1....... ........ .010.... .1010111 */
+            decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 100000.. ........ .010.... .1010111 */
+                if (trans_vdivu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1:
+                /* 100001.. ........ .010.... .1010111 */
+                if (trans_vdiv_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x2:
+                /* 100010.. ........ .010.... .1010111 */
+                if (trans_vremu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x3:
+                /* 100011.. ........ .010.... .1010111 */
+                if (trans_vrem_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x4:
+                /* 100100.. ........ .010.... .1010111 */
+                if (trans_vmulhu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x5:
+                /* 100101.. ........ .010.... .1010111 */
+                if (trans_vmul_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x6:
+                /* 100110.. ........ .010.... .1010111 */
+                if (trans_vmulhsu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x7:
+                /* 100111.. ........ .010.... .1010111 */
+                if (trans_vmulh_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x9:
+                /* 101001.. ........ .010.... .1010111 */
+                if (trans_vmadd_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xb:
+                /* 101011.. ........ .010.... .1010111 */
+                if (trans_vnmsub_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xd:
+                /* 101101.. ........ .010.... .1010111 */
+                if (trans_vmacc_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xf:
+                /* 101111.. ........ .010.... .1010111 */
+                if (trans_vnmsac_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x10:
+                /* 110000.. ........ .010.... .1010111 */
+                if (trans_vwaddu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x11:
+                /* 110001.. ........ .010.... .1010111 */
+                if (trans_vwadd_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x12:
+                /* 110010.. ........ .010.... .1010111 */
+                if (trans_vwsubu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x13:
+                /* 110011.. ........ .010.... .1010111 */
+                if (trans_vwsub_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x14:
+                /* 110100.. ........ .010.... .1010111 */
+                if (trans_vwaddu_wv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x15:
+                /* 110101.. ........ .010.... .1010111 */
+                if (trans_vwadd_wv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x16:
+                /* 110110.. ........ .010.... .1010111 */
+                if (trans_vwsubu_wv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x17:
+                /* 110111.. ........ .010.... .1010111 */
+                if (trans_vwsub_wv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x18:
+                /* 111000.. ........ .010.... .1010111 */
+                if (trans_vwmulu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1a:
+                /* 111010.. ........ .010.... .1010111 */
+                if (trans_vwmulsu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1b:
+                /* 111011.. ........ .010.... .1010111 */
+                if (trans_vwmul_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1c:
+                /* 111100.. ........ .010.... .1010111 */
+                if (trans_vwmaccu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1d:
+                /* 111101.. ........ .010.... .1010111 */
+                if (trans_vwmacc_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1e:
+                /* 111110.. ........ .010.... .1010111 */
+                if (trans_vwmaccsu_vv(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x80003000:
+            /* 1....... ........ .011.... .1010111 */
+            decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 100000.. ........ .011.... .1010111 */
+                if (trans_vsaddu_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1:
+                /* 100001.. ........ .011.... .1010111 */
+                if (trans_vsadd_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x4:
+                /* 100100.. ........ .011.... .1010111 */
+                if (trans_vaadd_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x5:
+                /* 100101.. ........ .011.... .1010111 */
+                if (trans_vsll_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x8:
+                /* 101000.. ........ .011.... .1010111 */
+                if (trans_vsrl_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x9:
+                /* 101001.. ........ .011.... .1010111 */
+                if (trans_vsra_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xa:
+                /* 101010.. ........ .011.... .1010111 */
+                if (trans_vssrl_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xb:
+                /* 101011.. ........ .011.... .1010111 */
+                if (trans_vssra_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xc:
+                /* 101100.. ........ .011.... .1010111 */
+                if (trans_vnsrl_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xd:
+                /* 101101.. ........ .011.... .1010111 */
+                if (trans_vnsra_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xe:
+                /* 101110.. ........ .011.... .1010111 */
+                if (trans_vnclipu_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xf:
+                /* 101111.. ........ .011.... .1010111 */
+                if (trans_vnclip_vi(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x80004000:
+            /* 1....... ........ .100.... .1010111 */
+            decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 100000.. ........ .100.... .1010111 */
+                if (trans_vsaddu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1:
+                /* 100001.. ........ .100.... .1010111 */
+                if (trans_vsadd_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x2:
+                /* 100010.. ........ .100.... .1010111 */
+                if (trans_vssubu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x3:
+                /* 100011.. ........ .100.... .1010111 */
+                if (trans_vssub_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x4:
+                /* 100100.. ........ .100.... .1010111 */
+                if (trans_vaadd_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x5:
+                /* 100101.. ........ .100.... .1010111 */
+                if (trans_vsll_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x6:
+                /* 100110.. ........ .100.... .1010111 */
+                if (trans_vasub_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x7:
+                /* 100111.. ........ .100.... .1010111 */
+                if (trans_vsmul_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x8:
+                /* 101000.. ........ .100.... .1010111 */
+                if (trans_vsrl_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x9:
+                /* 101001.. ........ .100.... .1010111 */
+                if (trans_vsra_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xa:
+                /* 101010.. ........ .100.... .1010111 */
+                if (trans_vssrl_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xb:
+                /* 101011.. ........ .100.... .1010111 */
+                if (trans_vssra_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xc:
+                /* 101100.. ........ .100.... .1010111 */
+                if (trans_vnsrl_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xd:
+                /* 101101.. ........ .100.... .1010111 */
+                if (trans_vnsra_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xe:
+                /* 101110.. ........ .100.... .1010111 */
+                if (trans_vnclipu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xf:
+                /* 101111.. ........ .100.... .1010111 */
+                if (trans_vnclip_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1c:
+                /* 111100.. ........ .100.... .1010111 */
+                if (trans_vwsmaccu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1d:
+                /* 111101.. ........ .100.... .1010111 */
+                if (trans_vwsmacc_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1e:
+                /* 111110.. ........ .100.... .1010111 */
+                if (trans_vwsmaccsu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1f:
+                /* 111111.. ........ .100.... .1010111 */
+                if (trans_vwsmaccus_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x80005000:
+            /* 1....... ........ .101.... .1010111 */
+            decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 100000.. ........ .101.... .1010111 */
+                if (trans_vfdiv_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1:
+                /* 100001.. ........ .101.... .1010111 */
+                if (trans_vfrdiv_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x4:
+                /* 100100.. ........ .101.... .1010111 */
+                if (trans_vfmul_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x7:
+                /* 100111.. ........ .101.... .1010111 */
+                if (trans_vfrsub_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x8:
+                /* 101000.. ........ .101.... .1010111 */
+                if (trans_vfmadd_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x9:
+                /* 101001.. ........ .101.... .1010111 */
+                if (trans_vfnmadd_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xa:
+                /* 101010.. ........ .101.... .1010111 */
+                if (trans_vfmsub_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xb:
+                /* 101011.. ........ .101.... .1010111 */
+                if (trans_vfnmsub_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xc:
+                /* 101100.. ........ .101.... .1010111 */
+                if (trans_vfmacc_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xd:
+                /* 101101.. ........ .101.... .1010111 */
+                if (trans_vfnmacc_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xe:
+                /* 101110.. ........ .101.... .1010111 */
+                if (trans_vfmsac_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xf:
+                /* 101111.. ........ .101.... .1010111 */
+                if (trans_vfnmsac_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x10:
+                /* 110000.. ........ .101.... .1010111 */
+                if (trans_vfwadd_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x12:
+                /* 110010.. ........ .101.... .1010111 */
+                if (trans_vfwsub_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x14:
+                /* 110100.. ........ .101.... .1010111 */
+                if (trans_vfwadd_wf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x16:
+                /* 110110.. ........ .101.... .1010111 */
+                if (trans_vfwsub_wf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x18:
+                /* 111000.. ........ .101.... .1010111 */
+                if (trans_vfwmul_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1c:
+                /* 111100.. ........ .101.... .1010111 */
+                if (trans_vfwmacc_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1d:
+                /* 111101.. ........ .101.... .1010111 */
+                if (trans_vfwnmacc_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1e:
+                /* 111110.. ........ .101.... .1010111 */
+                if (trans_vfwmsac_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1f:
+                /* 111111.. ........ .101.... .1010111 */
+                if (trans_vfwnmsac_vf(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x80006000:
+            /* 1....... ........ .110.... .1010111 */
+            decode_insn32_extract_r_vm(ctx, &u.f_rmrr, insn);
+            switch ((insn >> 26) & 0x1f) {
+            case 0x0:
+                /* 100000.. ........ .110.... .1010111 */
+                if (trans_vdivu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1:
+                /* 100001.. ........ .110.... .1010111 */
+                if (trans_vdiv_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x2:
+                /* 100010.. ........ .110.... .1010111 */
+                if (trans_vremu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x3:
+                /* 100011.. ........ .110.... .1010111 */
+                if (trans_vrem_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x4:
+                /* 100100.. ........ .110.... .1010111 */
+                if (trans_vmulhu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x5:
+                /* 100101.. ........ .110.... .1010111 */
+                if (trans_vmul_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x6:
+                /* 100110.. ........ .110.... .1010111 */
+                if (trans_vmulhsu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x7:
+                /* 100111.. ........ .110.... .1010111 */
+                if (trans_vmulh_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x9:
+                /* 101001.. ........ .110.... .1010111 */
+                if (trans_vmadd_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xb:
+                /* 101011.. ........ .110.... .1010111 */
+                if (trans_vnmsub_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xd:
+                /* 101101.. ........ .110.... .1010111 */
+                if (trans_vmacc_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0xf:
+                /* 101111.. ........ .110.... .1010111 */
+                if (trans_vnmsac_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x10:
+                /* 110000.. ........ .110.... .1010111 */
+                if (trans_vwaddu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x11:
+                /* 110001.. ........ .110.... .1010111 */
+                if (trans_vwadd_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x12:
+                /* 110010.. ........ .110.... .1010111 */
+                if (trans_vwsubu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x13:
+                /* 110011.. ........ .110.... .1010111 */
+                if (trans_vwsub_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x14:
+                /* 110100.. ........ .110.... .1010111 */
+                if (trans_vwaddu_wx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x15:
+                /* 110101.. ........ .110.... .1010111 */
+                if (trans_vwadd_wx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x16:
+                /* 110110.. ........ .110.... .1010111 */
+                if (trans_vwsubu_wx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x17:
+                /* 110111.. ........ .110.... .1010111 */
+                if (trans_vwsub_wx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x18:
+                /* 111000.. ........ .110.... .1010111 */
+                if (trans_vwmulu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1a:
+                /* 111010.. ........ .110.... .1010111 */
+                if (trans_vwmulsu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1b:
+                /* 111011.. ........ .110.... .1010111 */
+                if (trans_vwmul_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1c:
+                /* 111100.. ........ .110.... .1010111 */
+                if (trans_vwmaccu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1d:
+                /* 111101.. ........ .110.... .1010111 */
+                if (trans_vwmacc_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1e:
+                /* 111110.. ........ .110.... .1010111 */
+                if (trans_vwmaccsu_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            case 0x1f:
+                /* 111111.. ........ .110.... .1010111 */
+                if (trans_vwmaccus_vx(ctx, &u.f_rmrr)) return true;
+                return false;
+            }
+            return false;
+        case 0x80007000:
+            /* 1....... ........ .111.... .1010111 */
+            decode_insn32_extract_r(ctx, &u.f_r, insn);
+            switch ((insn >> 25) & 0x3f) {
+            case 0x0:
+                /* 1000000. ........ .111.... .1010111 */
+                if (trans_vsetvl(ctx, &u.f_r)) return true;
                 return false;
             }
             return false;
@@ -1568,32 +4285,26 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch ((insn >> 12) & 0x7) {
         case 0x0:
             /* ........ ........ .000.... .1100011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:90 */
             if (trans_beq(ctx, &u.f_b)) return true;
             return false;
         case 0x1:
             /* ........ ........ .001.... .1100011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:91 */
             if (trans_bne(ctx, &u.f_b)) return true;
             return false;
         case 0x4:
             /* ........ ........ .100.... .1100011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:92 */
             if (trans_blt(ctx, &u.f_b)) return true;
             return false;
         case 0x5:
             /* ........ ........ .101.... .1100011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:93 */
             if (trans_bge(ctx, &u.f_b)) return true;
             return false;
         case 0x6:
             /* ........ ........ .110.... .1100011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:94 */
             if (trans_bltu(ctx, &u.f_b)) return true;
             return false;
         case 0x7:
             /* ........ ........ .111.... .1100011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:95 */
             if (trans_bgeu(ctx, &u.f_b)) return true;
             return false;
         }
@@ -1604,14 +4315,12 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
         switch ((insn >> 12) & 0x7) {
         case 0x0:
             /* ........ ........ .000.... .1100111 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:89 */
             if (trans_jalr(ctx, &u.f_i)) return true;
             return false;
         }
         return false;
     case 0x0000006f:
         /* ........ ........ ........ .1101111 */
-        /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:88 */
         decode_insn32_extract_j(ctx, &u.f_j, insn);
         if (trans_jal(ctx, &u.f_j)) return true;
         return false;
@@ -1623,21 +4332,18 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
             switch (insn & 0xfe000f80) {
             case 0x00000000:
                 /* 0000000. ........ .0000000 01110011 */
-                decode_insn32_extract_decode_insn32_Fmt_18(ctx, &u.f_empty, insn);
+                decode_insn32_extract_decode_insn32_Fmt_28(ctx, &u.f_empty, insn);
                 switch ((insn >> 15) & 0x3ff) {
                 case 0x0:
                     /* 00000000 00000000 00000000 01110011 */
-                    /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:74 */
                     if (trans_ecall(ctx, &u.f_empty)) return true;
                     return false;
                 case 0x20:
                     /* 00000000 00010000 00000000 01110011 */
-                    /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:75 */
                     if (trans_ebreak(ctx, &u.f_empty)) return true;
                     return false;
                 case 0x40:
                     /* 00000000 00100000 00000000 01110011 */
-                    /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:76 */
                     if (trans_uret(ctx, &u.f_empty)) return true;
                     return false;
                 }
@@ -1647,28 +4353,25 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
                 switch ((insn >> 20) & 0x1f) {
                 case 0x2:
                     /* 00010000 0010.... .0000000 01110011 */
-                    decode_insn32_extract_decode_insn32_Fmt_18(ctx, &u.f_empty, insn);
+                    decode_insn32_extract_decode_insn32_Fmt_28(ctx, &u.f_empty, insn);
                     switch ((insn >> 15) & 0x1f) {
                     case 0x0:
                         /* 00010000 00100000 00000000 01110011 */
-                        /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:77 */
                         if (trans_sret(ctx, &u.f_empty)) return true;
                         return false;
                     }
                     return false;
                 case 0x4:
                     /* 00010000 0100.... .0000000 01110011 */
-                    /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:83 */
-                    decode_insn32_extract_sfence_vm(ctx, &u.f_decode_insn3215, insn);
-                    if (trans_sfence_vm(ctx, &u.f_decode_insn3215)) return true;
+                    decode_insn32_extract_sfence_vm(ctx, &u.f_decode_insn3223, insn);
+                    if (trans_sfence_vm(ctx, &u.f_decode_insn3223)) return true;
                     return false;
                 case 0x5:
                     /* 00010000 0101.... .0000000 01110011 */
-                    decode_insn32_extract_decode_insn32_Fmt_18(ctx, &u.f_empty, insn);
+                    decode_insn32_extract_decode_insn32_Fmt_28(ctx, &u.f_empty, insn);
                     switch ((insn >> 15) & 0x1f) {
                     case 0x0:
                         /* 00010000 01010000 00000000 01110011 */
-                        /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:79 */
                         if (trans_wfi(ctx, &u.f_empty)) return true;
                         return false;
                     }
@@ -1677,70 +4380,60 @@ static bool decode_insn32(DisasContext *ctx, uint32_t insn)
                 return false;
             case 0x12000000:
                 /* 0001001. ........ .0000000 01110011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:82 */
-                decode_insn32_extract_sfence_vma(ctx, &u.f_decode_insn3214, insn);
-                if (trans_sfence_vma(ctx, &u.f_decode_insn3214)) return true;
+                decode_insn32_extract_sfence_vma(ctx, &u.f_decode_insn3222, insn);
+                if (trans_sfence_vma(ctx, &u.f_decode_insn3222)) return true;
                 return false;
             case 0x22000000:
                 /* 0010001. ........ .0000000 01110011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:81 */
-                decode_insn32_extract_hfence_bvma(ctx, &u.f_decode_insn3214, insn);
-                if (trans_hfence_bvma(ctx, &u.f_decode_insn3214)) return true;
+                decode_insn32_extract_hfence_vvma(ctx, &u.f_decode_insn3222, insn);
+                if (trans_hfence_vvma(ctx, &u.f_decode_insn3222)) return true;
                 return false;
             case 0x30000000:
                 /* 0011000. ........ .0000000 01110011 */
-                decode_insn32_extract_decode_insn32_Fmt_18(ctx, &u.f_empty, insn);
+                decode_insn32_extract_decode_insn32_Fmt_28(ctx, &u.f_empty, insn);
                 switch ((insn >> 15) & 0x3ff) {
                 case 0x40:
                     /* 00110000 00100000 00000000 01110011 */
-                    /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:78 */
                     if (trans_mret(ctx, &u.f_empty)) return true;
                     return false;
                 }
                 return false;
             case 0x62000000:
                 /* 0110001. ........ .0000000 01110011 */
-                /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:80 */
-                decode_insn32_extract_hfence_gvma(ctx, &u.f_decode_insn3214, insn);
-                if (trans_hfence_gvma(ctx, &u.f_decode_insn3214)) return true;
+                decode_insn32_extract_hfence_gvma(ctx, &u.f_decode_insn3222, insn);
+                if (trans_hfence_gvma(ctx, &u.f_decode_insn3222)) return true;
                 return false;
             }
             return false;
         case 0x1:
             /* ........ ........ .001.... .1110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:125 */
-            decode_insn32_extract_csr(ctx, &u.f_decode_insn329, insn);
-            if (trans_csrrw(ctx, &u.f_decode_insn329)) return true;
+            decode_insn32_extract_csr(ctx, &u.f_decode_insn3214, insn);
+            if (trans_csrrw(ctx, &u.f_decode_insn3214)) return true;
             return false;
         case 0x2:
             /* ........ ........ .010.... .1110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:126 */
-            decode_insn32_extract_csr(ctx, &u.f_decode_insn329, insn);
-            if (trans_csrrs(ctx, &u.f_decode_insn329)) return true;
+            decode_insn32_extract_csr(ctx, &u.f_decode_insn3214, insn);
+            if (trans_csrrs(ctx, &u.f_decode_insn3214)) return true;
             return false;
         case 0x3:
             /* ........ ........ .011.... .1110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:127 */
-            decode_insn32_extract_csr(ctx, &u.f_decode_insn329, insn);
-            if (trans_csrrc(ctx, &u.f_decode_insn329)) return true;
+            decode_insn32_extract_csr(ctx, &u.f_decode_insn3214, insn);
+            if (trans_csrrc(ctx, &u.f_decode_insn3214)) return true;
             return false;
         case 0x5:
             /* ........ ........ .101.... .1110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:128 */
-            decode_insn32_extract_csr(ctx, &u.f_decode_insn329, insn);
-            if (trans_csrrwi(ctx, &u.f_decode_insn329)) return true;
+            decode_insn32_extract_csr(ctx, &u.f_decode_insn3214, insn);
+            if (trans_csrrwi(ctx, &u.f_decode_insn3214)) return true;
             return false;
         case 0x6:
             /* ........ ........ .110.... .1110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:129 */
-            decode_insn32_extract_csr(ctx, &u.f_decode_insn329, insn);
-            if (trans_csrrsi(ctx, &u.f_decode_insn329)) return true;
+            decode_insn32_extract_csr(ctx, &u.f_decode_insn3214, insn);
+            if (trans_csrrsi(ctx, &u.f_decode_insn3214)) return true;
             return false;
         case 0x7:
             /* ........ ........ .111.... .1110011 */
-            /* /home/me/projects/unicorn2/qemu-5.0.0-build/target/riscv/insn32.decode:130 */
-            decode_insn32_extract_csr(ctx, &u.f_decode_insn329, insn);
-            if (trans_csrrci(ctx, &u.f_decode_insn329)) return true;
+            decode_insn32_extract_csr(ctx, &u.f_decode_insn3214, insn);
+            if (trans_csrrci(ctx, &u.f_decode_insn3214)) return true;
             return false;
         }
         return false;

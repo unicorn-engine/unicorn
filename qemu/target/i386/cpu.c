@@ -852,10 +852,10 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         .type = CPUID_FEATURE_WORD,
         .feat_names = {
             NULL, NULL, "avx512-4vnniw", "avx512-4fmaps",
-            NULL, NULL, NULL, NULL,
-            NULL, NULL, "md-clear", NULL,
-            NULL, NULL, NULL, NULL,
-            NULL, NULL, NULL /* pconfig */, NULL,
+            "fsrm", NULL, NULL, NULL,
+            "avx512-vp2intersect", NULL, "md-clear", NULL,
+            NULL, NULL, "serialize", NULL,
+            "tsx-ldtrk", NULL, NULL /* pconfig */, NULL,
             NULL, NULL, NULL, NULL,
             NULL, NULL, "spec-ctrl", "stibp",
             NULL, "arch-capabilities", "core-capability", "ssbd",
@@ -999,6 +999,22 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         },
         .msr = {
             .index = MSR_IA32_CORE_CAPABILITY,
+        },
+    },
+    [FEAT_PERF_CAPABILITIES] = {
+        .type = MSR_FEATURE_WORD,
+        .feat_names = {
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, "full-width-write", NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+        },
+        .msr = {
+            .index = MSR_IA32_PERF_CAPABILITIES,
         },
     },
 
@@ -2722,6 +2738,13 @@ static X86CPUDefinition builtin_x86_defs[] = {
                     { NULL /* end of list */ }
                 }
             },
+            {
+                .version = 4,
+                .props = (PropValue[]) {
+                    { "vmx-eptp-switching", "on" },
+                    { /* end of list */ }
+                }
+            },
             { 0 /* end of list */ }
         }
     },
@@ -2827,6 +2850,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         .versions = (X86CPUVersionDefinition[]) {
             { .version = 1 },
             { .version = 2,
+              .note = "ARCH_CAPABILITIES",
               .props = (PropValue[]) {
                   { "arch-capabilities", "on" },
                   { "rdctl-no", "on" },
@@ -2838,10 +2862,18 @@ static X86CPUDefinition builtin_x86_defs[] = {
             },
             { .version = 3,
               .alias = "Cascadelake-Server-noTSX",
+              .note = "ARCH_CAPABILITIES, no TSX",
               .props = (PropValue[]) {
                   { "hle", "off" },
                   { "rtm", "off" },
                   { NULL /* end of list */ }
+              },
+            },
+            { .version = 4,
+              .note = "ARCH_CAPABILITIES, no TSX",
+              .props = (PropValue[]) {
+                  { "vmx-eptp-switching", "on" },
+                  { /* end of list */ }
               },
             },
             { 0 /* end of list */ }
@@ -3059,6 +3091,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
             { .version = 1 },
             {
                 .version = 2,
+                .note = "no TSX",
                 .alias = "Icelake-Client-noTSX",
                 .props = (PropValue[]) {
                     { "hle", "off" },
@@ -3196,6 +3229,20 @@ static X86CPUDefinition builtin_x86_defs[] = {
                     { NULL /* end of list */ }
                 },
             },
+            {
+                .version = 4,
+                .props = (PropValue[]) {
+                    { "sha-ni", "on" },
+                    { "avx512ifma", "on" },
+                    { "rdpid", "on" },
+                    { "fsrm", "on" },
+                    { "vmx-rdseed-exit", "on" },
+                    { "vmx-pml", "on" },
+                    { "vmx-eptp-switching", "on" },
+                    { "model", "106" },
+                    { /* end of list */ }
+                },
+            },
             { 0 /* end of list */ }
         }
     },
@@ -3296,6 +3343,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
             { .version = 1 },
             {
                 .version = 2,
+                .note = "no MPX, no MONITOR",
                 .props = (PropValue[]) {
                     { "monitor", "off" },
                     { "mpx", "off" },
@@ -3828,16 +3876,6 @@ static void mark_unavailable_features(X86CPU *cpu, FeatureWord w, uint64_t mask,
     }
 }
 
-/* Convert all '_' in a feature string option name to '-', to make feature
- * name conform to QOM property naming rule, which uses '-' instead of '_'.
- */
-static inline void feat2prop(char *s)
-{
-    while ((s = strchr(s, '_'))) {
-        *s = '-';
-    }
-}
-
 static void x86_cpu_filter_features(X86CPU *cpu, bool verbose);
 
 static uint64_t x86_cpu_get_supported_feature_word(FeatureWord w,
@@ -3888,6 +3926,13 @@ static void x86_cpu_load_model(X86CPU *cpu, X86CPUModel *model)
     }
 
     x86_cpuid_set_vendor(cpu, def->vendor);
+
+    /*
+     * Properties in versioned CPU model are not user specified features.
+     * We can simply clear env->user_features here since it will be filled later
+     * in x86_cpu_expand_features() based on plus_features and minus_features.
+     */
+    memset(&env->user_features, 0, sizeof(env->user_features));
 }
 
 void cpu_clear_apic_feature(CPUX86State *env)
@@ -4041,6 +4086,9 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         if (cs->nr_cores * cs->nr_threads > 1) {
             *ebx |= (cs->nr_cores * cs->nr_threads) << 16;
             *edx |= CPUID_HT;
+        }
+        if (!cpu->enable_pmu) {
+            *ecx &= ~CPUID_EXT_PDCM;
         }
         break;
     case 2:
@@ -4330,9 +4378,9 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             host_cpuid(index, 0, eax, ebx, ecx, edx);
             break;
         }
-        *eax = (L1_DTLB_2M_ASSOC << 24) | (L1_DTLB_2M_ENTRIES << 16) | \
+        *eax = (L1_DTLB_2M_ASSOC << 24) | (L1_DTLB_2M_ENTRIES << 16) |
                (L1_ITLB_2M_ASSOC <<  8) | (L1_ITLB_2M_ENTRIES);
-        *ebx = (L1_DTLB_4K_ASSOC << 24) | (L1_DTLB_4K_ENTRIES << 16) | \
+        *ebx = (L1_DTLB_4K_ASSOC << 24) | (L1_DTLB_4K_ENTRIES << 16) |
                (L1_ITLB_4K_ASSOC <<  8) | (L1_ITLB_4K_ENTRIES);
         *ecx = encode_cache_cpuid80000005(env->cache_info_amd.l1d_cache);
         *edx = encode_cache_cpuid80000005(env->cache_info_amd.l1i_cache);
@@ -4343,13 +4391,13 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             host_cpuid(index, 0, eax, ebx, ecx, edx);
             break;
         }
-        *eax = (AMD_ENC_ASSOC(L2_DTLB_2M_ASSOC) << 28) | \
+        *eax = (AMD_ENC_ASSOC(L2_DTLB_2M_ASSOC) << 28) |
                (L2_DTLB_2M_ENTRIES << 16) | \
-               (AMD_ENC_ASSOC(L2_ITLB_2M_ASSOC) << 12) | \
+               (AMD_ENC_ASSOC(L2_ITLB_2M_ASSOC) << 12) |
                (L2_ITLB_2M_ENTRIES);
-        *ebx = (AMD_ENC_ASSOC(L2_DTLB_4K_ASSOC) << 28) | \
+        *ebx = (AMD_ENC_ASSOC(L2_DTLB_4K_ASSOC) << 28) |
                (L2_DTLB_4K_ENTRIES << 16) | \
-               (AMD_ENC_ASSOC(L2_ITLB_4K_ASSOC) << 12) | \
+               (AMD_ENC_ASSOC(L2_ITLB_4K_ASSOC) << 12) |
                (L2_ITLB_4K_ENTRIES);
         encode_cache_cpuid80000006(env->cache_info_amd.l2_cache,
                                    cpu->enable_l3_cache ?
@@ -4376,11 +4424,20 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             *eax = cpu->phys_bits;
         }
         *ebx = env->features[FEAT_8000_0008_EBX];
-        *ecx = 0;
-        *edx = 0;
         if (cs->nr_cores * cs->nr_threads > 1) {
-            *ecx |= (cs->nr_cores * cs->nr_threads) - 1;
+            /*
+             * Bits 15:12 is "The number of bits in the initial
+             * Core::X86::Apic::ApicId[ApicId] value that indicate
+             * thread ID within a package". This is already stored at
+             * CPUX86State::pkg_offset.
+             * Bits 7:0 is "The number of threads in the package is NC+1"
+             */
+            *ecx = (env->pkg_offset << 12) |
+                   ((cs->nr_cores * cs->nr_threads) - 1);
+        } else {
+            *ecx = 0;
         }
+        *edx = 0;
         break;
     case 0x8000000A:
         if (env->features[FEAT_8000_0001_ECX] & CPUID_EXT3_SVM) {
@@ -4478,6 +4535,7 @@ static void x86_cpu_reset(CPUState *dev)
     /* init to reset state */
 
     env->hflags2 |= HF2_GIF_MASK;
+    env->hflags &= ~HF_GUEST_MASK;
 
     cpu_x86_update_cr0(env, 0x60000010);
     env->a20_mask = ~0x0;
@@ -4707,7 +4765,7 @@ static void x86_cpu_expand_features(X86CPU *cpu)
              */
             env->features[w] |=
                 x86_cpu_get_supported_feature_word(w, cpu->migratable) &
-                ~env->user_features[w] & \
+                ~env->user_features[w] &
                 ~feature_word_info[w].no_autoenable_flags;
         }
     }
@@ -4740,7 +4798,7 @@ static void x86_cpu_expand_features(X86CPU *cpu)
                 // TODO: Add a warning?
                 // mark_unavailable_features(cpu, FEAT_7_0_EBX,
                 //     CPUID_7_0_EBX_INTEL_PT,
-                //     "Intel PT need CPUID leaf 0x14, please set by \"-cpu ...,+intel-pt,level=0x14\"");
+                //     "Intel PT need CPUID leaf 0x14, please set by \"-cpu ...,+intel-pt,min-level=0x14\"");
             }
         }
 
