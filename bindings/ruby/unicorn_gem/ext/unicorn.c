@@ -275,7 +275,7 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
 }
 
 VALUE m_uc_mem_read(VALUE self, VALUE address, VALUE size){
-    size_t isize = NUM2UINT(size);
+    uint64_t isize = NUM2ULL(size);
     uint8_t bytes[isize];
     uc_err err;
     uc_engine *_uc;
@@ -310,7 +310,7 @@ VALUE m_uc_mem_map(int argc, VALUE* argv, VALUE self){
     if (NIL_P(perms))
         perms = INT2NUM(UC_PROT_ALL);
 
-    err = uc_mem_map(_uc, NUM2ULL(address), NUM2UINT(size), NUM2UINT(perms));
+    err = uc_mem_map(_uc, NUM2ULL(address), NUM2ULL(size), NUM2UINT(perms));
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
     }
@@ -321,7 +321,7 @@ VALUE m_uc_mem_unmap(VALUE self, VALUE address, VALUE size){
     uc_err err;
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self, "@uch"), uc_engine, _uc);
-    err = uc_mem_unmap(_uc, NUM2ULL(address), NUM2UINT(size));
+    err = uc_mem_unmap(_uc, NUM2ULL(address), NUM2ULL(size));
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
     }
@@ -332,7 +332,7 @@ VALUE m_uc_mem_protect(VALUE self, VALUE address, VALUE size, VALUE perms){
     uc_err err;
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
-    err = uc_mem_protect(_uc, NUM2ULL(address), NUM2UINT(size), NUM2UINT(perms));
+    err = uc_mem_protect(_uc, NUM2ULL(address), NUM2UINT(size), NUM2ULL(perms));
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
     }

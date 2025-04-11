@@ -75,10 +75,10 @@ pub fn uc_reg_write_batch(uc: ?*c.uc_engine, regs: [*c]c_int, vals: [*c]const ?*
 pub fn uc_reg_read_batch(uc: ?*c.uc_engine, regs: [*c]c_int, vals: [*c]?*anyopaque, count: c_int) !void {
     try getErrors(c.uc_reg_read_batch(uc, regs, vals, count));
 }
-pub fn uc_mem_write(uc: ?*c.uc_engine, address: u64, bytes: ?*const anyopaque, size: usize) !void {
+pub fn uc_mem_write(uc: ?*c.uc_engine, address: u64, bytes: ?*const anyopaque, size: u64) !void {
     try getErrors(c.uc_mem_write(uc, address, bytes, size));
 }
-pub fn uc_mem_read(uc: ?*c.uc_engine, address: u64, bytes: ?*anyopaque, size: usize) !void {
+pub fn uc_mem_read(uc: ?*c.uc_engine, address: u64, bytes: ?*anyopaque, size: u64) !void {
     try getErrors(c.uc_mem_read(uc, address, bytes, size));
 }
 pub fn uc_emu_start(uc: ?*c.uc_engine, begin: u64, until: u64, timeout: u64, count: usize) !void {
@@ -93,19 +93,19 @@ pub fn uc_hook_add(uc: ?*c.uc_engine, hh: [*c]c.uc_hook, @"type": c_int, callbac
 pub fn uc_hook_del(uc: ?*c.uc_engine, hh: c.uc_hook) !void {
     try getErrors(c.uc_hook_del(uc, hh));
 }
-pub fn uc_mem_map(uc: ?*c.uc_engine, address: u64, size: usize, perms: u32) !void {
+pub fn uc_mem_map(uc: ?*c.uc_engine, address: u64, size: u64, perms: u32) !void {
     try getErrors(c.uc_mem_map(uc, address, size, perms));
 }
-pub fn uc_mem_map_ptr(uc: ?*c.uc_engine, address: u64, size: usize, perms: u32, ptr: ?*anyopaque) !void {
+pub fn uc_mem_map_ptr(uc: ?*c.uc_engine, address: u64, size: u64, perms: u32, ptr: ?*anyopaque) !void {
     try getErrors(c.uc_mem_map_ptr(uc, address, size, perms, ptr));
 }
-pub fn uc_mmio_map(uc: ?*c.uc_engine, address: u64, size: usize, read_cb: c.uc_cb_mmio_read_t, user_data_read: ?*anyopaque, write_cb: c.uc_cb_mmio_write_t, user_data_write: ?*anyopaque) !void {
+pub fn uc_mmio_map(uc: ?*c.uc_engine, address: u64, size: u64, read_cb: c.uc_cb_mmio_read_t, user_data_read: ?*anyopaque, write_cb: c.uc_cb_mmio_write_t, user_data_write: ?*anyopaque) !void {
     try getErrors(c.uc_mmio_map(uc, address, size, read_cb, user_data_read, write_cb, user_data_write));
 }
-pub fn uc_mem_unmap(uc: ?*c.uc_engine, address: u64, size: usize) !void {
+pub fn uc_mem_unmap(uc: ?*c.uc_engine, address: u64, size: u64) !void {
     try getErrors(c.uc_mem_unmap(uc, address, size));
 }
-pub fn uc_mem_protect(uc: ?*c.uc_engine, address: u64, size: usize, perms: u32) !void {
+pub fn uc_mem_protect(uc: ?*c.uc_engine, address: u64, size: u64, perms: u32) !void {
     try getErrors(c.uc_mem_protect(uc, address, size, perms));
 }
 pub fn uc_mem_regions(uc: ?*c.uc_engine, regions: [*c][*c]c.uc_mem_region, count: [*c]u32) !void {

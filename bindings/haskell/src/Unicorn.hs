@@ -217,7 +217,7 @@ memWrite uc address bytes = do
 memRead :: Engine                       -- ^ 'Unicorn' engine handle
         -> Word64                       -- ^ Starting memory address to read
                                         -- from
-        -> Int                          -- ^ Size of memory to read (in bytes)
+        -> Word64                       -- ^ Size of memory to read (in bytes)
         -> Emulator ByteString          -- ^ The memory contents on success, or
                                         -- an 'Error' on failure
 memRead uc address size = do
@@ -238,7 +238,7 @@ memMap :: Engine                -- ^ 'Unicorn' engine handle
                                 -- be mapped in. This address must be
                                 -- aligned to 4KB, or this will return with
                                 -- 'ErrArg' error
-       -> Int                   -- ^ Size of the new memory region to be mapped
+       -> Word64                -- ^ Size of the new memory region to be mapped
                                 -- in. This size must be a multiple of 4KB, or
                                 -- this will return with an 'ErrArg' error
        -> [MemoryPermission]    -- ^ Permissions for the newly mapped region
@@ -255,7 +255,7 @@ memUnmap :: Engine      -- ^ 'Unicorn' engine handle
          -> Word64      -- ^ Start addres of the memory region to be unmapped.
                         -- This address must be aligned to 4KB or this will
                         -- return with an 'ErrArg' error
-         -> Int         -- ^ Size of the memory region to be modified. This
+         -> Word64      -- ^ Size of the memory region to be modified. This
                         -- must be a multiple of 4KB, or this will return with
                         -- an 'ErrArg' error
          -> Emulator () -- ^ An 'Error' on failure
@@ -272,7 +272,7 @@ memProtect :: Engine                -- ^ 'Unicorn' engine handle
                                     -- modify. This address must be aligned to
                                     -- 4KB, or this will return with an
                                     -- 'ErrArg' error
-           -> Int                   -- ^ Size of the memory region to be
+           -> Word64                -- ^ Size of the memory region to be
                                     -- modified. This size must be a multiple
                                     -- of 4KB, or this will return with an
                                     -- 'ErrArg' error

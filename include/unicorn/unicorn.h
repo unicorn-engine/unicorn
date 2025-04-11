@@ -916,7 +916,7 @@ uc_err uc_reg_read_batch2(uc_engine *uc, int const *regs, void *const *vals,
 */
 UNICORN_EXPORT
 uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *bytes,
-                    size_t size);
+                    uint64_t size);
 
 /*
  Read a range of bytes in memory.
@@ -932,7 +932,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *bytes,
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size);
+uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, uint64_t size);
 
 /*
  Emulate machine code in a specific duration of time.
@@ -1059,7 +1059,8 @@ typedef enum uc_context_content {
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
+uc_err uc_mem_map(uc_engine *uc, uint64_t address, uint64_t size,
+                  uint32_t perms);
 
 /*
  Map existing host memory in for emulation.
@@ -1084,7 +1085,7 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size,
+uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, uint64_t size,
                       uint32_t perms, void *ptr);
 
 /*
@@ -1107,7 +1108,7 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size,
    for detailed error).
  */
 UNICORN_EXPORT
-uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
+uc_err uc_mmio_map(uc_engine *uc, uint64_t address, uint64_t size,
                    uc_cb_mmio_read_t read_cb, void *user_data_read,
                    uc_cb_mmio_write_t write_cb, void *user_data_write);
 
@@ -1127,7 +1128,7 @@ uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size);
+uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, uint64_t size);
 
 /*
  Set memory permissions for emulation memory.
@@ -1148,7 +1149,7 @@ uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size);
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size,
+uc_err uc_mem_protect(uc_engine *uc, uint64_t address, uint64_t size,
                       uint32_t perms);
 
 /*

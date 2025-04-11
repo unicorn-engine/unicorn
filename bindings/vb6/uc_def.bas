@@ -2078,7 +2078,7 @@ Public Declare Function ucs_reg_read Lib "ucvbshim.dll" (ByVal hEngine As Long, 
 '*/
 'UNICORN_EXPORT
 'uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *bytes, size_t size);
-Public Declare Function ucs_mem_write Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef b As Byte, ByVal size As Long) As uc_err
+Public Declare Function ucs_mem_write Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef b As Byte, ByVal size As Currency) As uc_err
 
 
 
@@ -2097,7 +2097,7 @@ Public Declare Function ucs_mem_write Lib "ucvbshim.dll" (ByVal hEngine As Long,
 '*/
 'UNICORN_EXPORT
 'uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size);
-Public Declare Function ucs_mem_read Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef b As Byte, ByVal size As Long) As uc_err
+Public Declare Function ucs_mem_read Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef b As Byte, ByVal size As Currency) As uc_err
 
 
 
@@ -2203,7 +2203,7 @@ Public Declare Function ucs_hook_del Lib "ucvbshim.dll" (ByVal hEngine As Long, 
 '*/
 'UNICORN_EXPORT
 'uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
-Public Declare Function ucs_mem_map Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Long, ByVal perms As uc_prot) As uc_err
+Public Declare Function ucs_mem_map Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Currency, ByVal perms As uc_prot) As uc_err
 
 
 
@@ -2228,7 +2228,7 @@ Public Declare Function ucs_mem_map Lib "ucvbshim.dll" (ByVal hEngine As Long, B
 '*/
 'UNICORN_EXPORT
 'uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, void *ptr);
-Public Declare Function ucs_mem_map_ptr Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Long, ByVal perms As uc_prot, ByVal ptr As Long) As uc_err
+Public Declare Function ucs_mem_map_ptr Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Currency, ByVal perms As uc_prot, ByVal ptr As Long) As uc_err
 
 
 
@@ -2247,7 +2247,7 @@ Public Declare Function ucs_mem_map_ptr Lib "ucvbshim.dll" (ByVal hEngine As Lon
 '*/
 'UNICORN_EXPORT
 'uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size);
-Public Declare Function ucs_mem_unmap Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Long) As uc_err
+Public Declare Function ucs_mem_unmap Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Currency) As uc_err
 
 
 '/*
@@ -2268,7 +2268,7 @@ Public Declare Function ucs_mem_unmap Lib "ucvbshim.dll" (ByVal hEngine As Long,
 '*/
 'UNICORN_EXPORT
 'uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
-Public Declare Function ucs_mem_protect Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Long, ByVal perm As uc_prot) As uc_err
+Public Declare Function ucs_mem_protect Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByVal size As Currency, ByVal perm As uc_prot) As uc_err
 
 
 
@@ -2368,7 +2368,7 @@ Public Declare Function disasm_addr Lib "ucvbshim.dll" (ByVal hEngine As Long, B
 
 'simplified access to map and write data to emu memory
 'uc_err __stdcall mem_write_block(uc_engine *uc, uint64_t address, void* data, uint32_t size, uint32_t perm){
-Public Declare Function mem_write_block Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef data As Byte, ByVal size As Long, ByVal perm As Long) As uc_err
+Public Declare Function mem_write_block Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef data As Byte, ByVal size As Currency, ByVal perm As Long) As uc_err
 
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As String) As Long
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenA" (ByVal lpString As Long) As Long

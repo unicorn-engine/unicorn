@@ -966,8 +966,8 @@ static bool test_arm_v7_lpae_hook_tlb(uc_engine *uc, uint64_t addr,
 }
 
 static void test_arm_v7_lpae_hook_read(uc_engine *uc, uc_mem_type type,
-                                       uint64_t address, int size, uint64_t value,
-    					               void *user_data)
+                                       uint64_t address, int size,
+                                       uint64_t value, void *user_data)
 {
     TEST_CHECK(address == 0x100001000);
 }
@@ -981,10 +981,11 @@ static void test_arm_v7_lpae(void)
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
     OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_A7));
 
-
     OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
-    OK(uc_hook_add(uc, &hook_tlb, UC_HOOK_TLB_FILL, test_arm_v7_lpae_hook_tlb, NULL, 1, 0));
-    OK(uc_hook_add(uc, &hook_read, UC_HOOK_MEM_READ, test_arm_v7_lpae_hook_read, NULL, 1, 0));
+    OK(uc_hook_add(uc, &hook_tlb, UC_HOOK_TLB_FILL, test_arm_v7_lpae_hook_tlb,
+                   NULL, 1, 0));
+    OK(uc_hook_add(uc, &hook_read, UC_HOOK_MEM_READ, test_arm_v7_lpae_hook_read,
+                   NULL, 1, 0));
 
     reg = 0x1000;
     OK(uc_reg_write(uc, UC_ARM_REG_R0, &reg));

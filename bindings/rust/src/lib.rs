@@ -131,7 +131,7 @@ impl Drop for Context {
 }
 
 pub struct MmioCallbackScope<'a> {
-    pub regions: Vec<(u64, usize)>,
+    pub regions: Vec<(u64, u64)>,
     pub read_callback: Option<Box<dyn ffi::IsUcHook<'a> + 'a>>,
     pub write_callback: Option<Box<dyn ffi::IsUcHook<'a> + 'a>>,
 }
@@ -141,7 +141,7 @@ impl<'a> MmioCallbackScope<'a> {
         !self.regions.is_empty()
     }
 
-    fn unmap(&mut self, begin: u64, size: usize) {
+    fn unmap(&mut self, begin: u64, size: u64) {
         let end: u64 = begin + size as u64;
         self.regions = self
             .regions
@@ -154,13 +154,13 @@ impl<'a> MmioCallbackScope<'a> {
                         vec![(*b, *s)]
                     } else if end >= e {
                         // The unmapped region overlaps with the end of this region
-                        vec![(*b, (begin - *b) as usize)]
+                        vec![(*b, (begin - *b) as u64)]
                     } else {
                         // The unmapped region is in the middle of this region
                         let second_b = end + 1;
                         vec![
-                            (*b, (begin - *b) as usize),
-                            (second_b, (e - second_b) as usize),
+                            (*b, (begin - *b) as u64),
+                            (second_b, (e - second_b) as u64),
                         ]
                     }
                 } else if end > *b {
@@ -169,7 +169,7 @@ impl<'a> MmioCallbackScope<'a> {
                         vec![]
                     } else {
                         // The unmapped region overlaps with the start of this region
-                        vec![(end, (e - end) as usize)]
+                        vec![(end, (e - end) as u64)]
                     }
                 } else {
                     // The unmapped region is completely before this region
@@ -327,18 +327,18 @@ impl<'a, D> Unicorn<'a, D> {
 
     /// Read a range of bytes from memory at the specified emulated physical address.
     pub fn mem_read(&self, address: u64, buf: &mut [u8]) -> Result<(), uc_error> {
-        unsafe { ffi::uc_mem_read(self.get_handle(), address, buf.as_mut_ptr(), buf.len()) }.into()
+        unsafe { ffi::uc_mem_read(self.get_handle(), address, buf.as_mut_ptr(), buf.len().try_into().unwrap()) }.into()
     }
 
     /// Return a range of bytes from memory at the specified emulated physical address as vector.
     pub fn mem_read_as_vec(&self, address: u64, size: usize) -> Result<Vec<u8>, uc_error> {
         let mut buf = vec![0; size];
-        unsafe { ffi::uc_mem_read(self.get_handle(), address, buf.as_mut_ptr(), size) }.and(Ok(buf))
+        unsafe { ffi::uc_mem_read(self.get_handle(), address, buf.as_mut_ptr(), size.try_into().unwrap()) }.and(Ok(buf))
     }
 
     /// Write the data in `bytes` to the emulated physical address `address`
     pub fn mem_write(&mut self, address: u64, bytes: &[u8]) -> Result<(), uc_error> {
-        unsafe { ffi::uc_mem_write(self.get_handle(), address, bytes.as_ptr(), bytes.len()) }.into()
+        unsafe { ffi::uc_mem_write(self.get_handle(), address, bytes.as_ptr(), bytes.len().try_into().unwrap()) }.into()
     }
 
     /// Map an existing memory region in the emulator at the specified address.
@@ -357,7 +357,7 @@ impl<'a, D> Unicorn<'a, D> {
     pub unsafe fn mem_map_ptr(
         &mut self,
         address: u64,
-        size: usize,
+        size: u64,
         perms: Permission,
         ptr: *mut c_void,
     ) -> Result<(), uc_error> {
@@ -371,7 +371,7 @@ impl<'a, D> Unicorn<'a, D> {
     pub fn mem_map(
         &mut self,
         address: u64,
-        size: libc::size_t,
+        size: u64,
         perms: Permission,
     ) -> Result<(), uc_error> {
         unsafe { ffi::uc_mem_map(self.get_handle(), address, size, perms.bits()) }.into()
@@ -384,7 +384,7 @@ impl<'a, D> Unicorn<'a, D> {
     pub fn mmio_map<R: 'a, W: 'a>(
         &mut self,
         address: u64,
-        size: libc::size_t,
+        size: u64,
         read_callback: Option<R>,
         write_callback: Option<W>,
     ) -> Result<(), uc_error>
@@ -431,8 +431,9 @@ impl<'a, D> Unicorn<'a, D> {
         .and_then(|| {
             let rd = read_data.map(|c| c as Box<dyn ffi::IsUcHook>);
             let wd = write_data.map(|c| c as Box<dyn ffi::IsUcHook>);
+            let u64_size : u64 = size.try_into().unwrap();
             self.inner_mut().mmio_callbacks.push(MmioCallbackScope {
-                regions: vec![(address, size)],
+                regions: vec![(address, u64_size)],
                 read_callback: rd,
                 write_callback: wd,
             });
@@ -448,7 +449,7 @@ impl<'a, D> Unicorn<'a, D> {
     pub fn mmio_map_ro<F: 'a>(
         &mut self,
         address: u64,
-        size: libc::size_t,
+        size: u64,
         callback: F,
     ) -> Result<(), uc_error>
     where
@@ -469,7 +470,7 @@ impl<'a, D> Unicorn<'a, D> {
     pub fn mmio_map_wo<F: 'a>(
         &mut self,
         address: u64,
-        size: libc::size_t,
+        size: u64,
         callback: F,
     ) -> Result<(), uc_error>
     where
@@ -487,13 +488,13 @@ impl<'a, D> Unicorn<'a, D> {
     ///
     /// `address` must be aligned to 4kb or this will return `Error::ARG`.
     /// `size` must be a multiple of 4kb or this will return `Error::ARG`.
-    pub fn mem_unmap(&mut self, address: u64, size: libc::size_t) -> Result<(), uc_error> {
+    pub fn mem_unmap(&mut self, address: u64, size: u64) -> Result<(), uc_error> {
         let err = unsafe { ffi::uc_mem_unmap(self.get_handle(), address, size) };
         self.mmio_unmap(address, size);
         err.into()
     }
 
-    fn mmio_unmap(&mut self, address: u64, size: libc::size_t) {
+    fn mmio_unmap(&mut self, address: u64, size: u64) {
         for scope in self.inner_mut().mmio_callbacks.iter_mut() {
             scope.unmap(address, size);
         }
@@ -509,7 +510,7 @@ impl<'a, D> Unicorn<'a, D> {
     pub fn mem_protect(
         &mut self,
         address: u64,
-        size: libc::size_t,
+        size: u64,
         perms: Permission,
     ) -> Result<(), uc_error> {
         unsafe { ffi::uc_mem_protect(self.get_handle(), address, size, perms.bits()) }.into()
