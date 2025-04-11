@@ -398,6 +398,10 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
         CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
         env->nip += 4;
 #endif
+#if defined(TARGET_ARM)
+        CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
+        cpu->exception_index=env->exception.syndrome&0xff; //save svc call number so it will be passed to uc-hook
+#endif
         // Unicorn: call registered interrupt callbacks
         catched = false;
         HOOK_FOREACH_VAR_DECLARE;
