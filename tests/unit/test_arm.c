@@ -956,6 +956,37 @@ static void test_arm_cp15_c1_c0_2(void)
     OK(uc_close(uc));
 }
 
+static void test_arm_be_flags(void)
+{
+    uc_engine *uc;
+    /*
+  subs pc, lr, #4 //<------ mind the 's' == update flags
+	nop
+	nop
+	nop
+	*/
+	const uint8_t code[] = { 0xe2, 0x5e, 0xf0, 0x04, 0xe3, 0x20, 0xf0, 0x00, 0xe3, 0x20, 0xf0, 0x00, 0x20, 0xf0, 0x00 };
+    uint32_t reg;
+
+    // Initialize emulator in ARM BE mode
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM|UC_MODE_BIG_ENDIAN, &uc));
+	OK(uc_mem_map(uc, code_start, 4096, UC_PROT_ALL));
+	OK(uc_mem_write(uc, code_start, code, sizeof(code)));
+	
+	// Set LR
+    reg = code_start + 0x0c;
+    OK(uc_reg_write(uc, UC_ARM_REG_LR, &reg));
+
+	// Run
+	OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 3));
+
+	// Check CPSR.E, should be set
+	OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &reg));
+	TEST_CHECK((!!(reg&(1<<9)))==1);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -985,4 +1016,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_tcg_opcode_cmp", test_arm_tcg_opcode_cmp},
              {"test_arm_thumb_tcg_opcode_cmn", test_arm_thumb_tcg_opcode_cmn},
              {"test_arm_cp15_c1_c0_2", test_arm_cp15_c1_c0_2},
+             {"test_arm_be_flags", test_arm_be_flags},
              {NULL, NULL}};
