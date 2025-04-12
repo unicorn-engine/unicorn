@@ -182,7 +182,8 @@ pub const armConst = enum(c_int) {
 	ARM_REG_XPSR_G = 137,
 	ARM_REG_XPSR_NZCVQG = 138,
 	ARM_REG_CP_REG = 139,
-	ARM_REG_ENDING = 140,
+	ARM_REG_ESR = 140,
+	ARM_REG_ENDING = 141,
 
 // alias registers
 	ARM_REG_R13 = 12,
