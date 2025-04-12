@@ -1,5 +1,5 @@
 use super::*;
-use crate::{ArmCpuModel, RegisterARM, RegisterARM_CP, TcgOpCode, TcgOpFlag, uc_error};
+use crate::{ArmCpuModel, RegisterARM, RegisterARMCP, TcgOpCode, TcgOpFlag, uc_error};
 
 #[test]
 fn test_arm_nop() {
@@ -600,16 +600,7 @@ fn test_arm_mem_access_abort() {
 #[test]
 fn test_arm_read_sctlr() {
     let uc = Unicorn::new(Arch::ARM, Mode::ARM).unwrap();
-    let mut reg = RegisterARM_CP {
-        cp: 15,
-        is64: 0,
-        sec: 0,
-        crn: 1,
-        crm: 0,
-        opc1: 0,
-        opc2: 0,
-        val: 0,
-    };
+    let mut reg = RegisterARMCP::new().cp(15).crn(1);
     uc.reg_read_arm_coproc(&mut reg).unwrap();
     assert_eq!((reg.val >> 31) & 1, 0);
 }
@@ -620,16 +611,7 @@ fn test_arm_be_cpsr_sctlr() {
     uc.ctl_set_cpu_model(ArmCpuModel::Model_1176 as i32)
         .unwrap();
 
-    let mut reg = RegisterARM_CP {
-        cp: 15,
-        is64: 0,
-        sec: 0,
-        crn: 1,
-        crm: 0,
-        opc1: 0,
-        opc2: 0,
-        val: 0,
-    };
+    let mut reg = RegisterARMCP::new().cp(15).crn(1);
     uc.reg_read_arm_coproc(&mut reg).unwrap();
     let cpsr = uc.reg_read(RegisterARM::CPSR).unwrap();
 
@@ -640,16 +622,7 @@ fn test_arm_be_cpsr_sctlr() {
     uc.ctl_set_cpu_model(ArmCpuModel::CORTEX_A15 as i32)
         .unwrap();
 
-    let mut reg = RegisterARM_CP {
-        cp: 15,
-        is64: 0,
-        sec: 0,
-        crn: 1,
-        crm: 0,
-        opc1: 0,
-        opc2: 0,
-        val: 0,
-    };
+    let mut reg = RegisterARMCP::new().cp(15).crn(1);
     uc.reg_read_arm_coproc(&mut reg).unwrap();
     let cpsr = uc.reg_read(RegisterARM::CPSR).unwrap();
 

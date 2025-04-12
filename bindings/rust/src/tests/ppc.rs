@@ -25,7 +25,6 @@ fn test_ppc32_add() {
 
 // https://www.ibm.com/docs/en/aix/7.2?topic=set-fadd-fa-floating-add-instruction
 #[test]
-// #[ignore = "Crashes on Windows & some Linux distros"]
 fn test_ppc32_fadd() {
     let code = [
         0xfc, 0xc4, 0x28, 0x2a, // fadd 6, 4, 5

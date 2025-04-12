@@ -215,11 +215,11 @@ where
 pub unsafe extern "C" fn insn_sys_hook_proxy_arm64<D, F>(
     uc: *mut uc_engine,
     reg: sys::RegisterARM64,
-    cp_reg: *const sys::RegisterARM64_CP,
+    cp_reg: *const sys::RegisterARM64CP,
     user_data: *mut UcHook<D, F>,
 ) -> bool
 where
-    F: FnMut(&mut crate::Unicorn<D>, sys::RegisterARM64, &sys::RegisterARM64_CP) -> bool,
+    F: FnMut(&mut crate::Unicorn<D>, sys::RegisterARM64, &sys::RegisterARM64CP) -> bool,
 {
     let user_data = unsafe { &mut *user_data };
     let mut user_data_uc = Unicorn {

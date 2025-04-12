@@ -113,6 +113,131 @@ impl ControlType {
     pub const IO_WRITE: Self = Self(1 << 30);
 }
 
+impl Default for RegisterARMCP {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RegisterARMCP {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            cp: 0,
+            is64: 0,
+            sec: 0,
+            crn: 0,
+            crm: 0,
+            opc1: 0,
+            opc2: 0,
+            val: 0,
+        }
+    }
+
+    #[must_use]
+    pub const fn cp(mut self, cp: u32) -> Self {
+        self.cp = cp;
+        self
+    }
+
+    #[must_use]
+    pub const fn is64(mut self, is64: u32) -> Self {
+        self.is64 = is64;
+        self
+    }
+
+    #[must_use]
+    pub const fn sec(mut self, sec: u32) -> Self {
+        self.sec = sec;
+        self
+    }
+
+    #[must_use]
+    pub const fn crn(mut self, crn: u32) -> Self {
+        self.crn = crn;
+        self
+    }
+
+    #[must_use]
+    pub const fn crm(mut self, crm: u32) -> Self {
+        self.crm = crm;
+        self
+    }
+
+    #[must_use]
+    pub const fn opc1(mut self, opc1: u32) -> Self {
+        self.opc1 = opc1;
+        self
+    }
+
+    #[must_use]
+    pub const fn opc2(mut self, opc2: u32) -> Self {
+        self.opc2 = opc2;
+        self
+    }
+
+    #[must_use]
+    pub const fn val(mut self, val: u64) -> Self {
+        self.val = val;
+        self
+    }
+}
+
+impl Default for RegisterARM64CP {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RegisterARM64CP {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            crn: 0,
+            crm: 0,
+            op0: 0,
+            op1: 0,
+            op2: 0,
+            val: 0,
+        }
+    }
+    #[must_use]
+    pub const fn crn(mut self, crn: u32) -> Self {
+        self.crn = crn;
+        self
+    }
+
+    #[must_use]
+    pub const fn crm(mut self, crm: u32) -> Self {
+        self.crm = crm;
+        self
+    }
+
+    #[must_use]
+    pub const fn op0(mut self, op0: u32) -> Self {
+        self.op0 = op0;
+        self
+    }
+
+    #[must_use]
+    pub const fn op1(mut self, op1: u32) -> Self {
+        self.op1 = op1;
+        self
+    }
+
+    #[must_use]
+    pub const fn op2(mut self, op2: u32) -> Self {
+        self.op2 = op2;
+        self
+    }
+
+    #[must_use]
+    pub const fn val(mut self, val: u64) -> Self {
+        self.val = val;
+        self
+    }
+}
+
 impl From<M68kCpuModel> for i32 {
     fn from(value: M68kCpuModel) -> Self {
         value as Self

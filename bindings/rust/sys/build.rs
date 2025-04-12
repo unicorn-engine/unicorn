@@ -185,7 +185,7 @@ impl ParseCallbacks for Renamer {
             return original_item_name
                 .strip_prefix("uc_")
                 .and_then(|suffix| suffix.strip_suffix("_reg"))
-                .map(|suffix| format!("Register{}", suffix.to_uppercase()));
+                .map(|suffix| format!("Register{}", suffix.replace('_', "").to_uppercase()));
         }
 
         if original_item_name.ends_with("_insn") {

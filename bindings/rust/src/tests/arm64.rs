@@ -1,4 +1,4 @@
-use unicorn_engine_sys::{Arm64CpuModel, Arm64Insn, RegisterARM64};
+use unicorn_engine_sys::{Arm64CpuModel, Arm64Insn, RegisterARM64, RegisterARM64CP};
 
 use super::*;
 
@@ -142,7 +142,8 @@ fn test_arm64_v8_pac() {
 fn test_arm64_read_sctlr() {
     let uc = Unicorn::new(Arch::ARM64, Mode::ARM | Mode::LITTLE_ENDIAN).unwrap();
 
-    let reg = uc.reg_read_arm64_coproc().unwrap();
+    let mut reg = RegisterARM64CP::new().crn(1).op0(0b11);
+    uc.reg_read_arm64_coproc(&mut reg).unwrap();
 
     assert_eq!(reg.val >> 58, 0);
 }
