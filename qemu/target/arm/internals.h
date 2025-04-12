@@ -1125,7 +1125,7 @@ static inline uint32_t aarch32_cpsr_valid_mask(uint64_t features,
         valid |= CPSR_Q; /* V5TE in reality*/
     }
     if ((features >> ARM_FEATURE_V6) & 1) {
-        valid |= CPSR_E | CPSR_GE;
+        valid |= CPSR_GE;
     }
     if ((features >> ARM_FEATURE_THUMB2) & 1) {
         valid |= CPSR_IT;
