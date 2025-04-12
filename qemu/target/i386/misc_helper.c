@@ -217,6 +217,7 @@ void helper_rdtsc(CPUX86State *env)
     uc_engine *uc = env->uc;
     struct hook *hook;
     int skip_rdtsc = 0;
+    bool synced = false;
 
     if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
         raise_exception_ra(env, EXCP0D_GPF, GETPC());
@@ -234,6 +235,11 @@ void helper_rdtsc(CPUX86State *env)
         // Multiple rdtsc callbacks returning different values is undefined.
         // true -> skip the rdtsc instruction
         if (hook->insn == UC_X86_INS_RDTSC) {
+            uintptr_t pc = GETPC();
+            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
+                cpu_restore_state(uc->cpu, pc, false);
+                synced = true;
+            }
             JIT_CALLBACK_GUARD_VAR(skip_rdtsc, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
         }
 
@@ -255,6 +261,7 @@ void helper_rdtscp(CPUX86State *env)
     uc_engine *uc = env->uc;
     struct hook *hook;
     int skip_rdtscp = 0;
+    bool synced = false;
 
     if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
         raise_exception_ra(env, EXCP0D_GPF, GETPC());
@@ -272,6 +279,11 @@ void helper_rdtscp(CPUX86State *env)
         // Multiple rdtscp callbacks returning different values is undefined.
         // true -> skip the rdtscp instruction
         if (hook->insn == UC_X86_INS_RDTSCP) {
+            uintptr_t pc = GETPC();
+            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
+                cpu_restore_state(uc->cpu, pc, false);
+                synced = true;
+            }
             JIT_CALLBACK_GUARD_VAR(skip_rdtscp, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
         }
 
