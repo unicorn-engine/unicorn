@@ -17,11 +17,7 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "qemu/osdep.h"
-#include "qemu/log.h"
-#include "cpu.h"
 #include "exec/exec-all.h"
-#include "exec/helper-proto.h"
 
 /* Exceptions processing helpers */
 void QEMU_NORETURN do_raise_exception_err(CPURH850State *env,
@@ -53,37 +49,3 @@ void helper_raise_exception_with_cause(CPURH850State *env, uint32_t exception, u
 {
     do_raise_exception_err_with_cause(env, exception, cause, 0);
 }
-
-target_ulong csr_read_helper(CPURH850State *env, target_ulong csrno)
-{
-    return 0;
-}
-
-#ifndef CONFIG_USER_ONLY
-
-/* iothread_mutex must be held */
-void rh850_set_local_interrupt(RH850CPU *cpu, target_ulong mask, int value)
-{
-}
-
-void rh850_set_mode(CPURH850State *env, target_ulong newpriv)
-{
-}
-
-void helper_tlb_flush(CPURH850State *env)
-{
-    RH850CPU *cpu = rh850_env_get_cpu(env);
-    CPUState *cs = CPU(cpu);
-    tlb_flush(cs);
-}
-
-void helper_uc_rh850_exit(CPURH850State *env)
-{
-    CPUState *cs = CPU(env);
-
-    cs->exception_index = EXCP_HLT;
-    cs->halted = 1;
-    cpu_loop_exit(cs);
-}
-
-#endif /* !CONFIG_USER_ONLY */

@@ -1,7 +1,6 @@
 #include "fpu_translate.h"
 #include "instmap.h"
-
-extern TCGv_i32 cpu_ZF;
+#include "tcg/tcg-op.h"
 
 /* Helpers */
 void fpu_load_i64(TCGContext *tcg_ctx, TCGv_i64 dst, int reg_n);
@@ -97,8 +96,7 @@ void fpu_gen_cat1_ir(CPURH850State *env, DisasContext *ctx, int op, int frs1, in
     gen_get_gpr(tcg_ctx, r2, frs2);
     gen_get_gpr(tcg_ctx, r3, frs3);
 
-    switch(op)
-    {
+    switch (op) {
         case OPC_RH850_FPU_FMAF_S:
             gen_helper_fmaf_s(tcg_ctx, r3, tcg_ctx->cpu_env, r1, r2, r3);
             break;
@@ -106,7 +104,7 @@ void fpu_gen_cat1_ir(CPURH850State *env, DisasContext *ctx, int op, int frs1, in
         case OPC_RH850_FPU_FMSF_S:
             gen_helper_fmsf_s(tcg_ctx, r3, tcg_ctx->cpu_env, r1, r2, r3);
             break;
-        
+
         case OPC_RH850_FPU_FNMAF_S:
             gen_helper_fnmaf_s(tcg_ctx, r3, tcg_ctx->cpu_env, r1, r2, r3);
             break;
@@ -140,284 +138,225 @@ void fpu_gen_sp_ir_2(CPURH850State *env, DisasContext *ctx, int operands, int op
     TCGv_i64 r3_64 = tcg_temp_local_new_i64(tcg_ctx);
 
     /* Load contents from registers. */
-    switch(operands)
-    {
+    switch (operands) {
         case FPU_TYPE_S:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r2, rs2);
-	
-                /* Apply operation. */
-                switch(op)
-                {
-                    case FPU_OP_ABS:
-                        gen_helper_fabs_s(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Extract value of reg1 and reg2. */
+            gen_get_gpr(tcg_ctx, r2, rs2);
 
-                    case FPU_OP_NEG:
-                        gen_helper_fneg_s(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Apply operation. */
+            switch (op) {
+                case FPU_OP_ABS:
+                    gen_helper_fabs_s(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_SQRT:
-                        gen_helper_fsqrt_s(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_NEG:
+                    gen_helper_fneg_s(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_RECIP:
-                        gen_helper_frecip_s(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_SQRT:
+                    gen_helper_fsqrt_s(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_RSQRT:
-                        gen_helper_frsqrt_s(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
-                }
+                case FPU_OP_RECIP:
+                    gen_helper_frecip_s(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                /* Store result. */
-                gen_set_gpr(tcg_ctx, rs3, r3);
+                case FPU_OP_RSQRT:
+                    gen_helper_frsqrt_s(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
             }
+
+            /* Store result. */
+            gen_set_gpr(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_SL:
-            {
-                /* Load simple-precision float. */
-                gen_get_gpr(tcg_ctx, r2, rs2);
+            /* Load simple-precision float. */
+            gen_get_gpr(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                switch(op)
-                {
-                    case FPU_OP_TRNC:
-                        gen_helper_ftrnc_sl(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Apply operation. */
+            switch (op) {
+                case FPU_OP_TRNC:
+                    gen_helper_ftrnc_sl(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CEIL:
-                        gen_helper_fceil_sl(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_CEIL:
+                    gen_helper_fceil_sl(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_FLOOR:
-                        gen_helper_ffloor_sl(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_FLOOR:
+                    gen_helper_ffloor_sl(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CVT:
-                        gen_helper_fcvt_sl(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
-                        break;
-                }
-
-                /* Store result as long. */
-                fpu_store_i64(tcg_ctx, rs3, r3_64);
+                case FPU_OP_CVT:
+                    gen_helper_fcvt_sl(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
+                    break;
             }
+
+            /* Store result as long. */
+            fpu_store_i64(tcg_ctx, rs3, r3_64);
             break;
 
         case FPU_TYPE_SUL:
-            {
-                /* Load simple-precision float. */
-                gen_get_gpr(tcg_ctx, r2, rs2);
+            /* Load simple-precision float. */
+            gen_get_gpr(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                switch(op)
-                {
-                    case FPU_OP_TRNC:
-                        gen_helper_ftrnc_sul(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Apply operation. */
+            switch (op) {
+                case FPU_OP_TRNC:
+                    gen_helper_ftrnc_sul(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CEIL:
-                        gen_helper_fceil_sul(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_CEIL:
+                    gen_helper_fceil_sul(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_FLOOR:
-                        gen_helper_ffloor_sul(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_FLOOR:
+                    gen_helper_ffloor_sul(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CVT:
-                        gen_helper_fcvt_sul(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
-                        break;
-                }
-
-                /* Store result as long. */
-                fpu_store_i64(tcg_ctx, rs3, r3_64);
+                case FPU_OP_CVT:
+                    gen_helper_fcvt_sul(tcg_ctx, r3_64, tcg_ctx->cpu_env, r2);
+                    break;
             }
+
+            /* Store result as long. */
+            fpu_store_i64(tcg_ctx, rs3, r3_64);
             break;
 
 
         case FPU_TYPE_SW:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r2, rs2);
+            /* Extract value of reg1 and reg2. */
+            gen_get_gpr(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                switch(op)
-                {
-                    case FPU_OP_TRNC:
-                        gen_helper_ftrnc_sw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Apply operation. */
+            switch (op) {
+                case FPU_OP_TRNC:
+                    gen_helper_ftrnc_sw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CEIL:
-                        gen_helper_fceil_sw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_CEIL:
+                    gen_helper_fceil_sw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_FLOOR:
-                        gen_helper_ffloor_sw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_FLOOR:
+                    gen_helper_ffloor_sw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CVT:
-                        gen_helper_fcvt_sw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
-                }
-
-                /* Store result. */
-                gen_set_gpr(tcg_ctx, rs3, r3);
+                case FPU_OP_CVT:
+                    gen_helper_fcvt_sw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
             }
+
+            /* Store result. */
+            gen_set_gpr(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_SUW:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r2, rs2);
+            /* Extract value of reg1 and reg2. */
+            gen_get_gpr(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                switch(op)
-                {
-                    case FPU_OP_TRNC:
-                        gen_helper_ftrnc_suw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Apply operation. */
+            switch (op) {
+                case FPU_OP_TRNC:
+                    gen_helper_ftrnc_suw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CEIL:
-                        gen_helper_fceil_suw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_CEIL:
+                    gen_helper_fceil_suw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_FLOOR:
-                        gen_helper_ffloor_suw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_FLOOR:
+                    gen_helper_ffloor_suw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CVT:
-                        gen_helper_fcvt_suw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
-                }
-
-                /* Store result. */
-                gen_set_gpr(tcg_ctx, rs3, r3);
+                case FPU_OP_CVT:
+                    gen_helper_fcvt_suw(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
             }
+
+            /* Store result. */
+            gen_set_gpr(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_LS:
-            {
-                /* Load content from register. */
-                fpu_load_i64(tcg_ctx, r3_64, rs2);
+            /* Load content from register. */
+            fpu_load_i64(tcg_ctx, r3_64, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_ls(tcg_ctx, r3, tcg_ctx->cpu_env, r3_64);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result into rs3. */
-                gen_set_gpr(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_ls(tcg_ctx, r3, tcg_ctx->cpu_env, r3_64);
             }
+
+            /* Store result into rs3. */
+            gen_set_gpr(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_HS:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r2, rs2);
+            /* Extract value of reg1 and reg2. */
+            gen_get_gpr(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_hs(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result into rs3. */
-                gen_set_gpr(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_hs(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
             }
+
+            /* Store result into rs3. */
+            gen_set_gpr(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_WS:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r2, rs2);
+            /* Extract value of reg1 and reg2. */
+            gen_get_gpr(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_ws(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result into rs3. */
-                gen_set_gpr(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_ws(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
             }
+
+            /* Store result into rs3. */
+            gen_set_gpr(tcg_ctx, rs3, r3);
             break;
 
 
         case FPU_TYPE_SH:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r2, rs2);
+            /* Extract value of reg1 and reg2. */
+            gen_get_gpr(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_sh(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result into rs3. */
-                gen_set_gpr(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_sh(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
             }
+
+            /* Store result into rs3. */
+            gen_set_gpr(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_ULS:
-            {
-                /* Load content from register. */
-                fpu_load_i64(tcg_ctx, r3_64, rs2);
+            /* Load content from register. */
+            fpu_load_i64(tcg_ctx, r3_64, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_uls(tcg_ctx, r3, tcg_ctx->cpu_env, r3_64);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result into rs3. */
-                gen_set_gpr(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_uls(tcg_ctx, r3, tcg_ctx->cpu_env, r3_64);
             }
+
+            /* Store result into rs3. */
+            gen_set_gpr(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_UWS:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r2, rs2);
+            /* Extract value of reg1 and reg2. */
+            gen_get_gpr(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_uws(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result into rs3. */
-                gen_set_gpr(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_uws(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
             }
+
+            /* Store result into rs3. */
+            gen_set_gpr(tcg_ctx, rs3, r3);
             break;
-        
     }
 
     /* Mov softfloat flags into our register. */
@@ -443,20 +382,14 @@ void fpu_gen_sp_ir_3(CPURH850State *env, DisasContext *ctx, int operands, int op
     TCGv r3 = tcg_temp_local_new_i32(tcg_ctx);
 
     /* Load contents from registers. */
-    switch(operands)
-    {
-        case FPU_TYPE_S:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r1, rs1);
-                gen_get_gpr(tcg_ctx, r2, rs2);
-            }
-            break;
+    if (operands == FPU_TYPE_S) {
+        /* Extract value of reg1 and reg2. */
+        gen_get_gpr(tcg_ctx, r1, rs1);
+        gen_get_gpr(tcg_ctx, r2, rs2);
     }
 
     /* Apply operation. */
-    switch(op)
-    {
+    switch (op) {
         case FPU_OP_ADD:
             gen_helper_fadd_s(tcg_ctx, r3, tcg_ctx->cpu_env, r1, r2);
             break;
@@ -483,14 +416,9 @@ void fpu_gen_sp_ir_3(CPURH850State *env, DisasContext *ctx, int operands, int op
     }
 
     /* Store result. */
-    switch(operands)
-    {
-        case FPU_TYPE_S:
-            {
-                /* Set reg3. */
-                gen_set_gpr(tcg_ctx, rs3, r3);
-            }
-            break;
+    if (operands == FPU_TYPE_S) {
+        /* Set reg3. */
+        gen_set_gpr(tcg_ctx, rs3, r3);
     }
 
     /* Mov softfloat flags into our register. */
@@ -516,13 +444,13 @@ void fpu_gen_trfsr(CPURH850State *env, DisasContext *ctx, int fcbit)
     gen_get_spr(tcg_ctx, BANK_ID_BASIC_0, FPSR_IDX, fpsr);
     tcg_gen_movi_i32(tcg_ctx, shift, 24 + fcbit);
     tcg_gen_shl_i32(tcg_ctx, mask, one, shift);
-    
+
     /* Extract CCn bit. */
     tcg_gen_and_i32(tcg_ctx, value, fpsr, mask);
     tcg_gen_shr_i32(tcg_ctx, value, value, shift);
 
     /* Set Z flag. */
-    tcg_gen_mov_i32(tcg_ctx, cpu_ZF, value);
+    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->cpu_ZF, value);
     gen_set_gpr(tcg_ctx, 1, value);
 
     /* Free locals. */
@@ -545,7 +473,6 @@ void fpu_gen_cmov_s(CPURH850State *env, DisasContext *ctx, int rs1, int rs2, int
 
     end = gen_new_label(tcg_ctx);
     otherwise = gen_new_label(tcg_ctx);
-    
 
     /* Load register contents. */
     gen_get_gpr(tcg_ctx, r1, rs1);
@@ -624,8 +551,7 @@ void fpu_gen_cmpf_s(CPURH850State *env, DisasContext *ctx, int rs1, int rs2, int
     tcg_gen_movi_i32(tcg_ctx, less, 0);
     tcg_gen_movi_i32(tcg_ctx, equal, 0);
     tcg_gen_movi_i32(tcg_ctx, unordered, 1);
-    if (fcond & 0x8)
-    {
+    if (fcond & 0x8) {
         /* Invalid operation detected. */
         /* TODO: raise exception ? */
     }
@@ -641,7 +567,7 @@ void fpu_gen_cmpf_s(CPURH850State *env, DisasContext *ctx, int rs1, int rs2, int
         tcg_gen_or_i32(tcg_ctx, res, res, equal);
     if (fcond & 4)
         tcg_gen_or_i32(tcg_ctx, res, res, less);
-    
+
     /**
      * Set CCn bit into FPSR (with n=fcbit).
      *  1. Load FPSR into r1
@@ -684,270 +610,211 @@ void fpu_gen_dp_ir_2(CPURH850State *env, DisasContext *ctx, int operands, int op
     TCGv r3_32 = tcg_temp_local_new_i32(tcg_ctx);
 
     /* Load contents from registers. */
-    switch(operands)
-    {
+    switch (operands) {
         case FPU_TYPE_D:
-            {
-                /* Extract value from register rs2. */
-                fpu_load_i64(tcg_ctx, r2, rs2);
+            /* Extract value from register rs2. */
+            fpu_load_i64(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                switch(op)
-                {
-                    case FPU_OP_ABS:
-                        gen_helper_fabs_d(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Apply operation. */
+            switch (op) {
+                case FPU_OP_ABS:
+                    gen_helper_fabs_d(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_NEG:
-                        gen_helper_fneg_d(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_NEG:
+                    gen_helper_fneg_d(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_SQRT:
-                        gen_helper_fsqrt_d(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_SQRT:
+                    gen_helper_fsqrt_d(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_RECIP:
-                        gen_helper_frecip_d(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_RECIP:
+                    gen_helper_frecip_d(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_RSQRT:
-                        gen_helper_frsqrt_d(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
-                }
-                
-                /* Store result. */
-                fpu_store_i64(tcg_ctx, rs3, r3);
+                case FPU_OP_RSQRT:
+                    gen_helper_frsqrt_d(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
             }
+
+            /* Store result. */
+            fpu_store_i64(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_DL:
-            {
-                /* Extract value from register rs2. */
-                fpu_load_i64(tcg_ctx, r2, rs2);
+            /* Extract value from register rs2. */
+            fpu_load_i64(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                switch(op)
-                {
-                    case FPU_OP_TRNC:
-                        gen_helper_ftrnc_dl(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Apply operation. */
+            switch (op) {
+                case FPU_OP_TRNC:
+                    gen_helper_ftrnc_dl(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CEIL:
-                        gen_helper_fceil_dl(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_CEIL:
+                    gen_helper_fceil_dl(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_FLOOR:
-                        gen_helper_ffloor_dl(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_FLOOR:
+                    gen_helper_ffloor_dl(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CVT:
-                        gen_helper_fcvt_dl(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
-
-                }
-                
-                /* Store result. */
-                fpu_store_i64(tcg_ctx, rs3, r3);
+                case FPU_OP_CVT:
+                    gen_helper_fcvt_dl(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
             }
+
+            /* Store result. */
+            fpu_store_i64(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_DUL:
-            {
-                /* Extract value from register rs2. */
-                fpu_load_i64(tcg_ctx, r2, rs2);
+            /* Extract value from register rs2. */
+            fpu_load_i64(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                switch(op)
-                {
-                    case FPU_OP_TRNC:
-                        gen_helper_ftrnc_dul(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Apply operation. */
+            switch (op) {
+                case FPU_OP_TRNC:
+                    gen_helper_ftrnc_dul(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CEIL:
-                        gen_helper_fceil_dul(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_CEIL:
+                    gen_helper_fceil_dul(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_FLOOR:
-                        gen_helper_ffloor_dul(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_FLOOR:
+                    gen_helper_ffloor_dul(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CVT:
-                        gen_helper_fcvt_dul(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                        break;
-
-                }
-                
-                /* Store result. */
-                fpu_store_i64(tcg_ctx, rs3, r3);
+                case FPU_OP_CVT:
+                    gen_helper_fcvt_dul(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
+                    break;
             }
+
+            /* Store result. */
+            fpu_store_i64(tcg_ctx, rs3, r3);
             break;
 
 
         case FPU_TYPE_DW:
-            {
-                /* Extract value from register rs2. */
-                fpu_load_i64(tcg_ctx, r2, rs2);
+            /* Extract value from register rs2. */
+            fpu_load_i64(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                switch(op)
-                {
-                    case FPU_OP_TRNC:
-                        gen_helper_ftrnc_dw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Apply operation. */
+            switch (op) {
+                case FPU_OP_TRNC:
+                    gen_helper_ftrnc_dw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CEIL:
-                        gen_helper_fceil_dw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_CEIL:
+                    gen_helper_fceil_dw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_FLOOR:
-                        gen_helper_ffloor_dw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_FLOOR:
+                    gen_helper_ffloor_dw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CVT:
-                        gen_helper_fcvt_dw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
-                        break;
-
-                }
-                
-                /* Store result. */
-                gen_set_gpr(tcg_ctx, rs3, r3_32);
+                case FPU_OP_CVT:
+                    gen_helper_fcvt_dw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
+                    break;
             }
+
+            /* Store result. */
+            gen_set_gpr(tcg_ctx, rs3, r3_32);
             break;
 
         case FPU_TYPE_DUW:
-            {
-                /* Extract value from register rs2. */
-                fpu_load_i64(tcg_ctx, r2, rs2);
+            /* Extract value from register rs2. */
+            fpu_load_i64(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                switch(op)
-                {
-                    case FPU_OP_TRNC:
-                        gen_helper_ftrnc_duw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
-                        break;
+            /* Apply operation. */
+            switch (op) {
+                case FPU_OP_TRNC:
+                    gen_helper_ftrnc_duw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CEIL:
-                        gen_helper_fceil_duw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_CEIL:
+                    gen_helper_fceil_duw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_FLOOR:
-                        gen_helper_ffloor_duw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
-                        break;
+                case FPU_OP_FLOOR:
+                    gen_helper_ffloor_duw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
+                    break;
 
-                    case FPU_OP_CVT:
-                        gen_helper_fcvt_duw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
-                        break;
-
-                }
-                
-                /* Store result. */
-                gen_set_gpr(tcg_ctx, rs3, r3_32);
+                case FPU_OP_CVT:
+                    gen_helper_fcvt_duw(tcg_ctx, r3_32, tcg_ctx->cpu_env, r2);
+                    break;
             }
-            break;
 
+            /* Store result. */
+            gen_set_gpr(tcg_ctx, rs3, r3_32);
+            break;
 
         case FPU_TYPE_LD:
-            {
-                /* Load content from register. */
-                fpu_load_i64(tcg_ctx, r2, rs2);
+            /* Load content from register. */
+            fpu_load_i64(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_ld(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result. */
-                fpu_store_i64(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_ld(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
             }
+
+            /* Store result. */
+            fpu_store_i64(tcg_ctx, rs3, r3);
             break;
 
-
         case FPU_TYPE_WD:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r3_32, rs2);
+            /* Extract value of reg1 and reg2. */
+            gen_get_gpr(tcg_ctx, r3_32, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_wd(tcg_ctx, r3, tcg_ctx->cpu_env, r3_32);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result. */
-                fpu_store_i64(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_wd(tcg_ctx, r3, tcg_ctx->cpu_env, r3_32);
             }
+
+            /* Store result. */
+            fpu_store_i64(tcg_ctx, rs3, r3);
             break;
 
 
         case FPU_TYPE_SD:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r3_32, rs2);
+            /* Extract value of reg1 and reg2. */
+            gen_get_gpr(tcg_ctx, r3_32, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_sd(tcg_ctx, r3, tcg_ctx->cpu_env, r3_32);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result. */
-                fpu_store_i64(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_sd(tcg_ctx, r3, tcg_ctx->cpu_env, r3_32);
             }
+
+            /* Store result. */
+            fpu_store_i64(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_UWD:
-            {
-                /* Extract value of reg1 and reg2. */
-                gen_get_gpr(tcg_ctx, r3_32, rs2);
+            /* Extract value of reg1 and reg2. */
+            gen_get_gpr(tcg_ctx, r3_32, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_uwd(tcg_ctx, r3, tcg_ctx->cpu_env, r3_32);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result. */
-                fpu_store_i64(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_uwd(tcg_ctx, r3, tcg_ctx->cpu_env, r3_32);
             }
+
+            /* Store result. */
+            fpu_store_i64(tcg_ctx, rs3, r3);
             break;
 
         case FPU_TYPE_ULD:
-            {
-                /* Load content from register. */
-                fpu_load_i64(tcg_ctx, r2, rs2);
+            /* Load content from register. */
+            fpu_load_i64(tcg_ctx, r2, rs2);
 
-                /* Apply operation. */
-                if (op == FPU_OP_CVT)
-                {
-                    gen_helper_fcvt_uld(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
-                }
-                else
-                {
-                    /* Unsupported operation. */
-                }
-
-                /* Store result. */
-                fpu_store_i64(tcg_ctx, rs3, r3);
+            /* Apply operation. */
+            if (op == FPU_OP_CVT) {
+                gen_helper_fcvt_uld(tcg_ctx, r3, tcg_ctx->cpu_env, r2);
             }
+            /* Store result. */
+            fpu_store_i64(tcg_ctx, rs3, r3);
             break;
-
     }
 
     /* Mov softfloat flags into our register. */
@@ -969,18 +836,14 @@ void fpu_gen_dp_ir_3(CPURH850State *env, DisasContext *ctx, int operands, int op
     TCGv_i64 r3 = tcg_temp_local_new_i64(tcg_ctx);
 
     /* Load contents from registers. */
-    switch(operands)
-    {
+    switch (operands) {
         case FPU_TYPE_D:
-            {
-                /* Load float64 values from regpairs designed by rs1 and rs2. */
-                fpu_load_i64_2(tcg_ctx, r1, r2, rs1, rs2);
-            }
+            /* Load float64 values from regpairs designed by rs1 and rs2. */
+            fpu_load_i64_2(tcg_ctx, r1, r2, rs1, rs2);
             break;
     }
 
-    switch(op)
-    {
+    switch (op) {
         case FPU_OP_ADD:
             gen_helper_fadd_d(tcg_ctx, r3, tcg_ctx->cpu_env, r1, r2);
             break;
@@ -1006,13 +869,10 @@ void fpu_gen_dp_ir_3(CPURH850State *env, DisasContext *ctx, int operands, int op
             break;
     }
 
-    switch(operands)
-    {
+    switch (operands) {
         case FPU_TYPE_D:
-            {
-                /* Store result as float64 in regpair designed by rs3. */
-                fpu_store_i64(tcg_ctx, rs3, r3);
-            }
+            /* Store result as float64 in regpair designed by rs3. */
+            fpu_store_i64(tcg_ctx, rs3, r3);
             break;
     }
 
@@ -1070,8 +930,7 @@ void fpu_gen_cmpf_d(CPURH850State *env, DisasContext *ctx, int rs1, int rs2, int
     tcg_gen_movi_i32(tcg_ctx, less, 0);
     tcg_gen_movi_i32(tcg_ctx, equal, 0);
     tcg_gen_movi_i32(tcg_ctx, unordered, 1);
-    if (fcond & 0x8)
-    {
+    if (fcond & 0x8) {
         /* Invalid operation detected. */
         /* TODO: raise exception ? */
     }
@@ -1087,7 +946,7 @@ void fpu_gen_cmpf_d(CPURH850State *env, DisasContext *ctx, int rs1, int rs2, int
         tcg_gen_or_i32(tcg_ctx, res, res, equal);
     if (fcond & 4)
         tcg_gen_or_i32(tcg_ctx, res, res, less);
-    
+
     /**
      * Set CCn bit into FPSR (with n=fcbit).
      *  1. Load FPSR into r1
@@ -1128,7 +987,6 @@ void fpu_gen_cmov_d(CPURH850State *env, DisasContext *ctx, int rs1, int rs2, int
 
     end = gen_new_label(tcg_ctx);
     otherwise = gen_new_label(tcg_ctx);
-    
 
     /* Load register contents. */
     fpu_load_i64(tcg_ctx, r1, rs1);
@@ -1174,12 +1032,10 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
     int rs1 = GET_RS1(ctx->opcode);
     int rs2 = GET_RS2(ctx->opcode);
     int rs3 = GET_RS3(ctx->opcode);
-    
-    switch(MASK_OP_FORMAT_FI(ctx->opcode))
-    {
+
+    switch (MASK_OP_FORMAT_FI(ctx->opcode)) {
         case OPC_RH850_FPU_GROUP_SW:
-            switch(rs1)
-            {
+            switch (rs1) {
                 case OPC_RH850_FPU_TRNCF_SW:
                     fpu_gen_sp_ir_2(env, ctx, FPU_TYPE_SW, FPU_OP_TRNC, rs2, rs3);
                     break;
@@ -1215,8 +1071,7 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
             break;
 
         case OPC_RH850_FPU_GROUP_DS:
-            switch(rs1)
-            {
+            switch (rs1) {
                 case OPC_RH850_FPU_CVTF_WS:
                     fpu_gen_sp_ir_2(env, ctx, FPU_TYPE_WS, FPU_OP_CVT, rs2, rs3);
                     break;
@@ -1244,8 +1099,7 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
             break;
 
         case OPC_RH850_FPU_GROUP_SL:
-            switch(rs1)
-            {
+            switch (rs1) {
                 case OPC_RH850_FPU_TRNCF_SL:
                     fpu_gen_sp_ir_2(env, ctx, FPU_TYPE_SL, FPU_OP_TRNC, rs2, rs3);
                     break;
@@ -1281,8 +1135,7 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
             break;
 
         case OPC_RH850_FPU_GROUP_ABSS:
-            switch(rs1)
-            {
+            switch (rs1) {
                 case OPC_RH850_FPU_ABSF_S:
                     fpu_gen_sp_ir_2(env, ctx, FPU_TYPE_S, FPU_OP_ABS, rs2, rs3);
                     break;
@@ -1294,8 +1147,7 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
             break;
 
         case OPC_RH850_FPU_GROUP_S:
-            switch(rs1)
-            {
+            switch (rs1) {
                 case OPC_RH850_FPU_SQRTF_S:
                     fpu_gen_sp_ir_2(env, ctx, FPU_TYPE_S, FPU_OP_SQRT, rs2, rs3);
                     break;
@@ -1311,8 +1163,7 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
             break;
 
         case OPC_RH850_FPU_GROUP_DW:
-            switch(rs1)
-            {
+            switch (rs1) {
                 case OPC_RH850_FPU_TRNCF_DW:
                     fpu_gen_dp_ir_2(env, ctx, FPU_TYPE_DW, FPU_OP_TRNC, rs2, rs3);
                     break;
@@ -1348,8 +1199,7 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
             break;
 
         case OPC_RH850_FPU_GROUP_DD:
-            switch(rs1)
-            {
+            switch (rs1) {
                 case OPC_RH850_FPU_CVTF_WD:
                     //fpu_gen_cvtf_wd(env, ctx, rs2, rs3);
                     fpu_gen_dp_ir_2(env, ctx, FPU_TYPE_WD, FPU_OP_CVT, rs2, rs3);
@@ -1378,8 +1228,7 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
             break;
 
         case OPC_RH850_FPU_GROUP_DL:
-            switch(rs1)
-            {
+            switch (rs1) {
                 case OPC_RH850_FPU_TRNCF_DL:
                     fpu_gen_dp_ir_2(env, ctx, FPU_TYPE_DL, FPU_OP_TRNC, rs2, rs3);
                     break;
@@ -1415,8 +1264,7 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
             break;
 
         case OPC_RH850_FPU_GROUP_ABSD:
-            switch(rs1)
-            {
+            switch (rs1) {
                 case OPC_RH850_FPU_ABSF_D:
                     fpu_gen_dp_ir_2(env, ctx, FPU_TYPE_D, FPU_OP_ABS, rs2, rs3);
                     break;
@@ -1428,8 +1276,7 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
             break;
 
         case OPC_RH850_FPU_GROUP_D:
-            switch(rs1)
-            {
+            switch (rs1) {
                 case OPC_RH850_FPU_SQRTF_D:
                     fpu_gen_dp_ir_2(env, ctx, FPU_TYPE_D, FPU_OP_SQRT, rs2, rs3);
                     break;
@@ -1450,8 +1297,7 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
 
         case OPC_RH850_FPU_ADDF_D:
             /* rs1, rs2 and rs3 must have bit 0 set to 0. */
-            if ((rs1 & 1) || (rs2 & 1) || (rs3 & 1))
-            {
+            if ((rs1 & 1) || (rs2 & 1) || (rs3 & 1)) {
                 /* TODO: Invalid instruction, must trigger exception.  */
             }
             else
@@ -1500,35 +1346,30 @@ void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx)
 
 
         default:
-            switch(ctx->opcode & (0x70 << 16))
-            {
+            switch (ctx->opcode & (0x70 << 16)) {
                 case OPC_RH850_FPU_CMOV_S_OR_TRFSR:
-
                     /* If reg1==reg2==reg3==0, then it is a TRSFR instruction. */
-                    if ((rs1 == 0) && (rs2 == 0) && (rs3 == 0))
-                    {
-                        fpu_gen_trfsr(env, ctx, (ctx->opcode & (0xe << 16))>>17 );
-                    }
-                    else
-                    {
+                    if ((rs1 == 0) && (rs2 == 0) && (rs3 == 0)) {
+                        fpu_gen_trfsr(env, ctx, (ctx->opcode & (0xe << 16))>>17);
+                    } else {
                         /* Call generator with fcbit. */
-                        fpu_gen_cmov_s(env, ctx, rs1, rs2, rs3, (ctx->opcode & (0xe << 16))>>17 );
+                        fpu_gen_cmov_s(env, ctx, rs1, rs2, rs3, (ctx->opcode & (0xe << 16))>>17);
                     }
                     break;
 
                 case OPC_RH850_FPU_CMOV_D:
                     /* Call generator with fcbit. */
-                    fpu_gen_cmov_d(env, ctx, rs1, rs2, rs3, (ctx->opcode & (0xe << 16))>>17 );
+                    fpu_gen_cmov_d(env, ctx, rs1, rs2, rs3, (ctx->opcode & (0xe << 16))>>17);
                     break;
 
                 case OPC_RH850_FPU_CMP_S:
                     /* Call generator with fcond (rs3) and fcbit. */
-                    fpu_gen_cmpf_s(env, ctx, rs1, rs2, rs3, (ctx->opcode & (0xe << 16))>>17 );
+                    fpu_gen_cmpf_s(env, ctx, rs1, rs2, rs3, (ctx->opcode & (0xe << 16))>>17);
                     break;
 
                 case OPC_RH850_FPU_CMP_D:
                     /* Call generator with fcond (rs3) and fcbit. */
-                    fpu_gen_cmpf_d(env, ctx, rs1, rs2, rs3, (ctx->opcode & (0xe << 16))>>17 );
+                    fpu_gen_cmpf_d(env, ctx, rs1, rs2, rs3, (ctx->opcode & (0xe << 16))>>17);
                     break;
 
                 default:
@@ -1546,12 +1387,4 @@ void fpu_decode_cat1_instn(CPURH850State *env, DisasContext *ctx)
     int rs3 = GET_RS3(ctx->opcode);
 
     fpu_gen_cat1_ir(env, ctx, MASK_OP_FORMAT_FI(ctx->opcode), rs1, rs2, rs3);
-}
-
-/**
- * Initialize FPU.
- **/
-
-void rh850_fpu_translate_init(void)
-{
 }

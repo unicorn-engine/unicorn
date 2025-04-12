@@ -1,14 +1,14 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015-2021 */
-/* Modified for Unicorn Engine by Damien Cauquil<dcauquil@quarkslab.com>, 2020 */
+/* Modified for Unicorn Engine by Damien Cauquil<dcauquil@quarkslab.com>, 2020
+ */
 
-#include "sysemu/cpus.h"
 #include "cpu.h"
 #include "unicorn_common.h"
 #include "uc_priv.h"
 #include "unicorn.h"
 
-RH850CPU *cpu_rh850_init(struct uc_struct *uc, const char *cpu_model);
+RH850CPU *cpu_rh850_init(struct uc_struct *uc);
 
 static void rh850_set_pc(struct uc_struct *uc, uint64_t address)
 {
@@ -49,66 +49,63 @@ static void reg_reset(struct uc_struct *uc)
 }
 
 DEFAULT_VISIBILITY
-uc_err reg_read(void *_env, int mode, unsigned int regid, void *value, size_t *size)
+uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
+                size_t *size)
 {
     int sel_id;
     CPURH850State *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     /* PC */
-    if (regid == UC_RH850_REG_PC)
-    {
+    if (regid == UC_RH850_REG_PC) {
         CHECK_REG_TYPE(uint32_t);
         *(uint32_t *)value = env->pc;
     }
 
     /* General purpose register. */
-    if ((regid >= UC_RH850_REG_R0) && (regid <= UC_RH850_REG_R31))
-    {
+    if ((regid >= UC_RH850_REG_R0) && (regid <= UC_RH850_REG_R31)) {
         CHECK_REG_TYPE(uint32_t);
         *(uint32_t *)value = env->gpRegs[regid];
     }
 
     /* System registers. */
-    if ((regid >= UC_RH850_SYSREG_SELID0) && (regid < (UC_RH850_SYSREG_SELID7 + 32)))
-    {
+    if ((regid >= UC_RH850_REG_EIPC) &&
+        (regid < (UC_RH850_REG_PC))) {
         CHECK_REG_TYPE(uint32_t);
-        sel_id = (regid - 32)/32;
-        *(uint32_t *)value = env->systemRegs[sel_id][regid % 32];
+        sel_id = (regid - 32) / 32;
+        *(uint32_t *)value = env->sys_reg[sel_id][regid % 32];
     }
 
     return ret;
 }
 
-
 DEFAULT_VISIBILITY
-uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value, size_t *size, int *setpc)
+uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
+                 size_t *size, int *setpc)
 {
     int sel_id;
     CPURH850State *env = _env;
     uc_err ret = UC_ERR_ARG;
 
     /* PC */
-    if (regid == UC_RH850_REG_PC)
-    {
+    if (regid == UC_RH850_REG_PC) {
         CHECK_REG_TYPE(uint32_t);
         env->pc = *(uint32_t *)value;
         *setpc = 1;
     }
 
     /* General purpose register. */
-    if ((regid >= UC_RH850_REG_R0) && (regid <= UC_RH850_REG_R31))
-    {
+    if ((regid >= UC_RH850_REG_R0) && (regid <= UC_RH850_REG_R31)) {
         CHECK_REG_TYPE(uint32_t);
         env->gpRegs[regid] = *(uint32_t *)value;
     }
 
     /* System registers. */
-    if ((regid >= UC_RH850_SYSREG_SELID0) && (regid <= (UC_RH850_SYSREG_SELID7 + 32)))
-    {
+    if ((regid >= UC_RH850_REG_EIPC) &&
+        (regid <= (UC_RH850_REG_PC))) {
         CHECK_REG_TYPE(uint32_t);
-        sel_id = (regid - 32)/32;
-        env->systemRegs[sel_id][regid % 32] = *(uint32_t *)value;
+        sel_id = (regid - 32) / 32;
+        env->sys_reg[sel_id][regid % 32] = *(uint32_t *)value;
     }
 
     return ret;
@@ -118,7 +115,7 @@ static int rh850_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     RH850CPU *cpu;
 
-    cpu = cpu_rh850_init(uc, cpu_model);
+    cpu = cpu_rh850_init(uc);
     if (cpu == NULL) {
         return -1;
     }
@@ -126,7 +123,7 @@ static int rh850_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-void rh850_uc_init(struct uc_struct *uc)
+void uc_init_rh850(struct uc_struct *uc)
 {
     uc->reg_read = reg_read;
     uc->reg_write = reg_write;

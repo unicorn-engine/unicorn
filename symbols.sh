@@ -7747,8 +7747,6 @@ tcg_s390_data_exception \
 "
 
 rh850_SYMBOLS="restore_state_to_opc \
-helper_tlb_flush \
-helper_uc_rh850_exit \
 gen_intermediate_code \
 "
 

@@ -20,22 +20,10 @@
 #ifndef RH850_FPU_H
 #define RH850_FPU_H
 
-#include "qemu/osdep.h"
 #include "cpu.h"
-#include "exec/exec-all.h"
-#include "tcg/tcg-op.h"
-#include "translate.h"
-#include "fpu_translate.h"
-#include "exec/cpu_ldst.h"
-#include "exec/exec-all.h"
-#include "exec/helper-proto.h"
-#include "exec/helper-gen.h"
-#include "exec/translator.h"
 #include "translate.h"
 
 void fpu_decode_cat0_instn(CPURH850State *env, DisasContext *ctx);
 void fpu_decode_cat1_instn(CPURH850State *env, DisasContext *ctx);
-void fpu_init(CPURH850State *env);
-void rh850_fpu_translate_init(void);
 
 #endif /* RH850_FPU_H */
