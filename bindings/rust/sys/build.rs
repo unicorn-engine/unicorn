@@ -83,9 +83,9 @@ fn build_with_cmake() {
     };
 
     // GNU-specific linker flags (but not on macOS)
-    if compiler.is_like_gnu() && env::consts::OS != "macos" {
-        println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
-    }
+    // if compiler.is_like_gnu() && env::consts::OS != "macos" {
+    //     println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
+    // }
 
     // Configure build generator
     if has_ninja {
