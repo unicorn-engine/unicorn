@@ -2071,6 +2071,38 @@ static void test_x86_hook_block()
     OK(uc_close(uc));
 }
 
+static bool test_x86_mem_hooks_pc_guarante_mem(uc_engine *uc, uc_mem_type type,
+                                               uint64_t addr, int size,
+                                               int64_t val, void *data)
+{
+    if (addr >= code_start + code_len) {
+        uint32_t eip;
+        OK(uc_reg_read(uc, UC_X86_REG_EIP, (void*)&eip));
+        TEST_CHECK(eip == code_start + 1);
+    }
+    return true;
+}
+
+static void test_x86_mem_hooks_pc_guarantee(void)
+{
+    uc_engine *uc;
+    // bs, _ = ks.asm("inc edx; t: mov eax, [ebx]; inc ebx; cmp ebx, ecx; jnz t;")
+    char code[] = "\x42\x8b\x03\x43\x39\xcb\x75\xf9";
+    uint32_t ebx=code_start + code_len, ecx = code_start + code_len + 0x10;
+    uc_hook hk;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_mem_map(uc, code_start + code_len, 0x1000, UC_PROT_ALL));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_READ, test_x86_mem_hooks_pc_guarante_mem, NULL,
+                   1, 0));
+    OK(uc_reg_write(uc, UC_X86_REG_EBX, (void*)&ebx));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, (void*)&ecx));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2133,4 +2165,5 @@ TEST_LIST = {
     {"test_x86_hook_insn_rdtscp", test_x86_hook_insn_rdtscp},
     {"test_x86_dr7", test_x86_dr7},
     {"test_x86_hook_block", test_x86_hook_block},
+    {"test_x86_mem_hooks_pc_guarantee", test_x86_mem_hooks_pc_guarantee},
     {NULL, NULL}};
