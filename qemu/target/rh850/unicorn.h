@@ -6,11 +6,11 @@
 
 // functions to read & write registers
 uc_err reg_read_rh850(void *_env, int mode, unsigned int regid, void *value,
-                size_t *size);
-uc_err reg_write_rh850(void *_env, int mode, unsigned int regid, const void *value,
-                 size_t *size, int *setpc);
+                      size_t *size);
+uc_err reg_write_rh850(void *_env, int mode, unsigned int regid,
+                       const void *value, size_t *size, int *setpc);
 
 void reg_reset_rh850(struct uc_struct *uc);
 
-void rh850_uc_init(struct uc_struct *uc);
+void uc_init_rh850(struct uc_struct *uc);
 #endif

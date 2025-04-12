@@ -16,37 +16,8 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _RH850_INSTMAP_H
-#define _RH850_INSTMAP_H
-
-enum{
-	/*SIGNED INT*/
-	COND_RH850_BGE = 1110,
-	COND_RH850_BGT = 1111,
-	COND_RH850_BLE = 0111,
-	COND_RH850_BLT = 0110,
-	/*UNSIGNED INT*/
-	COND_RH850_BH = 1011,
-	COND_RH850_BL = 0001,
-	COND_RH850_BNH = 0011,
-	COND_RH850_BNL = 1001,
-	/*COMMON*/
-	COND_RH850_BE = 0010,
-	COND_RH850_BNE = 1010,
-	/*OTHERS*/
-	COND_RH850_BC = 0001,
-	COND_RH850_BF = 1010,
-	COND_RH850_BN = 0100,
-	COND_RH850_BNC = 1001,
-	COND_RH850_BNV = 1000,
-	COND_RH850_BNZ = 1010,
-	COND_RH850_BP = 1100,
-	COND_RH850_BR = 0101,
-	COND_RH850_BSA = 1101,
-	COND_RH850_BT = 0010,
-	COND_RH850_BV = 0000,
-	COND_RH850_BZ = 0010,
-};
+#ifndef RH850_INSTMAP_H
+#define RH850_INSTMAP_H
 
 #define MASK_OP_MAJOR(op)  (op & (0x3F << 5)) // the major opcode in rh850 is at bits 10-5
 enum {
@@ -537,88 +508,10 @@ enum {
 	operation_CLL = 2,
 };
 
-
-
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////
-
-
-#define GET_B_IMM(inst) ((extract32(inst, 8, 4) << 1) \
-                         | (extract32(inst, 25, 6) << 5) \
-                         | (extract32(inst, 7, 1) << 11) \
-                         | (sextract64(inst, 31, 1) << 12))
-
-#define GET_STORE_IMM(inst) ((extract32(inst, 7, 5)) \
-                             | (sextract64(inst, 25, 7) << 5))
-
-#define GET_JAL_IMM(inst) ((extract32(inst, 21, 10) << 1) \
-                           | (extract32(inst, 20, 1) << 11) \
-                           | (extract32(inst, 12, 8) << 12) \
-                           | (sextract64(inst, 31, 1) << 20))
-
-
 #define GET_RS1(inst)  extract32(inst, 0, 5)		//appropriate for RH850
 #define GET_RS2(inst)  extract32(inst, 11, 5)		//appropriate for RH850
 #define GET_RS3(inst)  extract32(inst, 27, 5)		//appropriate for RH850
-#define GET_DISP(inst) (extract32(inst, 20, 7) | (sextract32(inst, 32, 16) << 7 ) ) //b47-b32 + b26-b20
 
-
-#define GET_RM(inst)   extract32(inst, 12, 3)
-#define GET_RD(inst)   extract32(inst, 7, 5)
-#define GET_IMM(inst)  sextract64(inst, 20, 12)
 #define GET_IMM_32(inst)	sextract64(inst, 16, 32)
-
-/* RVC decoding macros */
-#define GET_C_IMM(inst)             (extract32(inst, 2, 5) \
-                                    | (sextract64(inst, 12, 1) << 5))
-#define GET_C_ZIMM(inst)            (extract32(inst, 2, 5) \
-                                    | (extract32(inst, 12, 1) << 5))
-#define GET_C_ADDI4SPN_IMM(inst)    ((extract32(inst, 6, 1) << 2) \
-                                    | (extract32(inst, 5, 1) << 3) \
-                                    | (extract32(inst, 11, 2) << 4) \
-                                    | (extract32(inst, 7, 4) << 6))
-#define GET_C_ADDI16SP_IMM(inst)    ((extract32(inst, 6, 1) << 4) \
-                                    | (extract32(inst, 2, 1) << 5) \
-                                    | (extract32(inst, 5, 1) << 6) \
-                                    | (extract32(inst, 3, 2) << 7) \
-                                    | (sextract64(inst, 12, 1) << 9))
-#define GET_C_LWSP_IMM(inst)        ((extract32(inst, 4, 3) << 2) \
-                                    | (extract32(inst, 12, 1) << 5) \
-                                    | (extract32(inst, 2, 2) << 6))
-#define GET_C_LDSP_IMM(inst)        ((extract32(inst, 5, 2) << 3) \
-                                    | (extract32(inst, 12, 1) << 5) \
-                                    | (extract32(inst, 2, 3) << 6))
-#define GET_C_SWSP_IMM(inst)        ((extract32(inst, 9, 4) << 2) \
-                                    | (extract32(inst, 7, 2) << 6))
-#define GET_C_SDSP_IMM(inst)        ((extract32(inst, 10, 3) << 3) \
-                                    | (extract32(inst, 7, 3) << 6))
-#define GET_C_LW_IMM(inst)          ((extract32(inst, 6, 1) << 2) \
-                                    | (extract32(inst, 10, 3) << 3) \
-                                    | (extract32(inst, 5, 1) << 6))
-#define GET_C_LD_IMM(inst)          ((extract32(inst, 10, 3) << 3) \
-                                    | (extract32(inst, 5, 2) << 6))
-#define GET_C_J_IMM(inst)           ((extract32(inst, 3, 3) << 1) \
-                                    | (extract32(inst, 11, 1) << 4) \
-                                    | (extract32(inst, 2, 1) << 5) \
-                                    | (extract32(inst, 7, 1) << 6) \
-                                    | (extract32(inst, 6, 1) << 7) \
-                                    | (extract32(inst, 9, 2) << 8) \
-                                    | (extract32(inst, 8, 1) << 10) \
-                                    | (sextract64(inst, 12, 1) << 11))
-#define GET_C_B_IMM(inst)           ((extract32(inst, 3, 2) << 1) \
-                                    | (extract32(inst, 10, 2) << 3) \
-                                    | (extract32(inst, 2, 1) << 5) \
-                                    | (extract32(inst, 5, 2) << 6) \
-                                    | (sextract64(inst, 12, 1) << 8))
-#define GET_C_SIMM3(inst)           extract32(inst, 10, 3)
-#define GET_C_RD(inst)              GET_RD(inst)
-#define GET_C_RS1(inst)             GET_RD(inst)
-#define GET_C_RS2(inst)             extract32(inst, 2, 5)
-#define GET_C_RS1S(inst)            (8 + extract32(inst, 7, 3))
-#define GET_C_RS2S(inst)            (8 + extract32(inst, 2, 3))
 
 #endif /* _RH850_INSTMAP_H */

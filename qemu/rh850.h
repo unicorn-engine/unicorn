@@ -1347,7 +1347,5 @@
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_rh850
 #define helper_stqcx_be_parallel helper_stqcx_be_parallel_rh850
 #define restore_state_to_opc restore_state_to_opc_rh850
-#define helper_tlb_flush helper_tlb_flush_rh850
-#define helper_uc_rh850_exit helper_uc_rh850_exit_rh850
 #define gen_intermediate_code gen_intermediate_code_rh850
 #endif

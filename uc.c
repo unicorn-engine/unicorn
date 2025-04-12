@@ -451,11 +451,11 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 #endif
 #ifdef UNICORN_HAS_RH850
         case UC_ARCH_RH850:
-            if (mode != UC_MODE_LITTLE_ENDIAN) {
+            if (mode & ~UC_MODE_RH850_MASK) {
                 free(uc);
                 return UC_ERR_MODE;
             }
-            uc->init_arch = rh850_uc_init;
+            uc->init_arch = uc_init_rh850;
             break;
 #endif
 #ifdef UNICORN_HAS_RISCV

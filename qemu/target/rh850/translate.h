@@ -1,9 +1,7 @@
-#ifndef _RH850_TRANSLATE_H
-#define _RH850_TRANSLATE_H
+#ifndef RH850_TRANSLATE_H
+#define RH850_TRANSLATE_H
 
-#include "cpu.h"
 #include "exec/translator.h"
-#include "tcg/tcg-op.h"
 
 /**
  * This structure contains data, which is needed to translate a
