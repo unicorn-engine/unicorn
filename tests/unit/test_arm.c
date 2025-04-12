@@ -966,8 +966,8 @@ static bool test_arm_v7_lpae_hook_tlb(uc_engine *uc, uint64_t addr,
 }
 
 static void test_arm_v7_lpae_hook_read(uc_engine *uc, uc_mem_type type,
-                                       uint64_t address, int size, uint64_t value,
-    					               void *user_data)
+                                       uint64_t address, int size,
+                                       uint64_t value, void *user_data)
 {
     TEST_CHECK(address == 0x100001000);
 }
@@ -981,10 +981,11 @@ static void test_arm_v7_lpae(void)
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
     OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_A7));
 
-
     OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
-    OK(uc_hook_add(uc, &hook_tlb, UC_HOOK_TLB_FILL, test_arm_v7_lpae_hook_tlb, NULL, 1, 0));
-    OK(uc_hook_add(uc, &hook_read, UC_HOOK_MEM_READ, test_arm_v7_lpae_hook_read, NULL, 1, 0));
+    OK(uc_hook_add(uc, &hook_tlb, UC_HOOK_TLB_FILL, test_arm_v7_lpae_hook_tlb,
+                   NULL, 1, 0));
+    OK(uc_hook_add(uc, &hook_read, UC_HOOK_MEM_READ, test_arm_v7_lpae_hook_read,
+                   NULL, 1, 0));
 
     reg = 0x1000;
     OK(uc_reg_write(uc, UC_ARM_REG_R0, &reg));
@@ -993,6 +994,42 @@ static void test_arm_v7_lpae(void)
     OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
     OK(uc_reg_read(uc, UC_ARM_REG_R1, &reg));
     TEST_CHECK(reg == 0xe5901000);
+
+    OK(uc_close(uc));
+}
+
+static void test_arm_svc_interrupt(uc_engine *uc, int intno, void *user_data)
+{
+    uint32_t esr;
+    OK(uc_reg_read(uc, UC_ARM_REG_ESR, &esr));
+    switch (intno) {
+    // SVC
+    case 2:
+        TEST_CHECK((esr & 0xff) == 0x42);
+        break;
+    // HVC
+    case 3:
+        TEST_CHECK((esr & 0xff) == 0x33);
+        break;
+    }
+}
+
+static void test_arm_svc_hvc_syndrome(void)
+{
+    uc_engine *uc;
+    uint8_t code[] = {
+        0x42, 0x00, 0x00, 0xef, // svc #0x42
+        0x73, 0x03, 0x40, 0xe1, // hvc #0x33
+    };
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, (char *)code, sizeof(code),
+                    UC_CPU_ARM_CORTEX_A15);
+
+    uc_hook hook;
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INTR, test_arm_svc_interrupt, NULL, 1,
+                   0));
+
+    OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
 
     OK(uc_close(uc));
 }
@@ -1027,4 +1064,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_tcg_opcode_cmn", test_arm_thumb_tcg_opcode_cmn},
              {"test_arm_cp15_c1_c0_2", test_arm_cp15_c1_c0_2},
              {"test_arm_v7_lpae", test_arm_v7_lpae},
+             {"test_arm_svc_hvc_syndrome", test_arm_svc_hvc_syndrome},
              {NULL, NULL}};

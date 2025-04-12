@@ -212,6 +212,9 @@ typedef enum uc_arm_reg {
     UC_ARM_REG_XPSR_G,
     UC_ARM_REG_XPSR_NZCVQG,
     UC_ARM_REG_CP_REG,
+	// A pseudo-register for fetching the exception syndrome
+	// from the CPU state. This is not a real register.
+    UC_ARM_REG_ESR,
     UC_ARM_REG_ENDING, // <-- mark the end of the list or registers
 
     //> alias registers

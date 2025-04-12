@@ -352,6 +352,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(uc_arm_cp_reg);
             ret = read_cp_reg(env, (uc_arm_cp_reg *)value);
             break;
+        case UC_ARM_REG_ESR:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->exception.syndrome;
+            break;
         }
     }
 
@@ -555,6 +559,10 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             CHECK_REG_TYPE(uc_arm_cp_reg);
             ret = write_cp_reg(env, (uc_arm_cp_reg *)value);
             arm_rebuild_hflags_arm(env);
+            break;
+        case UC_ARM_REG_ESR:
+            CHECK_REG_TYPE(uint32_t);
+            env->exception.syndrome = *(uint32_t *)value;
             break;
         }
     }
