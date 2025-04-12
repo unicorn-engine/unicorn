@@ -109,9 +109,13 @@ static void test_x86_in_callback(uc_engine *uc, uint32_t port, int size,
                                  void *user_data)
 {
     INSN_IN_RESULT *result = (INSN_IN_RESULT *)user_data;
+    uint32_t eip;
 
     result->port = port;
     result->size = size;
+
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, (void*)&eip));
+    TEST_CHECK(eip == code_start);
 }
 
 static void test_x86_in(void)
@@ -763,10 +767,13 @@ static void test_x86_sysenter(void)
 
 static int test_x86_hook_cpuid_callback(uc_engine *uc, void *data)
 {
-    int reg = 7;
+    uint32_t reg = 7;
+    uint32_t eip;
 
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, (void*)&eip));
     OK(uc_reg_write(uc, UC_X86_REG_EAX, &reg));
 
+    TEST_CHECK(eip == code_start + 1);
     // Overwrite the cpuid instruction.
     return 1;
 }
