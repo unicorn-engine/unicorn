@@ -235,7 +235,7 @@ static uint64_t test_mem_protect_mmio_read_cb(struct uc_struct *uc,
 {
     TEST_CHECK(addr == 0x20); // note, it's not 0x1020
 
-    *(uint64_t *)user_data = *(uint64_t *)user_data + 1;
+    *(uint64_t *)user_data += 1;
     return 0x114514;
 }
 

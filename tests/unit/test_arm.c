@@ -590,9 +590,7 @@ static void test_arm_mem_access_abort(void)
     r_r0 = 0x990000;
     OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
 
-    OK(uc_hook_add(uc, &hk,
-                   UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED |
-                       UC_HOOK_MEM_FETCH_UNMAPPED,
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_UNMAPPED,
                    test_arm_mem_access_abort_hook_mem, (void *)&r_pc_in_hook, 1,
                    0));
     OK(uc_hook_add(uc, &hkk, UC_HOOK_INSN_INVALID,
