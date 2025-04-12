@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _m68k
 #endif
+#define gen_helper_check_exit_request gen_helper_check_exit_request_m68k
 #define unicorn_fill_tlb unicorn_fill_tlb_m68k
 #define reg_read reg_read_m68k
 #define reg_write reg_write_m68k

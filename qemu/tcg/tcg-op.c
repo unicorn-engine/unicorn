@@ -2852,8 +2852,6 @@ static void gen_ldst_i64(TCGContext *tcg_ctx, TCGOpcode opc, TCGv_i64 val, TCGv 
 // if so, we jump to the block epilogue to quit immediately.
 void check_exit_request(TCGContext *tcg_ctx)
 {
-    TCGv_i32 count;
-
     // Unicorn:
     //   For ARM IT block, we couldn't exit in the middle of the
     //   block and this is the our hack here.
@@ -2861,23 +2859,17 @@ void check_exit_request(TCGContext *tcg_ctx)
         return;
     }
 
-    count = tcg_temp_new_i32(tcg_ctx);
-
-    tcg_gen_ld_i32(tcg_ctx, count, tcg_ctx->cpu_env,
-                   offsetof(ArchCPU, neg.icount_decr.u32) -
-                   offsetof(ArchCPU, env));
+    TCGv_ptr puc = tcg_const_ptr(tcg_ctx, tcg_ctx->uc);
+    TCGv_i32 tmp = tcg_const_i32(tcg_ctx, 0);
     // Unicorn:
     //    We CANT'T use brcondi_i32 here or we will fail liveness analysis
     //    because it marks the end of BB
     if (tcg_ctx->delay_slot_flag != NULL) {
-        TCGv_i32 tmp = tcg_const_i32(tcg_ctx, 0);
-        // dest = (c1 cond c2 ? v1 : v2)
-        tcg_gen_movcond_i32(tcg_ctx, TCG_COND_GT, count, tcg_ctx->delay_slot_flag, tmp, tcg_ctx->delay_slot_flag, count);
-        tcg_temp_free_i32(tcg_ctx, tmp);
+        tcg_gen_mov_i32(tcg_ctx, tmp, tcg_ctx->delay_slot_flag);
     }
-    
-    tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_LT, count, 0, tcg_ctx->exitreq_label);
-    tcg_temp_free_i32(tcg_ctx, count);
+    gen_helper_check_exit_request(tcg_ctx, puc, tmp);
+    tcg_temp_free_i32(tcg_ctx, tmp);
+    tcg_temp_free_ptr(tcg_ctx, puc);
 }
 
 static void tcg_gen_req_mo(TCGContext *tcg_ctx, TCGBar type)

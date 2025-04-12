@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _aarch64
 #endif
+#define gen_helper_check_exit_request gen_helper_check_exit_request_aarch64
 #define unicorn_fill_tlb unicorn_fill_tlb_aarch64
 #define reg_read reg_read_aarch64
 #define reg_write reg_write_aarch64

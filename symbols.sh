@@ -4,6 +4,7 @@ CMD_PATH=$(realpath $0)
 SOURCE_DIR=$(dirname ${CMD_PATH})
 
 COMMON_SYMBOLS="
+gen_helper_check_exit_request \
 unicorn_fill_tlb \
 reg_read \
 reg_write \

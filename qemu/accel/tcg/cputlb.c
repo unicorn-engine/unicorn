@@ -1575,7 +1575,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     //                because qemu might generate tcg code like:
                     //                       qemu_ld_i64 x0,x1,leq,8  sync: 0  dead: 0 1
                     //                where we don't have a change to recover x0 value
-                    cpu_loop_exit(uc->cpu);
+                    cpu_loop_exit_restore(uc->cpu, retaddr);
                 }
                 return 0;
             }
@@ -1586,7 +1586,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             if (uc->nested_level > 0 && !uc->cpu->stopped) {
                 cpu_exit(uc->cpu);
                 // See comments above
-                cpu_loop_exit(uc->cpu);
+                cpu_loop_exit_restore(uc->cpu, retaddr);
             }
             return 0;
         }
@@ -1660,7 +1660,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 if (uc->nested_level > 0 && !uc->cpu->stopped) {
                     cpu_exit(uc->cpu);
                     // See comments above
-                    cpu_loop_exit(uc->cpu);
+                    cpu_loop_exit_restore(uc->cpu, retaddr);
                 }
                 return 0;
             }
@@ -1694,7 +1694,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 if (uc->nested_level > 0 && !uc->cpu->stopped) {
                     cpu_exit(uc->cpu);
                     // See comments above
-                    cpu_loop_exit(uc->cpu);
+                    cpu_loop_exit_restore(uc->cpu, retaddr);
                 }
                 return 0;
             }

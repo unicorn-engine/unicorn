@@ -708,6 +708,7 @@ uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
     if (setpc) {
         // force to quit execution and flush TB
         uc->quit_request = true;
+        uc->skip_sync_pc_on_exit = true;
         break_translation_loop(uc);
     }
 

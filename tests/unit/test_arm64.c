@@ -651,6 +651,24 @@ static void test_arm64_mem_hook_read_write(void)
     OK(uc_close(uc));
 }
 
+static void test_arm64_pc_guarantee(void)
+{
+    uc_engine *uc;
+    // ks.asm("mov x0, #1; mov x1, #2; ldr x0, [x1]")
+    const char code[] = "\x20\x00\x80\xd2\x41\x00\x80\xd2\x20\x00\x40\xf9";
+    uint64_t rip;
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code),
+                    UC_CPU_ARM64_A72);
+
+    uc_assert_err(UC_ERR_READ_UNMAPPED, uc_emu_start(uc, code_start,
+                                          code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, (void*)&rip));
+    TEST_CHECK(rip == code_start + 8);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -668,4 +686,5 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_pc_wrap", test_arm64_pc_wrap},
              {"test_arm64_mem_prot_regress", test_arm64_mem_prot_regress},
              {"test_arm64_mem_hook_read_write", test_arm64_mem_hook_read_write},
+             {"test_arm64_pc_guarantee", test_arm64_pc_guarantee},
              {NULL, NULL}};

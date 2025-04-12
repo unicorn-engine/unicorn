@@ -206,7 +206,7 @@ static void test_mips_simple_coredump_2134(void)
     const char code[] = "\x25\xc8\x80\x03\x25\x78\xe0\x03\x09\xf8\x20\x03\x10\x00\x18\x24";
     uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32, code, sizeof(code) - 1);
 
-    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    uc_assert_err(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0), UC_ERR_FETCH_UNMAPPED);
 
     OK(uc_close(uc));
 }
