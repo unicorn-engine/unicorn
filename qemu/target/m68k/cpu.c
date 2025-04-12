@@ -236,12 +236,6 @@ static void m68k_cpu_class_init(CPUClass *c)
     cc->tcg_initialize = m68k_tcg_init;
 }
 
-#define DEFINE_M68K_CPU_TYPE(cpu_model, initfn) \
-    {                                           \
-        .name = cpu_model,  \
-        .initfn = initfn,                \
-    }
-
 struct M68kCPUInfo {
     const char *name;
     void (*initfn)(CPUState *obj);

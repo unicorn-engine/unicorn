@@ -1019,12 +1019,18 @@ void free_code_gen_buffer(struct uc_struct *uc)
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
+#if CONFIG_TCG_INTERPRETER
+    int prot = PROT_WRITE | PROT_READ;
+#else
     int prot = PROT_WRITE | PROT_READ | PROT_EXEC;
+#endif
     int flags = MAP_PRIVATE | MAP_ANONYMOUS;
     size_t size = tcg_ctx->code_gen_buffer_size;
     void *buf;
+#if !CONFIG_TCG_INTERPRETER
 #ifdef USE_MAP_JIT
     flags |= MAP_JIT;
+#endif
 #endif
     buf = mmap(NULL, size, prot, flags, -1, 0);
     if (buf == MAP_FAILED) {
@@ -1694,9 +1700,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
                               target_ulong pc, target_ulong cs_base,
                               uint32_t flags, int cflags)
 {
-#ifdef TARGET_ARM
-    struct uc_struct *uc = cpu->uc;
-#endif
+    UNICORN_UNUSED struct uc_struct *uc = cpu->uc;
     TCGContext *tcg_ctx = cpu->uc->tcg_ctx;
     CPUArchState *env = cpu->env_ptr;
     TranslationBlock *tb, *existing_tb;
@@ -2155,9 +2159,7 @@ static void tb_jmp_cache_clear_page(CPUState *cpu, target_ulong page_addr)
 
 void tb_flush_jmp_cache(CPUState *cpu, target_ulong addr)
 {
-#ifdef TARGET_ARM
-    struct uc_struct *uc = cpu->uc;
-#endif
+    UNICORN_UNUSED struct uc_struct *uc = cpu->uc;
 
     /* Discard jump cache entries for any tb which might potentially
        overlap the flushed page.  */

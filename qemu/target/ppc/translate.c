@@ -170,6 +170,7 @@ struct DisasContext {
     bool vsx_enabled;
     bool spe_enabled;
     bool tm_enabled;
+    bool scv_enabled;
     bool gtse;
     ppc_spr_t *spr_cb; /* Needed to check rights for mfspr/mtspr */
     int singlestep_enabled;
@@ -1946,6 +1947,7 @@ static void gen_rlwimi(DisasContext *ctx)
         tcg_gen_deposit_tl(tcg_ctx, t_ra, t_ra, t_rs, sh, me - mb + 1);
     } else {
         target_ulong mask;
+        bool mask_in_32b = true;
         TCGv t1;
 
 #if defined(TARGET_PPC64)
@@ -1954,8 +1956,13 @@ static void gen_rlwimi(DisasContext *ctx)
 #endif
         mask = MASK(mb, me);
 
+#if defined(TARGET_PPC64)
+        if (mask > 0xffffffffu) {
+            mask_in_32b = false;
+        }
+#endif
         t1 = tcg_temp_new(tcg_ctx);
-        if (mask <= 0xffffffffu) {
+        if (mask_in_32b) {
             TCGv_i32 t0 = tcg_temp_new_i32(tcg_ctx);
             tcg_gen_trunc_tl_i32(tcg_ctx, t0, t_rs);
             tcg_gen_rotli_i32(tcg_ctx, t0, t0, sh);
@@ -1998,12 +2005,18 @@ static void gen_rlwinm(DisasContext *ctx)
         tcg_gen_extract_tl(tcg_ctx, t_ra, t_rs, rsh, len);
     } else {
         target_ulong mask;
+        bool mask_in_32b = true;
 #if defined(TARGET_PPC64)
         mb += 32;
         me += 32;
 #endif
         mask = MASK(mb, me);
-        if (mask <= 0xffffffffu) {
+#if defined(TARGET_PPC64)
+        if (mask > 0xffffffffu) {
+            mask_in_32b = false;
+        }
+#endif
+        if (mask_in_32b) {
             if (sh == 0) {
                 tcg_gen_andi_tl(tcg_ctx, t_ra, t_rs, mask);
             } else {
@@ -2039,6 +2052,7 @@ static void gen_rlwnm(DisasContext *ctx)
     uint32_t mb = MB(ctx->opcode);
     uint32_t me = ME(ctx->opcode);
     target_ulong mask;
+    bool mask_in_32b = true;
 
 #if defined(TARGET_PPC64)
     mb += 32;
@@ -2046,7 +2060,12 @@ static void gen_rlwnm(DisasContext *ctx)
 #endif
     mask = MASK(mb, me);
 
-    if (mask <= 0xffffffffu) {
+#if defined(TARGET_PPC64)
+    if (mask > 0xffffffffu) {
+        mask_in_32b = false;
+    }
+#endif
+    if (mask_in_32b) {
         TCGv_i32 t0 = tcg_temp_new_i32(tcg_ctx);
         TCGv_i32 t1 = tcg_temp_new_i32(tcg_ctx);
         tcg_gen_trunc_tl_i32(tcg_ctx, t0, t_rb);
@@ -4112,6 +4131,18 @@ static void gen_rfid(DisasContext *ctx)
     gen_sync_exception(ctx);
 }
 
+static void gen_rfscv(DisasContext *ctx)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    CHK_SV;
+    if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
+        gen_io_start(tcg_ctx);
+    }
+    gen_update_cfar(ctx, ctx->base.pc_next - 4);
+    gen_helper_rfscv(tcg_ctx, tcg_ctx->cpu_env);
+    gen_sync_exception(ctx);
+}
+
 static void gen_hrfid(DisasContext *ctx)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -4124,6 +4155,7 @@ static void gen_hrfid(DisasContext *ctx)
 
 /* sc */
 #define POWERPC_SYSCALL POWERPC_EXCP_SYSCALL
+#define POWERPC_SYSCALL_VECTORED POWERPC_EXCP_SYSCALL_VECTORED
 static void gen_sc(DisasContext *ctx)
 {
     uint32_t lev;
@@ -4131,6 +4163,21 @@ static void gen_sc(DisasContext *ctx)
     lev = (ctx->opcode >> 5) & 0x7F;
     gen_exception_err(ctx, POWERPC_SYSCALL, lev);
 }
+
+#if defined(TARGET_PPC64)
+static void gen_scv(DisasContext *ctx)
+{
+    uint32_t lev;
+
+    if (unlikely(!ctx->scv_enabled)) {
+        gen_exception_err(ctx, POWERPC_EXCP_FU, FSCR_IC_SCV);
+        return;
+    }
+
+    lev = (ctx->opcode >> 5) & 0x7F;
+    gen_exception_err(ctx, POWERPC_SYSCALL_VECTORED, lev);
+}
+#endif
 
 /***                                Trap                                   ***/
 
@@ -6988,6 +7035,10 @@ GEN_HANDLER(mcrf, 0x13, 0x00, 0xFF, 0x00000001, PPC_INTEGER),
 GEN_HANDLER(rfi, 0x13, 0x12, 0x01, 0x03FF8001, PPC_FLOW),
 #if defined(TARGET_PPC64)
 GEN_HANDLER(rfid, 0x13, 0x12, 0x00, 0x03FF8001, PPC_64B),
+/* Top bit of opc2 corresponds with low bit of LEV, so use two handlers */
+GEN_HANDLER_E(scv, 0x11, 0x10, 0xFF, 0x03FFF01E, PPC_NONE, PPC2_ISA300),
+GEN_HANDLER_E(scv, 0x11, 0x00, 0xFF, 0x03FFF01E, PPC_NONE, PPC2_ISA300),
+GEN_HANDLER_E(rfscv, 0x13, 0x12, 0x02, 0x03FF8001, PPC_NONE, PPC2_ISA300),
 GEN_HANDLER_E(stop, 0x13, 0x12, 0x0b, 0x03FFF801, PPC_NONE, PPC2_ISA300),
 GEN_HANDLER_E(doze, 0x13, 0x12, 0x0c, 0x03FFF801, PPC_NONE, PPC2_PM_ISA206),
 GEN_HANDLER_E(nap, 0x13, 0x12, 0x0d, 0x03FFF801, PPC_NONE, PPC2_PM_ISA206),
@@ -6995,7 +7046,9 @@ GEN_HANDLER_E(sleep, 0x13, 0x12, 0x0e, 0x03FFF801, PPC_NONE, PPC2_PM_ISA206),
 GEN_HANDLER_E(rvwinkle, 0x13, 0x12, 0x0f, 0x03FFF801, PPC_NONE, PPC2_PM_ISA206),
 GEN_HANDLER(hrfid, 0x13, 0x12, 0x08, 0x03FF8001, PPC_64H),
 #endif
-GEN_HANDLER(sc, 0x11, 0xFF, 0xFF, 0x03FFF01D, PPC_FLOW),
+/* Top bit of opc2 corresponds with low bit of LEV, so use two handlers */
+GEN_HANDLER(sc, 0x11, 0x11, 0xFF, 0x03FFF01D, PPC_FLOW),
+GEN_HANDLER(sc, 0x11, 0x01, 0xFF, 0x03FFF01D, PPC_FLOW),
 GEN_HANDLER(tw, 0x1F, 0x04, 0x00, 0x00000001, PPC_FLOW),
 GEN_HANDLER(twi, 0x03, 0xFF, 0xFF, 0x00000000, PPC_FLOW),
 #if defined(TARGET_PPC64)
@@ -7540,6 +7593,12 @@ static void ppc_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
         ctx->vsx_enabled = !!msr_vsx;
     } else {
         ctx->vsx_enabled = false;
+    }
+    if ((env->flags & POWERPC_FLAG_SCV)
+        && (env->spr[SPR_FSCR] & (1ull << FSCR_SCV))) {
+        ctx->scv_enabled = true;
+    } else {
+        ctx->scv_enabled = false;
     }
 #if defined(TARGET_PPC64)
     if ((env->flags & POWERPC_FLAG_TM) && msr_tm) {

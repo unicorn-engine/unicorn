@@ -38,8 +38,10 @@ public interface MipsConst {
     public static final int UC_CPU_MIPS64_I6500 = 9;
     public static final int UC_CPU_MIPS64_LOONGSON_2E = 10;
     public static final int UC_CPU_MIPS64_LOONGSON_2F = 11;
-    public static final int UC_CPU_MIPS64_MIPS64DSPR2 = 12;
-    public static final int UC_CPU_MIPS64_ENDING = 13;
+    public static final int UC_CPU_MIPS64_LOONGSON_3A1000 = 12;
+    public static final int UC_CPU_MIPS64_LOONGSON_3A4000 = 13;
+    public static final int UC_CPU_MIPS64_MIPS64DSPR2 = 14;
+    public static final int UC_CPU_MIPS64_ENDING = 15;
 
     // MIPS registers
 

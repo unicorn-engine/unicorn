@@ -33,9 +33,11 @@ typedef size_t uc_hook;
 #include "mips.h"
 #include "sparc.h"
 #include "ppc.h"
+#include "rh850.h"
 #include "riscv.h"
 #include "s390x.h"
 #include "tricore.h"
+#include "avr.h"
 
 #ifdef __GNUC__
 #define DEFAULT_VISIBILITY __attribute__((visibility("default")))
@@ -67,6 +69,18 @@ typedef size_t uc_hook;
 #pragma message(                                                               \
     "WARNING: You need to implement UNICORN_DEPRECATED for this compiler")
 #define UNICORN_DEPRECATED
+#endif
+
+#ifdef _MSC_VER
+#define UNICORN_UNUSED __pragma(warning(suppress : 4101))
+#else
+#define UNICORN_UNUSED __attribute__((unused))
+#endif
+
+#ifdef _MSC_VER
+#define UNICORN_NONNULL
+#else
+#define UNICORN_NONNULL __attribute__((nonnull))
 #endif
 
 // Unicorn API version
@@ -106,6 +120,8 @@ typedef enum uc_arch {
     UC_ARCH_RISCV,   // RISCV architecture
     UC_ARCH_S390X,   // S390X architecture
     UC_ARCH_TRICORE, // TriCore architecture
+    UC_ARCH_AVR,     // AVR architecture
+    UC_ARCH_RH850,   // Renesas RH850 architecture (V850e3v2)
     UC_ARCH_MAX,
 } uc_arch;
 
@@ -151,6 +167,9 @@ typedef enum uc_mode {
     UC_MODE_SPARC32 = 1 << 2, // 32-bit mode
     UC_MODE_SPARC64 = 1 << 3, // 64-bit mode
     UC_MODE_V9 = 1 << 4,      // SparcV9 mode (currently unsupported)
+
+    // rh850
+    UC_MODE_RH850 = 1 << 2, // 32-bit mode
 
     // riscv
     UC_MODE_RISCV32 = 1 << 2, // 32-bit mode

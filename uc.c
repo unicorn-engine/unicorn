@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #endif
 
-#include <time.h> // nanosleep
 #include <string.h>
 
 #include "uc_priv.h"
@@ -23,9 +22,11 @@
 #include "qemu/target/mips/unicorn.h"
 #include "qemu/target/sparc/unicorn.h"
 #include "qemu/target/ppc/unicorn.h"
+#include "qemu/target/rh850/unicorn.h"
 #include "qemu/target/riscv/unicorn.h"
 #include "qemu/target/s390x/unicorn.h"
 #include "qemu/target/tricore/unicorn.h"
+#include "qemu/target/avr/unicorn.h"
 
 #include "qemu/include/tcg/tcg-apple-jit.h"
 #include "qemu/include/qemu/queue.h"
@@ -226,6 +227,10 @@ bool uc_arch_supported(uc_arch arch)
     case UC_ARCH_X86:
         return true;
 #endif
+#ifdef UNICORN_HAS_RH850
+    case UC_ARCH_RH850:
+        return true;
+#endif
 #ifdef UNICORN_HAS_RISCV
     case UC_ARCH_RISCV:
         return true;
@@ -236,6 +241,10 @@ bool uc_arch_supported(uc_arch arch)
 #endif
 #ifdef UNICORN_HAS_TRICORE
     case UC_ARCH_TRICORE:
+        return true;
+#endif
+#ifdef UNICORN_HAS_AVR
+    case UC_ARCH_AVR:
         return true;
 #endif
     /* Invalid or disabled arch */
@@ -440,6 +449,15 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
             }
             break;
 #endif
+#ifdef UNICORN_HAS_RH850
+        case UC_ARCH_RH850:
+            if (mode != UC_MODE_LITTLE_ENDIAN) {
+                free(uc);
+                return UC_ERR_MODE;
+            }
+            uc->init_arch = rh850_uc_init;
+            break;
+#endif
 #ifdef UNICORN_HAS_RISCV
         case UC_ARCH_RISCV:
             if ((mode & ~UC_MODE_RISCV_MASK) ||
@@ -473,6 +491,15 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 return UC_ERR_MODE;
             }
             uc->init_arch = uc_init_tricore;
+            break;
+#endif
+#ifdef UNICORN_HAS_AVR
+        case UC_ARCH_AVR:
+            if ((mode & ~UC_MODE_AVR_MASK)) {
+                free(uc);
+                return UC_ERR_MODE;
+            }
+            uc->init_arch = uc_init_avr;
             break;
 #endif
         }
@@ -1046,6 +1073,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         }
         break;
 #endif
+#ifdef UNICORN_HAS_RH850
+    case UC_ARCH_RH850:
+        uc_reg_write(uc, UC_RH850_REG_PC, &begin);
+        break;
+#endif
 #ifdef UNICORN_HAS_RISCV
     case UC_ARCH_RISCV:
         if (uc->mode & UC_MODE_RISCV64) {
@@ -1063,6 +1095,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 #ifdef UNICORN_HAS_TRICORE
     case UC_ARCH_TRICORE:
         uc_reg_write(uc, UC_TRICORE_REG_PC, &begin_pc32);
+        break;
+#endif
+#ifdef UNICORN_HAS_AVR
+    case UC_ARCH_AVR:
+        uc_reg_write(uc, UC_AVR_REG_PC, &begin_pc32);
         break;
 #endif
     }
@@ -1123,6 +1160,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 
     if (timeout) {
         // wait for the timer to finish
+        printf("Wait VM to finish ...\n");
         qemu_thread_join(&uc->timer);
     }
 
@@ -2285,6 +2323,12 @@ static context_reg_rw_t find_context_reg_rw(uc_arch arch, uc_mode mode)
         }
         break;
 #endif
+#ifdef UNICORN_HAS_RH850
+    case UC_ARCH_RH850:
+        rw.read = reg_read_rh850;
+        rw.write = reg_write_rh850;
+        break;
+#endif
 #ifdef UNICORN_HAS_RISCV
     case UC_ARCH_RISCV:
         if (mode & UC_MODE_RISCV32) {
@@ -2306,6 +2350,12 @@ static context_reg_rw_t find_context_reg_rw(uc_arch arch, uc_mode mode)
     case UC_ARCH_TRICORE:
         rw.read = reg_read_tricore;
         rw.write = reg_write_tricore;
+        break;
+#endif
+#ifdef UNICORN_HAS_AVR
+    case UC_ARCH_AVR:
+        rw.read = reg_read_avr;
+        rw.write = reg_write_avr;
         break;
 #endif
     }
@@ -2733,6 +2783,11 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 }
             } else if (uc->arch == UC_ARCH_M68K) {
                 if (model >= UC_CPU_M68K_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+            } else if (uc->arch == UC_ARCH_AVR) {
+                if (!avr_cpu_model_valid(model)) {
                     err = UC_ERR_ARG;
                     break;
                 }

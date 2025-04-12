@@ -33,170 +33,170 @@ static void gen_set_cr1_from_fpscr(DisasContext *ctx)
 #endif
 
 /***                       Floating-Point arithmetic                       ***/
-#define _GEN_FLOAT_ACB(name, op, op1, op2, isfloat, set_fprf, type)           \
-static void gen_f##name(DisasContext *ctx)                                    \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv_i64 t0;                                                              \
-    TCGv_i64 t1;                                                              \
-    TCGv_i64 t2;                                                              \
-    TCGv_i64 t3;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    t1 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    t2 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    t3 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    gen_reset_fpstatus(tcg_ctx);                                                     \
-    get_fpr(tcg_ctx, t0, rA(ctx->opcode));                                             \
-    get_fpr(tcg_ctx, t1, rC(ctx->opcode));                                             \
-    get_fpr(tcg_ctx, t2, rB(ctx->opcode));                                             \
-    gen_helper_f##op(tcg_ctx, t3, tcg_ctx->cpu_env, t0, t1, t2);                                \
-    if (isfloat) {                                                            \
-        gen_helper_frsp(tcg_ctx, t3, tcg_ctx->cpu_env, t3);                                     \
-    }                                                                         \
-    set_fpr(tcg_ctx, rD(ctx->opcode), t3);                                             \
-    if (set_fprf) {                                                           \
-        gen_compute_fprf_float64(tcg_ctx, t3);                                         \
-    }                                                                         \
-    if (unlikely(Rc(ctx->opcode) != 0)) {                                     \
-        gen_set_cr1_from_fpscr(ctx);                                          \
-    }                                                                         \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
-    tcg_temp_free_i64(tcg_ctx, t1);                                                    \
-    tcg_temp_free_i64(tcg_ctx, t2);                                                    \
-    tcg_temp_free_i64(tcg_ctx, t3);                                                    \
-}
+#define _GEN_FLOAT_ACB(name, op, op1, op2, isfloat, set_fprf, type)            \
+    static void gen_f##name(DisasContext *ctx)                                 \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv_i64 t0;                                                           \
+        TCGv_i64 t1;                                                           \
+        TCGv_i64 t2;                                                           \
+        TCGv_i64 t3;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        t1 = tcg_temp_new_i64(tcg_ctx);                                        \
+        t2 = tcg_temp_new_i64(tcg_ctx);                                        \
+        t3 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_reset_fpstatus(tcg_ctx);                                           \
+        get_fpr(tcg_ctx, t0, rA(ctx->opcode));                                 \
+        get_fpr(tcg_ctx, t1, rC(ctx->opcode));                                 \
+        get_fpr(tcg_ctx, t2, rB(ctx->opcode));                                 \
+        gen_helper_f##op(tcg_ctx, t3, tcg_ctx->cpu_env, t0, t1, t2);           \
+        if (isfloat) {                                                         \
+            gen_helper_frsp(tcg_ctx, t3, tcg_ctx->cpu_env, t3);                \
+        }                                                                      \
+        set_fpr(tcg_ctx, rD(ctx->opcode), t3);                                 \
+        if (set_fprf) {                                                        \
+            gen_compute_fprf_float64(tcg_ctx, t3);                             \
+        }                                                                      \
+        if (unlikely(Rc(ctx->opcode) != 0)) {                                  \
+            gen_set_cr1_from_fpscr(ctx);                                       \
+        }                                                                      \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+        tcg_temp_free_i64(tcg_ctx, t1);                                        \
+        tcg_temp_free_i64(tcg_ctx, t2);                                        \
+        tcg_temp_free_i64(tcg_ctx, t3);                                        \
+    }
 
-#define GEN_FLOAT_ACB(name, op2, set_fprf, type)                              \
-_GEN_FLOAT_ACB(name, name, 0x3F, op2, 0, set_fprf, type);                     \
-_GEN_FLOAT_ACB(name##s, name, 0x3B, op2, 1, set_fprf, type);
+#define GEN_FLOAT_ACB(name, op2, set_fprf, type)                               \
+    _GEN_FLOAT_ACB(name, name, 0x3F, op2, 0, set_fprf, type);                  \
+    _GEN_FLOAT_ACB(name##s, name, 0x3B, op2, 1, set_fprf, type);
 
-#define _GEN_FLOAT_AB(name, op, op1, op2, inval, isfloat, set_fprf, type)     \
-static void gen_f##name(DisasContext *ctx)                                    \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv_i64 t0;                                                              \
-    TCGv_i64 t1;                                                              \
-    TCGv_i64 t2;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    t1 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    t2 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    gen_reset_fpstatus(tcg_ctx);                                                     \
-    get_fpr(tcg_ctx, t0, rA(ctx->opcode));                                             \
-    get_fpr(tcg_ctx, t1, rB(ctx->opcode));                                             \
-    gen_helper_f##op(tcg_ctx, t2, tcg_ctx->cpu_env, t0, t1);                                    \
-    if (isfloat) {                                                            \
-        gen_helper_frsp(tcg_ctx, t2, tcg_ctx->cpu_env, t2);                                     \
-    }                                                                         \
-    set_fpr(tcg_ctx, rD(ctx->opcode), t2);                                             \
-    if (set_fprf) {                                                           \
-        gen_compute_fprf_float64(tcg_ctx, t2);                                         \
-    }                                                                         \
-    if (unlikely(Rc(ctx->opcode) != 0)) {                                     \
-        gen_set_cr1_from_fpscr(ctx);                                          \
-    }                                                                         \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
-    tcg_temp_free_i64(tcg_ctx, t1);                                                    \
-    tcg_temp_free_i64(tcg_ctx, t2);                                                    \
-}
-#define GEN_FLOAT_AB(name, op2, inval, set_fprf, type)                        \
-_GEN_FLOAT_AB(name, name, 0x3F, op2, inval, 0, set_fprf, type);               \
-_GEN_FLOAT_AB(name##s, name, 0x3B, op2, inval, 1, set_fprf, type);
+#define _GEN_FLOAT_AB(name, op, op1, op2, inval, isfloat, set_fprf, type)      \
+    static void gen_f##name(DisasContext *ctx)                                 \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv_i64 t0;                                                           \
+        TCGv_i64 t1;                                                           \
+        TCGv_i64 t2;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        t1 = tcg_temp_new_i64(tcg_ctx);                                        \
+        t2 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_reset_fpstatus(tcg_ctx);                                           \
+        get_fpr(tcg_ctx, t0, rA(ctx->opcode));                                 \
+        get_fpr(tcg_ctx, t1, rB(ctx->opcode));                                 \
+        gen_helper_f##op(tcg_ctx, t2, tcg_ctx->cpu_env, t0, t1);               \
+        if (isfloat) {                                                         \
+            gen_helper_frsp(tcg_ctx, t2, tcg_ctx->cpu_env, t2);                \
+        }                                                                      \
+        set_fpr(tcg_ctx, rD(ctx->opcode), t2);                                 \
+        if (set_fprf) {                                                        \
+            gen_compute_fprf_float64(tcg_ctx, t2);                             \
+        }                                                                      \
+        if (unlikely(Rc(ctx->opcode) != 0)) {                                  \
+            gen_set_cr1_from_fpscr(ctx);                                       \
+        }                                                                      \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+        tcg_temp_free_i64(tcg_ctx, t1);                                        \
+        tcg_temp_free_i64(tcg_ctx, t2);                                        \
+    }
+#define GEN_FLOAT_AB(name, op2, inval, set_fprf, type)                         \
+    _GEN_FLOAT_AB(name, name, 0x3F, op2, inval, 0, set_fprf, type);            \
+    _GEN_FLOAT_AB(name##s, name, 0x3B, op2, inval, 1, set_fprf, type);
 
-#define _GEN_FLOAT_AC(name, op, op1, op2, inval, isfloat, set_fprf, type)     \
-static void gen_f##name(DisasContext *ctx)                                    \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv_i64 t0;                                                              \
-    TCGv_i64 t1;                                                              \
-    TCGv_i64 t2;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    t1 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    t2 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    gen_reset_fpstatus(tcg_ctx);                                                     \
-    get_fpr(tcg_ctx, t0, rA(ctx->opcode));                                             \
-    get_fpr(tcg_ctx, t1, rC(ctx->opcode));                                             \
-    gen_helper_f##op(tcg_ctx, t2, tcg_ctx->cpu_env, t0, t1);                                    \
-    if (isfloat) {                                                            \
-        gen_helper_frsp(tcg_ctx, t2, tcg_ctx->cpu_env, t2);                                     \
-    }                                                                         \
-    set_fpr(tcg_ctx, rD(ctx->opcode), t2);                                             \
-    if (set_fprf) {                                                           \
-        gen_compute_fprf_float64(tcg_ctx, t2);                                         \
-    }                                                                         \
-    if (unlikely(Rc(ctx->opcode) != 0)) {                                     \
-        gen_set_cr1_from_fpscr(ctx);                                          \
-    }                                                                         \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
-    tcg_temp_free_i64(tcg_ctx, t1);                                                    \
-    tcg_temp_free_i64(tcg_ctx, t2);                                                    \
-}
-#define GEN_FLOAT_AC(name, op2, inval, set_fprf, type)                        \
-_GEN_FLOAT_AC(name, name, 0x3F, op2, inval, 0, set_fprf, type);               \
-_GEN_FLOAT_AC(name##s, name, 0x3B, op2, inval, 1, set_fprf, type);
+#define _GEN_FLOAT_AC(name, op, op1, op2, inval, isfloat, set_fprf, type)      \
+    static void gen_f##name(DisasContext *ctx)                                 \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv_i64 t0;                                                           \
+        TCGv_i64 t1;                                                           \
+        TCGv_i64 t2;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        t1 = tcg_temp_new_i64(tcg_ctx);                                        \
+        t2 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_reset_fpstatus(tcg_ctx);                                           \
+        get_fpr(tcg_ctx, t0, rA(ctx->opcode));                                 \
+        get_fpr(tcg_ctx, t1, rC(ctx->opcode));                                 \
+        gen_helper_f##op(tcg_ctx, t2, tcg_ctx->cpu_env, t0, t1);               \
+        if (isfloat) {                                                         \
+            gen_helper_frsp(tcg_ctx, t2, tcg_ctx->cpu_env, t2);                \
+        }                                                                      \
+        set_fpr(tcg_ctx, rD(ctx->opcode), t2);                                 \
+        if (set_fprf) {                                                        \
+            gen_compute_fprf_float64(tcg_ctx, t2);                             \
+        }                                                                      \
+        if (unlikely(Rc(ctx->opcode) != 0)) {                                  \
+            gen_set_cr1_from_fpscr(ctx);                                       \
+        }                                                                      \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+        tcg_temp_free_i64(tcg_ctx, t1);                                        \
+        tcg_temp_free_i64(tcg_ctx, t2);                                        \
+    }
+#define GEN_FLOAT_AC(name, op2, inval, set_fprf, type)                         \
+    _GEN_FLOAT_AC(name, name, 0x3F, op2, inval, 0, set_fprf, type);            \
+    _GEN_FLOAT_AC(name##s, name, 0x3B, op2, inval, 1, set_fprf, type);
 
-#define GEN_FLOAT_B(name, op2, op3, set_fprf, type)                           \
-static void gen_f##name(DisasContext *ctx)                                    \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv_i64 t0;                                                              \
-    TCGv_i64 t1;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    t1 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    gen_reset_fpstatus(tcg_ctx);                                                     \
-    get_fpr(tcg_ctx, t0, rB(ctx->opcode));                                             \
-    gen_helper_f##name(tcg_ctx, t1, tcg_ctx->cpu_env, t0);                                      \
-    set_fpr(tcg_ctx, rD(ctx->opcode), t1);                                             \
-    if (set_fprf) {                                                           \
-        gen_compute_fprf_float64(tcg_ctx, t1);                                         \
-    }                                                                         \
-    if (unlikely(Rc(ctx->opcode) != 0)) {                                     \
-        gen_set_cr1_from_fpscr(ctx);                                          \
-    }                                                                         \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
-    tcg_temp_free_i64(tcg_ctx, t1);                                                    \
-}
+#define GEN_FLOAT_B(name, op2, op3, set_fprf, type)                            \
+    static void gen_f##name(DisasContext *ctx)                                 \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv_i64 t0;                                                           \
+        TCGv_i64 t1;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        t1 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_reset_fpstatus(tcg_ctx);                                           \
+        get_fpr(tcg_ctx, t0, rB(ctx->opcode));                                 \
+        gen_helper_f##name(tcg_ctx, t1, tcg_ctx->cpu_env, t0);                 \
+        set_fpr(tcg_ctx, rD(ctx->opcode), t1);                                 \
+        if (set_fprf) {                                                        \
+            gen_compute_fprf_float64(tcg_ctx, t1);                             \
+        }                                                                      \
+        if (unlikely(Rc(ctx->opcode) != 0)) {                                  \
+            gen_set_cr1_from_fpscr(ctx);                                       \
+        }                                                                      \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+        tcg_temp_free_i64(tcg_ctx, t1);                                        \
+    }
 
-#define GEN_FLOAT_BS(name, op1, op2, set_fprf, type)                          \
-static void gen_f##name(DisasContext *ctx)                                    \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv_i64 t0;                                                              \
-    TCGv_i64 t1;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    t1 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    gen_reset_fpstatus(tcg_ctx);                                                     \
-    get_fpr(tcg_ctx, t0, rB(ctx->opcode));                                             \
-    gen_helper_f##name(tcg_ctx, t1, tcg_ctx->cpu_env, t0);                                      \
-    set_fpr(tcg_ctx, rD(ctx->opcode), t1);                                             \
-    if (set_fprf) {                                                           \
-        gen_compute_fprf_float64(tcg_ctx, t1);                                         \
-    }                                                                         \
-    if (unlikely(Rc(ctx->opcode) != 0)) {                                     \
-        gen_set_cr1_from_fpscr(ctx);                                          \
-    }                                                                         \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
-    tcg_temp_free_i64(tcg_ctx, t1);                                                    \
-}
+#define GEN_FLOAT_BS(name, op1, op2, set_fprf, type)                           \
+    static void gen_f##name(DisasContext *ctx)                                 \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv_i64 t0;                                                           \
+        TCGv_i64 t1;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        t1 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_reset_fpstatus(tcg_ctx);                                           \
+        get_fpr(tcg_ctx, t0, rB(ctx->opcode));                                 \
+        gen_helper_f##name(tcg_ctx, t1, tcg_ctx->cpu_env, t0);                 \
+        set_fpr(tcg_ctx, rD(ctx->opcode), t1);                                 \
+        if (set_fprf) {                                                        \
+            gen_compute_fprf_float64(tcg_ctx, t1);                             \
+        }                                                                      \
+        if (unlikely(Rc(ctx->opcode) != 0)) {                                  \
+            gen_set_cr1_from_fpscr(ctx);                                       \
+        }                                                                      \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+        tcg_temp_free_i64(tcg_ctx, t1);                                        \
+    }
 
 /* fadd - fadds */
 GEN_FLOAT_AB(add, 0x15, 0x000007C0, 1, PPC_FLOAT);
@@ -217,7 +217,7 @@ GEN_FLOAT_BS(rsqrte, 0x3F, 0x1A, 1, PPC_FLOAT_FRSQRTE);
 /* frsqrtes */
 static void gen_frsqrtes(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     TCGv_i64 t1;
     if (unlikely(!ctx->fpu_enabled)) {
@@ -248,7 +248,7 @@ GEN_FLOAT_AB(sub, 0x14, 0x000007C0, 1, PPC_FLOAT);
 /* fsqrt */
 static void gen_fsqrt(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     TCGv_i64 t1;
     if (unlikely(!ctx->fpu_enabled)) {
@@ -271,7 +271,7 @@ static void gen_fsqrt(DisasContext *ctx)
 
 static void gen_fsqrts(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     TCGv_i64 t1;
     if (unlikely(!ctx->fpu_enabled)) {
@@ -342,7 +342,7 @@ GEN_FLOAT_B(rim, 0x08, 0x0F, 1, PPC_FLOAT_EXT);
 
 static void gen_ftdiv(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     TCGv_i64 t1;
     if (unlikely(!ctx->fpu_enabled)) {
@@ -360,7 +360,7 @@ static void gen_ftdiv(DisasContext *ctx)
 
 static void gen_ftsqrt(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     if (unlikely(!ctx->fpu_enabled)) {
         gen_exception(ctx, POWERPC_EXCP_FPU);
@@ -372,14 +372,12 @@ static void gen_ftsqrt(DisasContext *ctx)
     tcg_temp_free_i64(tcg_ctx, t0);
 }
 
-
-
 /***                         Floating-Point compare                        ***/
 
 /* fcmpo */
 static void gen_fcmpo(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 crf;
     TCGv_i64 t0;
     TCGv_i64 t1;
@@ -403,7 +401,7 @@ static void gen_fcmpo(DisasContext *ctx)
 /* fcmpu */
 static void gen_fcmpu(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 crf;
     TCGv_i64 t0;
     TCGv_i64 t1;
@@ -429,7 +427,7 @@ static void gen_fcmpu(DisasContext *ctx)
 /* XXX: beware that fabs never checks for NaNs nor update FPSCR */
 static void gen_fabs(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     TCGv_i64 t1;
     if (unlikely(!ctx->fpu_enabled)) {
@@ -452,7 +450,7 @@ static void gen_fabs(DisasContext *ctx)
 /* XXX: beware that fmr never checks for NaNs nor update FPSCR */
 static void gen_fmr(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     if (unlikely(!ctx->fpu_enabled)) {
         gen_exception(ctx, POWERPC_EXCP_FPU);
@@ -471,7 +469,7 @@ static void gen_fmr(DisasContext *ctx)
 /* XXX: beware that fnabs never checks for NaNs nor update FPSCR */
 static void gen_fnabs(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     TCGv_i64 t1;
     if (unlikely(!ctx->fpu_enabled)) {
@@ -494,7 +492,7 @@ static void gen_fnabs(DisasContext *ctx)
 /* XXX: beware that fneg never checks for NaNs nor update FPSCR */
 static void gen_fneg(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     TCGv_i64 t1;
     if (unlikely(!ctx->fpu_enabled)) {
@@ -517,7 +515,7 @@ static void gen_fneg(DisasContext *ctx)
 /* XXX: beware that fcpsgn never checks for NaNs nor update FPSCR */
 static void gen_fcpsgn(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     TCGv_i64 t1;
     TCGv_i64 t2;
@@ -542,7 +540,7 @@ static void gen_fcpsgn(DisasContext *ctx)
 
 static void gen_fmrgew(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 b0;
     TCGv_i64 t0;
     TCGv_i64 t1;
@@ -565,7 +563,7 @@ static void gen_fmrgew(DisasContext *ctx)
 
 static void gen_fmrgow(DisasContext *ctx)
 {
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i64 t0;
     TCGv_i64 t1;
     TCGv_i64 t2;
@@ -607,8 +605,8 @@ static void gen_mcrfs(DisasContext *ctx)
     shift = 4 * nibble;
     tcg_gen_shri_tl(tcg_ctx, tmp, cpu_fpscr, shift);
     tcg_gen_trunc_tl_i32(tcg_ctx, cpu_crf[crfD(ctx->opcode)], tmp);
-    tcg_gen_andi_i32(tcg_ctx, cpu_crf[crfD(ctx->opcode)], cpu_crf[crfD(ctx->opcode)],
-                     0xf);
+    tcg_gen_andi_i32(tcg_ctx, cpu_crf[crfD(ctx->opcode)],
+                     cpu_crf[crfD(ctx->opcode)], 0xf);
     tcg_temp_free(tcg_ctx, tmp);
     tcg_gen_extu_tl_i64(tcg_ctx, tnew_fpscr, cpu_fpscr);
     /* Only the exception bits (including FX) should be cleared if read */
@@ -836,7 +834,8 @@ static void gen_mtfsf(DisasContext *ctx)
     }
     gen_reset_fpstatus(tcg_ctx);
     if (l) {
-        t0 = tcg_const_i32(tcg_ctx, (ctx->insns_flags2 & PPC2_ISA205) ? 0xffff : 0xff);
+        t0 = tcg_const_i32(tcg_ctx,
+                           (ctx->insns_flags2 & PPC2_ISA205) ? 0xffff : 0xff);
     } else {
         t0 = tcg_const_i32(tcg_ctx, flm << (w * 8));
     }
@@ -887,101 +886,101 @@ static void gen_mtfsfi(DisasContext *ctx)
 }
 
 /***                         Floating-point load                           ***/
-#define GEN_LDF(name, ldop, opc, type)                                        \
-static void glue(gen_, name)(DisasContext *ctx)                               \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv EA;                                                                  \
-    TCGv_i64 t0;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    gen_set_access_type(ctx, ACCESS_FLOAT);                                   \
-    EA = tcg_temp_new(tcg_ctx);                                                      \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    gen_addr_imm_index(ctx, EA, 0);                                           \
-    gen_qemu_##ldop(ctx, t0, EA);                                             \
-    set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                             \
-    tcg_temp_free(tcg_ctx, EA);                                                        \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
-}
+#define GEN_LDF(name, ldop, opc, type)                                         \
+    static void glue(gen_, name)(DisasContext * ctx)                           \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv EA;                                                               \
+        TCGv_i64 t0;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        gen_set_access_type(ctx, ACCESS_FLOAT);                                \
+        EA = tcg_temp_new(tcg_ctx);                                            \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_addr_imm_index(ctx, EA, 0);                                        \
+        gen_qemu_##ldop(ctx, t0, EA);                                          \
+        set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                 \
+        tcg_temp_free(tcg_ctx, EA);                                            \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+    }
 
-#define GEN_LDUF(name, ldop, opc, type)                                       \
-static void glue(gen_, name##u)(DisasContext *ctx)                            \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv EA;                                                                  \
-    TCGv_i64 t0;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    if (unlikely(rA(ctx->opcode) == 0)) {                                     \
-        gen_inval_exception(ctx, POWERPC_EXCP_INVAL_INVAL);                   \
-        return;                                                               \
-    }                                                                         \
-    gen_set_access_type(ctx, ACCESS_FLOAT);                                   \
-    EA = tcg_temp_new(tcg_ctx);                                               \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                           \
-    gen_addr_imm_index(ctx, EA, 0);                                           \
-    gen_qemu_##ldop(ctx, t0, EA);                                             \
-    set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                    \
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                    \
-    tcg_temp_free(tcg_ctx, EA);                                               \
-    tcg_temp_free_i64(tcg_ctx, t0);                                           \
-}
+#define GEN_LDUF(name, ldop, opc, type)                                        \
+    static void glue(gen_, name##u)(DisasContext * ctx)                        \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv EA;                                                               \
+        TCGv_i64 t0;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        if (unlikely(rA(ctx->opcode) == 0)) {                                  \
+            gen_inval_exception(ctx, POWERPC_EXCP_INVAL_INVAL);                \
+            return;                                                            \
+        }                                                                      \
+        gen_set_access_type(ctx, ACCESS_FLOAT);                                \
+        EA = tcg_temp_new(tcg_ctx);                                            \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_addr_imm_index(ctx, EA, 0);                                        \
+        gen_qemu_##ldop(ctx, t0, EA);                                          \
+        set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                 \
+        tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                 \
+        tcg_temp_free(tcg_ctx, EA);                                            \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+    }
 
-#define GEN_LDUXF(name, ldop, opc, type)                                      \
-static void glue(gen_, name##ux)(DisasContext *ctx)                           \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv EA;                                                                  \
-    TCGv_i64 t0;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                           \
-    if (unlikely(rA(ctx->opcode) == 0)) {                                     \
-        gen_inval_exception(ctx, POWERPC_EXCP_INVAL_INVAL);                   \
-        return;                                                               \
-    }                                                                         \
-    gen_set_access_type(ctx, ACCESS_FLOAT);                                   \
-    EA = tcg_temp_new(tcg_ctx);                                               \
-    gen_addr_reg_index(ctx, EA);                                              \
-    gen_qemu_##ldop(ctx, t0, EA);                                             \
-    set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                    \
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                    \
-    tcg_temp_free(tcg_ctx, EA);                                               \
-    tcg_temp_free_i64(tcg_ctx, t0);                                           \
-}
+#define GEN_LDUXF(name, ldop, opc, type)                                       \
+    static void glue(gen_, name##ux)(DisasContext * ctx)                       \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv EA;                                                               \
+        TCGv_i64 t0;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        if (unlikely(rA(ctx->opcode) == 0)) {                                  \
+            gen_inval_exception(ctx, POWERPC_EXCP_INVAL_INVAL);                \
+            return;                                                            \
+        }                                                                      \
+        gen_set_access_type(ctx, ACCESS_FLOAT);                                \
+        EA = tcg_temp_new(tcg_ctx);                                            \
+        gen_addr_reg_index(ctx, EA);                                           \
+        gen_qemu_##ldop(ctx, t0, EA);                                          \
+        set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                 \
+        tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                 \
+        tcg_temp_free(tcg_ctx, EA);                                            \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+    }
 
-#define GEN_LDXF(name, ldop, opc2, opc3, type)                                \
-static void glue(gen_, name##x)(DisasContext *ctx)                            \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv EA;                                                                  \
-    TCGv_i64 t0;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    gen_set_access_type(ctx, ACCESS_FLOAT);                                   \
-    EA = tcg_temp_new(tcg_ctx);                                               \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                           \
-    gen_addr_reg_index(ctx, EA);                                              \
-    gen_qemu_##ldop(ctx, t0, EA);                                             \
-    set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                    \
-    tcg_temp_free(tcg_ctx, EA);                                               \
-    tcg_temp_free_i64(tcg_ctx, t0);                                           \
-}
+#define GEN_LDXF(name, ldop, opc2, opc3, type)                                 \
+    static void glue(gen_, name##x)(DisasContext * ctx)                        \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv EA;                                                               \
+        TCGv_i64 t0;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        gen_set_access_type(ctx, ACCESS_FLOAT);                                \
+        EA = tcg_temp_new(tcg_ctx);                                            \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_addr_reg_index(ctx, EA);                                           \
+        gen_qemu_##ldop(ctx, t0, EA);                                          \
+        set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                 \
+        tcg_temp_free(tcg_ctx, EA);                                            \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+    }
 
-#define GEN_LDFS(name, ldop, op, type)                                        \
-GEN_LDF(name, ldop, op | 0x20, type);                                         \
-GEN_LDUF(name, ldop, op | 0x21, type);                                        \
-GEN_LDUXF(name, ldop, op | 0x01, type);                                       \
-GEN_LDXF(name, ldop, 0x17, op | 0x00, type)
+#define GEN_LDFS(name, ldop, op, type)                                         \
+    GEN_LDF(name, ldop, op | 0x20, type);                                      \
+    GEN_LDUF(name, ldop, op | 0x21, type);                                     \
+    GEN_LDUXF(name, ldop, op | 0x01, type);                                    \
+    GEN_LDXF(name, ldop, 0x17, op | 0x00, type)
 
 static void gen_qemu_ld32fs(DisasContext *ctx, TCGv_i64 dest, TCGv addr)
 {
@@ -992,9 +991,9 @@ static void gen_qemu_ld32fs(DisasContext *ctx, TCGv_i64 dest, TCGv addr)
     tcg_temp_free_i32(tcg_ctx, tmp);
 }
 
- /* lfd lfdu lfdux lfdx */
+/* lfd lfdu lfdux lfdx */
 GEN_LDFS(lfd, ld64_i64, 0x12, PPC_FLOAT);
- /* lfs lfsu lfsux lfsx */
+/* lfs lfsu lfsux lfsx */
 GEN_LDFS(lfs, ld32fs, 0x10, PPC_FLOAT);
 
 /* lfdepx (external PID lfdx) */
@@ -1132,101 +1131,101 @@ static void gen_lfiwzx(DisasContext *ctx)
     tcg_temp_free_i64(tcg_ctx, t0);
 }
 /***                         Floating-point store                          ***/
-#define GEN_STF(name, stop, opc, type)                                        \
-static void glue(gen_, name)(DisasContext *ctx)                               \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv EA;                                                                  \
-    TCGv_i64 t0;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    gen_set_access_type(ctx, ACCESS_FLOAT);                                   \
-    EA = tcg_temp_new(tcg_ctx);                                                      \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    gen_addr_imm_index(ctx, EA, 0);                                           \
-    get_fpr(tcg_ctx, t0, rS(ctx->opcode));                                             \
-    gen_qemu_##stop(ctx, t0, EA);                                             \
-    tcg_temp_free(tcg_ctx, EA);                                                        \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
-}
+#define GEN_STF(name, stop, opc, type)                                         \
+    static void glue(gen_, name)(DisasContext * ctx)                           \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv EA;                                                               \
+        TCGv_i64 t0;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        gen_set_access_type(ctx, ACCESS_FLOAT);                                \
+        EA = tcg_temp_new(tcg_ctx);                                            \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_addr_imm_index(ctx, EA, 0);                                        \
+        get_fpr(tcg_ctx, t0, rS(ctx->opcode));                                 \
+        gen_qemu_##stop(ctx, t0, EA);                                          \
+        tcg_temp_free(tcg_ctx, EA);                                            \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+    }
 
-#define GEN_STUF(name, stop, opc, type)                                       \
-static void glue(gen_, name##u)(DisasContext *ctx)                            \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv EA;                                                                  \
-    TCGv_i64 t0;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    if (unlikely(rA(ctx->opcode) == 0)) {                                     \
-        gen_inval_exception(ctx, POWERPC_EXCP_INVAL_INVAL);                   \
-        return;                                                               \
-    }                                                                         \
-    gen_set_access_type(ctx, ACCESS_FLOAT);                                   \
-    EA = tcg_temp_new(tcg_ctx);                                                      \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    gen_addr_imm_index(ctx, EA, 0);                                           \
-    get_fpr(tcg_ctx, t0, rS(ctx->opcode));                                             \
-    gen_qemu_##stop(ctx, t0, EA);                                             \
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                             \
-    tcg_temp_free(tcg_ctx, EA);                                                        \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
-}
+#define GEN_STUF(name, stop, opc, type)                                        \
+    static void glue(gen_, name##u)(DisasContext * ctx)                        \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv EA;                                                               \
+        TCGv_i64 t0;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        if (unlikely(rA(ctx->opcode) == 0)) {                                  \
+            gen_inval_exception(ctx, POWERPC_EXCP_INVAL_INVAL);                \
+            return;                                                            \
+        }                                                                      \
+        gen_set_access_type(ctx, ACCESS_FLOAT);                                \
+        EA = tcg_temp_new(tcg_ctx);                                            \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_addr_imm_index(ctx, EA, 0);                                        \
+        get_fpr(tcg_ctx, t0, rS(ctx->opcode));                                 \
+        gen_qemu_##stop(ctx, t0, EA);                                          \
+        tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                 \
+        tcg_temp_free(tcg_ctx, EA);                                            \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+    }
 
-#define GEN_STUXF(name, stop, opc, type)                                      \
-static void glue(gen_, name##ux)(DisasContext *ctx)                           \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv EA;                                                                  \
-    TCGv_i64 t0;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    if (unlikely(rA(ctx->opcode) == 0)) {                                     \
-        gen_inval_exception(ctx, POWERPC_EXCP_INVAL_INVAL);                   \
-        return;                                                               \
-    }                                                                         \
-    gen_set_access_type(ctx, ACCESS_FLOAT);                                   \
-    EA = tcg_temp_new(tcg_ctx);                                                      \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    gen_addr_reg_index(ctx, EA);                                              \
-    get_fpr(tcg_ctx, t0, rS(ctx->opcode));                                             \
-    gen_qemu_##stop(ctx, t0, EA);                                             \
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                             \
-    tcg_temp_free(tcg_ctx, EA);                                                        \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
-}
+#define GEN_STUXF(name, stop, opc, type)                                       \
+    static void glue(gen_, name##ux)(DisasContext * ctx)                       \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv EA;                                                               \
+        TCGv_i64 t0;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        if (unlikely(rA(ctx->opcode) == 0)) {                                  \
+            gen_inval_exception(ctx, POWERPC_EXCP_INVAL_INVAL);                \
+            return;                                                            \
+        }                                                                      \
+        gen_set_access_type(ctx, ACCESS_FLOAT);                                \
+        EA = tcg_temp_new(tcg_ctx);                                            \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_addr_reg_index(ctx, EA);                                           \
+        get_fpr(tcg_ctx, t0, rS(ctx->opcode));                                 \
+        gen_qemu_##stop(ctx, t0, EA);                                          \
+        tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                 \
+        tcg_temp_free(tcg_ctx, EA);                                            \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+    }
 
-#define GEN_STXF(name, stop, opc2, opc3, type)                                \
-static void glue(gen_, name##x)(DisasContext *ctx)                            \
-{                                                                             \
-    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                   \
-    TCGv EA;                                                                  \
-    TCGv_i64 t0;                                                              \
-    if (unlikely(!ctx->fpu_enabled)) {                                        \
-        gen_exception(ctx, POWERPC_EXCP_FPU);                                 \
-        return;                                                               \
-    }                                                                         \
-    gen_set_access_type(ctx, ACCESS_FLOAT);                                   \
-    EA = tcg_temp_new(tcg_ctx);                                                      \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
-    gen_addr_reg_index(ctx, EA);                                              \
-    get_fpr(tcg_ctx, t0, rS(ctx->opcode));                                             \
-    gen_qemu_##stop(ctx, t0, EA);                                             \
-    tcg_temp_free(tcg_ctx, EA);                                                        \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
-}
+#define GEN_STXF(name, stop, opc2, opc3, type)                                 \
+    static void glue(gen_, name##x)(DisasContext * ctx)                        \
+    {                                                                          \
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                \
+        TCGv EA;                                                               \
+        TCGv_i64 t0;                                                           \
+        if (unlikely(!ctx->fpu_enabled)) {                                     \
+            gen_exception(ctx, POWERPC_EXCP_FPU);                              \
+            return;                                                            \
+        }                                                                      \
+        gen_set_access_type(ctx, ACCESS_FLOAT);                                \
+        EA = tcg_temp_new(tcg_ctx);                                            \
+        t0 = tcg_temp_new_i64(tcg_ctx);                                        \
+        gen_addr_reg_index(ctx, EA);                                           \
+        get_fpr(tcg_ctx, t0, rS(ctx->opcode));                                 \
+        gen_qemu_##stop(ctx, t0, EA);                                          \
+        tcg_temp_free(tcg_ctx, EA);                                            \
+        tcg_temp_free_i64(tcg_ctx, t0);                                        \
+    }
 
-#define GEN_STFS(name, stop, op, type)                                        \
-GEN_STF(name, stop, op | 0x20, type);                                         \
-GEN_STUF(name, stop, op | 0x21, type);                                        \
-GEN_STUXF(name, stop, op | 0x01, type);                                       \
-GEN_STXF(name, stop, 0x17, op | 0x00, type)
+#define GEN_STFS(name, stop, op, type)                                         \
+    GEN_STF(name, stop, op | 0x20, type);                                      \
+    GEN_STUF(name, stop, op | 0x21, type);                                     \
+    GEN_STUXF(name, stop, op | 0x01, type);                                    \
+    GEN_STXF(name, stop, 0x17, op | 0x00, type)
 
 static void gen_qemu_st32fs(DisasContext *ctx, TCGv_i64 src, TCGv addr)
 {
@@ -1338,8 +1337,7 @@ static inline void gen_qemu_st32fiw(DisasContext *ctx, TCGv_i64 arg1, TCGv arg2)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv t0 = tcg_temp_new(tcg_ctx);
-    tcg_gen_trunc_i64_tl(tcg_ctx, t0, arg1),
-    gen_qemu_st32(ctx, t0, arg2);
+    tcg_gen_trunc_i64_tl(tcg_ctx, t0, arg1), gen_qemu_st32(ctx, t0, arg2);
     tcg_temp_free(tcg_ctx, t0);
 }
 /* stfiwx */
