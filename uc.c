@@ -1066,7 +1066,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         break;
 #endif
     }
-
+    uc->skip_sync_pc_on_exit = false;
     uc->stop_request = false;
 
     uc->emu_count = count;
