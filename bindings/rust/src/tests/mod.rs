@@ -20,7 +20,7 @@ mod s390x;
 use crate::{Arch, HookType, Mode, Prot, TlbEntry, TlbType, Unicorn, uc_error};
 
 pub const CODE_START: u64 = 0x1000;
-pub const CODE_LEN: usize = 0x4000;
+pub const CODE_LEN: u64 = 0x4000;
 
 fn uc_common_setup<T>(
     arch: Arch,

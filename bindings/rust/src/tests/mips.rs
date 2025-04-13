@@ -3,7 +3,7 @@ use unicorn_engine_sys::RegisterMIPS;
 use super::*;
 
 const CODE_START: u64 = 0x10000000;
-const CODE_LEN: usize = 0x4000;
+const CODE_LEN: u64 = 0x4000;
 
 fn uc_common_setup<T>(
     arch: Arch,

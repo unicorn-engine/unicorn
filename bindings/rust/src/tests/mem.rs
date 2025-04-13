@@ -161,7 +161,7 @@ fn test_map_big_memory() {
     let mut uc = Unicorn::new(Arch::X86, Mode::MODE_64).unwrap();
     let requested_size = !(page_size::get() - 1);
     assert_eq!(
-        uc.mem_map(0x0, requested_size, Prot::ALL),
+        uc.mem_map(0x0, requested_size.try_into().unwrap(), Prot::ALL),
         Err(uc_error::NOMEM)
     );
 }
