@@ -297,7 +297,7 @@ impl<'a, D> Unicorn<'a, D> {
     /// Return a range of bytes from memory at the specified emulated physical address as vector.
     pub fn mem_read_as_vec(&self, address: u64, size: usize) -> Result<Vec<u8>, uc_error> {
         let mut buf = vec![0; size];
-        unsafe { uc_mem_read(self.get_handle(), address, buf.as_mut_ptr().cast(), size.try_into().unwrap() }
+        unsafe { uc_mem_read(self.get_handle(), address, buf.as_mut_ptr().cast(), size.try_into().unwrap()); }
             .and(Ok(buf))
     }
 
