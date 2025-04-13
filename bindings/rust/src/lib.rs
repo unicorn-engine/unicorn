@@ -573,7 +573,7 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Read ARM Coprocessor register
-    pub fn reg_read_arm_coproc(&self, reg: &mut RegisterARM_CP) -> Result<(), uc_error> {
+    pub fn reg_read_arm_coproc(&self, reg: &mut RegisterARMCP) -> Result<(), uc_error> {
         let curr_arch = self.get_arch();
         match curr_arch {
             #[cfg(feature = "arch_arm")]
@@ -585,14 +585,33 @@ impl<'a, D> Unicorn<'a, D> {
             uc_reg_read(
                 self.get_handle(),
                 RegisterARM::CP_REG.into(),
-                core::ptr::from_mut::<RegisterARM_CP>(reg).cast(),
+                core::ptr::from_mut(reg).cast(),
+            )
+        }
+        .into()
+    }
+
+    /// Write ARM Coprocessor register
+    pub fn reg_write_arm_coproc(&mut self, reg: &RegisterARMCP) -> Result<(), uc_error> {
+        let curr_arch = self.get_arch();
+        match curr_arch {
+            #[cfg(feature = "arch_arm")]
+            Arch::ARM => {}
+            _ => return Err(uc_error::ARCH),
+        }
+
+        unsafe {
+            uc_reg_write(
+                self.get_handle(),
+                RegisterARM::CP_REG.into(),
+                core::ptr::from_ref(reg).cast(),
             )
         }
         .into()
     }
 
     /// Read ARM64 Coprocessor register
-    pub fn reg_read_arm64_coproc(&self) -> Result<RegisterARM64_CP, uc_error> {
+    pub fn reg_read_arm64_coproc(&self, reg: &mut RegisterARM64CP) -> Result<(), uc_error> {
         let curr_arch = self.get_arch();
         match curr_arch {
             #[cfg(feature = "arch_aarch64")]
@@ -600,17 +619,33 @@ impl<'a, D> Unicorn<'a, D> {
             _ => return Err(uc_error::ARCH),
         }
 
-        let regid = RegisterARM64::CP_REG;
-        let mut reg = RegisterARM64_CP {
-            crn: 0,
-            crm: 0,
-            op0: 0,
-            op1: 0,
-            op2: 0,
-            val: 0,
-        };
+        unsafe {
+            uc_reg_read(
+                self.get_handle(),
+                RegisterARM64::CP_REG.into(),
+                core::ptr::from_mut(reg).cast(),
+            )
+        }
+        .and(Ok(()))
+    }
 
-        unsafe { uc_reg_read(self.get_handle(), regid as i32, (&raw mut reg).cast()) }.and(Ok(reg))
+    /// Write ARM64 Coprocessor register
+    pub fn reg_write_arm64_coproc(&mut self, reg: &RegisterARM64CP) -> Result<(), uc_error> {
+        let curr_arch = self.get_arch();
+        match curr_arch {
+            #[cfg(feature = "arch_aarch64")]
+            Arch::ARM64 => {}
+            _ => return Err(uc_error::ARCH),
+        }
+
+        unsafe {
+            uc_reg_write(
+                self.get_handle(),
+                RegisterARM64::CP_REG.into(),
+                core::ptr::from_ref(reg).cast(),
+            )
+        }
+        .and(Ok(()))
     }
 
     #[cfg(feature = "arch_arm")]
@@ -925,7 +960,7 @@ impl<'a, D> Unicorn<'a, D> {
         callback: F,
     ) -> Result<UcHookId, uc_error>
     where
-        F: FnMut(&mut Unicorn<D>, RegisterARM64, &RegisterARM64_CP) -> bool + 'a,
+        F: FnMut(&mut Unicorn<D>, RegisterARM64, &RegisterARM64CP) -> bool + 'a,
     {
         let mut hook_id = 0;
         let mut user_data = Box::new(hook::UcHook {
