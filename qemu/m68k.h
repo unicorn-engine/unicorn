@@ -1372,6 +1372,7 @@
 #define helper_bitrev helper_bitrev_m68k
 #define helper_ff1 helper_ff1_m68k
 #define helper_sats helper_sats_m68k
+#define cpu_m68k_get_sr cpu_m68k_get_sr_m68k
 #define cpu_m68k_set_sr cpu_m68k_set_sr_m68k
 #define helper_set_sr helper_set_sr_m68k
 #define helper_mac_move helper_mac_move_m68k

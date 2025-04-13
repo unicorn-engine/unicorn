@@ -20,3 +20,22 @@ fn test_move_to_sr() {
     let sr = uc.reg_read(RegisterM68K::SR).unwrap();
     assert_eq!(sr, 0x2700);
 }
+
+#[test]
+fn test_sr_contains_flags() {
+    let code = [
+        0x76, 0xed, // moveq #-19, %d3
+    ];
+
+    let mut uc = uc_common_setup(Arch::M68K, Mode::BIG_ENDIAN, None, &code, ());
+
+    uc.emu_start(CODE_START, CODE_START + code.len() as u64, 0, 0)
+        .unwrap();
+
+    let d3 = uc.reg_read(RegisterM68K::D3).unwrap();
+    assert_eq!(d3, 0xffffffed);
+
+    let sr = uc.reg_read(RegisterM68K::SR).unwrap();
+    let is_negative = sr & 0x8 == 0x8;
+    assert!(is_negative, "SR should contain negative flag");
+}
