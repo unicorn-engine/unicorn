@@ -361,19 +361,19 @@ static void test_snapshot_with_vtlb(void)
     OK(uc_emu_start(uc, 0x400000000 + 0x1000,
                     0x400000000 + 0x1000 + sizeof(code) - 1, 0, 0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 1);
+    TEST_CHECK(LEINT32(mem) == 1);
     OK(uc_context_save(uc, c1));
     OK(uc_emu_start(uc, 0x400000000 + 0x1000,
                     0x400000000 + 0x1000 + sizeof(code) - 1, 0, 0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 2);
+    TEST_CHECK(LEINT32(mem) == 2);
     OK(uc_context_restore(uc, c1));
     // TODO check mem
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 1);
+    TEST_CHECK(LEINT32(mem) == 1);
     OK(uc_context_restore(uc, c0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 0);
+    TEST_CHECK(LEINT32(mem) == 0);
     // TODO check mem
 
     OK(uc_context_free(c0));
