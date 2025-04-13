@@ -536,9 +536,9 @@ restart:
 #else
                     target_ulong old_pte =
 #ifdef _MSC_VER
-                        atomic_cmpxchg((long *)pte_pa, pte, updated_pte);
+                        atomic_cmpxchg((long *)pte_pa, cpu_to_le64(pte), cpu_to_le64(updated_pte));
 #else
-                        atomic_cmpxchg(pte_pa, pte, updated_pte);
+                        atomic_cmpxchg(pte_pa, cpu_to_le64(pte), cpu_to_le64(updated_pte));
 #endif
                     if (old_pte != pte) {
                         goto restart;
