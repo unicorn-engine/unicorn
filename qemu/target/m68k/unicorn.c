@@ -72,7 +72,8 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             break;
         case UC_M68K_REG_SR:
             CHECK_REG_TYPE(uint32_t);
-            *(uint32_t *)value = env->sr;
+            env->cc_op = CC_OP_FLAGS;
+            *(uint32_t *)value = cpu_m68k_get_sr(env);
             break;
         case UC_M68K_REG_CR_SFC:
             CHECK_REG_TYPE(uint32_t);

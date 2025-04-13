@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _tricore
 #endif
+#define gen_helper_check_exit_request gen_helper_check_exit_request_tricore
 #define unicorn_fill_tlb unicorn_fill_tlb_tricore
 #define reg_read reg_read_tricore
 #define reg_write reg_write_tricore

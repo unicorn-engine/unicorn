@@ -584,15 +584,11 @@ static void test_arm64_mem_prot_regress(void)
                    test_arm64_mem_prot_regress_hook_mem, NULL, 1, 0));
 
     uc_hook hh_prot;
-    OK(uc_hook_add(uc, &hh_prot,
-                   UC_HOOK_MEM_READ_PROT | UC_HOOK_MEM_WRITE_PROT |
-                       UC_HOOK_MEM_FETCH_PROT,
+    OK(uc_hook_add(uc, &hh_prot, UC_HOOK_MEM_PROT,
                    test_arm64_mem_prot_regress_hook_prot, NULL, 1, 0));
 
     uc_hook hh_unm;
-    OK(uc_hook_add(uc, &hh_unm,
-                   UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED |
-                       UC_HOOK_MEM_FETCH_UNMAPPED,
+    OK(uc_hook_add(uc, &hh_unm, UC_HOOK_MEM_UNMAPPED,
                    test_arm64_mem_prot_regress_hook_unm, NULL, 1, 0));
 
     const uint64_t value = 0x801b;
@@ -651,6 +647,24 @@ static void test_arm64_mem_hook_read_write(void)
     OK(uc_close(uc));
 }
 
+static void test_arm64_pc_guarantee(void)
+{
+    uc_engine *uc;
+    // ks.asm("mov x0, #1; mov x1, #2; ldr x0, [x1]")
+    const char code[] = "\x20\x00\x80\xd2\x41\x00\x80\xd2\x20\x00\x40\xf9";
+    uint64_t rip;
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code),
+                    UC_CPU_ARM64_A72);
+
+    uc_assert_err(UC_ERR_READ_UNMAPPED, uc_emu_start(uc, code_start,
+                                          code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, (void*)&rip));
+    TEST_CHECK(rip == code_start + 8);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -668,4 +682,5 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_pc_wrap", test_arm64_pc_wrap},
              {"test_arm64_mem_prot_regress", test_arm64_mem_prot_regress},
              {"test_arm64_mem_hook_read_write", test_arm64_mem_hook_read_write},
+             {"test_arm64_pc_guarantee", test_arm64_pc_guarantee},
              {NULL, NULL}};

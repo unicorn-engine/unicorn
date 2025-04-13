@@ -672,7 +672,6 @@ struct TCGContext {
 #endif
 
     TCGv_i32 delay_slot_flag;
-    TCGLabel *exitreq_label;
 
     TCGTempSet free_temps[TCG_TYPE_COUNT * 2];
     TCGTemp temps[TCG_MAX_TEMPS]; /* globals first, temps after */

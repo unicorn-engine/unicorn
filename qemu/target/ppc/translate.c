@@ -7628,6 +7628,7 @@ static void ppc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     // Unicorn: end address tells us to stop emulation
     if (uc_addr_is_exit(uc, ctx->base.pc_next)) {
         gen_wait(ctx);
+        dcbase->is_jmp = DISAS_NORETURN;
         return;
     }
 

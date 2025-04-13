@@ -617,7 +617,7 @@ void helper_store_fpscr(CPUPPCState *env, uint64_t arg, uint32_t mask)
     fpscr_set_rounding_mode(env);
 }
 
-void store_fpscr(CPUPPCState *env, uint64_t arg, uint32_t mask)
+void do_store_fpscr(CPUPPCState *env, uint64_t arg, uint32_t mask)
 {
     helper_store_fpscr(env, arg, mask);
 }

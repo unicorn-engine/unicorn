@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _sparc
 #endif
+#define gen_helper_check_exit_request gen_helper_check_exit_request_sparc
 #define unicorn_fill_tlb unicorn_fill_tlb_sparc
 #define reg_read reg_read_sparc
 #define reg_write reg_write_sparc

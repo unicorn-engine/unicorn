@@ -504,6 +504,9 @@ uc_err uc_close(uc_engine *uc)
         return UC_ERR_OK;
     }
 
+    // Flush all translation buffers or we leak memory allocated by MMU
+    uc->tb_flush(uc);
+
     // Cleanup internally.
     if (uc->release) {
         uc->release(uc->tcg_ctx);
@@ -705,6 +708,7 @@ uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
     if (setpc) {
         // force to quit execution and flush TB
         uc->quit_request = true;
+        uc->skip_sync_pc_on_exit = true;
         break_translation_loop(uc);
     }
 
@@ -1050,7 +1054,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         break;
 #endif
     }
-
+    uc->skip_sync_pc_on_exit = false;
     uc->stop_request = false;
 
     uc->emu_count = count;
