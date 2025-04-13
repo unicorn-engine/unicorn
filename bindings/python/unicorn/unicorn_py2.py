@@ -390,7 +390,7 @@ def _catch_hook_exception(func):
         """
         try:
             return func(self, *args, **kwargs)
-        except Exception as e:
+        except BaseException as e:
             # If multiple hooks raise exceptions, just use the first one
             if self._hook_exception is None:
                 self._hook_exception = e
