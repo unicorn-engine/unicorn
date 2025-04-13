@@ -89,8 +89,8 @@ impl Drop for Context {
 
 pub struct MmioCallbackScope<'a> {
     pub regions: Vec<(u64, u64)>,
-    pub read_callback: Option<Box<dyn ffi::IsUcHook<'a> + 'a>>,
-    pub write_callback: Option<Box<dyn ffi::IsUcHook<'a> + 'a>>,
+    pub read_callback: Option<Box<dyn hook::IsUcHook<'a> + 'a>>,
+    pub write_callback: Option<Box<dyn hook::IsUcHook<'a> + 'a>>,
 }
 
 impl MmioCallbackScope<'_> {
