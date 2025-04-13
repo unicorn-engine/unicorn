@@ -362,99 +362,63 @@ else()
     set(TARGET_LIST "${TARGET_LIST} ")
 
     # GEN config-host.mak & target directories
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
-        --cc=${CMAKE_C_COMPILER}
-        ${EXTRA_CFLAGS}
-        ${TARGET_LIST}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/config-host.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/config-host.h
-    )
-    if(UNICORN_HAS_X86)
+    if (NOT EXISTS "${CMAKE_BINARY_DIR}/config-host.mak")
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
+                        --cc=${CMAKE_C_COMPILER}
+                        ${EXTRA_CFLAGS}
+                        ${TARGET_LIST}
+                        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    endif()
+
+    if (NOT EXISTS "${CMAKE_BINARY_DIR}/config-host.h")
         execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/x86_64-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/x86_64-softmmu/config-target.h
-        )
+                        INPUT_FILE "${CMAKE_BINARY_DIR}/config-host.mak"
+                        OUTPUT_FILE "${CMAKE_BINARY_DIR}/config-host.h")
+    endif()
+
+    macro(generate_unicorn_config_target_file target_arch)
+        if (NOT EXISTS "${CMAKE_BINARY_DIR}/${target_arch}/config-target.h")
+            execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+                            INPUT_FILE "${CMAKE_BINARY_DIR}/${target_arch}/config-target.mak"
+                            OUTPUT_FILE "${CMAKE_BINARY_DIR}/${target_arch}/config-target.h")
+        endif()
+    endmacro()
+
+    if(UNICORN_HAS_X86)
+        generate_unicorn_config_target_file("x86_64-softmmu")
     endif()
     if(UNICORN_HAS_ARM)
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/arm-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/arm-softmmu/config-target.h
-        )
+        generate_unicorn_config_target_file("arm-softmmu")
     endif()
     if(UNICORN_HAS_AARCH64)
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/aarch64-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/aarch64-softmmu/config-target.h
-        )
+        generate_unicorn_config_target_file("aarch64-softmmu")
     endif()
     if(UNICORN_HAS_M68K)
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/m68k-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/m68k-softmmu/config-target.h
-        )
+        generate_unicorn_config_target_file("m68k-softmmu")
     endif()
     if(UNICORN_HAS_MIPS)
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/mips-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips-softmmu/config-target.h
-        )
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/mipsel-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/mipsel-softmmu/config-target.h
-        )
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/mips64-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips64-softmmu/config-target.h
-        )
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/mips64el-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips64el-softmmu/config-target.h
-        )
+        generate_unicorn_config_target_file("mips-softmmu")
+        generate_unicorn_config_target_file("mipsel-softmmu")
+        generate_unicorn_config_target_file("mips64-softmmu")
+        generate_unicorn_config_target_file("mips64el-softmmu")
     endif()
     if(UNICORN_HAS_SPARC)
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/sparc-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc-softmmu/config-target.h
-        )
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.h
-        )
+        generate_unicorn_config_target_file("sparc-softmmu")
+        generate_unicorn_config_target_file("sparc64-softmmu")
     endif()
     if(UNICORN_HAS_PPC)
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/ppc-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/ppc-softmmu/config-target.h
-        )
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/ppc64-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/ppc64-softmmu/config-target.h
-        )
+        generate_unicorn_config_target_file("ppc-softmmu")
+        generate_unicorn_config_target_file("ppc64-softmmu")
     endif()
     if(UNICORN_HAS_RISCV)
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/riscv32-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/riscv32-softmmu/config-target.h
-        )
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/riscv64-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/riscv64-softmmu/config-target.h
-        )
+        generate_unicorn_config_target_file("riscv32-softmmu")
+        generate_unicorn_config_target_file("riscv64-softmmu")
     endif()
-    if (UNICORN_HAS_S390X)
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/s390x-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/s390x-softmmu/config-target.h
-        )
+    if(UNICORN_HAS_S390X)
+        generate_unicorn_config_target_file("s390x-softmmu")
     endif()
-    if (UNICORN_HAS_TRICORE)
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/tricore-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/tricore-softmmu/config-target.h
-        )
+    if(UNICORN_HAS_TRICORE)
+        generate_unicorn_config_target_file("tricore-softmmu")
     endif()
     add_compile_options(
         ${UNICORN_CFLAGS}
@@ -1538,3 +1502,4 @@ Cflags: -I\$\{includedir\}\n"
     )
     install(FILES ${CMAKE_BINARY_DIR}/unicorn.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
+
