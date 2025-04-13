@@ -591,6 +591,10 @@ uint32_t HELPER(sats)(uint32_t val, uint32_t v)
     return val;
 }
 
+uint32_t cpu_m68k_get_sr(CPUM68KState *env) {
+    return env->sr | cpu_m68k_get_ccr(env);
+}
+
 void cpu_m68k_set_sr(CPUM68KState *env, uint32_t sr)
 {
     env->sr = sr & 0xffe0;

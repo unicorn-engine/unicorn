@@ -5749,6 +5749,7 @@ m68k_cpu_tlb_fill \
 helper_bitrev \
 helper_ff1 \
 helper_sats \
+cpu_m68k_get_sr \
 cpu_m68k_set_sr \
 helper_set_sr \
 helper_mac_move \
