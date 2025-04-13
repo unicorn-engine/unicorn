@@ -147,6 +147,9 @@ typedef struct CPUM68KState {
     /* Fields from here on are preserved across CPU reset. */
     uint32_t features;
 
+    // translate opcode
+    void* opcode_table[65536];
+
     // Unicorn engine
     struct uc_struct *uc;
 } CPUM68KState;
