@@ -46,6 +46,8 @@ Contact
 [Contact us](http://www.unicorn-engine.org/contact/) via mailing list, email or twitter for any questions.
 
 
+Join [our group](https://t.me/+lnNl0fPpyCYzZmVh) for instant feedback.
+
 Contribute
 ----------
 
@@ -56,4 +58,3 @@ We also maintain a list of more challenged problems in [milestones](https://gith
 Please send pull request to our [dev branch](https://github.com/unicorn-engine/unicorn/tree/dev).
 
 [CREDITS.TXT](CREDITS.TXT) records important contributors of our project.
-
