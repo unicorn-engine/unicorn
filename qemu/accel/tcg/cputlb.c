@@ -1556,11 +1556,12 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     if (uc->stop_request)
                         break;
                 }
-
+#ifdef TARGET_ARM64
                 if (!handled) {
                     addr = addr & ARM64_TBI_MASK;
                     handled = 1;
                 }
+#endif
             }
         } else {
             error_code = uc->invalid_error;
@@ -2118,7 +2119,9 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
     struct uc_struct *uc = env->uc;
     HOOK_FOREACH_VAR_DECLARE;
     uintptr_t mmu_idx = get_mmuidx(oi);
+#ifdef TARGET_ARM64
     addr = addr & ARM64_TBI_MASK;
+#endif
     uintptr_t index = tlb_index(env, mmu_idx, addr);
     CPUTLBEntry *entry = tlb_entry(env, mmu_idx, addr);
     target_ulong tlb_addr = tlb_addr_write(entry);
