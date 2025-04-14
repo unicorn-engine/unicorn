@@ -61,6 +61,7 @@
     } while (0)
 #endif
 
+#define ARM64_TBI_MASK 0xFFFFFFFFFFFFFF
 /* run_on_cpu_data.target_ptr should always be big enough for a
  * target_ulong even on 32 bit builds */
 QEMU_BUILD_BUG_ON(sizeof(target_ulong) > sizeof(run_on_cpu_data));
@@ -1555,6 +1556,11 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     if (uc->stop_request)
                         break;
                 }
+
+                if (!handled) {
+                    addr = addr & ARM64_TBI_MASK;
+                    handled = 1;
+                }
             }
         } else {
             error_code = uc->invalid_error;
@@ -2112,6 +2118,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
     struct uc_struct *uc = env->uc;
     HOOK_FOREACH_VAR_DECLARE;
     uintptr_t mmu_idx = get_mmuidx(oi);
+    addr = addr & ARM64_TBI_MASK;
     uintptr_t index = tlb_index(env, mmu_idx, addr);
     CPUTLBEntry *entry = tlb_entry(env, mmu_idx, addr);
     target_ulong tlb_addr = tlb_addr_write(entry);
