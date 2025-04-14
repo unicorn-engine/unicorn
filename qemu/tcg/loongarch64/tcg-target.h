@@ -97,8 +97,6 @@ typedef enum {
     TCG_VEC_TMP0 = TCG_REG_V23,
 } TCGReg;
 
-extern bool use_lsx_instructions;
-
 /* used for function call generation */
 #define TCG_REG_CALL_STACK              TCG_REG_SP
 #define TCG_TARGET_STACK_ALIGN          16
@@ -187,10 +185,10 @@ extern bool use_lsx_instructions;
 #define TCG_TARGET_HAS_mulsh_i64        1
 #define TCG_TARGET_HAS_direct_jump      0
 
-#define TCG_TARGET_HAS_qemu_ldst_i128   use_lsx_instructions
+#define TCG_TARGET_HAS_qemu_ldst_i128   s->use_lsx_instructions
 
 #define TCG_TARGET_HAS_v64              0
-#define TCG_TARGET_HAS_v128             use_lsx_instructions
+#define TCG_TARGET_HAS_v128             s->use_lsx_instructions
 #define TCG_TARGET_HAS_v256             0
 
 #define TCG_TARGET_HAS_not_vec          1
