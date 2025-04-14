@@ -361,7 +361,7 @@ def uccallback(uc: Uc, functype: Type[_CFP]):
         def wrapper(handle: int, *args, **kwargs):
             try:
                 return func(uc, *args, **kwargs)
-            except Exception as e:
+            except BaseException as e:
                 # If multiple hooks raise exceptions, just use the first one
                 if uc._hook_exception is None:
                     uc._hook_exception = e
