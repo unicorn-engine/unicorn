@@ -1470,6 +1470,7 @@ static void test_x86_16_incorrect_ip(void)
     OK(uc_close(uc));
 }
 
+// Porting to BE: Only uc_mem_read/write needs endian fixing
 static void test_x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr,
                                      uint64_t tlb_base)
 {
@@ -1482,12 +1483,12 @@ static void test_x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr,
     uint64_t pml4e = (tlb_base + 0x1000) | 1 | (1 << 2);
     uint64_t pdpe = (tlb_base + 0x2000) | 1 | (1 << 2);
     uint64_t pde = (tlb_base + 0x3000) | 1 | (1 << 2);
-    pml4e = LEINT64(pml4e);
-    pde = LEINT64(pde);
-    pdpe = LEINT64(pdpe);
-    OK(uc_mem_write(uc, tlb_base + pml4o, &pml4e, sizeof(pml4o)));
-    OK(uc_mem_write(uc, tlb_base + 0x1000 + pdpo, &pdpe, sizeof(pdpe)));
-    OK(uc_mem_write(uc, tlb_base + 0x2000 + pdo, &pde, sizeof(pde)));
+    uint64_t pml4e_mem = LEINT64(pml4e);
+    uint64_t pde_mem = LEINT64(pde);
+    uint64_t pdpe_mem = LEINT64(pdpe);
+    OK(uc_mem_write(uc, tlb_base + pml4o, &pml4e_mem, sizeof(pml4o)));
+    OK(uc_mem_write(uc, tlb_base + 0x1000 + pdpo, &pdpe_mem, sizeof(pdpe)));
+    OK(uc_mem_write(uc, tlb_base + 0x2000 + pdo, &pde_mem, sizeof(pde)));
     OK(uc_reg_write(uc, UC_X86_REG_CR3, &tlb_base));
     OK(uc_reg_read(uc, UC_X86_REG_CR0, &cr0));
     OK(uc_reg_read(uc, UC_X86_REG_CR4, &cr4));
@@ -1496,10 +1497,6 @@ static void test_x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr,
     cr0 |= 1l << 31;
     cr4 |= 1l << 5;
     msr.value |= 1l << 8;
-    cr0 = LEINT64(cr0);
-    cr4 = LEINT64(cr4);
-    msr.rid = LEINT32(msr.rid);
-    msr.value = LEINT64(msr.value);
     OK(uc_reg_write(uc, UC_X86_REG_CR0, &cr0));
     OK(uc_reg_write(uc, UC_X86_REG_CR4, &cr4));
     OK(uc_reg_write(uc, UC_X86_REG_MSR, &msr));
