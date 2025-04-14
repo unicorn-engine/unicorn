@@ -1644,7 +1644,7 @@ static void test_x86_vtlb(void)
 static void test_x86_segmentation(void)
 {
     uc_engine *uc;
-    uint64_t fs = 0x53;
+    uint16_t fs = 0x53;
     uc_x86_mmr gdtr = {0, 0xfffff8076d962000, 0x57, 0};
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
