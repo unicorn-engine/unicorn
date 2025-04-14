@@ -1474,8 +1474,8 @@ static void test_x86_16_incorrect_ip(void)
 static void test_x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr,
                                      uint64_t tlb_base)
 {
-    uint64_t cr0;
-    uint64_t cr4;
+    uint32_t cr0;
+    uint32_t cr4;
     uc_x86_msr msr = {.rid = 0x0c0000080, .value = 0};
     uint64_t pml4o = ((vaddr & 0x00ff8000000000) >> 39) * 8;
     uint64_t pdpo = ((vaddr & 0x00007fc0000000) >> 30) * 8;
@@ -1507,7 +1507,9 @@ static void test_x86_mmu_pt_set(uc_engine *uc, uint64_t vaddr, uint64_t paddr,
 {
     uint64_t pto = ((vaddr & 0x000000001ff000) >> 12) * 8;
     uint32_t pte = (paddr) | 1 | (1 << 2);
+    fprintf(stderr, "%lx -> %x\n", tlb_base + 0x3000 + pto, pte);
     pte = LEINT32(pte);
+    
     uc_mem_write(uc, tlb_base + 0x3000 + pto, &pte, sizeof(pte));
 }
 
