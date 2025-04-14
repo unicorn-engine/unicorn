@@ -1507,9 +1507,7 @@ static void test_x86_mmu_pt_set(uc_engine *uc, uint64_t vaddr, uint64_t paddr,
 {
     uint64_t pto = ((vaddr & 0x000000001ff000) >> 12) * 8;
     uint32_t pte = (paddr) | 1 | (1 << 2);
-    fprintf(stderr, "%lx -> %x\n", tlb_base + 0x3000 + pto, pte);
     pte = LEINT32(pte);
-    
     uc_mem_write(uc, tlb_base + 0x3000 + pto, &pte, sizeof(pte));
 }
 
