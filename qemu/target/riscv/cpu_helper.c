@@ -536,9 +536,17 @@ restart:
 #else
                     target_ulong old_pte =
 #ifdef _MSC_VER
+#if TARGET_LONG_SIZE == 4
+                        atomic_cmpxchg((long *)pte_pa, cpu_to_le32(pte), cpu_to_le32(updated_pte));
+#else
                         atomic_cmpxchg((long *)pte_pa, cpu_to_le64(pte), cpu_to_le64(updated_pte));
+#endif
+#else
+#if TARGET_LONG_SIZE == 4
+                        atomic_cmpxchg(pte_pa, cpu_to_le32(pte), cpu_to_le32(updated_pte));
 #else
                         atomic_cmpxchg(pte_pa, cpu_to_le64(pte), cpu_to_le64(updated_pte));
+#endif
 #endif
                     if (old_pte != pte) {
                         goto restart;
