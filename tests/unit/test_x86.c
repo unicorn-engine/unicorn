@@ -52,7 +52,12 @@ static void QuickTest_run(QuickTest *test)
         OK(uc_reg_write(uc, UC_X86_REG_ESP, &stack_top));
     }
     for (size_t i = 0; i < test->in_count; i++) {
-        OK(uc_reg_write(uc, test->in_regs[i].reg, &test->in_regs[i].value));
+        if (test->mode == UC_MODE_64) {
+            OK(uc_reg_write(uc, test->in_regs[i].reg, &test->in_regs[i].value));
+        } else {
+            uint32_t reg = test->in_regs[i].value & 0xFFFFFFFF;
+            OK(uc_reg_write(uc, test->in_regs[i].reg, &reg));
+        }
     }
     OK(uc_emu_start(uc, MEM_TEXT, MEM_TEXT + test->code_size, 0, 0));
     for (size_t i = 0; i < test->out_count; i++) {
@@ -1704,7 +1709,8 @@ static void test_x86_64_not_overwriting_tmp0_for_pc_update(void)
     uc_hook hk;
     const char code[] = "\x48\xb9\xff\xff\xff\xff\xff\xff\xff\xff\x48\x89\x0c"
                         "\x24\x48\xd3\x24\x24\x73\x0a";
-    uint64_t rsp, pc, eflags;
+    uint64_t rsp, pc;
+    uint32_t eflags;
 
     // 0x1000: movabs  rcx, 0xffffffffffffffff
     // 0x100a: mov     qword ptr [rsp], rcx
