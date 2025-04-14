@@ -1482,6 +1482,9 @@ static void test_x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr,
     uint64_t pml4e = (tlb_base + 0x1000) | 1 | (1 << 2);
     uint64_t pdpe = (tlb_base + 0x2000) | 1 | (1 << 2);
     uint64_t pde = (tlb_base + 0x3000) | 1 | (1 << 2);
+    pml4e = LEINT64(pml4e);
+    pde = LEINT64(pde);
+    pdpe = LEINT64(pdpe);
     OK(uc_mem_write(uc, tlb_base + pml4o, &pml4e, sizeof(pml4o)));
     OK(uc_mem_write(uc, tlb_base + 0x1000 + pdpo, &pdpe, sizeof(pdpe)));
     OK(uc_mem_write(uc, tlb_base + 0x2000 + pdo, &pde, sizeof(pde)));
@@ -1493,6 +1496,10 @@ static void test_x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr,
     cr0 |= 1l << 31;
     cr4 |= 1l << 5;
     msr.value |= 1l << 8;
+    cr0 = LEINT64(cr0);
+    cr4 = LEINT64(cr4);
+    msr.rid = LEINT32(msr.rid);
+    msr.value = LEINT64(msr.value);
     OK(uc_reg_write(uc, UC_X86_REG_CR0, &cr0));
     OK(uc_reg_write(uc, UC_X86_REG_CR4, &cr4));
     OK(uc_reg_write(uc, UC_X86_REG_MSR, &msr));
@@ -1503,6 +1510,7 @@ static void test_x86_mmu_pt_set(uc_engine *uc, uint64_t vaddr, uint64_t paddr,
 {
     uint64_t pto = ((vaddr & 0x000000001ff000) >> 12) * 8;
     uint32_t pte = (paddr) | 1 | (1 << 2);
+    pte = LEINT32(pte);
     uc_mem_write(uc, tlb_base + 0x3000 + pto, &pte, sizeof(pte));
 }
 
