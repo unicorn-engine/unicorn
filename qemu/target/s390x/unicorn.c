@@ -65,10 +65,23 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         *(uint64_t *)value = env->regs[regid - UC_S390X_REG_R0];
     } else if (regid >= UC_S390X_REG_A0 && regid <= UC_S390X_REG_A15) {
         CHECK_REG_TYPE(uint32_t);
-        *(uint32_t *)value = env->regs[regid - UC_S390X_REG_A0];
+        *(uint32_t *)value = env->aregs[regid - UC_S390X_REG_A0];
+    } else if (regid >= UC_S390X_REG_F0 && regid <= UC_S390X_REG_F31) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->vregs[regid - UC_S390X_REG_F0][0];
+    } else if (regid >= UC_S390X_REG_F0_HI && regid <= UC_S390X_REG_F31_HI) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->vregs[regid - UC_S390X_REG_F0_HI][1];
+    } else if (regid >= UC_S390X_REG_CR0 && regid <= UC_S390X_REG_CR15){
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->cregs[regid - UC_S390X_REG_CR0];
     } else {
         switch (regid) {
         default:
+            break;
+        case UC_S390X_REG_FPC:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->fpc;
             break;
         case UC_S390X_REG_PC:
             CHECK_REG_TYPE(uint64_t);
@@ -96,10 +109,23 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         env->regs[regid - UC_S390X_REG_R0] = *(uint64_t *)value;
     } else if (regid >= UC_S390X_REG_A0 && regid <= UC_S390X_REG_A15) {
         CHECK_REG_TYPE(uint32_t);
-        env->regs[regid - UC_S390X_REG_A0] = *(uint32_t *)value;
+        env->aregs[regid - UC_S390X_REG_A0] = *(uint32_t *)value;
+    } else if (regid >= UC_S390X_REG_F0 && regid <= UC_S390X_REG_F31) {
+        CHECK_REG_TYPE(uint64_t);
+        env->vregs[regid - UC_S390X_REG_F0][0] = *(uint64_t *)value;
+    } else if (regid >= UC_S390X_REG_F0_HI && regid <= UC_S390X_REG_F31_HI) {
+        CHECK_REG_TYPE(uint64_t);
+        env->vregs[regid - UC_S390X_REG_F0_HI][1] = *(uint64_t *)value;
+    } else if (regid >= UC_S390X_REG_CR0 && regid <= UC_S390X_REG_CR15){
+        CHECK_REG_TYPE(uint64_t);
+        env->cregs[regid - UC_S390X_REG_CR0] = *(uint64_t *)value;
     } else {
         switch (regid) {
         default:
+            break;
+        case UC_S390X_REG_FPC:
+            CHECK_REG_TYPE(uint32_t);
+            env->fpc = *(uint32_t *)value;
             break;
         case UC_S390X_REG_PC:
             CHECK_REG_TYPE(uint64_t);
