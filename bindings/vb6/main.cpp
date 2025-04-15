@@ -230,12 +230,12 @@ uc_err __stdcall ucs_reg_read_batch(uc_engine *uc, int *regs, void **vals, int c
     return uc_reg_read_batch(uc, regs, vals, count);
 }
 
-uc_err __stdcall ucs_mem_write(uc_engine *uc, uint64_t address, const void *bytes, size_t size){
+uc_err __stdcall ucs_mem_write(uc_engine *uc, uint64_t address, const void *bytes, uint64_t size){
 #pragma EXPORT
     return uc_mem_write(uc, address, bytes, size);
 }
 
-uc_err __stdcall ucs_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size){
+uc_err __stdcall ucs_mem_read(uc_engine *uc, uint64_t address, void *bytes, uint64_t size){
 #pragma EXPORT
     return uc_mem_read(uc, address, bytes, size);
 }
@@ -255,24 +255,24 @@ uc_err __stdcall ucs_hook_del(uc_engine *uc, uc_hook hh){
     return uc_hook_del(uc, hh);
 }
 
-uc_err __stdcall ucs_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms){
+uc_err __stdcall ucs_mem_map(uc_engine *uc, uint64_t address, uint64_t size, uint32_t perms){
 #pragma EXPORT
     return uc_mem_map(uc, address, size, perms);
 }
 
 //requires link against v1.0
-uc_err __stdcall ucs_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, void *ptr){
+uc_err __stdcall ucs_mem_map_ptr(uc_engine *uc, uint64_t address, uint64_t size, uint32_t perms, void *ptr){
 #pragma EXPORT
     return uc_mem_map_ptr(uc, address, size, perms, ptr);
 }
 
 
-uc_err __stdcall ucs_mem_unmap(uc_engine *uc, uint64_t address, size_t size){
+uc_err __stdcall ucs_mem_unmap(uc_engine *uc, uint64_t address, uint64_t size){
 #pragma EXPORT
     return uc_mem_unmap(uc, address, size);
 }
 
-uc_err __stdcall ucs_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t perms){
+uc_err __stdcall ucs_mem_protect(uc_engine *uc, uint64_t address, uint64_t size, uint32_t perms){
 #pragma EXPORT
     return uc_mem_protect(uc, address, size, perms);
 }
@@ -363,12 +363,12 @@ int __stdcall disasm_addr(uc_engine *uc, uint32_t va, char *str, int bufLen){
 
 
 //maps and write in one shot, auto handles alignment..
-uc_err __stdcall mem_write_block(uc_engine *uc, uint64_t address, void* data, uint32_t size, uint32_t perm){
+uc_err __stdcall mem_write_block(uc_engine *uc, uint64_t address, void* data, uint64_t size, uint32_t perm){
 #pragma EXPORT
 
 	uc_err x;
 	uint64_t base = address;
-    uint32_t sz = size;
+  uint64_t sz = size;
 
 	while(base % 0x1000 !=0){
 		base--;

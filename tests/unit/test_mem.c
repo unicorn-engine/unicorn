@@ -449,6 +449,85 @@ static void test_snapshot_unmap(void)
     OK(uc_close(uc));
 }
 
+static void parts_increment(size_t idx, char parts[3])
+{
+    if (idx && idx % 3 == 0) {
+        if (++parts[2] > '9') {
+            parts[2] = '0';
+            if (++parts[1] > 'z') {
+                parts[1] = 'a';
+                if (++parts[0] > 'Z')
+                    parts[0] = 'A';
+            }
+        }
+    }
+}
+
+// Create a pattern string. It works the same as
+// https://github.com/rapid7/metasploit-framework/blob/master/tools/exploit/pattern_create.rb
+static void pattern_create(char *buf, size_t len)
+{
+    char parts[] = {'A', 'a', '0'};
+    size_t i;
+
+    for (i = 0; i < len; i++) {
+        buf[i] = parts[i % 3];
+        parts_increment(i, parts);
+    }
+}
+
+static bool pattern_verify(const char *buf, size_t len)
+{
+    char parts[] = {'A', 'a', '0'};
+    size_t i;
+
+    for (i = 0; i < len; i++) {
+        if (buf[i] != parts[i % 3])
+            return false;
+        parts_increment(i, parts);
+    }
+
+    return true;
+}
+
+// Test for reading and writing memory block that are bigger than INT_MAX.
+static void test_mem_read_and_write_large_memory_block(void)
+{
+    uc_engine *uc;
+    uint64_t mem_addr = 0x1000000;
+    uint64_t mem_size = 0x9f000000;
+    char *pmem = NULL;
+
+    if (sizeof(void *) < 8) {
+        // Don't perform the test on a 32-bit platforms since we may not have
+        // enough memory space.
+        return;
+    }
+    // Android CI/CD services do not have enough memory capacity for this
+    // test to work. Executing it will result in a permanent loop with the
+    // low memory killer daemon. 
+#ifdef __ANDROID__
+    return;
+#endif 
+
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
+    OK(uc_mem_map(uc, mem_addr, mem_size, UC_PROT_ALL));
+
+    pmem = malloc(mem_size);
+    if (TEST_CHECK(pmem != NULL)) {
+        pattern_create(pmem, mem_size);
+
+        OK(uc_mem_write(uc, mem_addr, pmem, mem_size));
+        memset(pmem, 'a', mem_size);
+        OK(uc_mem_read(uc, mem_addr, pmem, mem_size));
+        TEST_CHECK(pattern_verify(pmem, mem_size));
+        free(pmem);
+    }
+
+    OK(uc_mem_unmap(uc, mem_addr, mem_size));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -464,4 +543,6 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_snapshot_with_vtlb", test_snapshot_with_vtlb},
              {"test_context_snapshot", test_context_snapshot},
              {"test_snapshot_unmap", test_snapshot_unmap},
+             {"test_mem_read_and_write_large_memory_block",
+              test_mem_read_and_write_large_memory_block},
              {NULL, NULL}};
