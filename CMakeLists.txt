@@ -273,6 +273,11 @@ else()
                 set(UNICORN_TARGET_ARCH "tricore")
                 break()
             endif()
+            string(FIND ${UC_COMPILER_MACRO} "loongarch64" UC_RET)
+            if (${UC_RET} GREATER_EQUAL "0")
+                set(UNICORN_TARGET_ARCH "loongarch64")
+                break()
+            endif()
             message(FATAL_ERROR "Unknown host compiler: ${CMAKE_C_COMPILER}.")
         endwhile(TRUE)
     endif()
@@ -362,6 +367,12 @@ else()
     set(TARGET_LIST "${TARGET_LIST} ")
 
     # GEN config-host.mak & target directories
+    # MESSAGE(STATUS "sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
+    #     --cc=${CMAKE_C_COMPILER}
+    #     ${EXTRA_CFLAGS}
+    #     ${TARGET_LIST}
+    #     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}"
+    # )
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
         --cc=${CMAKE_C_COMPILER}
         ${EXTRA_CFLAGS}
