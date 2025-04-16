@@ -94,6 +94,7 @@ typedef enum uc_s390x_reg {
     UC_S390X_REG_F13,
     UC_S390X_REG_F14,
     UC_S390X_REG_F15,
+    //> Not real registers, low half of vr16-vr31
     UC_S390X_REG_F16,
     UC_S390X_REG_F17,
     UC_S390X_REG_F18,
@@ -131,6 +132,61 @@ typedef enum uc_s390x_reg {
 
     UC_S390X_REG_PC, // PC register
     UC_S390X_REG_PSWM,
+
+    //> pseudo registers, high half of vr16-vr31
+    UC_S390X_REG_F0_HI,
+    UC_S390X_REG_F1_HI,
+    UC_S390X_REG_F2_HI,
+    UC_S390X_REG_F3_HI,
+    UC_S390X_REG_F4_HI,
+    UC_S390X_REG_F5_HI,
+    UC_S390X_REG_F6_HI,
+    UC_S390X_REG_F7_HI,
+    UC_S390X_REG_F8_HI,
+    UC_S390X_REG_F9_HI,
+    UC_S390X_REG_F10_HI,
+    UC_S390X_REG_F11_HI,
+    UC_S390X_REG_F12_HI,
+    UC_S390X_REG_F13_HI,
+    UC_S390X_REG_F14_HI,
+    UC_S390X_REG_F15_HI,
+    UC_S390X_REG_F16_HI,
+    UC_S390X_REG_F17_HI,
+    UC_S390X_REG_F18_HI,
+    UC_S390X_REG_F19_HI,
+    UC_S390X_REG_F20_HI,
+    UC_S390X_REG_F21_HI,
+    UC_S390X_REG_F22_HI,
+    UC_S390X_REG_F23_HI,
+    UC_S390X_REG_F24_HI,
+    UC_S390X_REG_F25_HI,
+    UC_S390X_REG_F26_HI,
+    UC_S390X_REG_F27_HI,
+    UC_S390X_REG_F28_HI,
+    UC_S390X_REG_F29_HI,
+    UC_S390X_REG_F30_HI,
+    UC_S390X_REG_F31_HI,
+
+    //> float control register
+    UC_S390X_REG_FPC,
+
+    //> control registers
+    UC_S390X_REG_CR0,
+    UC_S390X_REG_CR1,
+    UC_S390X_REG_CR2,
+    UC_S390X_REG_CR3,
+    UC_S390X_REG_CR4,
+    UC_S390X_REG_CR5,
+    UC_S390X_REG_CR6,
+    UC_S390X_REG_CR7,
+    UC_S390X_REG_CR8,
+    UC_S390X_REG_CR9,
+    UC_S390X_REG_CR10,
+    UC_S390X_REG_CR11,
+    UC_S390X_REG_CR12,
+    UC_S390X_REG_CR13,
+    UC_S390X_REG_CR14,
+    UC_S390X_REG_CR15,
 
     UC_S390X_REG_ENDING, // <-- mark the end of the list or registers
 

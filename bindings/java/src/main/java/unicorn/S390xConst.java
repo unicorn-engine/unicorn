@@ -85,6 +85,8 @@ public interface S390xConst {
     public static final int UC_S390X_REG_F13 = 30;
     public static final int UC_S390X_REG_F14 = 31;
     public static final int UC_S390X_REG_F15 = 32;
+
+    // Not real registers, low half of vr16-vr31
     public static final int UC_S390X_REG_F16 = 33;
     public static final int UC_S390X_REG_F17 = 34;
     public static final int UC_S390X_REG_F18 = 35;
@@ -121,7 +123,62 @@ public interface S390xConst {
     public static final int UC_S390X_REG_A15 = 64;
     public static final int UC_S390X_REG_PC = 65;
     public static final int UC_S390X_REG_PSWM = 66;
-    public static final int UC_S390X_REG_ENDING = 67;
+
+    // pseudo registers, high half of vr16-vr31
+    public static final int UC_S390X_REG_F0_HI = 67;
+    public static final int UC_S390X_REG_F1_HI = 68;
+    public static final int UC_S390X_REG_F2_HI = 69;
+    public static final int UC_S390X_REG_F3_HI = 70;
+    public static final int UC_S390X_REG_F4_HI = 71;
+    public static final int UC_S390X_REG_F5_HI = 72;
+    public static final int UC_S390X_REG_F6_HI = 73;
+    public static final int UC_S390X_REG_F7_HI = 74;
+    public static final int UC_S390X_REG_F8_HI = 75;
+    public static final int UC_S390X_REG_F9_HI = 76;
+    public static final int UC_S390X_REG_F10_HI = 77;
+    public static final int UC_S390X_REG_F11_HI = 78;
+    public static final int UC_S390X_REG_F12_HI = 79;
+    public static final int UC_S390X_REG_F13_HI = 80;
+    public static final int UC_S390X_REG_F14_HI = 81;
+    public static final int UC_S390X_REG_F15_HI = 82;
+    public static final int UC_S390X_REG_F16_HI = 83;
+    public static final int UC_S390X_REG_F17_HI = 84;
+    public static final int UC_S390X_REG_F18_HI = 85;
+    public static final int UC_S390X_REG_F19_HI = 86;
+    public static final int UC_S390X_REG_F20_HI = 87;
+    public static final int UC_S390X_REG_F21_HI = 88;
+    public static final int UC_S390X_REG_F22_HI = 89;
+    public static final int UC_S390X_REG_F23_HI = 90;
+    public static final int UC_S390X_REG_F24_HI = 91;
+    public static final int UC_S390X_REG_F25_HI = 92;
+    public static final int UC_S390X_REG_F26_HI = 93;
+    public static final int UC_S390X_REG_F27_HI = 94;
+    public static final int UC_S390X_REG_F28_HI = 95;
+    public static final int UC_S390X_REG_F29_HI = 96;
+    public static final int UC_S390X_REG_F30_HI = 97;
+    public static final int UC_S390X_REG_F31_HI = 98;
+
+    // float control register
+    public static final int UC_S390X_REG_FPC = 99;
+
+    // control registers
+    public static final int UC_S390X_REG_CR0 = 100;
+    public static final int UC_S390X_REG_CR1 = 101;
+    public static final int UC_S390X_REG_CR2 = 102;
+    public static final int UC_S390X_REG_CR3 = 103;
+    public static final int UC_S390X_REG_CR4 = 104;
+    public static final int UC_S390X_REG_CR5 = 105;
+    public static final int UC_S390X_REG_CR6 = 106;
+    public static final int UC_S390X_REG_CR7 = 107;
+    public static final int UC_S390X_REG_CR8 = 108;
+    public static final int UC_S390X_REG_CR9 = 109;
+    public static final int UC_S390X_REG_CR10 = 110;
+    public static final int UC_S390X_REG_CR11 = 111;
+    public static final int UC_S390X_REG_CR12 = 112;
+    public static final int UC_S390X_REG_CR13 = 113;
+    public static final int UC_S390X_REG_CR14 = 114;
+    public static final int UC_S390X_REG_CR15 = 115;
+    public static final int UC_S390X_REG_ENDING = 116;
 
     // Alias registers
 
