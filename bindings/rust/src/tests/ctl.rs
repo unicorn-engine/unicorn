@@ -83,7 +83,8 @@ fn test_uc_ctl_tb_cache() {
     let code = [0x90; CODE_LEN]; // nop
 
     let mut uc = Unicorn::new(Arch::X86, Mode::MODE_32).unwrap();
-    uc.mem_map(CODE_START, CODE_LEN.try_into().unwrap(), Prot::ALL).unwrap();
+    uc.mem_map(CODE_START, CODE_LEN.try_into().unwrap(), Prot::ALL)
+        .unwrap();
     uc.mem_write(CODE_START, &code).unwrap();
 
     let standard = time_emulation(&mut uc, CODE_START, CODE_START + code.len() as u64);
@@ -232,7 +233,8 @@ fn test_tlb_clear() {
     ];
 
     let mut uc = Unicorn::new_with_data(Arch::X86, Mode::MODE_64, 0usize).unwrap();
-    uc.mem_map(CODE_START, CODE_LEN.try_into().unwrap(), Prot::ALL).unwrap();
+    uc.mem_map(CODE_START, CODE_LEN.try_into().unwrap(), Prot::ALL)
+        .unwrap();
     uc.mem_write(CODE_START, code).unwrap();
 
     uc.mem_map(0x200000, 0x1000, Prot::ALL).unwrap();

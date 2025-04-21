@@ -28,9 +28,9 @@ fn test_sr_contains_flags() {
     ];
 
     let mut uc = uc_common_setup(Arch::M68K, Mode::BIG_ENDIAN, None, &code, ());
-    let code_start_u64 : usize = CODE_START.try_into().unwrap();
-    let code_len_u64 : usize= code.len().try_into().unwrap();
-    let code_len_addition : usize = code_start_u64 + code_len_u64;
+    let code_start_u64: usize = CODE_START.try_into().unwrap();
+    let code_len_u64: usize = code.len().try_into().unwrap();
+    let code_len_addition: usize = code_start_u64 + code_len_u64;
     uc.emu_start(CODE_START, code_len_addition.try_into().unwrap(), 0, 0)
         .unwrap();
 
