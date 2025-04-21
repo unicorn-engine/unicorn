@@ -179,24 +179,7 @@ impl<'a> Unicorn<'a, ()> {
     /// does not point to a unicorn instance will cause undefined
     /// behavior.
     pub unsafe fn from_handle(handle: *mut uc_engine) -> Result<Unicorn<'a, ()>, uc_error> {
-        if handle.is_null() {
-            return Err(uc_error::HANDLE);
-        }
-        let mut arch = 0;
-        let err = unsafe { uc_query(handle, Query::ARCH, &mut arch) };
-        if err != uc_error::OK {
-            return Err(err);
-        }
-        Ok(Unicorn {
-            inner: Rc::new(UnsafeCell::from(UnicornInner {
-                handle,
-                ffi: true,
-                arch: arch.try_into()?,
-                data: (),
-                hooks: vec![],
-                mmio_callbacks: vec![],
-            })),
-        })
+        unsafe { Self::from_handle_with_data(handle, ()) }
     }
 }
 
@@ -219,6 +202,33 @@ where
                     mmio_callbacks: vec![],
                 })),
             })
+        })
+    }
+
+    /// # Safety
+    /// The function has to be called with a valid [`uc_engine`] pointer
+    /// that was previously allocated by a call to [`uc_open`].
+    /// Calling the function with a non null pointer value that
+    /// does not point to a unicorn instance will cause undefined
+    /// behavior.
+    pub unsafe fn from_handle_with_data(handle: *mut uc_engine, data: D) -> Result<Unicorn<'a, D>, uc_error> {
+        if handle.is_null() {
+            return Err(uc_error::HANDLE);
+        }
+        let mut arch = 0;
+        let err = unsafe { uc_query(handle, Query::ARCH, &mut arch) };
+        if err != uc_error::OK {
+            return Err(err);
+        }
+        Ok(Unicorn {
+            inner: Rc::new(UnsafeCell::from(UnicornInner {
+                handle,
+                ffi: true,
+                arch: arch.try_into()?,
+                data,
+                hooks: vec![],
+                mmio_callbacks: vec![],
+            })),
         })
     }
 }
