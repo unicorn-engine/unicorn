@@ -115,10 +115,7 @@ impl MmioCallbackScope<'_> {
                     } else {
                         // The unmapped region is in the middle of this region
                         let second_b = end + 1;
-                        vec![
-                            (*b, (begin - *b) as u64),
-                            (second_b, (e - second_b) as u64),
-                        ]
+                        vec![(*b, (begin - *b) as u64), (second_b, (e - second_b) as u64)]
                     }
                 } else if end > *b {
                     if end >= e {
@@ -179,24 +176,7 @@ impl<'a> Unicorn<'a, ()> {
     /// does not point to a unicorn instance will cause undefined
     /// behavior.
     pub unsafe fn from_handle(handle: *mut uc_engine) -> Result<Unicorn<'a, ()>, uc_error> {
-        if handle.is_null() {
-            return Err(uc_error::HANDLE);
-        }
-        let mut arch = 0;
-        let err = unsafe { uc_query(handle, Query::ARCH, &mut arch) };
-        if err != uc_error::OK {
-            return Err(err);
-        }
-        Ok(Unicorn {
-            inner: Rc::new(UnsafeCell::from(UnicornInner {
-                handle,
-                ffi: true,
-                arch: arch.try_into()?,
-                data: (),
-                hooks: vec![],
-                mmio_callbacks: vec![],
-            })),
-        })
+        unsafe { Self::from_handle_with_data(handle, ()) }
     }
 }
 
@@ -219,6 +199,36 @@ where
                     mmio_callbacks: vec![],
                 })),
             })
+        })
+    }
+
+    /// # Safety
+    /// The function has to be called with a valid [`uc_engine`] pointer
+    /// that was previously allocated by a call to [`uc_open`].
+    /// Calling the function with a non null pointer value that
+    /// does not point to a unicorn instance will cause undefined
+    /// behavior.
+    pub unsafe fn from_handle_with_data(
+        handle: *mut uc_engine,
+        data: D,
+    ) -> Result<Unicorn<'a, D>, uc_error> {
+        if handle.is_null() {
+            return Err(uc_error::HANDLE);
+        }
+        let mut arch = 0;
+        let err = unsafe { uc_query(handle, Query::ARCH, &mut arch) };
+        if err != uc_error::OK {
+            return Err(err);
+        }
+        Ok(Unicorn {
+            inner: Rc::new(UnsafeCell::from(UnicornInner {
+                handle,
+                ffi: true,
+                arch: arch.try_into()?,
+                data,
+                hooks: vec![],
+                mmio_callbacks: vec![],
+            })),
         })
     }
 }
@@ -297,8 +307,15 @@ impl<'a, D> Unicorn<'a, D> {
     /// Return a range of bytes from memory at the specified emulated physical address as vector.
     pub fn mem_read_as_vec(&self, address: u64, size: usize) -> Result<Vec<u8>, uc_error> {
         let mut buf = vec![0; size];
-        unsafe { uc_mem_read(self.get_handle(), address, buf.as_mut_ptr().cast(), size.try_into().unwrap()) }
-            .and(Ok(buf))
+        unsafe {
+            uc_mem_read(
+                self.get_handle(),
+                address,
+                buf.as_mut_ptr().cast(),
+                size.try_into().unwrap(),
+            )
+        }
+        .and(Ok(buf))
     }
 
     /// Write the data in `bytes` to the emulated physical address `address`
@@ -400,7 +417,7 @@ impl<'a, D> Unicorn<'a, D> {
             )
         }
         .and_then(|| {
-            let u64_size : u64 = size.try_into().unwrap();
+            let u64_size: u64 = size.try_into().unwrap();
             let rd = read_data.map(|c| c as Box<dyn hook::IsUcHook>);
             let wd = write_data.map(|c| c as Box<dyn hook::IsUcHook>);
             self.inner_mut().mmio_callbacks.push(MmioCallbackScope {
