@@ -44,6 +44,7 @@ extern crate alloc;
 
 use alloc::{boxed::Box, rc::Rc, vec::Vec};
 use core::{cell::UnsafeCell, ffi::c_void, ptr};
+use perfect_derive::perfect_derive;
 
 #[macro_use]
 pub mod unicorn_const;
@@ -158,6 +159,9 @@ impl<D> Drop for UnicornInner<'_, D> {
 }
 
 /// A Unicorn emulator instance.
+///
+/// You could clone this instance cheaply, since it has an `Rc` inside.
+#[perfect_derive(Clone)]
 pub struct Unicorn<'a, D: 'a> {
     inner: Rc<UnsafeCell<UnicornInner<'a, D>>>,
 }
