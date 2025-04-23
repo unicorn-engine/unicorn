@@ -302,14 +302,14 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// Read a range of bytes from memory at the specified emulated virtual address.
-    pub fn vmem_read(&self, address: u64, prot: Permission, buf: &mut [u8]) -> Result<(), uc_error> {
-        unsafe { ffi::uc_vmem_read(self.get_handle(), address, prot, buf.as_mut_ptr(), buf.len()) }.into()
+    pub fn vmem_read(&self, address: u64, prot: Prot, buf: &mut [u8]) -> Result<(), uc_error> {
+        unsafe { uc_vmem_read(self.get_handle(), address, prot.0 as _, buf.as_mut_ptr() as _, buf.len()) }.into()
     }
 
     /// Return a range of bytes from memory at the specified emulated virtual address as vector.
-    pub fn vmem_read_as_vec(&self, address: u64, prot: Permission, size: usize) -> Result<Vec<u8>, uc_error> {
+    pub fn vmem_read_as_vec(&self, address: u64, prot: Prot, size: usize) -> Result<Vec<u8>, uc_error> {
         let mut buf = vec![0; size];
-        unsafe { ffi::uc_vmem_read(self.get_handle(), address, prot, buf.as_mut_ptr(), buf.len()) }.and(Ok(buf))
+        unsafe { uc_vmem_read(self.get_handle(), address, prot.0 as _, buf.as_mut_ptr() as _, buf.len()) }.and(Ok(buf))
     }
 
     /// Write the data in `bytes` to the emulated physical address `address`
@@ -326,9 +326,9 @@ impl<'a, D> Unicorn<'a, D> {
     }
 
     /// translate virtual to physical address
-    pub fn vmem_translate(&mut self, address: u64, prot: Permission) -> Result<u64, uc_error> {
+    pub fn vmem_translate(&mut self, address: u64, prot: Prot) -> Result<u64, uc_error> {
         let mut physical: u64 = 0;
-        let err = unsafe { ffi::uc_vmem_translate(self.get_handle(), address, prot, &mut physical) };
+        let err = unsafe { uc_vmem_translate(self.get_handle(), address, prot.0 as _, &mut physical) };
         if err != uc_error::OK {
             return Err(err);
         }
