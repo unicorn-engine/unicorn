@@ -32,7 +32,7 @@ impl core::fmt::Display for uc_error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let error_raw_str = unsafe { uc_strerror(*self) };
         let error_c_str = unsafe { core::ffi::CStr::from_ptr(error_raw_str) };
-        write!(f, "{}", error_c_str.to_string_lossy())
+        write!(f, "{}", error_c_str.to_str().unwrap())
     }
 }
 
