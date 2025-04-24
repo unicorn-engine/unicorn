@@ -28,6 +28,16 @@ impl From<uc_error> for Result<(), uc_error> {
     }
 }
 
+impl core::fmt::Display for uc_error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let error_raw_str = unsafe { uc_strerror(*self) };
+        let error_c_str = unsafe { core::ffi::CStr::from_ptr(error_raw_str) };
+        write!(f, "{}", error_c_str.to_str().unwrap())
+    }
+}
+
+impl core::error::Error for uc_error {}
+
 impl TryFrom<usize> for Arch {
     type Error = uc_error;
 
