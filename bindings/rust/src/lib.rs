@@ -1085,6 +1085,42 @@ impl<'a, D> Unicorn<'a, D> {
         }
     }
 
+    /// Add hook for edge generated event.
+    ///
+    /// Callback parameters: (uc, cur_tb, prev_tb)
+    pub fn add_edge_gen_hook<F>(
+        &mut self,
+        begin: u64,
+        end: u64,
+        callback: F,
+    ) -> Result<UcHookId, uc_error>
+    where
+        F: FnMut(&mut Unicorn<D>, &mut TranslationBlock, &mut TranslationBlock) + 'a,
+    {
+        let mut hook_id = 0;
+        let mut user_data = Box::new(hook::UcHook {
+            callback,
+            uc: Rc::downgrade(&self.inner),
+        });
+
+        unsafe {
+            uc_hook_add(
+                self.get_handle(),
+                (&raw mut hook_id).cast(),
+                HookType::EDGE_GENERATED.0 as i32,
+                hook::edge_gen_hook_proxy::<D, F> as _,
+                core::ptr::from_mut(user_data.as_mut()).cast(),
+                begin,
+                end,
+            )
+        }
+        .and_then(|| {
+            let hook_id = UcHookId(hook_id);
+            self.inner_mut().hooks.push((hook_id, user_data));
+            Ok(hook_id)
+        })
+    }
+
     /// Remove a hook.
     ///
     /// `hook_id` is the value returned by `add_*_hook` functions.
