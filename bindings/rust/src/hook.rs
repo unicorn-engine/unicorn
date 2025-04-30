@@ -276,3 +276,24 @@ pub unsafe extern "C" fn tcg_proxy<D, F>(
     debug_assert_eq!(uc, user_data_uc.get_handle());
     (user_data.callback)(&mut user_data_uc, addr, arg1, arg2, size as usize);
 }
+
+/// # Safety
+///
+/// This function is unsafe because it dereferences the `user_data` pointer.
+pub unsafe extern "C" fn edge_gen_hook_proxy<D, F>(
+    uc: *mut uc_engine,
+    cur_tb: *mut sys::TranslationBlock,
+    prev_tb: *mut sys::TranslationBlock,
+    user_data: *mut UcHook<D, F>,
+) where
+    F: FnMut(&mut Unicorn<D>, &mut sys::TranslationBlock, &mut sys::TranslationBlock),
+{
+    let user_data = unsafe { &mut *user_data };
+    let mut user_data_uc = Unicorn {
+        inner: user_data.uc.upgrade().unwrap(),
+    };
+    debug_assert_eq!(uc, user_data_uc.get_handle());
+    (user_data.callback)(&mut user_data_uc, unsafe { &mut *cur_tb }, unsafe {
+        &mut *prev_tb
+    });
+}
