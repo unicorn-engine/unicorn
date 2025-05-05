@@ -529,14 +529,15 @@ jobs:
       - name: '🚧 Linux s390x build'
         if: contains(matrix.config.arch, 's390x')
         uses: appleboy/ssh-action@v1
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REPO: ${{ github.repositoryUrl }}
         with:
           host: ${{ secrets.S390X_HOST }}
           username: ${{ secrets.S390X_USERNAME }}
           key: ${{ secrets.S390X_PRIVKEY }}
           port: ${{ secrets.S390X_PORT }}
-          envs:
-            GITHUB_SHA: ${{ github.sha }}
-            GITHUB_REPO: ${{ github.repositoryUrl }}
+          envs: GITHUB_SHA,GITHUB_REPO
           script: |
             git clone $GITHUB_REPO repo && cd repo && git checkout $GITHUB_SHA &&\
             mkdir build install && cd build && cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
