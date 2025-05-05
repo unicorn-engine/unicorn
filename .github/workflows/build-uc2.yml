@@ -443,6 +443,15 @@ jobs:
             generators: 'Ninja',
             distro: ubuntu22.04
           }
+          - {
+            os: ubuntu-22.04,
+            arch: x86,
+            name: 'ubuntu-s390x cmake',
+            artifact: 'ubuntu-cmake-s390x.7z',
+            archiver: '7z a',
+            generators: 'Ninja',
+            distro: ubuntu22.04
+          }
         compiler: [ gcc ]
     steps:
       - uses: actions/checkout@v4
@@ -517,6 +526,23 @@ jobs:
             cmake --install . --strip
             ctest -VV -C ${{ env.BUILD_TYPE }}
 
+      - name: '🚧 Linux s390x build'
+        if: contains(matrix.config.arch, 's390x')
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.S390X_HOST }}
+          username: ${{ secrets.S390X_USERNAME }}
+          key: ${{ secrets.S390X_PRIVKEY }}
+          port: ${{ secrets.S390X_PORT }}
+          envs:
+            GITHUB_SHA: ${{ github.sha }}
+            GITHUB_REPO: ${{ github.repositoryUrl }}
+          script: |
+            git clone $GITHUB_REPO repo && cd repo && git checkout $GITHUB_SHA &&\
+            mkdir build install && cd build && cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DCMAKE_INSTALL_PREFIX:PATH=install && cmake --build . --config ${{ env.BUILD_TYPE }} -j 4 && \
+            ctest -VV -C ${{ env.BUILD_TYPE }} && cmake --install . --strip
+            
       - name: '📦 Pack artifact'
         if: always()
         shell: bash
