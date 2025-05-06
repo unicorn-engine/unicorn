@@ -531,7 +531,7 @@ jobs:
         uses: appleboy/ssh-action@v1
         env:
           GITHUB_SHA: ${{ github.sha }}
-          GITHUB_REPO: ${{ github.repositoryUrl }}
+          GITHUB_REPO: ${{ github.repository }}
         with:
           host: ${{ secrets.S390X_HOST }}
           username: ${{ secrets.S390X_USERNAME }}
@@ -539,7 +539,7 @@ jobs:
           port: ${{ secrets.S390X_PORT }}
           envs: GITHUB_SHA,GITHUB_REPO
           script: |
-            rm -rf /work/repo && git clone $GITHUB_REPO repo && cd repo && git checkout $GITHUB_SHA &&\
+            rm -rf /work/repo && git clone https://github.com/$GITHUB_REPO repo && cd repo && git checkout $GITHUB_SHA &&\
             mkdir build install && cd build && cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
             -DCMAKE_INSTALL_PREFIX:PATH=install && cmake --build . --config ${{ env.BUILD_TYPE }} -j 4 && \
             ctest -VV -C ${{ env.BUILD_TYPE }} && cmake --install . --strip
