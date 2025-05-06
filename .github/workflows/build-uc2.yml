@@ -540,7 +540,7 @@ jobs:
           port: ${{ secrets.S390X_PORT }}
           envs: GITHUB_SHA,GITHUB_REPO,BUILT_TYPE
           script: |
-            bash -c "cd /work && rm -rf repo &&\
+            bash -c "cd /work && rm -rf repo && pwd &&\
             git clone https://github.com/$GITHUB_REPO repo && cd repo && git checkout $GITHUB_SHA &&\
             mkdir build install && cd build && cmake .. -DCMAKE_BUILD_TYPE=$BUILT_TYPE \
             -DCMAKE_INSTALL_PREFIX:PATH=install && cmake --build . --config $BUILT_TYPE -j 4 && \
