@@ -552,7 +552,7 @@ jobs:
           username: ${{ secrets.S390X_USERNAME }}
           key: ${{ secrets.S390X_PRIVKEY }}
           port: ${{ secrets.S390X_PORT }}
-          source: "/work/repo/build"
+          source: "/work/repo/install"
           target: /instdir
 
       - name: '📦 Pack artifact'
