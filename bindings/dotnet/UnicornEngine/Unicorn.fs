@@ -20,7 +20,6 @@ and SyscallHook = delegate of Unicorn * Object -> unit
 
 // the managed unicorn engine
 and Unicorn(arch: Int32, mode: Int32, binding: IBinding) =
-
     // hook callback list
     let _codeHooks = new List<(CodeHook * (UIntPtr * Object * Object))>()
     let _blockHooks = new List<(BlockHook * (UIntPtr * Object * Object))>()
@@ -71,6 +70,9 @@ and Unicorn(arch: Int32, mode: Int32, binding: IBinding) =
         mem.ToPointer()
 
     do
+        if OperatingSystem.IsWindows() then
+            WinNativeImport.CheckCFG();
+            
         // initialize event list
         _eventMemMap
         |> Seq.map(fun kv -> kv.Key)
