@@ -179,9 +179,9 @@ void HELPER(check_exit_request)(void *p, uint32_t in_delay_slot) {
         uc->cpu->tcg_exit_req = 0;
 
         if (uc->skip_sync_pc_on_exit) {
+            uc->skip_sync_pc_on_exit = false;
             cpu_loop_exit(uc->cpu);
         } else {
-            uc->skip_sync_pc_on_exit = false;
             cpu_loop_exit_restore(uc->cpu, GETPC());
         }
     }
