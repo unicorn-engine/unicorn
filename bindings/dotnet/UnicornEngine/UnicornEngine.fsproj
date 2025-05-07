@@ -10,6 +10,7 @@
     <ProjectGuid>0c21f1c1-2725-4a46-9022-1905f85822a5</ProjectGuid>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<OtherFlags>--standalone</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -21,6 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="WinNativeImport.fs" />
     <Compile Include="Const\Arm.fs" />
     <Compile Include="Const\Arm64.fs" />
     <Compile Include="Const\Common.fs" />

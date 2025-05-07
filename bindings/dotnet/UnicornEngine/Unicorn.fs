@@ -71,6 +71,10 @@ and Unicorn(arch: Int32, mode: Int32, binding: IBinding) =
         mem.ToPointer()
 
     do
+        // check for cfg
+        if OperatingSystem.IsWindows() then
+            WinNativeImport.CheckCFG();
+
         // initialize event list
         _eventMemMap
         |> Seq.map(fun kv -> kv.Key)
