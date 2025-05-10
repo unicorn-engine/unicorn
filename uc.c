@@ -1939,10 +1939,6 @@ void helper_uc_traceopcode(struct hook *hook, uint64_t arg1, uint64_t arg2,
 {
     struct uc_struct *uc = handle;
 
-    if (unlikely(uc->stop_request)) {
-        return;
-    }
-
     if (unlikely(hook->to_delete)) {
         return;
     }
@@ -1956,10 +1952,6 @@ void helper_uc_traceopcode(struct hook *hook, uint64_t arg1, uint64_t arg2,
     // TODO: Shall we have a flag to allow users to control whether updating PC?
     JIT_CALLBACK_GUARD(((uc_hook_tcg_op_2)hook->callback)(
         uc, address, arg1, arg2, size, hook->user_data));
-
-    if (unlikely(uc->stop_request)) {
-        return;
-    }
 }
 
 void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
@@ -1988,10 +1980,7 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
     //     uc->set_pc(uc, address);
     // }
 
-    // the last callback may already asked to stop emulation
-    if (uc->stop_request && !not_allow_stop) {
-        return;
-    } else if (not_allow_stop && uc->stop_request) {
+    if (not_allow_stop && uc->stop_request) {
         revert_uc_emu_stop(uc);
     }
 
@@ -2018,7 +2007,6 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
                 uc, address, size, hook->user_data));
         }
 
-        // the last callback may already asked to stop emulation
         // Unicorn:
         //   In an ARM IT block, we behave like the emulation continues
         //   normally. No check_exit_request is generated and the hooks are
@@ -2026,8 +2014,6 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
         //   as a single instruction.
         if (not_allow_stop && uc->stop_request) {
             revert_uc_emu_stop(uc);
-        } else if (!not_allow_stop && uc->stop_request) {
-            break;
         }
     }
 }

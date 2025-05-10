@@ -990,10 +990,6 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
             }
             JIT_CALLBACK_GUARD(((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data));
         }
-
-        // the last callback may already asked to stop emulation
-        if (env->uc->stop_request)
-            break;
     }
 
     env->eip += next_eip_addend;
@@ -2374,10 +2370,6 @@ void helper_sysenter(CPUX86State *env, int next_eip_addend)
             }
             JIT_CALLBACK_GUARD(((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data));
         }
-
-        // the last callback may already asked to stop emulation
-        if (env->uc->stop_request)
-            break;
     }
 
     env->eip += next_eip_addend;

@@ -130,10 +130,6 @@ void helper_cpuid(CPUX86State *env)
             }
             JIT_CALLBACK_GUARD_VAR(skip_cpuid, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
         }
-
-        // the last callback may already asked to stop emulation
-        if (env->uc->stop_request)
-            break;
     }
 
     if (!skip_cpuid) {
@@ -242,10 +238,6 @@ void helper_rdtsc(CPUX86State *env)
             }
             JIT_CALLBACK_GUARD_VAR(skip_rdtsc, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
         }
-
-        // the last callback may already asked to stop emulation
-        if (env->uc->stop_request)
-            break;
     }
 
     if (!skip_rdtsc) {
@@ -286,10 +278,6 @@ void helper_rdtscp(CPUX86State *env)
             }
             JIT_CALLBACK_GUARD_VAR(skip_rdtscp, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
         }
-
-        // the last callback may already asked to stop emulation
-        if (env->uc->stop_request)
-            break;
     }
 
     if (!skip_rdtscp) {

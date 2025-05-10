@@ -1529,10 +1529,6 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                                            ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, paddr, size, 0, hook->user_data));
                     if (handled)
                         break;
-
-                    // the last callback may already asked to stop emulation
-                    if (uc->stop_request)
-                        break;
                 }
             } else {
                 // data reading
@@ -1549,10 +1545,6 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     JIT_CALLBACK_GUARD_VAR(handled, 
                                            ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, paddr, size, 0, hook->user_data));
                     if (handled)
-                        break;
-
-                    // the last callback may already asked to stop emulation
-                    if (uc->stop_request)
                         break;
                 }
             }
@@ -1615,9 +1607,6 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 synced = true;
             }
             JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, paddr, size, 0, hook->user_data));
-            // the last callback may already asked to stop emulation
-            if (uc->stop_request)
-                break;
         }
 
         /* Unicorn: Previous callbacks may invalidate TLB, reload everything.
@@ -1649,10 +1638,6 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 JIT_CALLBACK_GUARD_VAR(handled, 
                                        ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, paddr, size, 0, hook->user_data));
                 if (handled)
-                    break;
-
-                // the last callback may already asked to stop emulation
-                if (uc->stop_request)
                     break;
             }
 
@@ -1699,10 +1684,6 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 JIT_CALLBACK_GUARD_VAR(handled,
                                        ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, paddr, size, 0, hook->user_data));
                 if (handled)
-                    break;
-
-                // the last callback may already asked to stop emulation
-                if (uc->stop_request)
                     break;
             }
 
@@ -1811,9 +1792,6 @@ _out:
                     synced = true;
                 }
                 JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ_AFTER, paddr, size, res, hook->user_data));
-                // the last callback may already asked to stop emulation
-                if (uc->stop_request)
-                    break;
             }
         }
     }
@@ -2159,9 +2137,6 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 synced = true;
             }
             JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(uc, UC_MEM_WRITE, paddr, size, val, hook->user_data));
-            // the last callback may already asked to stop emulation
-            if (uc->stop_request)
-                break;
         }
     }
 
@@ -2180,10 +2155,6 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             JIT_CALLBACK_GUARD_VAR(handled,
                                    ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_UNMAPPED, paddr, size, val, hook->user_data));
             if (handled)
-                break;
-
-            // the last callback may already asked to stop emulation
-            if (uc->stop_request)
                 break;
         }
 
@@ -2233,10 +2204,6 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             JIT_CALLBACK_GUARD_VAR(handled,
                                    ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, paddr, size, val, hook->user_data));
             if (handled)
-                break;
-
-            // the last callback may already asked to stop emulation
-            if (uc->stop_request)
                 break;
         }
 
