@@ -339,6 +339,7 @@ ld="${LD-${cross_prefix}ld}"
 ranlib="${RANLIB-${cross_prefix}ranlib}"
 nm="${NM-${cross_prefix}nm}"
 strip="${STRIP-${cross_prefix}strip}"
+strings="${STRINGS-${cross_prefix}strings}"
 pkg_config_exe="${PKG_CONFIG-${cross_prefix}pkg-config}"
 query_pkg_config() {
     "${pkg_config_exe}" ${QEMU_PKG_CONFIG_FLAGS} "$@"
@@ -1233,9 +1234,9 @@ int main(int argc, char *argv[]) {
 EOF
 
 if compile_object ; then
-    if strings -a $TMPO | grep -q BiGeNdIaN ; then
+    if ${strings} -a $TMPO | grep -q BiGeNdIaN ; then
         bigendian="yes"
-    elif strings -a $TMPO | grep -q LiTtLeEnDiAn ; then
+    elif ${strings} -a $TMPO | grep -q LiTtLeEnDiAn ; then
         bigendian="no"
     else
         echo big/little test failed
