@@ -1211,10 +1211,15 @@ impl<'a, D> Unicorn<'a, D> {
     /// Get the `i32` register value for the program counter for the specified architecture.
     ///
     /// If an architecture is not compiled in, this function will return `uc_error::ARCH`.
-    const fn arch_to_pc_register(arch: Arch) -> Result<i32, uc_error> {
+    const fn arch_to_pc_register(arch: Arch, mode: Mode) -> Result<i32, uc_error> {
         match arch {
             #[cfg(feature = "arch_x86")]
-            Arch::X86 => Ok(RegisterX86::RIP as i32),
+            Arch::X86 => match mode {
+                Mode::MODE_16 => Ok(RegisterX86::IP as _),
+                Mode::MODE_32 => Ok(RegisterX86::EIP as _),
+                Mode::MODE_64 => Ok(RegisterX86::RIP as _),
+                _ => Err(uc_error::ARCH),
+            },
             #[cfg(feature = "arch_arm")]
             Arch::ARM => Ok(RegisterARM::PC as i32),
             #[cfg(feature = "arch_arm")]
@@ -1242,15 +1247,17 @@ impl<'a, D> Unicorn<'a, D> {
     /// Gets the current program counter for this `unicorn` instance.
     pub fn pc_read(&self) -> Result<u64, uc_error> {
         let arch = self.get_arch();
+        let mode = self.ctl_get_mode()?;
 
-        self.reg_read(Self::arch_to_pc_register(arch)?)
+        self.reg_read(Self::arch_to_pc_register(arch, mode)?)
     }
 
     /// Sets the program counter for this `unicorn` instance.
     pub fn set_pc(&mut self, value: u64) -> Result<(), uc_error> {
         let arch = self.get_arch();
+        let mode = self.ctl_get_mode()?;
 
-        self.reg_write(Self::arch_to_pc_register(arch)?, value)
+        self.reg_write(Self::arch_to_pc_register(arch, mode)?, value)
     }
 
     pub fn ctl_get_mode(&self) -> Result<Mode, uc_error> {
