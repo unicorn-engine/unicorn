@@ -157,6 +157,7 @@ typedef enum uc_sparc_reg {
 
     // pseudo register
     UC_SPARC_REG_PC, // program counter register
+    UC_SPARC_REG_PSR,
 
     UC_SPARC_REG_ENDING, // <-- mark the end of the list of registers
 
