@@ -394,6 +394,10 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
         CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
         env->pc += 4;
 #endif
+#if defined(TARGET_SPARC)
+        CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
+        env->pc = env->npc;
+#endif
 #if defined(TARGET_PPC)
         CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
         env->nip += 4;
