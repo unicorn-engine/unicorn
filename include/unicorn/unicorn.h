@@ -245,7 +245,22 @@ typedef uint32_t (*uc_cb_insn_in_t)(uc_engine *uc, uint32_t port, int size,
 typedef void (*uc_cb_insn_out_t)(uc_engine *uc, uint32_t port, int size,
                                  uint32_t value, void *user_data);
 
+// The definitions for `uc_cb_tlbevent_t` callback
+typedef enum uc_prot {
+    UC_PROT_NONE = 0,
+    UC_PROT_READ = 1,
+    UC_PROT_WRITE = 2,
+    UC_PROT_EXEC = 4,
+    UC_PROT_ALL = 7,
+} uc_prot;
+
+struct uc_tlb_entry {
+    uint64_t paddr;
+    uc_prot perms;
+};
+
 typedef struct uc_tlb_entry uc_tlb_entry;
+
 // All type of memory accesses for UC_HOOK_MEM_*
 typedef enum uc_mem_type {
     UC_MEM_READ = 16,      // Memory is read from
@@ -950,16 +965,16 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, uint64_t size);
  will not translate the virtual address when the pages are not mapped
  with the given access rights.
 
- When the pages are mapped with the given access rights the read will
- happen indipenden from the access rights of the mapping. So when you
- have a page write only mapped, a call with prot == UC_PROT_WRITE will
- be able to read the stored data.
+ Note the `prot` is different from the underlying protections of the physicall
+ memory regions. For instance, if a region of phyiscal memory is mapped with
+ write-only permissions, only a call with prot == UC_PROT_WRITE will be able to
+ read the contents.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_vmem_read(uc_engine *uc, uint64_t address, uint32_t prot,
+uc_err uc_vmem_read(uc_engine *uc, uint64_t address, uc_prot prot,
                            void *bytes, size_t size);
 
 /*
@@ -987,7 +1002,7 @@ uc_err uc_vmem_read(uc_engine *uc, uint64_t address, uint32_t prot,
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_vmem_write(uc_engine *uc, uint64_t address, uint32_t prot,
+uc_err uc_vmem_write(uc_engine *uc, uint64_t address, uc_prot prot,
                            void *bytes, size_t size);
 
 /*
@@ -1007,7 +1022,7 @@ uc_err uc_vmem_write(uc_engine *uc, uint64_t address, uint32_t prot,
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_vmem_translate(uc_engine *uc, uint64_t address, uint32_t prot,
+uc_err uc_vmem_translate(uc_engine *uc, uint64_t address, uc_prot prot,
                               uint64_t *paddress);
 
 /*
@@ -1087,19 +1102,6 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 */
 UNICORN_EXPORT
 uc_err uc_hook_del(uc_engine *uc, uc_hook hh);
-
-typedef enum uc_prot {
-    UC_PROT_NONE = 0,
-    UC_PROT_READ = 1,
-    UC_PROT_WRITE = 2,
-    UC_PROT_EXEC = 4,
-    UC_PROT_ALL = 7,
-} uc_prot;
-
-struct uc_tlb_entry {
-    uint64_t paddr;
-    uc_prot perms;
-};
 
 /*
  Variables to control which state should be stored in the context.
