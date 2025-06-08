@@ -388,7 +388,6 @@ static void test_context_snapshot(void)
     uint64_t baseaddr = 0xfffff1000;
     uint64_t offset = 0x10;
     uint64_t tmp = 1;
-
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
     OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY | UC_CTL_CONTEXT_CPU));
     OK(uc_mem_map(uc, baseaddr, 0x1000, UC_PROT_ALL));
@@ -528,6 +527,68 @@ static void test_mem_read_and_write_large_memory_block(void)
     OK(uc_close(uc));
 }
 
+static bool test_v2p_tlb_fill(uc_engine *uc, uint64_t addr, uc_mem_type type,
+                               uc_tlb_entry *result, void *user_data)               
+{
+    if (type != UC_MEM_READ)
+        return false;
+    result->paddr = addr;
+    result->perms = UC_PROT_READ;
+    return true;
+}
+
+static void test_virtual_to_physical(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t res;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_v2p_tlb_fill, NULL, 1, 0));
+
+    OK(uc_vmem_translate(uc, 0x1000, UC_PROT_READ, &res));
+    uc_assert_err(UC_ERR_WRITE_PROT,
+                  uc_vmem_translate(uc, 0x1000, UC_PROT_WRITE, &res));
+    OK(uc_close(uc));
+}
+
+static bool test_virtual_write_tlb_fill(uc_engine *uc, uint64_t addr, uc_mem_type type,
+                                        uc_tlb_entry *result, void *user_data)
+{
+    if (addr < 0x1000)
+        return false;
+    result->paddr = addr - 0x1000;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+static void test_virtual_write(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t rax = 21;
+    uint64_t res = 0;
+    /*
+     * mov rax, [0x2000]
+     */
+    char code[] = { 0x48, 0x8B, 0x04, 0x25, 0x00, 0x20, 0x00, 0x00 };
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_virtual_write_tlb_fill, NULL, 1, 0));
+    OK(uc_mem_map(uc, 0x0, 0x2000, UC_PROT_ALL));
+
+    OK(uc_vmem_write(uc, 0x1000, UC_PROT_EXEC, code, sizeof(code)));
+    OK(uc_vmem_write(uc, 0x2000, UC_PROT_READ, &rax, sizeof(rax)));
+
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 1));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &res));
+    TEST_CHECK(rax == res);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -545,4 +606,6 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_snapshot_unmap", test_snapshot_unmap},
              {"test_mem_read_and_write_large_memory_block",
               test_mem_read_and_write_large_memory_block},
+             {"test_virtual_to_physical", test_virtual_to_physical},
+             {"test_virtual_write", test_virtual_write},
              {NULL, NULL}};

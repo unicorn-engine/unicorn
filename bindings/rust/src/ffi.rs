@@ -48,6 +48,19 @@ extern "C" {
         bytes: *mut u8,
         size: u64,
     ) -> uc_error;
+    pub fn uc_vmem_read(
+        engine: uc_handle,
+        address: u64,
+        prot: u32,
+        bytes: *mut u8,
+        size: libc::size_t,
+    ) -> uc_error;
+    pub fn uc_vmem_translate(
+        engine: uc_handle,
+        address: u64,
+        prot: u32,
+        paddr: *mut u64,
+    ) -> uc_error;
     pub fn uc_mem_map(engine: uc_handle, address: u64, size: u64, perms: u32) -> uc_error;
     pub fn uc_mem_map_ptr(
         engine: uc_handle,
