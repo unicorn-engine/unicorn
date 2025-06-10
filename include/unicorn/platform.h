@@ -57,6 +57,7 @@ typedef unsigned char bool;
 typedef unsigned char bool;
 #define false 0
 #define true 1
+#endif // __STDC_VERSION__
 #endif // !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(__MINGW64__)
        // && (defined (WIN32) || defined (WIN64) || defined (_WIN32) || defined
        // (_WIN64))
