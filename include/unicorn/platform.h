@@ -50,8 +50,13 @@ typedef unsigned char bool;
 #endif // (_MSC_VER < MSC_VER_VS2013) || defined(_KERNEL_MODE)
 
 #else
-// not MSVC -> C99 is supported
+#if __STDC_VERSION__ >= 199901L
+// C99 is supported
 #include <stdbool.h>
+#else
+typedef unsigned char bool;
+#define false 0
+#define true 1
 #endif // !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(__MINGW64__)
        // && (defined (WIN32) || defined (WIN64) || defined (_WIN32) || defined
        // (_WIN64))
