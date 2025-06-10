@@ -803,6 +803,8 @@ uc_err uc_vmem_translate(uc_engine *uc, uint64_t address, uc_prot prot,
             return UC_ERR_WRITE_PROT;
         case UC_PROT_EXEC:
             return UC_ERR_FETCH_PROT;
+        default:
+            return UC_ERR_ARG;
         }
     }
 
