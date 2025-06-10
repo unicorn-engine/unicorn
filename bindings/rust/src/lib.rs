@@ -330,13 +330,36 @@ impl<'a, D> Unicorn<'a, D> {
 
     /// Read a range of bytes from memory at the specified emulated virtual address.
     pub fn vmem_read(&self, address: u64, prot: Prot, buf: &mut [u8]) -> Result<(), uc_error> {
-        unsafe { uc_vmem_read(self.get_handle(), address, prot, buf.as_mut_ptr() as _, buf.len()) }.into()
+        unsafe {
+            uc_vmem_read(
+                self.get_handle(),
+                address,
+                prot,
+                buf.as_mut_ptr() as _,
+                buf.len(),
+            )
+        }
+        .into()
     }
 
     /// Return a range of bytes from memory at the specified emulated virtual address as vector.
-    pub fn vmem_read_as_vec(&self, address: u64, prot: Prot, size: usize) -> Result<Vec<u8>, uc_error> {
+    pub fn vmem_read_as_vec(
+        &self,
+        address: u64,
+        prot: Prot,
+        size: usize,
+    ) -> Result<Vec<u8>, uc_error> {
         let mut buf = vec![0; size];
-        unsafe { uc_vmem_read(self.get_handle(), address, prot, buf.as_mut_ptr() as _, buf.len()) }.and(Ok(buf))
+        unsafe {
+            uc_vmem_read(
+                self.get_handle(),
+                address,
+                prot,
+                buf.as_mut_ptr() as _,
+                buf.len(),
+            )
+        }
+        .and(Ok(buf))
     }
 
     /// Write the data in `bytes` to the emulated physical address `address`
