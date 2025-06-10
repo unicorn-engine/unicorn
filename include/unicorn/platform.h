@@ -50,7 +50,8 @@ typedef unsigned char bool;
 #endif // (_MSC_VER < MSC_VER_VS2013) || defined(_KERNEL_MODE)
 
 #else
-#if __STDC_VERSION__ >= 199901L
+// Clang 5 doesn't have stdbool.h in manylinux image
+#if __STDC_VERSION__ >= 199901L && __clang_major__ > 5
 // C99 is supported
 #include <stdbool.h>
 #else
