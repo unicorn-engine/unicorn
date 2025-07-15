@@ -138,7 +138,7 @@ jobs:
           python3 -m pip install -U pip wheel
           python3 -m wheel tags --python-tag='py2' --abi-tag=none wheelhouse/*cp38*.whl
 
-      - uses: LizardByte/setup-python-action@v2024.919.163656
+      - uses: LizardByte/actions/actions/setup_python@v2025.715.25226
         if: (runner.os == 'Linux' && (matrix.arch == 'x86_64' || matrix.arch == 'aarch64') && matrix.cibw_build == 'cp38-manylinux*') || (runner.os == 'macOS' && matrix.arch == 'arm64') || (runner.os == 'Windows' && matrix.arch == 'AMD64')
         with:
           python-version: 2.7
