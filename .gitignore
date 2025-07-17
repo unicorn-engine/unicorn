@@ -88,6 +88,7 @@ rust_build
 [Oo]bj/
 packages/
 cmocka/
+.zig-cache/
 zig-cache/
 zig-out/
 .cache

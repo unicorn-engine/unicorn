@@ -1,5 +1,11 @@
 .{
-    .name = "unicorn",
+    .name = .unicorn,
     .version = "2.1.3",
-    .paths = .{""},
+    .fingerprint = 0x58fbd83f9276a14b, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.14.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "bindings/",
+    },
 }
