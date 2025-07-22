@@ -716,6 +716,7 @@ static void g_hash_table_resize (GHashTable *hash_table)
     g_hash_table_set_shift_from_size (hash_table, hash_table->nnodes * 2);
 
     new_nodes = g_new0 (GHashNode, hash_table->size);
+    memset(new_nodes, 0, hash_table->size * sizeof(GHashNode));
 
     for (i = 0; i < old_size; i++)
     {
