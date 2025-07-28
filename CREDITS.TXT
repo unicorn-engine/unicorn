@@ -1,6 +1,0 @@
-This file credits the contributors of the Unicorn engine project.
-Key developers
-==============
-rolando a montes <montes12roland@gmail.com>(xwings)
-Beta testers (in no particular order)
-==============================
