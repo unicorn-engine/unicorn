@@ -125,20 +125,20 @@ fn build_with_cmake() {
         config.define("UNICORN_LOGGING", "ON");
     }
 
-    // need to clear build target and append "build" to the path because
-    // unicorn's CMakeLists.txt doesn't properly support 'install', so we use
-    // the build artifacts from the build directory, which cmake crate sets
-    // to "<out_dir>/build/"
     let dst = config
         .define("UNICORN_BUILD_TESTS", "OFF")
-        .define("UNICORN_INSTALL", "OFF")
+        .define("UNICORN_INSTALL", "ON")
         .define("UNICORN_ARCH", archs)
-        .no_build_target(true)
         .build();
 
     println!(
         "cargo:rustc-link-search=native={}",
-        dst.join("build").display()
+        dst.join("lib").display()
+    );
+    // rhel
+    println!(
+        "cargo:rustc-link-search=native={}",
+        dst.join("lib64").display()
     );
 
     // Lazymio(@wtdcode): Dynamic link may break. See: https://github.com/rust-lang/cargo/issues/5077
