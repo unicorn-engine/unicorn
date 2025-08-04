@@ -135,6 +135,11 @@ fn build_with_cmake() {
         "cargo:rustc-link-search=native={}",
         dst.join("lib").display()
     );
+    // rhel
+    println!(
+        "cargo:rustc-link-search=native={}",
+        dst.join("lib64").display()
+    );
 
     // Lazymio(@wtdcode): Dynamic link may break. See: https://github.com/rust-lang/cargo/issues/5077
     if cfg!(feature = "dynamic_linkage") {
