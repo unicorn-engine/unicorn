@@ -159,7 +159,6 @@ jobs:
         if: contains(matrix.config.name, 'macos-x64')
         shell: bash
         run: |
-          brew install ninja
           ninja --version
           cmake --version
           mkdir build
