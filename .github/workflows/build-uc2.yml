@@ -294,7 +294,6 @@ jobs:
         if: contains(matrix.config.name, 'macos')
         shell: bash
         run: |
-          brew install ninja
           ninja --version
           cmake --version
           mkdir build
@@ -314,7 +313,6 @@ jobs:
         if: contains(matrix.config.name, 'android')
         shell: bash
         run: |
-          brew install ninja
           mkdir build
           mkdir instdir
           cmake . -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
