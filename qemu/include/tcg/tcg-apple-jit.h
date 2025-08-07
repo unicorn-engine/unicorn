@@ -39,10 +39,6 @@
 // On Github Action (Virtualized environment), this shall always returns 0
 static inline uint64_t read_sprr_perm(void)
 {
-    if (!pthread_jit_write_protect_supported_np()) {
-        return 0;
-    }
-
     uint64_t v;
     __asm__ __volatile__("isb sy\n"
                          "mrs %0, S3_6_c15_c1_5\n"
@@ -52,6 +48,9 @@ static inline uint64_t read_sprr_perm(void)
 
 QEMU_UNUSED_FUNC static inline uint8_t thread_mask() 
 {
+    if (!pthread_jit_write_protect_supported_np()) {
+        return 0;
+    }
     uint64_t v = read_sprr_perm();
 
     if (v == 0) {
@@ -72,6 +71,9 @@ QEMU_UNUSED_FUNC static inline bool thread_executable()
 }
 
 static inline void assert_executable(bool executable) {
+    if (!pthread_jit_write_protect_supported_np()) {
+        return;
+    }
     uint64_t v = read_sprr_perm();
 
     if (!v) {
