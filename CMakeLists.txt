@@ -1,7 +1,7 @@
 # CMake setup for Unicorn 2.
 # By Huitao Chen & Nguyen Anh Quynh, 2019-2020
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...3.20)
 
 # Only required for MSVC, but we can't know the compiler at this point because we haven't
 # called enable_language() or project(), and if we did that it would lock in the old
