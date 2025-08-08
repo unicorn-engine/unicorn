@@ -30,12 +30,13 @@
 #include "stdbool.h"
 #include "qemu/compiler.h"
 
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
+
 // Returns the S3_6_c15_c1_5 register's value
-// Taken from 
+// Taken from
 // https://stackoverflow.com/questions/70019553/lldb-how-to-read-the-permissions-of-a-memory-region-for-a-thread
 // https://blog.svenpeter.dev/posts/m1_sprr_gxf/
 // On Github Action (Virtualized environment), this shall always returns 0
-#if defined(HAVE_SPRR_MRS)
 static inline uint64_t read_sprr_perm(void)
 {
     uint64_t v;
@@ -44,17 +45,12 @@ static inline uint64_t read_sprr_perm(void)
                          : "=r"(v)::"memory");
     return v;
 }
-#else
-static inline uint64_t read_sprr_perm(void)
-{
-    return 0;
-}
-#endif
-
-#if defined(__APPLE__) && defined(HAVE_SPRR_MRS) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 
 QEMU_UNUSED_FUNC static inline uint8_t thread_mask() 
 {
+    if (!pthread_jit_write_protect_supported_np()) {
+        return 0;
+    }
     uint64_t v = read_sprr_perm();
 
     if (v == 0) {
@@ -75,6 +71,9 @@ QEMU_UNUSED_FUNC static inline bool thread_executable()
 }
 
 static inline void assert_executable(bool executable) {
+    if (!pthread_jit_write_protect_supported_np()) {
+        return;
+    }
     uint64_t v = read_sprr_perm();
 
     if (!v) {
