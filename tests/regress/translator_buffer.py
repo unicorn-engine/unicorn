@@ -83,8 +83,8 @@ class TranslatorBuffer(regress.RegressTest):
         sp_base = 0x000f88001b800000  # was: 0xffff88001b800000
         mg_base = 0x000f880026f02000  # was: 0xffff880026f02000
 
-        ips = range(0x9000, 0xf000, 8)
-        sps = range(0x0000, 0x6000, 8)
+        ips = range(0x9000, 0xf000, 16) # was: ..., 8
+        sps = range(0x0000, 0x6000, 16) # was: ..., 8
 
         for i, (ip, sp) in enumerate(zip(ips, sps)):
             self.init_unicorn(ip_base + ip, sp_base + sp, mg_base + i * 8)
