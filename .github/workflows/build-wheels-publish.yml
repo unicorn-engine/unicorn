@@ -24,6 +24,10 @@ on:
       - "docs/**"
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   # Enable DEBUG flag either according to the tag release or manual override
   UNICORN_DEBUG: ${{ inputs.debugMode != '' && inputs.debugMode || (startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v')) && '0' || contains(github.event.head_commit.message, 'CI(release)') && '0' || '1' }}
