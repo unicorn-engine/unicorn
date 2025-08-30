@@ -18,6 +18,7 @@ class Emulator:
 
         self.mu = Uc(UC_ARCH_X86, UC_MODE_64)
         self.mu.ctl_set_tlb_mode(UC_TLB_VIRTUAL)
+        self.mu.ctl_set_tcg_buffer_size(1 * 1024 * 1024) # 1MB
 
         regress.logger.debug("mapping code  : %#x", __page_aligned(code))
         regress.logger.debug("mapping stack : %#x", __page_aligned(stack))
