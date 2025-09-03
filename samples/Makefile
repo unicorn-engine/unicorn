@@ -62,6 +62,7 @@ UNICORN_ARCHS := $(shell if [ -e ../config.log ]; then cat ../config.log;\
 				 else printf "$(UNICORN_ARCHS)"; fi)
 
 SOURCES =
+SOURCES += sample_playground.c
 ifneq (,$(findstring arm,$(UNICORN_ARCHS)))
 SOURCES += sample_arm.c
 SOURCES += sample_armeb.c
