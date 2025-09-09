@@ -50,13 +50,7 @@ fn get_tool_paths_msvc(compiler: &cc::Tool) -> Option<(PathBuf, PathBuf)> {
 
 fn build_with_cmake() {
     let current_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    let uc_dir = current_dir
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap();
+    let uc_dir = current_dir;
     let compiler = cc::Build::new().get_compiler();
 
     // Initialize configuration
@@ -329,10 +323,7 @@ impl ParseCallbacks for Renamer {
 }
 
 fn generate_bindings() {
-    const HEADER_PATH: &str = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../../include/unicorn/unicorn.h"
-    );
+    const HEADER_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/include/unicorn/unicorn.h");
 
     let bitflag_enums = [
         "uc_hook_type",

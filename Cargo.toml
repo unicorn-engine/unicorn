@@ -1,12 +1,12 @@
 [workspace]
 default-members = ["bindings/rust"]
-members = ["bindings/rust", "bindings/rust/sys"]
+members = ["bindings/rust"]
 resolver = "2"
 
 [workspace.package]
 rust-version = "1.85.0"
-version = "2.1.4"
-authors = ["Ziqiao Kong", "Lukas Seidel", "Amaan Qureshi <amaanq12@gmail.com>"]
+version = "2.1.5"
+authors = ["Ziqiao Kong <mio@lazym.io>", "Lukas Seidel", "Amaan Qureshi <amaanq12@gmail.com>"]
 keywords = ["unicorn", "cpu", "emulator", "bindings"]
 categories = ["api-bindings", "emulators", "no-std", "virtualization"]
 documentation = "https://github.com/unicorn-engine/unicorn/wiki"
@@ -29,3 +29,77 @@ use_self = "allow"
 pedantic = { level = "warn", priority = -1 }
 nursery = { level = "warn", priority = -1 }
 cargo = { level = "warn", priority = -1 }
+
+# Root package
+[package]
+name = "unicorn-engine-sys"
+version.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories = [
+	"api-bindings",
+	"emulators",
+	"external-ffi-bindings",
+	"no-std",
+	"virtualization",
+]
+documentation.workspace = true
+edition.workspace = true
+license.workspace = true
+readme = "README.md"
+repository.workspace = true
+description.workspace = true
+links = "unicorn"
+exclude = [
+    "/docs",
+    "/bindings/dotnet",
+    "/bindings/go",
+    "/bindings/haskell",
+    "/bindings/java",
+    "/bindings/pascal",
+    "/bindings/python",
+    "/bindings/ruby",
+    "/bindings/vb6",
+    "/bindings/zig",
+    "/samples",
+    "/tests",
+]
+
+[lib]
+path = "bindings/rust/sys/src/lib.rs"
+
+[lints]
+workspace = true
+
+[build-dependencies]
+bindgen = "0.71.1"
+cc = { version = "1.2.17" }
+cmake = { version = "0.1.54" }
+heck = "0.5.0"
+pkg-config = { version = "0.3.32" }
+
+[features]
+default = ["arch_all"]
+dynamic_linkage = []
+arch_all = [
+	"arch_x86",
+	"arch_arm",
+	"arch_aarch64",
+	"arch_riscv",
+	"arch_mips",
+	"arch_sparc",
+	"arch_m68k",
+	"arch_ppc",
+	"arch_s390x",
+	"arch_tricore",
+]
+arch_x86 = []
+arch_arm = []
+arch_aarch64 = ["arch_arm"]
+arch_riscv = []
+arch_mips = []
+arch_sparc = []
+arch_m68k = []
+arch_ppc = []
+arch_s390x = []
+arch_tricore = []
