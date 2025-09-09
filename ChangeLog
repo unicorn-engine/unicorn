@@ -9,13 +9,13 @@ The very first thing is that, Unicorn (finally!) offers consistent PC guarantee 
 
 In addition, we offer a standalone unicorn Rust crate `unicorn-engine-sys` to allows users to build their own bindings since v2.1.4. There are also lots of bindings improvements contained in this release.
 
-We also fix the building and distribution issues for macos ARM and distribute wheels again.
+We also fix the building and distribution issues for macos ARM and distribute wheels again. Our friend @patryk4815 from pwndbg helps sort this out. Kudos to him!
 
 For 2.2.0, personally I wish I could work it out before the end of this year, by merging lots of pending big PRs but my time budget is relatively limited recently. Please aware that 2.2.0 would probably bump QEMU version to 5.1.0 or even higher so semantics could be changed. Any help is highly welcome and please contact @wtdcode if you are keen.
 
 Lastly, I would like to express my deep gratitude to all contributors that help make this release happen, specifically @Evian-Zhang for Rust improvements and unicornafl integration, @Antelox for consistent contributions on our workflows, @amaanq for various huge work, reviews and Rust bindings split, @PhilippTakacs for PR reviews and fix. Again, thanks for every contributor!
 
-Below goes the auto generated release notes. Starting from this tag, the release note will switch to a short passage plus github generated contents.
+Below goes the auto generated release notes. Starting from this tag, the release note will switch to a short passage plus Github generated contents because this makes it easier to follow big changes.
 
 ## What's Changed
 * bindings/zig: Fix sample_riscv_zig partial writes and logging by @fervagar in https://github.com/unicorn-engine/unicorn/pull/2133
