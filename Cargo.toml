@@ -1,6 +1,5 @@
 [workspace]
-default-members = ["bindings/rust"]
-members = ["bindings/rust"]
+members = ["bindings/rust/unicorn-engine"]
 resolver = "2"
 
 [workspace.package]
@@ -12,7 +11,7 @@ categories = ["api-bindings", "emulators", "no-std", "virtualization"]
 documentation = "https://github.com/unicorn-engine/unicorn/wiki"
 edition = "2024"
 license = "GPL-2.0"
-readme = "README.md"
+readme = "./bindings/rust/sys/README.md"
 repository = "https://github.com/unicorn-engine/unicorn"
 description = "Rust bindings for the Unicorn emulator with utility functions"
 
