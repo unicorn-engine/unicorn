@@ -359,9 +359,9 @@ fn generate_bindings() {
         .generate()
         .expect("Failed to generate bindings");
 
-    let bindings_rs = "src/bindings.rs";
+    let bindings_rs = PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("bindings.rs");
     bindings
-        .write_to_file(bindings_rs)
+        .write_to_file(&bindings_rs)
         .unwrap_or_else(|_| panic!("Failed to write bindings into path: {bindings_rs:?}"));
 }
 
