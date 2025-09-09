@@ -6,7 +6,7 @@
     <AssemblyName>UnicornSamples</AssemblyName>
     <Copyright>Copyright © Antonio Parata 2016</Copyright>
     <RepositoryUrl>https://github.com/unicorn-engine/unicorn</RepositoryUrl>
-    <Version>2.1.3</Version>
+    <Version>2.1.4</Version>
     <ProjectGuid>{B80B5987-1E24-4309-8BF9-C4F91270F21C}</ProjectGuid>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
