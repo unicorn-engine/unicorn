@@ -49,6 +49,7 @@ readme = "README.md"
 repository.workspace = true
 description.workspace = true
 links = "unicorn"
+# Cargo package --list
 exclude = [
     "/docs",
     "/bindings/dotnet",
