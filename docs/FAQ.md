@@ -9,6 +9,9 @@ Optimize your program with less instrumentation, e.g. by using `UC_HOOK_BLOCK` i
 
 ## Why do I get a wrong PC after emulation stops?
 
+<details>
+  <summary>For version < 2.1.4 </summary>
+  
 Updating PC is a very large overhead (10x slower in the worst case, see FAQ above) for emulation so the PC sync guarantee is explained below in several cases:
 
 - A `UC_HOOK_CODE` hook is installed. In this case, the PC is sync-ed _everywhere_ within the effective range of the hook. However, on some architectures, the PC might by sync-ed all the time if the hook is installed in any range. Note using `count` in `uc_emu_start` implies installing a `UC_HOOK_CODE` hook.
@@ -33,10 +36,19 @@ mov x0, #1
 mov x1, #2
 ldr x0, [x1] <--- exception here and PC sync-ed here
 ```
+  
+</details>
+
+<details>
+  <summary>For version >= 2.1.4 </summary>
+
+We should always have valid PC all the time. Please report an issue for your case.
+
+</details>
 
 ## I get an “Unhandled CPU Exception”, why?
 
-Unicorn is a pure CPU emulator and usually it’s due to no handler registered for instructions like `syscall` and `SVC`. If you expect system emulation, you probably would like [qiling framework](https://github.com/qilingframework/qiling).
+Unicorn is a pure CPU emulator and usually it’s due to no handler registered for instructions like `syscall` and `SVC`. If you expect syscall and userland emulation, you probably would like [qiling framework](https://github.com/qilingframework/qiling).
 
 ## I would like to instrument a specific instruction but get a `UC_ERR_HOOK`, why?
 
