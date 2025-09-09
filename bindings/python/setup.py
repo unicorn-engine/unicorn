@@ -148,5 +148,6 @@ class CustomBuild(build_py):
 
 setup(
     cmdclass={'build_py': CustomBuild, 'sdist': CustomSDist},
-    has_ext_modules=lambda: True,  # It's not a Pure Python wheel
+    has_ext_modules=lambda: True,  # It's not a Pure Python wheel,
+    options={"bdist_wheel": {"py_limited_api": "cp37"}},  # to have ABI3 tagged wheel
 )
