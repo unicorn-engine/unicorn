@@ -1,6 +1,6 @@
 .{
     .name = .unicorn,
-    .version = "2.1.3",
+    .version = "2.1.4",
     .minimum_zig_version = "0.14.0-dev.3445+6c3cbb0c8",
     .fingerprint = 0x58fbd83f3bf465b6,
     .paths = .{""},
