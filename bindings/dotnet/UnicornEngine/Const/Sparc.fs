@@ -136,7 +136,8 @@ module Sparc =
     let UC_SPARC_REG_Y = 86
     let UC_SPARC_REG_XCC = 87
     let UC_SPARC_REG_PC = 88
-    let UC_SPARC_REG_ENDING = 89
+    let UC_SPARC_REG_PSR = 89
+    let UC_SPARC_REG_ENDING = 90
     let UC_SPARC_REG_O6 = 84
     let UC_SPARC_REG_I6 = 67
 

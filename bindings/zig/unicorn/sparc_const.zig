@@ -131,7 +131,8 @@ pub const sparcConst = enum(c_int) {
 	SPARC_REG_Y = 86,
 	SPARC_REG_XCC = 87,
 	SPARC_REG_PC = 88,
-	SPARC_REG_ENDING = 89,
+	SPARC_REG_PSR = 89,
+	SPARC_REG_ENDING = 90,
 	SPARC_REG_O6 = 84,
 	SPARC_REG_I6 = 67,
 
