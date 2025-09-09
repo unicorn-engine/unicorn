@@ -133,7 +133,8 @@ public interface SparcConst {
     public static final int UC_SPARC_REG_Y = 86;
     public static final int UC_SPARC_REG_XCC = 87;
     public static final int UC_SPARC_REG_PC = 88;
-    public static final int UC_SPARC_REG_ENDING = 89;
+    public static final int UC_SPARC_REG_PSR = 89;
+    public static final int UC_SPARC_REG_ENDING = 90;
     public static final int UC_SPARC_REG_O6 = 84;
     public static final int UC_SPARC_REG_I6 = 67;
 
