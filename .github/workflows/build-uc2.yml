@@ -24,10 +24,6 @@ on:
       - "docs/**"
   pull_request:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 env:
   # Specify build type either according to the tag release or manual override
   BUILD_TYPE: ${{ inputs.buildType != '' && inputs.buildType || startsWith(github.ref, 'refs/tags') && 'Release' || 'Debug' }}
