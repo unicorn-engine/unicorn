@@ -88,6 +88,8 @@ module S390x =
     let UC_S390X_REG_F13 = 30
     let UC_S390X_REG_F14 = 31
     let UC_S390X_REG_F15 = 32
+
+    // Not real registers, low half of vr16-vr31
     let UC_S390X_REG_F16 = 33
     let UC_S390X_REG_F17 = 34
     let UC_S390X_REG_F18 = 35
@@ -124,7 +126,62 @@ module S390x =
     let UC_S390X_REG_A15 = 64
     let UC_S390X_REG_PC = 65
     let UC_S390X_REG_PSWM = 66
-    let UC_S390X_REG_ENDING = 67
+
+    // pseudo registers, high half of vr16-vr31
+    let UC_S390X_REG_F0_HI = 67
+    let UC_S390X_REG_F1_HI = 68
+    let UC_S390X_REG_F2_HI = 69
+    let UC_S390X_REG_F3_HI = 70
+    let UC_S390X_REG_F4_HI = 71
+    let UC_S390X_REG_F5_HI = 72
+    let UC_S390X_REG_F6_HI = 73
+    let UC_S390X_REG_F7_HI = 74
+    let UC_S390X_REG_F8_HI = 75
+    let UC_S390X_REG_F9_HI = 76
+    let UC_S390X_REG_F10_HI = 77
+    let UC_S390X_REG_F11_HI = 78
+    let UC_S390X_REG_F12_HI = 79
+    let UC_S390X_REG_F13_HI = 80
+    let UC_S390X_REG_F14_HI = 81
+    let UC_S390X_REG_F15_HI = 82
+    let UC_S390X_REG_F16_HI = 83
+    let UC_S390X_REG_F17_HI = 84
+    let UC_S390X_REG_F18_HI = 85
+    let UC_S390X_REG_F19_HI = 86
+    let UC_S390X_REG_F20_HI = 87
+    let UC_S390X_REG_F21_HI = 88
+    let UC_S390X_REG_F22_HI = 89
+    let UC_S390X_REG_F23_HI = 90
+    let UC_S390X_REG_F24_HI = 91
+    let UC_S390X_REG_F25_HI = 92
+    let UC_S390X_REG_F26_HI = 93
+    let UC_S390X_REG_F27_HI = 94
+    let UC_S390X_REG_F28_HI = 95
+    let UC_S390X_REG_F29_HI = 96
+    let UC_S390X_REG_F30_HI = 97
+    let UC_S390X_REG_F31_HI = 98
+
+    // float control register
+    let UC_S390X_REG_FPC = 99
+
+    // control registers
+    let UC_S390X_REG_CR0 = 100
+    let UC_S390X_REG_CR1 = 101
+    let UC_S390X_REG_CR2 = 102
+    let UC_S390X_REG_CR3 = 103
+    let UC_S390X_REG_CR4 = 104
+    let UC_S390X_REG_CR5 = 105
+    let UC_S390X_REG_CR6 = 106
+    let UC_S390X_REG_CR7 = 107
+    let UC_S390X_REG_CR8 = 108
+    let UC_S390X_REG_CR9 = 109
+    let UC_S390X_REG_CR10 = 110
+    let UC_S390X_REG_CR11 = 111
+    let UC_S390X_REG_CR12 = 112
+    let UC_S390X_REG_CR13 = 113
+    let UC_S390X_REG_CR14 = 114
+    let UC_S390X_REG_CR15 = 115
+    let UC_S390X_REG_ENDING = 116
 
     // Alias registers
 

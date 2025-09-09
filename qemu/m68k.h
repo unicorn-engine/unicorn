@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _m68k
 #endif
+#define gen_helper_check_exit_request gen_helper_check_exit_request_m68k
 #define unicorn_fill_tlb unicorn_fill_tlb_m68k
 #define reg_read reg_read_m68k
 #define reg_write reg_write_m68k
@@ -796,6 +797,7 @@
 #define get_page_addr_code get_page_addr_code_m68k
 #define probe_access probe_access_m68k
 #define tlb_vaddr_to_host tlb_vaddr_to_host_m68k
+#define tlb_vaddr_to_paddr tlb_vaddr_to_paddr_m68k
 #define helper_ret_ldub_mmu helper_ret_ldub_mmu_m68k
 #define helper_le_lduw_mmu helper_le_lduw_mmu_m68k
 #define helper_be_lduw_mmu helper_be_lduw_mmu_m68k
@@ -1371,6 +1373,7 @@
 #define helper_bitrev helper_bitrev_m68k
 #define helper_ff1 helper_ff1_m68k
 #define helper_sats helper_sats_m68k
+#define cpu_m68k_get_sr cpu_m68k_get_sr_m68k
 #define cpu_m68k_set_sr cpu_m68k_set_sr_m68k
 #define helper_set_sr helper_set_sr_m68k
 #define helper_mac_move helper_mac_move_m68k

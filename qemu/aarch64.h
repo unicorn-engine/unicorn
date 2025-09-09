@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _aarch64
 #endif
+#define gen_helper_check_exit_request gen_helper_check_exit_request_aarch64
 #define unicorn_fill_tlb unicorn_fill_tlb_aarch64
 #define reg_read reg_read_aarch64
 #define reg_write reg_write_aarch64
@@ -796,6 +797,7 @@
 #define get_page_addr_code get_page_addr_code_aarch64
 #define probe_access probe_access_aarch64
 #define tlb_vaddr_to_host tlb_vaddr_to_host_aarch64
+#define tlb_vaddr_to_paddr tlb_vaddr_to_paddr_aarch64
 #define helper_ret_ldub_mmu helper_ret_ldub_mmu_aarch64
 #define helper_le_lduw_mmu helper_le_lduw_mmu_aarch64
 #define helper_be_lduw_mmu helper_be_lduw_mmu_aarch64

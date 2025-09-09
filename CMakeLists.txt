@@ -1,7 +1,7 @@
 # CMake setup for Unicorn 2.
 # By Huitao Chen & Nguyen Anh Quynh, 2019-2020
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...3.20)
 
 # Only required for MSVC, but we can't know the compiler at this point because we haven't
 # called enable_language() or project(), and if we did that it would lock in the old
@@ -169,17 +169,18 @@ else()
         execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine
             OUTPUT_VARIABLE UC_COMPILER_VERSION)
 
-        string(FIND "${UC_COMPILER_VERSION}" "i686" UC_RET)
-        if(${UC_RET} GREATER_EQUAL "0")
+        if(UC_COMPILER_VERSION MATCHES "^i686.*")
             set(UNICORN_TARGET_ARCH "i386")
             set(UNICORN_CFLAGS -m32 -static-libgcc) # Workaround for github action bugs
             set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -m32")
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m32")
-        else()
+        elseif(UC_COMPILER_VERSION MATCHES "^x86_64.*")
             set(UNICORN_TARGET_ARCH "i386")
             set(UNICORN_CFLAGS -m64 -mcx16)
             set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -m64")
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m64")
+        elseif(UC_COMPILER_VERSION MATCHES "^aarch64.*")
+            set(UNICORN_TARGET_ARCH "aarch64")
         endif()
     elseif(ANDROID_ABI)
         string(FIND "${ANDROID_ABI}" "arm64" UC_RET)
@@ -273,6 +274,11 @@ else()
                 set(UNICORN_TARGET_ARCH "tricore")
                 break()
             endif()
+            string(FIND ${UC_COMPILER_MACRO} "loongarch64" UC_RET)
+            if (${UC_RET} GREATER_EQUAL "0")
+                set(UNICORN_TARGET_ARCH "loongarch64")
+                break()
+            endif()
             message(FATAL_ERROR "Unknown host compiler: ${CMAKE_C_COMPILER}.")
         endwhile(TRUE)
     endif()
@@ -362,6 +368,12 @@ else()
     set(TARGET_LIST "${TARGET_LIST} ")
 
     # GEN config-host.mak & target directories
+    # MESSAGE(STATUS "sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
+    #     --cc=${CMAKE_C_COMPILER}
+    #     ${EXTRA_CFLAGS}
+    #     ${TARGET_LIST}
+    #     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}"
+    # )
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
         --cc=${CMAKE_C_COMPILER}
         ${EXTRA_CFLAGS}

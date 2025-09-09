@@ -980,8 +980,8 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 
     // mov edx, [ecx] ; restore edx
     // mov ecx, [ecx+4] ; restore ecx
-    // ret
-    const char tramp2[] = "\x8b\x11\x8b\x49\x04\xc3";
+    // ret 4
+    const char tramp2[] = "\x8b\x11\x8b\x49\x04\xc2\x04\x00";
     memcpy(ptr, (void*)tramp2, sizeof(tramp2) - 1);
 
     memcpy(data + 0x8,  (void*)&uc, 4);

@@ -639,19 +639,24 @@ static void test_riscv_mmu_prepare_tlb(uc_engine *uc, uint32_t data_address,
 {
     uint64_t tlbe;
     uint32_t sptbr = 0x2000;
+    uint64_t tlbe_mem;
 
     OK(uc_mem_map(uc, sptbr, 0x3000, UC_PROT_ALL)); // tlb base
 
     tlbe = ((sptbr + 0x1000) >> 2) | 1;
-    OK(uc_mem_write(uc, sptbr, &tlbe, sizeof(tlbe)));
+    tlbe_mem = LEINT64(tlbe);
+    OK(uc_mem_write(uc, sptbr, &tlbe_mem, sizeof(tlbe)));
     tlbe = ((sptbr + 0x2000) >> 2) | 1;
-    OK(uc_mem_write(uc, sptbr + 0x1000, &tlbe, sizeof(tlbe)));
+    tlbe_mem = LEINT64(tlbe);
+    OK(uc_mem_write(uc, sptbr + 0x1000, &tlbe_mem, sizeof(tlbe)));
 
     tlbe = (code_address >> 2) | (7 << 1) | 1;
-    OK(uc_mem_write(uc, sptbr + 0x2000 + 0x15 * 8, &tlbe, sizeof(tlbe)));
+    tlbe_mem = LEINT64(tlbe);
+    OK(uc_mem_write(uc, sptbr + 0x2000 + 0x15 * 8, &tlbe_mem, sizeof(tlbe)));
 
     tlbe = (data_address >> 2) | (7 << 1) | 1;
-    OK(uc_mem_write(uc, sptbr + 0x2000 + 0x16 * 8, &tlbe, sizeof(tlbe)));
+    tlbe_mem = LEINT64(tlbe);
+    OK(uc_mem_write(uc, sptbr + 0x2000 + 0x16 * 8, &tlbe_mem, sizeof(tlbe)));
 }
 
 static void test_riscv_mmu_hook_code(uc_engine *uc, uint64_t address,

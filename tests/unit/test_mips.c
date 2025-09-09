@@ -107,13 +107,14 @@ static void test_mips_stop_delay_slot_from_qiling(void)
     // 24 ab ff da          addiu                $t3, $a1, -0x26
     // 2d 62 00 02          sltiu                $v0, $t3, 2
     // 10 40 00 32          beqz                 $v0, 0x47c8c9c
-    // 00 00 00 00          nop  
+    // 00 00 00 00          nop
     char code[] =
-        "\x24\x06\x00\x03\x10\xa6\x00\x79\x30\x42\x00\xfc\x10\x40\x00\x32\x24\xab\xff\xda\x2d\x62\x00\x02\x10\x40\x00\x32\x00\x00\x00\x00";
+        "\x24\x06\x00\x03\x10\xa6\x00\x79\x30\x42\x00\xfc\x10\x40\x00\x32\x24"
+        "\xab\xff\xda\x2d\x62\x00\x02\x10\x40\x00\x32\x00\x00\x00\x00";
     uint32_t r_pc = 0x0;
     uint32_t r_v0 = 0xff;
     uint32_t r_a1 = 0x3;
-    
+
     uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_BIG_ENDIAN,
                     code, sizeof(code) - 1);
     OK(uc_reg_write(uc, UC_MIPS_REG_V0, &r_v0));
@@ -199,6 +200,28 @@ static void test_mips_mips_fpr(void)
     OK(uc_close(uc));
 }
 
+static void test_mips_simple_coredump_2134(void)
+{
+    uc_engine *uc;
+    const char code[] = "\x25\xc8\x80\x03\x25\x78\xe0\x03\x09\xf8\x20\x03\x10\x00\x18\x24";
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32, code, sizeof(code) - 1);
+
+    uc_assert_err(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0), UC_ERR_FETCH_UNMAPPED);
+
+    OK(uc_close(uc));
+}
+
+static void test_mips_simple_coredump_2137(void)
+{
+    uc_engine *uc;
+    const char code[] = "\x1c\x00\x40\x54\xe8\x00\xc4\xaf";
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_MIPS32, code, sizeof(code) - 1);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_mips_stop_at_branch", test_mips_stop_at_branch},
     {"test_mips_stop_at_delay_slot", test_mips_stop_at_delay_slot},
@@ -207,5 +230,8 @@ TEST_LIST = {
     {"test_mips_lwx_exception_issue_1314", test_mips_lwx_exception_issue_1314},
     {"test_mips_mips16", test_mips_mips16},
     {"test_mips_mips_fpr", test_mips_mips_fpr},
-    {"test_mips_stop_delay_slot_from_qiling", test_mips_stop_delay_slot_from_qiling},
+    {"test_mips_stop_delay_slot_from_qiling",
+     test_mips_stop_delay_slot_from_qiling},
+     {"test_mips_simple_coredump_2134", test_mips_simple_coredump_2134},
+     {"test_mips_simple_coredump_2137", test_mips_simple_coredump_2137},
     {NULL, NULL}};

@@ -339,6 +339,7 @@ ld="${LD-${cross_prefix}ld}"
 ranlib="${RANLIB-${cross_prefix}ranlib}"
 nm="${NM-${cross_prefix}nm}"
 strip="${STRIP-${cross_prefix}strip}"
+strings="${STRINGS-${cross_prefix}strings}"
 pkg_config_exe="${PKG_CONFIG-${cross_prefix}pkg-config}"
 query_pkg_config() {
     "${pkg_config_exe}" ${QEMU_PKG_CONFIG_FLAGS} "$@"
@@ -491,6 +492,8 @@ elif check_define __aarch64__ ; then
   cpu="aarch64"
 elif check_define __tricore__ ; then
   cpu="tricore"
+elif check_define __loongarch64 ; then
+  cpu="loongarch64"
 else
   cpu=$(uname -m)
 fi
@@ -532,6 +535,10 @@ case "$cpu" in
   ;;
   tricore)
     cpu="tricore"
+    supported_cpu="yes"
+  ;;
+  loongarch64)
+    cpu="loongarch64"
     supported_cpu="yes"
   ;;
   *)
@@ -844,6 +851,11 @@ case "$cpu" in
            CPU_CFLAGS="-m64 -mcx16"
            QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
            ;;
+    loongarch*)
+	   CPU_CFLAGS=""
+           QEMU_LDFLAGS=" $QEMU_LDFLAGS"
+           ;;
+
     x32)
            CPU_CFLAGS="-mx32"
            QEMU_LDFLAGS="-mx32 $QEMU_LDFLAGS"
@@ -1222,9 +1234,9 @@ int main(int argc, char *argv[]) {
 EOF
 
 if compile_object ; then
-    if strings -a $TMPO | grep -q BiGeNdIaN ; then
+    if ${strings} -a $TMPO | grep -q BiGeNdIaN ; then
         bigendian="yes"
-    elif strings -a $TMPO | grep -q LiTtLeEnDiAn ; then
+    elif ${strings} -a $TMPO | grep -q LiTtLeEnDiAn ; then
         bigendian="no"
     else
         echo big/little test failed
@@ -2140,38 +2152,12 @@ fi
 if [ "$darwin" = "yes" ] ; then
   cat > $TMPC << EOF
 #include <pthread.h>
-int main() { pthread_jit_write_protect_np(0); return 0;}
+int main() { pthread_jit_write_protect_supported_np(); return 0;}
 EOF
   if ! compile_prog ""; then
     have_pthread_jit_protect='no'
   else
     have_pthread_jit_protect='yes'
-  fi
-
-  if test "$have_pthread_jit_protect" = "yes" ; then
-    cat > $TMPC << EOF
-#include "stdint.h"
-int main() {
-    uint64_t v;
-
-    __asm__ __volatile__("isb sy\n"
-                          "mrs %0, S3_6_c15_c1_5\n"
-                          : "=r"(v)::"memory");
-    // In Apple Hypervisor virtualized environment (EL1), this value is not accessbile
-    // but pthread_jit_write_protect_np essentially is a no-op.
-    return 0;
-}
-EOF
-    if ! compile_prog ""; then
-      have_sprr_mrs='no'
-    else
-      $TMPE
-      if [ $? -eq 0 ]; then
-        have_sprr_mrs='yes'
-      else
-        have_sprr_mrs='no'
-      fi
-    fi
   fi
 fi
 
@@ -2553,10 +2539,6 @@ if test "$have_pthread_jit_protect" = "yes" ; then
   echo "HAVE_PTHREAD_JIT_PROTECT=y" >> $config_host_mak
 fi
 
-if test "$have_sprr_mrs" = "yes" ; then
-  echo "HAVE_SPRR_MRS=y" >> $config_host_mak
-fi
-
 # Hold two types of flag:
 #   CONFIG_THREAD_SETNAME_BYTHREAD  - we've got a way of setting the name on
 #                                     a thread we have a handle to
@@ -2658,6 +2640,11 @@ case "$target_name" in
   i386)
     mttcg="yes"
     TARGET_SYSTBL_ABI=i386
+  ;;
+  loongarch64)
+    mttcg="yes"
+    TARGET_ARCH=loongarch64
+    TARGET_SYSTBL_ABI=common,64
   ;;
   x86_64)
     TARGET_BASE_ARCH=i386

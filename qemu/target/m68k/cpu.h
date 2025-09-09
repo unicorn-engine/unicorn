@@ -147,6 +147,9 @@ typedef struct CPUM68KState {
     /* Fields from here on are preserved across CPU reset. */
     uint32_t features;
 
+    // translate opcode
+    void* opcode_table[65536];
+
     // Unicorn engine
     struct uc_struct *uc;
 } CPUM68KState;
@@ -183,6 +186,7 @@ int cpu_m68k_signal_handler(int host_signum, void *pinfo,
                            void *puc);
 uint32_t cpu_m68k_get_ccr(CPUM68KState *env);
 void cpu_m68k_set_ccr(CPUM68KState *env, uint32_t);
+uint32_t cpu_m68k_get_sr(CPUM68KState *env);
 void cpu_m68k_set_sr(CPUM68KState *env, uint32_t);
 void cpu_m68k_set_fpcr(CPUM68KState *env, uint32_t val);
 

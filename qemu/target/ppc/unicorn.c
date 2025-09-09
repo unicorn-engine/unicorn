@@ -261,7 +261,7 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             break;
         case UC_PPC_REG_FPSCR:
             CHECK_REG_TYPE(uint32_t);
-            store_fpscr(env, *(uint32_t *)value, 0xffffffff);
+            do_store_fpscr(env, *(uint32_t *)value, 0xffffffff);
             break;
         }
     }

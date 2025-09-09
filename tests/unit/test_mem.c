@@ -235,7 +235,7 @@ static uint64_t test_mem_protect_mmio_read_cb(struct uc_struct *uc,
 {
     TEST_CHECK(addr == 0x20); // note, it's not 0x1020
 
-    *(uint64_t *)user_data = *(uint64_t *)user_data + 1;
+    *(uint64_t *)user_data += 1;
     return 0x114514;
 }
 
@@ -297,18 +297,18 @@ static void test_snapshot(void)
 
     OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 1);
+    TEST_CHECK(LEINT32(mem) == 1);
     OK(uc_context_save(uc, c1));
     OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 2);
+    TEST_CHECK(LEINT32(mem) == 2);
     OK(uc_context_restore(uc, c1));
 
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 1);
+    TEST_CHECK(LEINT32(mem) == 1);
     OK(uc_context_restore(uc, c0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 0);
+    TEST_CHECK(LEINT32(mem) == 0);
 
     OK(uc_mem_read(uc, 0x1000, &code_data, sizeof(code_data)));
     TEST_CHECK(code_data == 0xa1);
@@ -361,19 +361,19 @@ static void test_snapshot_with_vtlb(void)
     OK(uc_emu_start(uc, 0x400000000 + 0x1000,
                     0x400000000 + 0x1000 + sizeof(code) - 1, 0, 0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 1);
+    TEST_CHECK(LEINT32(mem) == 1);
     OK(uc_context_save(uc, c1));
     OK(uc_emu_start(uc, 0x400000000 + 0x1000,
                     0x400000000 + 0x1000 + sizeof(code) - 1, 0, 0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 2);
+    TEST_CHECK(LEINT32(mem) == 2);
     OK(uc_context_restore(uc, c1));
     // TODO check mem
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 1);
+    TEST_CHECK(LEINT32(mem) == 1);
     OK(uc_context_restore(uc, c0));
     OK(uc_mem_read(uc, 0x2020, &mem, sizeof(mem)));
-    TEST_CHECK(mem == 0);
+    TEST_CHECK(LEINT32(mem) == 0);
     // TODO check mem
 
     OK(uc_context_free(c0));
@@ -388,7 +388,6 @@ static void test_context_snapshot(void)
     uint64_t baseaddr = 0xfffff1000;
     uint64_t offset = 0x10;
     uint64_t tmp = 1;
-
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
     OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY | UC_CTL_CONTEXT_CPU));
     OK(uc_mem_map(uc, baseaddr, 0x1000, UC_PROT_ALL));
@@ -449,6 +448,147 @@ static void test_snapshot_unmap(void)
     OK(uc_close(uc));
 }
 
+static void parts_increment(size_t idx, char parts[3])
+{
+    if (idx && idx % 3 == 0) {
+        if (++parts[2] > '9') {
+            parts[2] = '0';
+            if (++parts[1] > 'z') {
+                parts[1] = 'a';
+                if (++parts[0] > 'Z')
+                    parts[0] = 'A';
+            }
+        }
+    }
+}
+
+// Create a pattern string. It works the same as
+// https://github.com/rapid7/metasploit-framework/blob/master/tools/exploit/pattern_create.rb
+static void pattern_create(char *buf, size_t len)
+{
+    char parts[] = {'A', 'a', '0'};
+    size_t i;
+
+    for (i = 0; i < len; i++) {
+        buf[i] = parts[i % 3];
+        parts_increment(i, parts);
+    }
+}
+
+static bool pattern_verify(const char *buf, size_t len)
+{
+    char parts[] = {'A', 'a', '0'};
+    size_t i;
+
+    for (i = 0; i < len; i++) {
+        if (buf[i] != parts[i % 3])
+            return false;
+        parts_increment(i, parts);
+    }
+
+    return true;
+}
+
+// Test for reading and writing memory block that are bigger than INT_MAX.
+static void test_mem_read_and_write_large_memory_block(void)
+{
+    uc_engine *uc;
+    uint64_t mem_addr = 0x1000000;
+    uint64_t mem_size = 0x9f000000;
+    char *pmem = NULL;
+
+    if (sizeof(void *) < 8) {
+        // Don't perform the test on a 32-bit platforms since we may not have
+        // enough memory space.
+        return;
+    }
+    // Android CI/CD services do not have enough memory capacity for this
+    // test to work. Executing it will result in a permanent loop with the
+    // low memory killer daemon. 
+#ifdef __ANDROID__
+    return;
+#endif 
+
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
+    OK(uc_mem_map(uc, mem_addr, mem_size, UC_PROT_ALL));
+
+    pmem = malloc(mem_size);
+    if (TEST_CHECK(pmem != NULL)) {
+        pattern_create(pmem, mem_size);
+
+        OK(uc_mem_write(uc, mem_addr, pmem, mem_size));
+        memset(pmem, 'a', mem_size);
+        OK(uc_mem_read(uc, mem_addr, pmem, mem_size));
+        TEST_CHECK(pattern_verify(pmem, mem_size));
+        free(pmem);
+    }
+
+    OK(uc_mem_unmap(uc, mem_addr, mem_size));
+    OK(uc_close(uc));
+}
+
+static bool test_v2p_tlb_fill(uc_engine *uc, uint64_t addr, uc_mem_type type,
+                               uc_tlb_entry *result, void *user_data)               
+{
+    if (type != UC_MEM_READ)
+        return false;
+    result->paddr = addr;
+    result->perms = UC_PROT_READ;
+    return true;
+}
+
+static void test_virtual_to_physical(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t res;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_v2p_tlb_fill, NULL, 1, 0));
+
+    OK(uc_vmem_translate(uc, 0x1000, UC_PROT_READ, &res));
+    uc_assert_err(UC_ERR_WRITE_PROT,
+                  uc_vmem_translate(uc, 0x1000, UC_PROT_WRITE, &res));
+    OK(uc_close(uc));
+}
+
+static bool test_virtual_write_tlb_fill(uc_engine *uc, uint64_t addr, uc_mem_type type,
+                                        uc_tlb_entry *result, void *user_data)
+{
+    if (addr < 0x1000)
+        return false;
+    result->paddr = addr - 0x1000;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+static void test_virtual_write(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t rax = 21;
+    uint64_t res = 0;
+    /*
+     * mov rax, [0x2000]
+     */
+    char code[] = { 0x48, 0x8B, 0x04, 0x25, 0x00, 0x20, 0x00, 0x00 };
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_virtual_write_tlb_fill, NULL, 1, 0));
+    OK(uc_mem_map(uc, 0x0, 0x2000, UC_PROT_ALL));
+
+    OK(uc_vmem_write(uc, 0x1000, UC_PROT_EXEC, code, sizeof(code)));
+    OK(uc_vmem_write(uc, 0x2000, UC_PROT_READ, &rax, sizeof(rax)));
+
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 1));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &res));
+    TEST_CHECK(rax == res);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -464,4 +604,8 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_snapshot_with_vtlb", test_snapshot_with_vtlb},
              {"test_context_snapshot", test_context_snapshot},
              {"test_snapshot_unmap", test_snapshot_unmap},
+             {"test_mem_read_and_write_large_memory_block",
+              test_mem_read_and_write_large_memory_block},
+             {"test_virtual_to_physical", test_virtual_to_physical},
+             {"test_virtual_write", test_virtual_write},
              {NULL, NULL}};

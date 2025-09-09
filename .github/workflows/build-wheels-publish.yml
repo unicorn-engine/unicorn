@@ -1,18 +1,14 @@
 name: Build and publish wheels with cibuildwheel
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
     inputs:
       debugMode:
         description: 'Debug Mode'
-        required: false
-        default: ''
-        type: choice
-        options:
-          - '0'
-          - '1'
-      fullMode:
-        description: 'Full Mode'
         required: false
         default: ''
         type: choice
@@ -38,7 +34,7 @@ env:
 
 jobs:
   # job to be executed for every push - testing purpose
-  build_wheels_python38_only:
+  build_and_test_wheels:
     name: Building on ${{ matrix.os }} - ${{ matrix.arch }} - ${{ matrix.cibw_build }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -47,21 +43,21 @@ jobs:
         include:
           # NOTE: Doing this to parallelize and speed up workflow
           # i686 - manylinux
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp38-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp*-manylinux*', cibw_skip: 'cp36*' }
           # i686 - musllinux
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp38-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp*-musllinux*', cibw_skip: 'cp36*' }
           # x86_64 - manylinux
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp38-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp*-manylinux*', cibw_skip: 'cp36*' }
           # x86_64 - musllinux
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp38-musllinux*', cibw_skip: '' }
+          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp*-musllinux*', cibw_skip: 'cp36*' }
           # aarch64 - manylinux
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp38-manylinux*', cibw_skip: '' }
+          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp*-manylinux*', cibw_skip: 'cp36*' }
           # aarch64 - musllinux
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp38-musllinux*', cibw_skip: '' }
-          - { os: macos-13, arch: x86_64, cibw_build: 'cp38*', cibw_skip: '' }
-          - { os: macos-latest, arch: arm64, cibw_build: 'cp38*', cibw_skip: '' }
-          - { os: windows-2022, arch: AMD64, cibw_build: 'cp38*', cibw_skip: '' }
-          - { os: windows-2022, arch: x86, cibw_build: 'cp38*', cibw_skip: '' }
+          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp*-musllinux*', cibw_skip: 'cp36*' }
+          - { os: macos-13, arch: x86_64, cibw_build: 'cp*', cibw_skip: 'cp36*' }
+          - { os: macos-14, arch: arm64, cibw_build: 'cp*', cibw_skip: 'cp36* cp37*' }
+          - { os: windows-2022, arch: AMD64, cibw_build: 'cp*', cibw_skip: 'cp36*' }
+          - { os: windows-2022, arch: x86, cibw_build: 'cp*', cibw_skip: 'cp36*' }
 
     steps:
       - uses: actions/checkout@v4
@@ -113,7 +109,7 @@ jobs:
         uses: docker/setup-qemu-action@v3
 
       - name: '🚧 cibuildwheel run'
-        uses: pypa/cibuildwheel@v2.22.0
+        uses: pypa/cibuildwheel@v2.23.3
         env:
           CIBW_BUILD_FRONTEND: build
           CIBW_BUILD: ${{ matrix.cibw_build }}
@@ -136,10 +132,10 @@ jobs:
         shell: bash
         run: |
           python3 -m pip install -U pip wheel
-          python3 -m wheel tags --python-tag='py2' --abi-tag=none wheelhouse/*cp38*.whl
+          python3 -m wheel tags --python-tag='py2' --abi-tag=none wheelhouse/*cp37*.whl
 
-      - uses: LizardByte/setup-python-action@v2024.919.163656
-        if: (runner.os == 'Linux' && (matrix.arch == 'x86_64' || matrix.arch == 'aarch64') && matrix.cibw_build == 'cp38-manylinux*') || (runner.os == 'macOS' && matrix.arch == 'arm64') || (runner.os == 'Windows' && matrix.arch == 'AMD64')
+      - uses: LizardByte/actions/actions/setup_python@v2025.715.25226
+        if: (runner.os == 'Linux' && (matrix.arch == 'x86_64' || matrix.arch == 'aarch64') && matrix.cibw_build == 'cp*-manylinux*') || (runner.os == 'macOS' && matrix.arch == 'arm64') || (runner.os == 'Windows' && matrix.arch == 'AMD64')
         with:
           python-version: 2.7
 
@@ -153,135 +149,12 @@ jobs:
 
       # NOTE: no python2.7 support for macos-13: https://github.com/LizardByte/setup-python-action/issues/2
       - name: 'Python 2.7 tests - Non-Windows'
-        if: (runner.os == 'Linux' && (matrix.arch == 'x86_64' || matrix.arch == 'aarch64') && matrix.cibw_build == 'cp38-manylinux*') || (runner.os == 'macOS' && matrix.arch == 'arm64')
+        if: (runner.os == 'Linux' && (matrix.arch == 'x86_64' || matrix.arch == 'aarch64') && matrix.cibw_build == 'cp*-manylinux*') || (runner.os == 'macOS' && matrix.arch == 'arm64')
         run: |
           python2 -m pip install capstone==4.0.2 wheelhouse/*py2*.whl
           python2 -m unittest discover tests/regress "*.py"
 
-      # https://github.com/unicorn-engine/unicorn/issues/2033
-      # Skip macos arm64 wheels during release stage
       - uses: actions/upload-artifact@v4
-        if: ${{!( startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v') && contains(matrix.os, 'macos') && contains(matrix.arch, 'arm64') )}}
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: ./wheelhouse/*.whl
-
-  # Job to be executed to build all wheels for all platforms/architectures/python versions only for tag release
-  build_wheels_all_versions:
-    name: Building on ${{ matrix.os }} - ${{ matrix.arch }} - ${{ matrix.cibw_build }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # NOTE: Doing this to parallelize and speed up workflow
-          # i686 - manylinux
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp37-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp39-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp310-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp311-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp312-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp313-manylinux*', cibw_skip: '' }
-          # i686 - musllinux
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp37-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp39-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp310-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp311-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp312-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: i686, cibw_build: 'cp313-musllinux*', cibw_skip: '' }
-          # x86_64 - manylinux
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp37-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp39-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp310-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp311-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp312-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp313-manylinux*', cibw_skip: '' }
-          # x86_64 - musllinux
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp37-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp39-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp310-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp311-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp312-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-latest, arch: x86_64, cibw_build: 'cp313-musllinux*', cibw_skip: '' }
-          # aarch64 - manylinux
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp37-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp39-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp310-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp311-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp312-manylinux*', cibw_skip: '' }
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp313-manylinux*', cibw_skip: '' }
-          # aarch64 - musllinux
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp37-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp39-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp310-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp311-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp312-musllinux*', cibw_skip: '' }
-          - { os: ubuntu-24.04-arm, arch: aarch64, cibw_build: 'cp313-musllinux*', cibw_skip: '' }
-          - { os: macos-13, arch: x86_64, cibw_build: 'cp*', cibw_skip: '*36* *38*' }
-          - { os: macos-latest, arch: arm64, cibw_build: 'cp*', cibw_skip: '*36* *37* *38*' }
-          - { os: windows-2022, arch: AMD64, cibw_build: 'cp*', cibw_skip: '*36* *38*' }
-          - { os: windows-2022, arch: x86, cibw_build: 'cp*', cibw_skip: '*36* *38*' }
-    if: ${{ inputs.fullMode == 1 || (startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v')) || contains(github.event.head_commit.message, 'CI(full)') }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      # https://github.com/actions/upload-artifact/issues/22
-      - name: Prepare a unique name for Artifacts
-        shell: bash
-        run: |
-          # replace not-allowed chars with dash
-          name="cibw-wheels-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.cibw_build }}"
-          name=$(echo -n "$name" | sed -e 's/[ \t:\/\\"<>|*?]/-/g' -e 's/--*/-/g' | sed -e 's/\-$//')
-          echo "ARTIFACT_NAME=$name" >> $GITHUB_ENV
-
-      - name: "Increase pagefile to avoid OOM"
-        if: runner.os == 'Windows'
-        uses: al-cheb/configure-pagefile-action@v1.4
-        with:
-          minimum-size: 8GB
-          disk-root: "C:"
-
-      - name: '🛠️ Add msbuild to PATH'
-        if: runner.os == 'Windows'
-        uses: microsoft/setup-msbuild@v2
-        with:
-          vs-version: '17'
-
-      - name: '🛠️ Win MSVC 32 dev cmd setup'
-        if: runner.os == 'Windows' && matrix.arch == 'x86'
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x86
-
-      - name: '🛠️ Win MSVC 64 dev cmd setup'
-        if: runner.os == 'Windows' && matrix.arch == 'AMD64'
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
-      - name: '🛠️ Set up QEMU'
-        if: runner.os == 'Linux' && matrix.arch == 'i686'
-        uses: docker/setup-qemu-action@v3
-
-      - name: '🚧 cibuildwheel run'
-        uses: pypa/cibuildwheel@v2.22.0
-        env:
-          CIBW_BUILD_FRONTEND: build
-          CIBW_BUILD: ${{ matrix.cibw_build }}
-          CIBW_SKIP: ${{ matrix.cibw_skip }}
-          CIBW_ARCHS: ${{ matrix.arch }}
-          CIBW_ENVIRONMENT: DEBUG=${{ env.UNICORN_DEBUG }} GENERATORS='Visual Studio 17 2022'
-          CIBW_ENVIRONMENT_PASS_LINUX: DEBUG
-          CIBW_TEST_EXTRAS: test
-          CIBW_TEST_COMMAND: 'python -m unittest discover -v {project}/tests/regress "*.py"'
-        with:
-          package-dir: bindings/python
-          output-dir: wheelhouse
-
-      - uses: actions/upload-artifact@v4
-        if: ${{!( startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v') && contains(matrix.os, 'macos') && contains(matrix.arch, 'arm64') )}}
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: ./wheelhouse/*.whl
@@ -307,7 +180,7 @@ jobs:
           path: bindings/python/dist/*.tar.gz
 
   publish:
-    needs: [ build_wheels_python38_only, build_wheels_all_versions, make_sdist ]
+    needs: [ build_and_test_wheels, make_sdist ]
     environment: pypi
     permissions:
       id-token: write

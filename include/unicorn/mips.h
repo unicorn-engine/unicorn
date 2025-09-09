@@ -61,7 +61,7 @@ typedef enum uc_cpu_mips64 {
 } uc_cpu_mips64;
 
 //> MIPS registers
-typedef enum UC_MIPS_REG {
+typedef enum uc_mips_reg {
     UC_MIPS_REG_INVALID = 0,
     //> General purpose registers
     UC_MIPS_REG_PC,
@@ -271,7 +271,10 @@ typedef enum UC_MIPS_REG {
     UC_MIPS_REG_LO1 = UC_MIPS_REG_HI1,
     UC_MIPS_REG_LO2 = UC_MIPS_REG_HI2,
     UC_MIPS_REG_LO3 = UC_MIPS_REG_HI3,
-} UC_MIPS_REG;
+} uc_mips_reg;
+
+// This is only for backwards compatibility
+typedef uc_mips_reg UC_MIPS_REG;
 
 #ifdef __cplusplus
 }

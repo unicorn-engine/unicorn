@@ -1,5 +1,9 @@
 name: Build UC2
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
     inputs:
@@ -294,7 +298,6 @@ jobs:
         if: contains(matrix.config.name, 'macos')
         shell: bash
         run: |
-          brew install ninja
           ninja --version
           cmake --version
           mkdir build
@@ -314,7 +317,6 @@ jobs:
         if: contains(matrix.config.name, 'android')
         shell: bash
         run: |
-          brew install ninja
           mkdir build
           mkdir instdir
           cmake . -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \

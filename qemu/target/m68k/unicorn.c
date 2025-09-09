@@ -72,7 +72,64 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             break;
         case UC_M68K_REG_SR:
             CHECK_REG_TYPE(uint32_t);
-            *(uint32_t *)value = env->sr;
+            env->cc_op = CC_OP_FLAGS;
+            *(uint32_t *)value = cpu_m68k_get_sr(env);
+            break;
+        case UC_M68K_REG_CR_SFC:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->sfc;
+            break;
+        case UC_M68K_REG_CR_DFC:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->dfc;
+            break;
+        case UC_M68K_REG_CR_CACR:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->cacr;
+            break;
+        case UC_M68K_REG_CR_TC:
+            CHECK_REG_TYPE(uint16_t);
+            *(uint16_t *)value = env->mmu.tcr;
+            break;
+        case UC_M68K_REG_CR_MMUSR:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->mmu.mmusr;
+            break;
+        case UC_M68K_REG_CR_SRP:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->mmu.srp;
+            break;
+        case UC_M68K_REG_CR_USP:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->sp[M68K_USP];
+            break;
+        case UC_M68K_REG_CR_MSP:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->sp[M68K_SSP];
+            break;
+        case UC_M68K_REG_CR_ISP:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->sp[M68K_ISP];
+            break;
+        case UC_M68K_REG_CR_URP:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->mmu.urp;
+            break;
+        case UC_M68K_REG_CR_ITT0:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->mmu.ttr[M68K_ITTR0];
+            break;
+        case UC_M68K_REG_CR_ITT1:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->mmu.ttr[M68K_ITTR1];
+            break;
+        case UC_M68K_REG_CR_DTT0:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->mmu.ttr[M68K_DTTR0];
+            break;
+        case UC_M68K_REG_CR_DTT1:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->mmu.ttr[M68K_DTTR1];
             break;
         }
     }
@@ -106,6 +163,73 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_M68K_REG_SR:
             CHECK_REG_TYPE(uint32_t);
             cpu_m68k_set_sr(env, *(uint32_t *)value);
+            break;
+        case UC_M68K_REG_CR_SFC:
+            CHECK_REG_TYPE(uint32_t);
+            env->sfc = (*(uint32_t *)value) & 7;
+            break;
+        case UC_M68K_REG_CR_DFC:
+            CHECK_REG_TYPE(uint32_t);
+            env->dfc = (*(uint32_t *)value) & 7;
+            break;
+        case UC_M68K_REG_CR_CACR: {
+            CHECK_REG_TYPE(uint32_t);
+            uint32_t val = *(uint32_t *)value;
+            if (m68k_feature(env, M68K_FEATURE_M68020)) {
+                env->cacr = val & 0x0000000f;
+            } else if (m68k_feature(env, M68K_FEATURE_M68030)) {
+                env->cacr = val & 0x00003f1f;
+            } else if (m68k_feature(env, M68K_FEATURE_M68040)) {
+                env->cacr = val & 0x80008000;
+            } else if (m68k_feature(env, M68K_FEATURE_M68060)) {
+                env->cacr = val & 0xf8e0e000;
+            }
+            m68k_switch_sp(env);
+            break;
+        }
+        case UC_M68K_REG_CR_TC:
+            CHECK_REG_TYPE(uint16_t);
+            env->mmu.tcr = *(uint16_t *)value;
+            break;
+        case UC_M68K_REG_CR_MMUSR:
+            CHECK_REG_TYPE(uint32_t);
+            env->mmu.mmusr = *(uint32_t *)value;
+            break;
+        case UC_M68K_REG_CR_SRP:
+            CHECK_REG_TYPE(uint32_t);
+            env->mmu.srp = *(uint32_t *)value;
+            break;
+        case UC_M68K_REG_CR_USP:
+            CHECK_REG_TYPE(uint32_t);
+            env->sp[M68K_USP] = *(uint32_t *)value;
+            break;
+        case UC_M68K_REG_CR_MSP:
+            CHECK_REG_TYPE(uint32_t);
+            env->sp[M68K_SSP] = *(uint32_t *)value;
+            break;
+        case UC_M68K_REG_CR_ISP:
+            CHECK_REG_TYPE(uint32_t);
+            env->sp[M68K_ISP] = *(uint32_t *)value;
+            break;
+        case UC_M68K_REG_CR_URP:
+            CHECK_REG_TYPE(uint32_t);
+            env->mmu.urp = *(uint32_t *)value;
+            break;
+        case UC_M68K_REG_CR_ITT0:
+            CHECK_REG_TYPE(uint32_t);
+            env->mmu.ttr[M68K_ITTR0] = *(uint32_t *)value;
+            break;
+        case UC_M68K_REG_CR_ITT1:
+            CHECK_REG_TYPE(uint32_t);
+            env->mmu.ttr[M68K_ITTR1] = *(uint32_t *)value;
+            break;
+        case UC_M68K_REG_CR_DTT0:
+            CHECK_REG_TYPE(uint32_t);
+            env->mmu.ttr[M68K_DTTR0] = *(uint32_t *)value;
+            break;
+        case UC_M68K_REG_CR_DTT1:
+            CHECK_REG_TYPE(uint32_t);
+            env->mmu.ttr[M68K_DTTR1] = *(uint32_t *)value;
             break;
         }
     }

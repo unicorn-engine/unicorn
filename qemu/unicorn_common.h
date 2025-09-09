@@ -5,6 +5,7 @@
 #include "tcg/tcg.h"
 #include "qemu-common.h"
 #include "exec/memory.h"
+#include "exec/cpu_ldst.h"
 
 // This header define common patterns/codes that will be included in all arch-sepcific
 // codes for unicorns purposes.
@@ -17,15 +18,77 @@ bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
 
 // return true on success, false on failure
 static inline bool cpu_physical_mem_read(AddressSpace *as, hwaddr addr,
-                                            uint8_t *buf, int len)
+                                            uint8_t *buf, hwaddr len)
 {
     return cpu_physical_memory_rw(as, addr, (void *)buf, len, 0);
 }
 
 static inline bool cpu_physical_mem_write(AddressSpace *as, hwaddr addr,
-                                            const uint8_t *buf, int len)
+                                            const uint8_t *buf, hwaddr len)
 {
     return cpu_physical_memory_rw(as, addr, (void *)buf, len, 1);
+}
+
+static bool cpu_virtual_mem_read(struct uc_struct *uc, vaddr addr, uint32_t prot, uint8_t *buf, int len)
+{
+    MMUAccessType access_type;
+    void *hostptr;
+    int mmu_idx = cpu_mmu_index(uc->cpu->env_ptr, false);
+
+    /*
+     * Only page aligned access is allowed,
+     * because tlb_fill() might change the mappings
+     */
+    assert((addr & TARGET_PAGE_MASK) == ((addr + len - 1) & TARGET_PAGE_MASK));
+
+    switch(prot) {
+    case UC_PROT_READ:
+        access_type = MMU_DATA_LOAD;
+        break;
+    case UC_PROT_WRITE:
+        access_type = MMU_DATA_STORE;
+        break;
+    case UC_PROT_EXEC:
+        access_type = MMU_INST_FETCH;
+        break;
+    default:
+        return false;
+    }
+
+    hostptr = tlb_vaddr_to_host(uc->cpu->env_ptr, addr, access_type, mmu_idx);
+    if (!hostptr) {
+        return false;
+    }
+    memcpy(buf, hostptr, len);
+    return true;
+}
+
+static bool cpu_virtual_to_physical(struct uc_struct *uc, vaddr addr, uint32_t prot, uint64_t *paddr)
+{
+    target_ulong res;
+    MMUAccessType access_type;
+    int mmu_idx = cpu_mmu_index(uc->cpu->env_ptr, false);
+
+    switch(prot) {
+    case UC_PROT_READ:
+        access_type = MMU_DATA_LOAD;
+        break;
+    case UC_PROT_WRITE:
+        access_type = MMU_DATA_STORE;
+        break;
+    case UC_PROT_EXEC:
+        access_type = MMU_INST_FETCH;
+        break;
+    default:
+        return false;
+    }
+
+    if (!tlb_vaddr_to_paddr(uc->cpu->env_ptr, addr, access_type, mmu_idx, &res)) {
+        return false;
+    }
+
+    *paddr = res;
+    return true;
 }
 
 void tb_cleanup(struct uc_struct *uc);
@@ -126,6 +189,8 @@ static inline void uc_common_init(struct uc_struct* uc)
 {
     uc->write_mem = cpu_physical_mem_write;
     uc->read_mem = cpu_physical_mem_read;
+    uc->read_mem_virtual = cpu_virtual_mem_read;
+    uc->virtual_to_physical = cpu_virtual_to_physical;
     uc->tcg_exec_init = tcg_exec_init;
     uc->cpu_exec_init_all = cpu_exec_init_all;
     uc->vm_start = vm_start;

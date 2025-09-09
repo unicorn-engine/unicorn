@@ -38,6 +38,21 @@ public interface M68kConst {
     public static final int UC_M68K_REG_D7 = 16;
     public static final int UC_M68K_REG_SR = 17;
     public static final int UC_M68K_REG_PC = 18;
-    public static final int UC_M68K_REG_ENDING = 19;
+    public static final int UC_M68K_REG_CR_SFC = 19;
+    public static final int UC_M68K_REG_CR_DFC = 20;
+    public static final int UC_M68K_REG_CR_VBR = 21;
+    public static final int UC_M68K_REG_CR_CACR = 22;
+    public static final int UC_M68K_REG_CR_TC = 23;
+    public static final int UC_M68K_REG_CR_MMUSR = 24;
+    public static final int UC_M68K_REG_CR_SRP = 25;
+    public static final int UC_M68K_REG_CR_USP = 26;
+    public static final int UC_M68K_REG_CR_MSP = 27;
+    public static final int UC_M68K_REG_CR_ISP = 28;
+    public static final int UC_M68K_REG_CR_URP = 29;
+    public static final int UC_M68K_REG_CR_ITT0 = 30;
+    public static final int UC_M68K_REG_CR_ITT1 = 31;
+    public static final int UC_M68K_REG_CR_DTT0 = 32;
+    public static final int UC_M68K_REG_CR_DTT1 = 33;
+    public static final int UC_M68K_REG_ENDING = 34;
 
 }

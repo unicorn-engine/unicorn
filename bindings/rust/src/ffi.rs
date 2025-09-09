@@ -40,36 +40,49 @@ extern "C" {
         engine: uc_handle,
         address: u64,
         bytes: *const u8,
-        size: libc::size_t,
+        size: u64,
     ) -> uc_error;
     pub fn uc_mem_read(
         engine: uc_handle,
         address: u64,
         bytes: *mut u8,
+        size: u64,
+    ) -> uc_error;
+    pub fn uc_vmem_read(
+        engine: uc_handle,
+        address: u64,
+        prot: u32,
+        bytes: *mut u8,
         size: libc::size_t,
     ) -> uc_error;
-    pub fn uc_mem_map(engine: uc_handle, address: u64, size: libc::size_t, perms: u32) -> uc_error;
+    pub fn uc_vmem_translate(
+        engine: uc_handle,
+        address: u64,
+        prot: u32,
+        paddr: *mut u64,
+    ) -> uc_error;
+    pub fn uc_mem_map(engine: uc_handle, address: u64, size: u64, perms: u32) -> uc_error;
     pub fn uc_mem_map_ptr(
         engine: uc_handle,
         address: u64,
-        size: libc::size_t,
+        size: u64,
         perms: u32,
         ptr: *mut c_void,
     ) -> uc_error;
     pub fn uc_mmio_map(
         engine: uc_handle,
         address: u64,
-        size: libc::size_t,
+        size: u64,
         read_cb: *mut c_void,
         user_data_read: *mut c_void,
         write_cb: *mut c_void,
         user_data_write: *mut c_void,
     ) -> uc_error;
-    pub fn uc_mem_unmap(engine: uc_handle, address: u64, size: libc::size_t) -> uc_error;
+    pub fn uc_mem_unmap(engine: uc_handle, address: u64, size: u64) -> uc_error;
     pub fn uc_mem_protect(
         engine: uc_handle,
         address: u64,
-        size: libc::size_t,
+        size: u64,
         perms: u32,
     ) -> uc_error;
     pub fn uc_mem_regions(

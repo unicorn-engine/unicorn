@@ -66,7 +66,7 @@ sdist3_win:
 	python3 setup.py sdist register upload
 
 clean:
-	rm -rf src/ dist/ build/ MANIFEST
+	rm -rf src/ dist/ build/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
 	rm -rf unicorn/lib unicorn/include

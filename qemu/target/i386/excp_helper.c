@@ -681,8 +681,9 @@ bool x86_cpu_tlb_fill(CPUState *cs, vaddr addr, int size,
 
     env->retaddr = retaddr;
     if (handle_mmu_fault(cs, addr, size, access_type, mmu_idx)) {
+        if (probe)
+	    return false;
         /* FIXME: On error in get_hphys we have already jumped out.  */
-        g_assert(!probe);
         raise_exception_err_ra(env, cs->exception_index,
                                env->error_code, retaddr);
     }

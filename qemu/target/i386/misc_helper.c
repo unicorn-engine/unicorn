@@ -35,7 +35,7 @@ void helper_outb(CPUX86State *env, uint32_t port, uint32_t data)
 //     address_space_stb(env->uc, &env->uc->address_space_io, port, data & 0xff,
 // #endif
 //                       cpu_get_mem_attrs(env), NULL);
-    return cpu_outb(env->uc, port, data);
+    return cpu_outb(env->uc, port, data, GETPC());
 }
 
 target_ulong helper_inb(CPUX86State *env, uint32_t port)
@@ -46,7 +46,7 @@ target_ulong helper_inb(CPUX86State *env, uint32_t port)
 //     return address_space_ldub(env->uc, &env->uc->address_space_io, port,
 // #endif
 //                               cpu_get_mem_attrs(env), NULL);
-    return cpu_inb(env->uc, port);
+    return cpu_inb(env->uc, port, GETPC());
 }
 
 void helper_outw(CPUX86State *env, uint32_t port, uint32_t data)
@@ -57,7 +57,7 @@ void helper_outw(CPUX86State *env, uint32_t port, uint32_t data)
 //     address_space_stw(env->uc, &env->uc->address_space_io, port, data & 0xffff,
 // #endif
 //                       cpu_get_mem_attrs(env), NULL);
-    return cpu_outw(env->uc, port, data);
+    return cpu_outw(env->uc, port, data, GETPC());
 }
 
 target_ulong helper_inw(CPUX86State *env, uint32_t port)
@@ -68,7 +68,7 @@ target_ulong helper_inw(CPUX86State *env, uint32_t port)
 //     return address_space_lduw(env->uc, &env->uc->address_space_io, port,
 // #endif
 //                               cpu_get_mem_attrs(env), NULL);
-    return cpu_inw(env->uc, port);
+    return cpu_inw(env->uc, port, GETPC());
 }
 
 void helper_outl(CPUX86State *env, uint32_t port, uint32_t data)
@@ -79,7 +79,7 @@ void helper_outl(CPUX86State *env, uint32_t port, uint32_t data)
 //     address_space_stl(env->uc, &env->uc->address_space_io, port, data,
 // #endif
 //                       cpu_get_mem_attrs(env), NULL);
-    return cpu_outl(env->uc, port, data);
+    return cpu_outl(env->uc, port, data, GETPC());
 }
 
 target_ulong helper_inl(CPUX86State *env, uint32_t port)
@@ -90,7 +90,7 @@ target_ulong helper_inl(CPUX86State *env, uint32_t port)
 //     return address_space_ldl(env->uc, &env->uc->address_space_io, port,
 // #endif
 //                              cpu_get_mem_attrs(env), NULL);
-    return cpu_inl(env->uc, port);
+    return cpu_inl(env->uc, port, GETPC());
 }
 
 void helper_into(CPUX86State *env, int next_eip_addend)
@@ -109,7 +109,7 @@ void helper_cpuid(CPUX86State *env)
     uc_engine *uc = env->uc;
     struct hook *hook;
     int skip_cpuid = 0;
-
+    bool synced = false;
     cpu_svm_check_intercept_param(env, SVM_EXIT_CPUID, 0, GETPC());
 
     // Unicorn: call registered CPUID hooks
@@ -123,6 +123,11 @@ void helper_cpuid(CPUX86State *env)
         // Multiple cpuid callbacks returning different values is undefined.
         // true -> skip the cpuid instruction
         if (hook->insn == UC_X86_INS_CPUID) {
+            uintptr_t pc = GETPC();
+            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
+                cpu_restore_state(uc->cpu, pc, false);
+                synced = true;
+            }
             JIT_CALLBACK_GUARD_VAR(skip_cpuid, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
         }
 
@@ -212,6 +217,7 @@ void helper_rdtsc(CPUX86State *env)
     uc_engine *uc = env->uc;
     struct hook *hook;
     int skip_rdtsc = 0;
+    bool synced = false;
 
     if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
         raise_exception_ra(env, EXCP0D_GPF, GETPC());
@@ -229,6 +235,11 @@ void helper_rdtsc(CPUX86State *env)
         // Multiple rdtsc callbacks returning different values is undefined.
         // true -> skip the rdtsc instruction
         if (hook->insn == UC_X86_INS_RDTSC) {
+            uintptr_t pc = GETPC();
+            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
+                cpu_restore_state(uc->cpu, pc, false);
+                synced = true;
+            }
             JIT_CALLBACK_GUARD_VAR(skip_rdtsc, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
         }
 
@@ -250,6 +261,7 @@ void helper_rdtscp(CPUX86State *env)
     uc_engine *uc = env->uc;
     struct hook *hook;
     int skip_rdtscp = 0;
+    bool synced = false;
 
     if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
         raise_exception_ra(env, EXCP0D_GPF, GETPC());
@@ -267,6 +279,11 @@ void helper_rdtscp(CPUX86State *env)
         // Multiple rdtscp callbacks returning different values is undefined.
         // true -> skip the rdtscp instruction
         if (hook->insn == UC_X86_INS_RDTSCP) {
+            uintptr_t pc = GETPC();
+            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
+                cpu_restore_state(uc->cpu, pc, false);
+                synced = true;
+            }
             JIT_CALLBACK_GUARD_VAR(skip_rdtscp, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
         }
 

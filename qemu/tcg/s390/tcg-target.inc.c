@@ -1705,7 +1705,10 @@ static void tcg_out_qemu_ld(TCGContext* s, TCGReg data_reg, TCGReg addr_reg,
 
     base_reg = tcg_out_tlb_read(s, addr_reg, opc, mem_index, 1);
 
-    tcg_out16(s, RI_BRC | (S390_CC_NE << 4));
+    if (!tcg_uc_has_hookmem(s))
+        tcg_out16(s, RI_BRC | (S390_CC_NE << 4));
+    else
+        tcg_out16(s, RI_BRC | (S390_CC_ALWAYS << 4));
     label_ptr = s->code_ptr;
     s->code_ptr += 1;
 
@@ -1732,7 +1735,10 @@ static void tcg_out_qemu_st(TCGContext* s, TCGReg data_reg, TCGReg addr_reg,
 
     base_reg = tcg_out_tlb_read(s, addr_reg, opc, mem_index, 0);
 
-    tcg_out16(s, RI_BRC | (S390_CC_NE << 4));
+    if (!tcg_uc_has_hookmem(s))
+        tcg_out16(s, RI_BRC | (S390_CC_NE << 4));
+    else
+        tcg_out16(s, RI_BRC | (S390_CC_ALWAYS << 4));
     label_ptr = s->code_ptr;
     s->code_ptr += 1;
 

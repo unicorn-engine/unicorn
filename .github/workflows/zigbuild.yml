@@ -1,5 +1,9 @@
 name: Zig Build
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     paths-ignore:
@@ -26,9 +30,9 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: goto-bus-stop/setup-zig@v2
+      - uses: mlugg/setup-zig@v1
         with:
-          version: 0.13.0
+          version: 0.14.0
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: latest
@@ -50,9 +54,9 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: goto-bus-stop/setup-zig@v2
+      - uses: mlugg/setup-zig@v1
         with:
-          version: 0.13.0
+          version: 0.14.0
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: latest

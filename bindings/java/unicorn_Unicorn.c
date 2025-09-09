@@ -758,9 +758,9 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn__1mem_1read(JNIEnv *env,
                                                         jlong address,
                                                         jbyteArray dest)
 {
-    jsize size = (*env)->GetArrayLength(env, dest);
+    jlong size = (*env)->GetArrayLength(env, dest);
     jbyte *arr = (*env)->GetByteArrayElements(env, dest, NULL);
-    uc_err err = uc_mem_read((uc_engine *)uc, address, arr, size);
+    uc_err err = uc_mem_read((uc_engine *)uc, address, arr, *size);
     (*env)->ReleaseByteArrayElements(env, dest, arr, 0);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
@@ -780,7 +780,8 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn__1mem_1write(JNIEnv *env,
 {
     jsize size = (*env)->GetArrayLength(env, src);
     jbyte *arr = (*env)->GetByteArrayElements(env, src, NULL);
-    uc_err err = uc_mem_write((uc_engine *)uc, address, arr, size);
+    // add type cast in case that type inflection does not work
+    uc_err err = uc_mem_write((uc_engine *)uc, address, arr, (uint64_t)size);
     (*env)->ReleaseByteArrayElements(env, src, arr, JNI_ABORT);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);

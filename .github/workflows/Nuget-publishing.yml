@@ -1,5 +1,10 @@
 name: Nuget 📦 Distribution
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+
 on:
   push:
     paths-ignore:
@@ -159,7 +164,6 @@ jobs:
         if: contains(matrix.config.name, 'macos-x64')
         shell: bash
         run: |
-          brew install ninja
           ninja --version
           cmake --version
           mkdir build

@@ -91,6 +91,7 @@ cmocka/
 zig-cache/
 zig-out/
 .cache
+bindings/rust/sys/src/bindings.rs
 
 ##################
 ## PyCharm Project

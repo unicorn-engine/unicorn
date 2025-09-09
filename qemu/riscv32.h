@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _riscv32
 #endif
+#define gen_helper_check_exit_request gen_helper_check_exit_request_riscv32
 #define unicorn_fill_tlb unicorn_fill_tlb_riscv32
 #define reg_read reg_read_riscv32
 #define reg_write reg_write_riscv32
@@ -796,6 +797,7 @@
 #define get_page_addr_code get_page_addr_code_riscv32
 #define probe_access probe_access_riscv32
 #define tlb_vaddr_to_host tlb_vaddr_to_host_riscv32
+#define tlb_vaddr_to_paddr tlb_vaddr_to_paddr_riscv32
 #define helper_ret_ldub_mmu helper_ret_ldub_mmu_riscv32
 #define helper_le_lduw_mmu helper_le_lduw_mmu_riscv32
 #define helper_be_lduw_mmu helper_be_lduw_mmu_riscv32

@@ -75,10 +75,16 @@ typedef struct {
 typedef void (*reg_reset_t)(struct uc_struct *uc);
 
 typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr,
-                               const uint8_t *buf, int len);
+                               const uint8_t *buf, hwaddr len);
 
 typedef bool (*uc_read_mem_t)(AddressSpace *as, hwaddr addr, uint8_t *buf,
-                              int len);
+                              hwaddr len);
+
+typedef bool (*uc_read_mem_virtual_t)(struct uc_struct *uc, vaddr addr,
+                                      uint32_t prot, uint8_t *buf, int len);
+
+typedef bool (*uc_virtual_to_physical_t)(struct uc_struct *uc, vaddr addr,
+                                      uint32_t prot, uint64_t *res);
 
 typedef MemoryRegion *(*uc_mem_cow_t)(struct uc_struct *uc,
                                       MemoryRegion *current, hwaddr begin,
@@ -276,6 +282,8 @@ struct uc_struct {
 
     uc_write_mem_t write_mem;
     uc_read_mem_t read_mem;
+    uc_read_mem_virtual_t read_mem_virtual;
+    uc_virtual_to_physical_t virtual_to_physical;
     uc_mem_cow_t memory_cow;
     uc_args_void_t release;  // release resource when uc_close()
     uc_args_uc_u64_t set_pc; // set PC for tracecode
@@ -423,6 +431,7 @@ struct uc_struct {
     uint64_t nested; // the nested level of all exposed API
     bool thread_executable_entry;
     bool current_executable;
+    bool skip_sync_pc_on_exit;
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()

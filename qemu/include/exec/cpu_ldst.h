@@ -168,4 +168,22 @@ static inline int cpu_ldsw_code(CPUArchState *env, abi_ptr addr)
 void *tlb_vaddr_to_host(CPUArchState *env, abi_ptr addr,
                         MMUAccessType access_type, int mmu_idx);
 
+
+/**
+ * tlb_vaddr_to_paddr:
+ * @env: CPUArchState
+ * @addr: guest virtual address to look up
+ * @access_type: 0 for read, 1 for write, 2 for execute
+ * @mmu_idx: MMU index to use for lookup
+ * @paddr: pointer to store the physical address
+ *
+ * Look up the specified guest virtual index in the TCG softmmu TLB.
+ * If we can translate a host virtual address to a host physical address,
+ * without causing a guest exception, then save the physical address in
+ * paddr pointer.
+ *
+ * Returns true when posible to translate, otherwhise false
+ */
+bool tlb_vaddr_to_paddr(CPUArchState *env, abi_ptr addr,
+		        MMUAccessType access_type, int mmu_idx, target_ulong *paddr);
 #endif /* CPU_LDST_H */

@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _sparc
 #endif
+#define gen_helper_check_exit_request gen_helper_check_exit_request_sparc
 #define unicorn_fill_tlb unicorn_fill_tlb_sparc
 #define reg_read reg_read_sparc
 #define reg_write reg_write_sparc
@@ -796,6 +797,7 @@
 #define get_page_addr_code get_page_addr_code_sparc
 #define probe_access probe_access_sparc
 #define tlb_vaddr_to_host tlb_vaddr_to_host_sparc
+#define tlb_vaddr_to_paddr tlb_vaddr_to_paddr_sparc
 #define helper_ret_ldub_mmu helper_ret_ldub_mmu_sparc
 #define helper_le_lduw_mmu helper_le_lduw_mmu_sparc
 #define helper_be_lduw_mmu helper_be_lduw_mmu_sparc

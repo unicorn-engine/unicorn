@@ -18,22 +18,22 @@ module NativeBinding =
         extern Int32 uc_close(UIntPtr eng)          
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_map(UIntPtr eng, UInt64 address, UIntPtr size, UInt32 perm)
+        extern Int32 uc_mem_map(UIntPtr eng, UInt64 address, UInt64 size, UInt32 perm)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_map_ptr(UIntPtr eng, UInt64 address, UIntPtr size, UInt32 perm, UIntPtr ptr)
+        extern Int32 uc_mem_map_ptr(UIntPtr eng, UInt64 address, UInt64 size, UInt32 perm, UIntPtr ptr)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_unmap(UIntPtr eng, UInt64 address, UIntPtr size)
+        extern Int32 uc_mem_unmap(UIntPtr eng, UInt64 address, UInt64 size)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_protect(UIntPtr eng, UInt64 address, UIntPtr size, UInt32 perms)
+        extern Int32 uc_mem_protect(UIntPtr eng, UInt64 address, UInt64 size, UInt32 perms)
                 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_write(UIntPtr eng, UInt64 address, Byte[] value, UIntPtr size)
+        extern Int32 uc_mem_write(UIntPtr eng, UInt64 address, Byte[] value, UInt64 size)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
-        extern Int32 uc_mem_read(UIntPtr eng, UInt64 address, Byte[] value, UIntPtr size)
+        extern Int32 uc_mem_read(UIntPtr eng, UInt64 address, Byte[] value, UInt64 size)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
         extern Int32 uc_reg_write(UIntPtr eng, Int32 regId, Byte[] value)

@@ -202,14 +202,14 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
     __set_prototype('uc_free', uc_err, void_p)
     __set_prototype('uc_hook_add', uc_err, uc_engine, PTR(uc_hook_h), s32, void_p, void_p, u64, u64)
     __set_prototype('uc_hook_del', uc_err, uc_engine, uc_hook_h)
-    __set_prototype('uc_mem_map', uc_err, uc_engine, u64, size_t, u32)
-    __set_prototype('uc_mem_map_ptr', uc_err, uc_engine, u64, size_t, u32, void_p)
-    __set_prototype('uc_mem_protect', uc_err, uc_engine, u64, size_t, u32)
-    __set_prototype('uc_mem_read', uc_err, uc_engine, u64, PTR(char), size_t)
+    __set_prototype('uc_mem_map', uc_err, uc_engine, u64, u64, u32)
+    __set_prototype('uc_mem_map_ptr', uc_err, uc_engine, u64, u64, u32, void_p)
+    __set_prototype('uc_mem_protect', uc_err, uc_engine, u64, u64, u32)
+    __set_prototype('uc_mem_read', uc_err, uc_engine, u64, PTR(char), u64)
     __set_prototype('uc_mem_regions', uc_err, uc_engine, PTR(PTR(uc_mem_region)), PTR(u32))
-    __set_prototype('uc_mem_unmap', uc_err, uc_engine, u64, size_t)
-    __set_prototype('uc_mem_write', uc_err, uc_engine, u64, PTR(char), size_t)
-    __set_prototype('uc_mmio_map', uc_err, uc_engine, u64, size_t, void_p, void_p, void_p, void_p)
+    __set_prototype('uc_mem_unmap', uc_err, uc_engine, u64, u64)
+    __set_prototype('uc_mem_write', uc_err, uc_engine, u64, PTR(char), u64)
+    __set_prototype('uc_mmio_map', uc_err, uc_engine, u64, u64, void_p, void_p, void_p, void_p)
     __set_prototype('uc_open', uc_err, u32, u32, PTR(uc_engine))
     __set_prototype('uc_query', uc_err, uc_engine, u32, PTR(size_t))
     __set_prototype('uc_reg_read', uc_err, uc_engine, s32, void_p)
@@ -361,7 +361,7 @@ def uccallback(uc: Uc, functype: Type[_CFP]):
         def wrapper(handle: int, *args, **kwargs):
             try:
                 return func(uc, *args, **kwargs)
-            except Exception as e:
+            except BaseException as e:
                 # If multiple hooks raise exceptions, just use the first one
                 if uc._hook_exception is None:
                     uc._hook_exception = e

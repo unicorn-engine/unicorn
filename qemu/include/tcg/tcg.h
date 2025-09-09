@@ -672,7 +672,6 @@ struct TCGContext {
 #endif
 
     TCGv_i32 delay_slot_flag;
-    TCGLabel *exitreq_label;
 
     TCGTempSet free_temps[TCG_TYPE_COUNT * 2];
     TCGTemp temps[TCG_MAX_TEMPS]; /* globals first, temps after */
@@ -816,6 +815,9 @@ struct TCGContext {
 
     char s390x_cpu_reg_names[16][4]; // renamed from original cpu_reg_names[][] to avoid name clash with m68k
     TCGv_i64 regs[16];
+
+    // loongarch 
+    bool use_lsx_instructions;
 };
 
 static inline size_t temp_idx(TCGContext *tcg_ctx, TCGTemp *ts)

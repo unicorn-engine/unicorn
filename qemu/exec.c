@@ -1131,7 +1131,8 @@ RAMBlock *qemu_ram_alloc_from_ptr(struct uc_struct *uc, ram_addr_t size, void *h
         new_block->flags |= RAM_PREALLOC;
     }
 
-    uc->invalid_addr = UC_ERR_OK;
+    uc->invalid_addr = 0;
+    uc->invalid_error = UC_ERR_OK;
     ram_block_add(mr->uc, new_block);
 
     if (uc->invalid_error != UC_ERR_OK) {

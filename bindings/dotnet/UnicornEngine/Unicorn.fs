@@ -71,6 +71,10 @@ and Unicorn(arch: Int32, mode: Int32, binding: IBinding) =
         mem.ToPointer()
 
     do
+        // check for cfg
+        if OperatingSystem.IsWindows() then
+            WinNativeImport.CheckCFG();
+
         // initialize event list
         _eventMemMap
         |> Seq.map(fun kv -> kv.Key)
@@ -84,34 +88,30 @@ and Unicorn(arch: Int32, mode: Int32, binding: IBinding) =
 
     new(arch, mode) = new Unicorn(arch, mode, BindingFactory.getDefault())
 
-    member this.MemMap(address: Int64, size: Int64, perm: Int32) =
-        let size = new UIntPtr(uint64 size)
+    member this.MemMap(address: Int64, size: UInt64, perm: Int32) =
         match binding.MemMap(_eng.[0], uint64 address, size, uint32 perm) |> checkResult with
         | Some e -> raise e | None -> ()
 
-    member this.MemMapPtr(address: Int64, size: Int64, perm: Int32, ptr: IntPtr) =
-        let size = new UIntPtr(uint64 size)
+    member this.MemMapPtr(address: Int64, size: UInt64, perm: Int32, ptr: IntPtr) =
         let ptr = new UIntPtr(ptr.ToPointer())
         match binding.MemMapPtr(_eng.[0], uint64 address, size, uint32 perm, ptr) |> checkResult with
         | Some e -> raise e | None -> ()
 
-    member this.MemUnmap(address: Int64, size: Int64) =
-        let size = new UIntPtr(uint64 size)
+    member this.MemUnmap(address: Int64, size: UInt64) =
         match binding.MemUnmap(_eng.[0], uint64 address, size) |> checkResult with
         | Some e -> raise e | None -> ()
 
-    member this.MemProtect(address: Int64, size: Int64, ?perm: Int32) =
-        let size = new UIntPtr(uint64 size)
+    member this.MemProtect(address: Int64, size: UInt64, ?perm: Int32) =
         let perm = defaultArg perm Common.UC_PROT_ALL
         match binding.MemProtect(_eng.[0], uint64 address, size, uint32 perm) |> checkResult with
         | Some e -> raise e | None -> ()
 
     member this.MemWrite(address: Int64, value: Byte array) =
-        match binding.MemWrite(_eng.[0], uint64 address, value, new UIntPtr(uint32 value.Length)) |> checkResult with
+        match binding.MemWrite(_eng.[0], uint64 address, value, uint64 value.Length) |> checkResult with
         | Some e -> raise e | None -> ()
 
     member this.MemRead(address: Int64, memValue: Byte array) =
-        match binding.MemRead(_eng.[0], uint64 address, memValue, new UIntPtr(uint32 memValue.Length)) |> checkResult with
+        match binding.MemRead(_eng.[0], uint64 address, memValue, uint64 memValue.Length) |> checkResult with
         | Some e -> raise e | None -> ()
 
     member this.RegWrite(regId: Int32, value: Byte array) =
