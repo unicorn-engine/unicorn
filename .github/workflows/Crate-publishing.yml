@@ -58,6 +58,7 @@ jobs:
 
       - name: Publish crates to Crates.io
         if: startsWith(github.ref, 'refs/tags') && !startsWith(github.ref, 'refs/tags/v') && contains(matrix.config.os, 'ubuntu')
-        uses: katyo/publish-crates@v2
-        with:
-          registry-token: ${{ secrets.cratesio_token }}
+        env:
+          TOKEN: ${{ secrets.cratesio_token }}
+        run: |
+          cargo login $TOKEN && cargo publish -p unicorn-engine-sys && cd bindings/rust/unicorn-engine && cargo publish -p unicorn-engine
