@@ -17,6 +17,7 @@
 //#include "sysemu/replay.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #ifndef _MSC_VER
 static __thread GRand *thread_rand;
@@ -58,11 +59,11 @@ static int glib_random_bytes(void *buf, size_t len)
 
         for (i = 0; i + 4 <= len; i += 4) {
             x = rand();
-            memcpy(buf + i, &x, 4);
+            memcpy(((uint8_t*)buf) + i, &x, 4);
         }
         if (i < len) {
             x = rand();
-            memcpy(buf + i, &x, i - len);
+            memcpy(((uint8_t*)buf) + i, &x, i - len);
         }
     }
 #endif
