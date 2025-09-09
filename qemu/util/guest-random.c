@@ -15,13 +15,15 @@
 #include "qemu/guest-random.h"
 #include "crypto/random.h"
 //#include "sysemu/replay.h"
-
+#include <stdlib.h>
+#include <string.h>
 
 #ifndef _MSC_VER
 static __thread GRand *thread_rand;
+#else
+static bool initialized = false;
 #endif
 static bool deterministic = true;
-
 
 static int glib_random_bytes(void *buf, size_t len)
 {
@@ -42,6 +44,26 @@ static int glib_random_bytes(void *buf, size_t len)
     if (i < len) {
         x = g_rand_int(rand);
         __builtin_memcpy(buf + i, &x, i - len);
+    }
+#else
+    uint32_t x;
+    size_t i;
+
+    if (!initialized) {
+        if (deterministic) {
+            srand(0);
+        } else {
+            srand(time(NULL));
+        }
+
+        for (i = 0; i + 4 <= len; i += 4) {
+            x = rand();
+            memcpy(buf + i, &x, 4);
+        }
+        if (i < len) {
+            x = rand();
+            memcpy(buf + i, &x, i - len);
+        }
     }
 #endif
     return 0;
