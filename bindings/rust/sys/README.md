@@ -57,5 +57,5 @@ Add this to your `Cargo.toml`:
 
 ```
 [dependencies]
-unicorn-engine-sys = "2.2.0"
+unicorn-engine-sys = "2.1.4"
 ```
