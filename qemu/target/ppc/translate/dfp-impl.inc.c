@@ -41,7 +41,7 @@ static void gen_##name(DisasContext *ctx)         \
     gen_update_nip(ctx, ctx->base.pc_next - 4);            \
     ra = gen_fprp_ptr(tcg_ctx, rA(ctx->opcode));           \
     rb = gen_fprp_ptr(tcg_ctx, rB(ctx->opcode));           \
-    gen_helper_##name(tcg_ctx, cpu_crf[crfD(ctx->opcode)], \
+    gen_helper_##name(tcg_ctx, tcg_ctx->cpu_crf[crfD(ctx->opcode)], \
                       tcg_ctx->cpu_env, ra, rb);           \
     tcg_temp_free_ptr(tcg_ctx, ra);                        \
     tcg_temp_free_ptr(tcg_ctx, rb);                        \
@@ -60,7 +60,7 @@ static void gen_##name(DisasContext *ctx)         \
     gen_update_nip(ctx, ctx->base.pc_next - 4);            \
     uim = tcg_const_i32(tcg_ctx, UIMM5(ctx->opcode));      \
     rb = gen_fprp_ptr(tcg_ctx, rB(ctx->opcode));           \
-    gen_helper_##name(tcg_ctx, cpu_crf[crfD(ctx->opcode)], \
+    gen_helper_##name(tcg_ctx, tcg_ctx->cpu_crf[crfD(ctx->opcode)], \
                       tcg_ctx->cpu_env, uim, rb);          \
     tcg_temp_free_i32(tcg_ctx, uim);                       \
     tcg_temp_free_ptr(tcg_ctx, rb);                        \
@@ -79,7 +79,7 @@ static void gen_##name(DisasContext *ctx)         \
     gen_update_nip(ctx, ctx->base.pc_next - 4);   \
     ra = gen_fprp_ptr(tcg_ctx, rA(ctx->opcode));           \
     dcm = tcg_const_i32(tcg_ctx, DCM(ctx->opcode));        \
-    gen_helper_##name(tcg_ctx, cpu_crf[crfD(ctx->opcode)], \
+    gen_helper_##name(tcg_ctx, tcg_ctx->cpu_crf[crfD(ctx->opcode)], \
                       tcg_ctx->cpu_env, ra, dcm);          \
     tcg_temp_free_ptr(tcg_ctx, ra);                        \
     tcg_temp_free_i32(tcg_ctx, dcm);                       \

@@ -44,13 +44,14 @@ static void spr_load_dump_spr(TCGContext *tcg_ctx, int sprn)
 static void spr_read_generic(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_load_spr(tcg_ctx, cpu_gpr[gprn], sprn);
+    gen_load_spr(tcg_ctx, tcg_ctx->cpu_gpr[gprn], sprn);
     spr_load_dump_spr(tcg_ctx, sprn);
 }
 
 static void spr_store_dump_spr(int sprn)
 {
 #ifdef PPC_DUMP_SPR_ACCESSES
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, sprn);
     gen_helper_store_dump_spr(tcg_ctx, tcg_ctx->cpu_env, t0);
     tcg_temp_free_i32(tcg_ctx, t0);
@@ -60,7 +61,7 @@ static void spr_store_dump_spr(int sprn)
 static void spr_write_generic(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_store_spr(tcg_ctx, sprn, cpu_gpr[gprn]);
+    gen_store_spr(tcg_ctx, sprn, tcg_ctx->cpu_gpr[gprn]);
     spr_store_dump_spr(sprn);
 }
 
@@ -69,7 +70,7 @@ static void spr_write_generic32(DisasContext *ctx, int sprn, int gprn)
 #ifdef TARGET_PPC64
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv t0 = tcg_temp_new(tcg_ctx);
-    tcg_gen_ext32u_tl(tcg_ctx, t0, cpu_gpr[gprn]);
+    tcg_gen_ext32u_tl(tcg_ctx, t0, tcg_ctx->cpu_gpr[gprn]);
     gen_store_spr(tcg_ctx, sprn, t0);
     tcg_temp_free(tcg_ctx, t0);
     spr_store_dump_spr(sprn);
@@ -84,7 +85,7 @@ static void spr_write_clear(DisasContext *ctx, int sprn, int gprn)
     TCGv t0 = tcg_temp_new(tcg_ctx);
     TCGv t1 = tcg_temp_new(tcg_ctx);
     gen_load_spr(tcg_ctx, t0, sprn);
-    tcg_gen_neg_tl(tcg_ctx, t1, cpu_gpr[gprn]);
+    tcg_gen_neg_tl(tcg_ctx, t1, tcg_ctx->cpu_gpr[gprn]);
     tcg_gen_and_tl(tcg_ctx, t0, t0, t1);
     gen_store_spr(tcg_ctx, sprn, t0);
     tcg_temp_free(tcg_ctx, t0);
@@ -99,26 +100,27 @@ static void spr_access_nop(DisasContext *ctx, int sprn, int gprn)
 /* XER */
 static void spr_read_xer(DisasContext *ctx, int gprn, int sprn)
 {
-    gen_read_xer(ctx, cpu_gpr[gprn]);
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    gen_read_xer(ctx, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void spr_write_xer(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_write_xer(tcg_ctx, cpu_gpr[gprn]);
+    gen_write_xer(tcg_ctx, tcg_ctx->cpu_gpr[gprn]);
 }
 
 /* LR */
 static void spr_read_lr(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[gprn], cpu_lr);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_lr);
 }
 
 static void spr_write_lr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_mov_tl(tcg_ctx, cpu_lr, cpu_gpr[gprn]);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_lr, tcg_ctx->cpu_gpr[gprn]);
 }
 
 /* CFAR */
@@ -126,13 +128,13 @@ static void spr_write_lr(DisasContext *ctx, int sprn, int gprn)
 static void spr_read_cfar(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[gprn], cpu_cfar);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_cfar);
 }
 
 static void spr_write_cfar(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_mov_tl(tcg_ctx, cpu_cfar, cpu_gpr[gprn]);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cfar, tcg_ctx->cpu_gpr[gprn]);
 }
 #endif
 
@@ -140,13 +142,13 @@ static void spr_write_cfar(DisasContext *ctx, int sprn, int gprn)
 static void spr_read_ctr(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[gprn], cpu_ctr);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_ctr);
 }
 
 static void spr_write_ctr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_mov_tl(tcg_ctx, cpu_ctr, cpu_gpr[gprn]);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_ctr, tcg_ctx->cpu_gpr[gprn]);
 }
 
 /* User read access to SPR */
@@ -158,14 +160,14 @@ static void spr_write_ctr(DisasContext *ctx, int sprn, int gprn)
 static void spr_read_ureg(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_load_spr(tcg_ctx, cpu_gpr[gprn], sprn + 0x10);
+    gen_load_spr(tcg_ctx, tcg_ctx->cpu_gpr[gprn], sprn + 0x10);
 }
 
 #if defined(TARGET_PPC64)
 static void spr_write_ureg(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_store_spr(tcg_ctx, sprn + 0x10, cpu_gpr[gprn]);
+    gen_store_spr(tcg_ctx, sprn + 0x10, tcg_ctx->cpu_gpr[gprn]);
 }
 #endif
 
@@ -178,7 +180,7 @@ static void spr_read_decr(DisasContext *ctx, int gprn, int sprn)
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_start(tcg_ctx);
     }
-    gen_helper_load_decr(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_decr(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_stop_exception(ctx);
     }
@@ -194,7 +196,7 @@ static void spr_write_decr(DisasContext *ctx, int sprn, int gprn)
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_start(tcg_ctx);
     }
-    gen_helper_store_decr(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_decr(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_stop_exception(ctx);
     }
@@ -212,7 +214,7 @@ static void spr_read_tbl(DisasContext *ctx, int gprn, int sprn)
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_start(tcg_ctx);
     }
-    gen_helper_load_tbl(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_tbl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_end(tcg_ctx);
         gen_stop_exception(ctx);
@@ -229,7 +231,7 @@ static void spr_read_tbu(DisasContext *ctx, int gprn, int sprn)
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_start(tcg_ctx);
     }
-    gen_helper_load_tbu(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_tbu(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_end(tcg_ctx);
         gen_stop_exception(ctx);
@@ -244,14 +246,14 @@ static void spr_read_tbu(DisasContext *ctx, int gprn, int sprn)
 static void spr_read_atbl(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_load_atbl(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_atbl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
 }
 
 // ATTRIBUTE_UNUSED
 static void spr_read_atbu(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_load_atbu(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_atbu(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
 }
 #endif
 
@@ -262,7 +264,7 @@ static void spr_write_tbl(DisasContext *ctx, int sprn, int gprn)
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_start(tcg_ctx);
     }
-    gen_helper_store_tbl(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_tbl(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_end(tcg_ctx);
         gen_stop_exception(ctx);
@@ -280,7 +282,7 @@ static void spr_write_tbu(DisasContext *ctx, int sprn, int gprn)
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_start(tcg_ctx);
     }
-    gen_helper_store_tbu(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_tbu(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_end(tcg_ctx);
         gen_stop_exception(ctx);
@@ -295,14 +297,14 @@ static void spr_write_tbu(DisasContext *ctx, int sprn, int gprn)
 static void spr_write_atbl(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_atbl(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_atbl(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 // ATTRIBUTE_UNUSED
 static void spr_write_atbu(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_atbu(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_atbu(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 #endif
 
@@ -311,13 +313,13 @@ static void spr_write_atbu(DisasContext *ctx, int sprn, int gprn)
 static void spr_read_purr(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_load_purr(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_purr(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
 }
 
 static void spr_write_purr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_purr(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_purr(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 /* HDECR */
@@ -327,7 +329,7 @@ static void spr_read_hdecr(DisasContext *ctx, int gprn, int sprn)
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_start(tcg_ctx);
     }
-    gen_helper_load_hdecr(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_hdecr(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_end(tcg_ctx);
         gen_stop_exception(ctx);
@@ -340,7 +342,7 @@ static void spr_write_hdecr(DisasContext *ctx, int sprn, int gprn)
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_start(tcg_ctx);
     }
-    gen_helper_store_hdecr(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_hdecr(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
     if (tb_cflags(ctx->base.tb) & CF_USE_ICOUNT) {
         gen_io_end(tcg_ctx);
         gen_stop_exception(ctx);
@@ -350,19 +352,19 @@ static void spr_write_hdecr(DisasContext *ctx, int sprn, int gprn)
 static void spr_read_vtb(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_load_vtb(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_vtb(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
 }
 
 static void spr_write_vtb(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_vtb(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_vtb(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void spr_write_tbu40(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_tbu40(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_tbu40(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 #endif
@@ -372,7 +374,7 @@ static void spr_write_tbu40(DisasContext *ctx, int sprn, int gprn)
 static void spr_read_ibat(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_ld_tl(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env,
+    tcg_gen_ld_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env,
                   offsetof(CPUPPCState,
                            IBAT[sprn & 1][(sprn - SPR_IBAT0U) / 2]));
 }
@@ -380,7 +382,7 @@ static void spr_read_ibat(DisasContext *ctx, int gprn, int sprn)
 static void spr_read_ibat_h(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_ld_tl(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env,
+    tcg_gen_ld_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env,
                   offsetof(CPUPPCState,
                            IBAT[sprn & 1][((sprn - SPR_IBAT4U) / 2) + 4]));
 }
@@ -389,7 +391,7 @@ static void spr_write_ibatu(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, (sprn - SPR_IBAT0U) / 2);
-    gen_helper_store_ibatu(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_ibatu(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -397,7 +399,7 @@ static void spr_write_ibatu_h(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, ((sprn - SPR_IBAT4U) / 2) + 4);
-    gen_helper_store_ibatu(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_ibatu(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -405,7 +407,7 @@ static void spr_write_ibatl(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, (sprn - SPR_IBAT0L) / 2);
-    gen_helper_store_ibatl(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_ibatl(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -413,7 +415,7 @@ static void spr_write_ibatl_h(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, ((sprn - SPR_IBAT4L) / 2) + 4);
-    gen_helper_store_ibatl(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_ibatl(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -422,7 +424,7 @@ static void spr_write_ibatl_h(DisasContext *ctx, int sprn, int gprn)
 static void spr_read_dbat(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_ld_tl(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env,
+    tcg_gen_ld_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env,
                   offsetof(CPUPPCState,
                            DBAT[sprn & 1][(sprn - SPR_DBAT0U) / 2]));
 }
@@ -430,7 +432,7 @@ static void spr_read_dbat(DisasContext *ctx, int gprn, int sprn)
 static void spr_read_dbat_h(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_ld_tl(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env,
+    tcg_gen_ld_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env,
                   offsetof(CPUPPCState,
                            DBAT[sprn & 1][((sprn - SPR_DBAT4U) / 2) + 4]));
 }
@@ -439,7 +441,7 @@ static void spr_write_dbatu(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, (sprn - SPR_DBAT0U) / 2);
-    gen_helper_store_dbatu(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_dbatu(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -447,7 +449,7 @@ static void spr_write_dbatu_h(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, ((sprn - SPR_DBAT4U) / 2) + 4);
-    gen_helper_store_dbatu(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_dbatu(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -455,7 +457,7 @@ static void spr_write_dbatl(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, (sprn - SPR_DBAT0L) / 2);
-    gen_helper_store_dbatl(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_dbatl(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -463,7 +465,7 @@ static void spr_write_dbatl_h(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, ((sprn - SPR_DBAT4L) / 2) + 4);
-    gen_helper_store_dbatl(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_dbatl(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -471,7 +473,7 @@ static void spr_write_dbatl_h(DisasContext *ctx, int sprn, int gprn)
 static void spr_write_sdr1(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_sdr1(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_sdr1(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 #if defined(TARGET_PPC64)
@@ -480,52 +482,52 @@ static void spr_write_sdr1(DisasContext *ctx, int sprn, int gprn)
 static void spr_write_pidr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_pidr(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_pidr(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void spr_write_lpidr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_lpidr(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_lpidr(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void spr_read_hior(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_ld_tl(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env, offsetof(CPUPPCState, excp_prefix));
+    tcg_gen_ld_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env, offsetof(CPUPPCState, excp_prefix));
 }
 
 static void spr_write_hior(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv t0 = tcg_temp_new(tcg_ctx);
-    tcg_gen_andi_tl(tcg_ctx, t0, cpu_gpr[gprn], 0x3FFFFF00000ULL);
+    tcg_gen_andi_tl(tcg_ctx, t0, tcg_ctx->cpu_gpr[gprn], 0x3FFFFF00000ULL);
     tcg_gen_st_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUPPCState, excp_prefix));
     tcg_temp_free(tcg_ctx, t0);
 }
 static void spr_write_ptcr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_ptcr(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_ptcr(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void spr_write_pcr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_pcr(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_pcr(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 /* DPDES */
 static void spr_read_dpdes(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_load_dpdes(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_dpdes(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
 }
 
 static void spr_write_dpdes(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_dpdes(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_dpdes(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 #endif
 
@@ -534,31 +536,31 @@ static void spr_write_dpdes(DisasContext *ctx, int sprn, int gprn)
 static void spr_read_601_rtcl(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_load_601_rtcl(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_601_rtcl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
 }
 
 static void spr_read_601_rtcu(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_load_601_rtcu(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_601_rtcu(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
 }
 
 static void spr_write_601_rtcu(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_601_rtcu(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_601_rtcu(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void spr_write_601_rtcl(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_601_rtcl(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_601_rtcl(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void spr_write_hid0_601(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_hid0_601(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_hid0_601(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
     /* Must stop the translation as endianness may have changed */
     gen_stop_exception(ctx);
 }
@@ -567,7 +569,7 @@ static void spr_write_hid0_601(DisasContext *ctx, int sprn, int gprn)
 static void spr_read_601_ubat(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_ld_tl(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env,
+    tcg_gen_ld_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env,
                   offsetof(CPUPPCState,
                            IBAT[sprn & 1][(sprn - SPR_IBAT0U) / 2]));
 }
@@ -576,7 +578,7 @@ static void spr_write_601_ubatu(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, (sprn - SPR_IBAT0U) / 2);
-    gen_helper_store_601_batl(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_601_batl(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -584,7 +586,7 @@ static void spr_write_601_ubatl(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, (sprn - SPR_IBAT0U) / 2);
-    gen_helper_store_601_batu(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_601_batu(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -593,9 +595,9 @@ static void spr_read_40x_pit(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 #ifdef UNICORN_ARCH_POSTFIX
-    glue(gen_helper_load_40x_pit, UNICORN_ARCH_POSTFIX)(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    glue(gen_helper_load_40x_pit, UNICORN_ARCH_POSTFIX)(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
 #else
-    gen_helper_load_40x_pit(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env);
+    gen_helper_load_40x_pit(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env);
 #endif
 }
 
@@ -603,20 +605,20 @@ static void spr_write_40x_pit(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 #ifdef UNICORN_ARCH_POSTFIX
-    glue(gen_helper_store_40x_pit, UNICORN_ARCH_POSTFIX)(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    glue(gen_helper_store_40x_pit, UNICORN_ARCH_POSTFIX)(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 #else
-    gen_helper_store_40x_pit(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_40x_pit(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 #endif
 }
 
 static void spr_write_40x_dbcr0(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_store_spr(tcg_ctx, sprn, cpu_gpr[gprn]);
+    gen_store_spr(tcg_ctx, sprn, tcg_ctx->cpu_gpr[gprn]);
 #ifdef UNICORN_ARCH_POSTFIX
-    glue(gen_helper_store_40x_dbcr0, UNICORN_ARCH_POSTFIX)(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    glue(gen_helper_store_40x_dbcr0, UNICORN_ARCH_POSTFIX)(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 #else
-    gen_helper_store_40x_dbcr0(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_40x_dbcr0(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 #endif
     /* We must stop translation as we may have rebooted */
     gen_stop_exception(ctx);
@@ -626,22 +628,22 @@ static void spr_write_40x_sler(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 #ifdef UNICORN_ARCH_POSTFIX
-    glue(gen_helper_store_40x_sler, UNICORN_ARCH_POSTFIX)(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    glue(gen_helper_store_40x_sler, UNICORN_ARCH_POSTFIX)(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 #else
-    gen_helper_store_40x_sler(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_40x_sler(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 #endif
 }
 
 static void spr_write_booke_tcr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_booke_tcr(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_booke_tcr(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void spr_write_booke_tsr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_store_booke_tsr(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_booke_tsr(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 /* PowerPC 403 specific registers */
@@ -649,7 +651,7 @@ static void spr_write_booke_tsr(DisasContext *ctx, int sprn, int gprn)
 static void spr_read_403_pbr(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_ld_tl(tcg_ctx, cpu_gpr[gprn], tcg_ctx->cpu_env,
+    tcg_gen_ld_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], tcg_ctx->cpu_env,
                   offsetof(CPUPPCState, pb[sprn - SPR_403_PBL1]));
 }
 
@@ -657,7 +659,7 @@ static void spr_write_403_pbr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, sprn - SPR_403_PBL1);
-    gen_helper_store_403_pbr(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_store_403_pbr(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -665,7 +667,7 @@ static void spr_write_pir(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv t0 = tcg_temp_new(tcg_ctx);
-    tcg_gen_andi_tl(tcg_ctx, t0, cpu_gpr[gprn], 0xF);
+    tcg_gen_andi_tl(tcg_ctx, t0, tcg_ctx->cpu_gpr[gprn], 0xF);
     gen_store_spr(tcg_ctx, SPR_PIR, t0);
     tcg_temp_free(tcg_ctx, t0);
 }
@@ -676,7 +678,7 @@ static void spr_read_spefscr(DisasContext *ctx, int gprn, int sprn)
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_temp_new_i32(tcg_ctx);
     tcg_gen_ld_i32(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUPPCState, spe_fscr));
-    tcg_gen_extu_i32_tl(tcg_ctx, cpu_gpr[gprn], t0);
+    tcg_gen_extu_i32_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], t0);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
@@ -684,7 +686,7 @@ static void spr_write_spefscr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_temp_new_i32(tcg_ctx);
-    tcg_gen_trunc_tl_i32(tcg_ctx, t0, cpu_gpr[gprn]);
+    tcg_gen_trunc_tl_i32(tcg_ctx, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_gen_st_i32(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUPPCState, spe_fscr));
     tcg_temp_free_i32(tcg_ctx, t0);
 }
@@ -695,7 +697,7 @@ static void spr_write_excp_prefix(DisasContext *ctx, int sprn, int gprn)
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv t0 = tcg_temp_new(tcg_ctx);
     tcg_gen_ld_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUPPCState, ivpr_mask));
-    tcg_gen_and_tl(tcg_ctx, t0, t0, cpu_gpr[gprn]);
+    tcg_gen_and_tl(tcg_ctx, t0, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_gen_st_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUPPCState, excp_prefix));
     gen_store_spr(tcg_ctx, sprn, t0);
     tcg_temp_free(tcg_ctx, t0);
@@ -721,7 +723,7 @@ static void spr_write_excp_vector(DisasContext *ctx, int sprn, int gprn)
 
     TCGv t0 = tcg_temp_new(tcg_ctx);
     tcg_gen_ld_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUPPCState, ivor_mask));
-    tcg_gen_and_tl(tcg_ctx, t0, t0, cpu_gpr[gprn]);
+    tcg_gen_and_tl(tcg_ctx, t0, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_gen_st_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUPPCState, excp_vectors[sprn_offs]));
     gen_store_spr(tcg_ctx, sprn, t0);
     tcg_temp_free(tcg_ctx, t0);
@@ -1226,7 +1228,7 @@ static void spr_write_amr(DisasContext *ctx, int sprn, int gprn)
     }
 
     /* Mask new bits into t2 */
-    tcg_gen_and_tl(tcg_ctx, t2, t1, cpu_gpr[gprn]);
+    tcg_gen_and_tl(tcg_ctx, t2, t1, tcg_ctx->cpu_gpr[gprn]);
 
     /* Load AMR and clear new bits in t0 */
     gen_load_spr(tcg_ctx, t0, SPR_AMR);
@@ -1258,7 +1260,7 @@ static void spr_write_uamor(DisasContext *ctx, int sprn, int gprn)
     gen_load_spr(tcg_ctx, t1, SPR_AMOR);
 
     /* Mask new bits into t2 */
-    tcg_gen_and_tl(tcg_ctx, t2, t1, cpu_gpr[gprn]);
+    tcg_gen_and_tl(tcg_ctx, t2, t1, tcg_ctx->cpu_gpr[gprn]);
 
     /* Load AMR and clear new bits in t0 */
     gen_load_spr(tcg_ctx, t0, SPR_UAMOR);
@@ -1290,7 +1292,7 @@ static void spr_write_iamr(DisasContext *ctx, int sprn, int gprn)
     gen_load_spr(tcg_ctx, t1, SPR_AMOR);
 
     /* Mask new bits into t2 */
-    tcg_gen_and_tl(tcg_ctx, t2, t1, cpu_gpr[gprn]);
+    tcg_gen_and_tl(tcg_ctx, t2, t1, tcg_ctx->cpu_gpr[gprn]);
 
     /* Load AMR and clear new bits in t0 */
     gen_load_spr(tcg_ctx, t0, SPR_IAMR);
@@ -1350,7 +1352,7 @@ static void spr_read_thrm(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     gen_helper_fixup_thrm(tcg_ctx, tcg_ctx->cpu_env);
-    gen_load_spr(tcg_ctx, cpu_gpr[gprn], sprn);
+    gen_load_spr(tcg_ctx, tcg_ctx->cpu_gpr[gprn], sprn);
     spr_load_dump_spr(tcg_ctx, sprn);
 }
 
@@ -1720,7 +1722,7 @@ static void spr_write_e500_l1csr0(DisasContext *ctx, int sprn, int gprn)
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv t0 = tcg_temp_new(tcg_ctx);
 
-    tcg_gen_andi_tl(tcg_ctx, t0, cpu_gpr[gprn], L1CSR0_DCE | L1CSR0_CPE);
+    tcg_gen_andi_tl(tcg_ctx, t0, tcg_ctx->cpu_gpr[gprn], L1CSR0_DCE | L1CSR0_CPE);
     gen_store_spr(tcg_ctx, sprn, t0);
     tcg_temp_free(tcg_ctx, t0);
 }
@@ -1730,7 +1732,7 @@ static void spr_write_e500_l1csr1(DisasContext *ctx, int sprn, int gprn)
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv t0 = tcg_temp_new(tcg_ctx);
 
-    tcg_gen_andi_tl(tcg_ctx, t0, cpu_gpr[gprn], L1CSR1_ICE | L1CSR1_CPE);
+    tcg_gen_andi_tl(tcg_ctx, t0, tcg_ctx->cpu_gpr[gprn], L1CSR1_ICE | L1CSR1_CPE);
     gen_store_spr(tcg_ctx, sprn, t0);
     tcg_temp_free(tcg_ctx, t0);
 }
@@ -1738,27 +1740,27 @@ static void spr_write_e500_l1csr1(DisasContext *ctx, int sprn, int gprn)
 static void spr_write_booke206_mmucsr0(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_booke206_tlbflush(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_booke206_tlbflush(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void spr_write_booke_pid(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 t0 = tcg_const_i32(tcg_ctx, sprn);
-    gen_helper_booke_setpid(tcg_ctx, tcg_ctx->cpu_env, t0, cpu_gpr[gprn]);
+    gen_helper_booke_setpid(tcg_ctx, tcg_ctx->cpu_env, t0, tcg_ctx->cpu_gpr[gprn]);
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
 static void spr_write_eplc(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_booke_set_eplc(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_booke_set_eplc(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void spr_write_epsc(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    gen_helper_booke_set_epsc(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_booke_set_epsc(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void gen_spr_usprg3(CPUPPCState *env)
@@ -4752,9 +4754,9 @@ static void spr_write_mas73(DisasContext *ctx, int sprn, int gprn)
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 
     TCGv val = tcg_temp_new(tcg_ctx);
-    tcg_gen_ext32u_tl(tcg_ctx, val, cpu_gpr[gprn]);
+    tcg_gen_ext32u_tl(tcg_ctx, val, tcg_ctx->cpu_gpr[gprn]);
     gen_store_spr(tcg_ctx, SPR_BOOKE_MAS3, val);
-    tcg_gen_shri_tl(tcg_ctx, val, cpu_gpr[gprn], 32);
+    tcg_gen_shri_tl(tcg_ctx, val, tcg_ctx->cpu_gpr[gprn], 32);
     gen_store_spr(tcg_ctx, SPR_BOOKE_MAS7, val);
     tcg_temp_free(tcg_ctx, val);
 }
@@ -4768,7 +4770,7 @@ static void spr_read_mas73(DisasContext *ctx, int gprn, int sprn)
     gen_load_spr(tcg_ctx, mas7, SPR_BOOKE_MAS7);
     tcg_gen_shli_tl(tcg_ctx, mas7, mas7, 32);
     gen_load_spr(tcg_ctx, mas3, SPR_BOOKE_MAS3);
-    tcg_gen_or_tl(tcg_ctx, cpu_gpr[gprn], mas3, mas7);
+    tcg_gen_or_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], mas3, mas7);
     tcg_temp_free(tcg_ctx, mas3);
     tcg_temp_free(tcg_ctx, mas7);
 }
@@ -7424,7 +7426,7 @@ static void spr_read_prev_upper32(DisasContext *ctx, int gprn, int sprn)
 
     gen_load_spr(tcg_ctx, spr, sprn - 1);
     tcg_gen_shri_tl(tcg_ctx, spr_up, spr, 32);
-    tcg_gen_ext32u_tl(tcg_ctx, cpu_gpr[gprn], spr_up);
+    tcg_gen_ext32u_tl(tcg_ctx, tcg_ctx->cpu_gpr[gprn], spr_up);
 
     tcg_temp_free(tcg_ctx, spr);
     tcg_temp_free(tcg_ctx, spr_up);
@@ -7436,7 +7438,7 @@ static void spr_write_prev_upper32(DisasContext *ctx, int sprn, int gprn)
     TCGv spr = tcg_temp_new(tcg_ctx);
 
     gen_load_spr(tcg_ctx, spr, sprn - 1);
-    tcg_gen_deposit_tl(tcg_ctx, spr, spr, cpu_gpr[gprn], 32, 32);
+    tcg_gen_deposit_tl(tcg_ctx, spr, spr, tcg_ctx->cpu_gpr[gprn], 32, 32);
     gen_store_spr(tcg_ctx, sprn - 1, spr);
 
     tcg_temp_free(tcg_ctx, spr);
@@ -7747,7 +7749,7 @@ static void spr_write_hmer(DisasContext *ctx, int sprn, int gprn)
     TCGv hmer = tcg_temp_new(tcg_ctx);
 
     gen_load_spr(tcg_ctx, hmer, sprn);
-    tcg_gen_and_tl(tcg_ctx, hmer, cpu_gpr[gprn], hmer);
+    tcg_gen_and_tl(tcg_ctx, hmer, tcg_ctx->cpu_gpr[gprn], hmer);
     gen_store_spr(tcg_ctx, sprn, hmer);
     spr_store_dump_spr(sprn);
     tcg_temp_free(tcg_ctx, hmer);
@@ -7757,7 +7759,7 @@ static void spr_write_lpcr(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 
-    gen_helper_store_lpcr(tcg_ctx, tcg_ctx->cpu_env, cpu_gpr[gprn]);
+    gen_helper_store_lpcr(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->cpu_gpr[gprn]);
 }
 
 static void gen_spr_970_lpar(CPUPPCState *env)

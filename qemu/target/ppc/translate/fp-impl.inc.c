@@ -20,15 +20,15 @@ static void gen_set_cr1_from_fpscr(DisasContext *ctx)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv_i32 tmp = tcg_temp_new_i32(tcg_ctx);
-    tcg_gen_trunc_tl_i32(tcg_ctx, tmp, cpu_fpscr);
-    tcg_gen_shri_i32(tcg_ctx, cpu_crf[1], tmp, 28);
+    tcg_gen_trunc_tl_i32(tcg_ctx, tmp, tcg_ctx->cpu_fpscr);
+    tcg_gen_shri_i32(tcg_ctx, tcg_ctx->cpu_crf[1], tmp, 28);
     tcg_temp_free_i32(tcg_ctx, tmp);
 }
 #else
 static void gen_set_cr1_from_fpscr(DisasContext *ctx)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    tcg_gen_shri_tl(tcg_ctx, cpu_crf[1], cpu_fpscr, 28);
+    tcg_gen_shri_tl(tcg_ctx, tcg_ctx->cpu_crf[1], tcg_ctx->cpu_fpscr, 28);
 }
 #endif
 
@@ -353,7 +353,7 @@ static void gen_ftdiv(DisasContext *ctx)
     t1 = tcg_temp_new_i64(tcg_ctx);
     get_fpr(tcg_ctx, t0, rA(ctx->opcode));
     get_fpr(tcg_ctx, t1, rB(ctx->opcode));
-    gen_helper_ftdiv(tcg_ctx, cpu_crf[crfD(ctx->opcode)], t0, t1);
+    gen_helper_ftdiv(tcg_ctx, tcg_ctx->cpu_crf[crfD(ctx->opcode)], t0, t1);
     tcg_temp_free_i64(tcg_ctx, t0);
     tcg_temp_free_i64(tcg_ctx, t1);
 }
@@ -368,7 +368,7 @@ static void gen_ftsqrt(DisasContext *ctx)
     }
     t0 = tcg_temp_new_i64(tcg_ctx);
     get_fpr(tcg_ctx, t0, rB(ctx->opcode));
-    gen_helper_ftsqrt(tcg_ctx, cpu_crf[crfD(ctx->opcode)], t0);
+    gen_helper_ftsqrt(tcg_ctx, tcg_ctx->cpu_crf[crfD(ctx->opcode)], t0);
     tcg_temp_free_i64(tcg_ctx, t0);
 }
 
@@ -605,12 +605,12 @@ static void gen_mcrfs(DisasContext *ctx)
     bfa = crfS(ctx->opcode);
     nibble = 7 - bfa;
     shift = 4 * nibble;
-    tcg_gen_shri_tl(tcg_ctx, tmp, cpu_fpscr, shift);
-    tcg_gen_trunc_tl_i32(tcg_ctx, cpu_crf[crfD(ctx->opcode)], tmp);
-    tcg_gen_andi_i32(tcg_ctx, cpu_crf[crfD(ctx->opcode)], cpu_crf[crfD(ctx->opcode)],
+    tcg_gen_shri_tl(tcg_ctx, tmp, tcg_ctx->cpu_fpscr, shift);
+    tcg_gen_trunc_tl_i32(tcg_ctx, tcg_ctx->cpu_crf[crfD(ctx->opcode)], tmp);
+    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_crf[crfD(ctx->opcode)], tcg_ctx->cpu_crf[crfD(ctx->opcode)],
                      0xf);
     tcg_temp_free(tcg_ctx, tmp);
-    tcg_gen_extu_tl_i64(tcg_ctx, tnew_fpscr, cpu_fpscr);
+    tcg_gen_extu_tl_i64(tcg_ctx, tnew_fpscr, tcg_ctx->cpu_fpscr);
     /* Only the exception bits (including FX) should be cleared if read */
     tcg_gen_andi_i64(tcg_ctx, tnew_fpscr, tnew_fpscr,
                      ~((0xF << shift) & FP_EX_CLEAR_BITS));
@@ -632,7 +632,7 @@ static void gen_mffs(DisasContext *ctx)
     }
     t0 = tcg_temp_new_i64(tcg_ctx);
     gen_reset_fpstatus(tcg_ctx);
-    tcg_gen_extu_tl_i64(tcg_ctx, t0, cpu_fpscr);
+    tcg_gen_extu_tl_i64(tcg_ctx, t0, tcg_ctx->cpu_fpscr);
     set_fpr(tcg_ctx, rD(ctx->opcode), t0);
     if (unlikely(Rc(ctx->opcode))) {
         gen_set_cr1_from_fpscr(ctx);
@@ -647,7 +647,7 @@ static void gen_mffsl(DisasContext *ctx)
     TCGv_i64 t0;
 
     if (unlikely(!(ctx->insns_flags2 & PPC2_ISA300))) {
-        return;
+        return gen_mffs(ctx);
     }
 
     if (unlikely(!ctx->fpu_enabled)) {
@@ -656,7 +656,7 @@ static void gen_mffsl(DisasContext *ctx)
     }
     t0 = tcg_temp_new_i64(tcg_ctx);
     gen_reset_fpstatus(tcg_ctx);
-    tcg_gen_extu_tl_i64(tcg_ctx, t0, cpu_fpscr);
+    tcg_gen_extu_tl_i64(tcg_ctx, t0, tcg_ctx->cpu_fpscr);
     /* Mask everything except mode, status, and enables.  */
     tcg_gen_andi_i64(tcg_ctx, t0, t0, FP_DRN | FP_STATUS | FP_ENABLES | FP_RN);
     set_fpr(tcg_ctx, rD(ctx->opcode), t0);
@@ -671,7 +671,7 @@ static void gen_mffsce(DisasContext *ctx)
     TCGv_i32 mask;
 
     if (unlikely(!(ctx->insns_flags2 & PPC2_ISA300))) {
-        return;
+        return gen_mffs(ctx);
     }
 
     if (unlikely(!ctx->fpu_enabled)) {
@@ -682,7 +682,7 @@ static void gen_mffsce(DisasContext *ctx)
     t0 = tcg_temp_new_i64(tcg_ctx);
 
     gen_reset_fpstatus(tcg_ctx);
-    tcg_gen_extu_tl_i64(tcg_ctx, t0, cpu_fpscr);
+    tcg_gen_extu_tl_i64(tcg_ctx, t0, tcg_ctx->cpu_fpscr);
     set_fpr(tcg_ctx, rD(ctx->opcode), t0);
 
     /* Clear exception enable bits in the FPSCR.  */
@@ -701,7 +701,7 @@ static void gen_helper_mffscrn(DisasContext *ctx, TCGv_i64 t1)
     TCGv_i32 mask = tcg_const_i32(tcg_ctx, 0x0001);
 
     gen_reset_fpstatus(tcg_ctx);
-    tcg_gen_extu_tl_i64(tcg_ctx, t0, cpu_fpscr);
+    tcg_gen_extu_tl_i64(tcg_ctx, t0, tcg_ctx->cpu_fpscr);
     tcg_gen_andi_i64(tcg_ctx, t0, t0, FP_DRN | FP_ENABLES | FP_RN);
     set_fpr(tcg_ctx, rD(ctx->opcode), t0);
 
@@ -724,7 +724,7 @@ static void gen_mffscrn(DisasContext *ctx)
     TCGv_i64 t1;
 
     if (unlikely(!(ctx->insns_flags2 & PPC2_ISA300))) {
-        return;
+        return gen_mffs(ctx);
     }
 
     if (unlikely(!ctx->fpu_enabled)) {
@@ -749,7 +749,7 @@ static void gen_mffscrni(DisasContext *ctx)
     TCGv_i64 t1;
 
     if (unlikely(!(ctx->insns_flags2 & PPC2_ISA300))) {
-        return;
+        return gen_mffs(ctx);
     }
 
     if (unlikely(!ctx->fpu_enabled)) {
@@ -783,8 +783,8 @@ static void gen_mtfsb0(DisasContext *ctx)
         tcg_temp_free_i32(tcg_ctx, t0);
     }
     if (unlikely(Rc(ctx->opcode) != 0)) {
-        tcg_gen_trunc_tl_i32(tcg_ctx, cpu_crf[1], cpu_fpscr);
-        tcg_gen_shri_i32(tcg_ctx, cpu_crf[1], cpu_crf[1], FPSCR_OX);
+        tcg_gen_trunc_tl_i32(tcg_ctx, tcg_ctx->cpu_crf[1], tcg_ctx->cpu_fpscr);
+        tcg_gen_shri_i32(tcg_ctx, tcg_ctx->cpu_crf[1], tcg_ctx->cpu_crf[1], FPSCR_OX);
     }
 }
 
@@ -808,8 +808,8 @@ static void gen_mtfsb1(DisasContext *ctx)
         tcg_temp_free_i32(tcg_ctx, t0);
     }
     if (unlikely(Rc(ctx->opcode) != 0)) {
-        tcg_gen_trunc_tl_i32(tcg_ctx, cpu_crf[1], cpu_fpscr);
-        tcg_gen_shri_i32(tcg_ctx, cpu_crf[1], cpu_crf[1], FPSCR_OX);
+        tcg_gen_trunc_tl_i32(tcg_ctx, tcg_ctx->cpu_crf[1], tcg_ctx->cpu_fpscr);
+        tcg_gen_shri_i32(tcg_ctx, tcg_ctx->cpu_crf[1], tcg_ctx->cpu_crf[1], FPSCR_OX);
     }
     /* We can raise a deferred exception */
     gen_helper_float_check_status(tcg_ctx, tcg_ctx->cpu_env);
@@ -845,8 +845,8 @@ static void gen_mtfsf(DisasContext *ctx)
     gen_helper_store_fpscr(tcg_ctx, tcg_ctx->cpu_env, t1, t0);
     tcg_temp_free_i32(tcg_ctx, t0);
     if (unlikely(Rc(ctx->opcode) != 0)) {
-        tcg_gen_trunc_tl_i32(tcg_ctx, cpu_crf[1], cpu_fpscr);
-        tcg_gen_shri_i32(tcg_ctx, cpu_crf[1], cpu_crf[1], FPSCR_OX);
+        tcg_gen_trunc_tl_i32(tcg_ctx, tcg_ctx->cpu_crf[1], tcg_ctx->cpu_fpscr);
+        tcg_gen_shri_i32(tcg_ctx, tcg_ctx->cpu_crf[1], tcg_ctx->cpu_crf[1], FPSCR_OX);
     }
     /* We can raise a deferred exception */
     gen_helper_float_check_status(tcg_ctx, tcg_ctx->cpu_env);
@@ -879,8 +879,8 @@ static void gen_mtfsfi(DisasContext *ctx)
     tcg_temp_free_i64(tcg_ctx, t0);
     tcg_temp_free_i32(tcg_ctx, t1);
     if (unlikely(Rc(ctx->opcode) != 0)) {
-        tcg_gen_trunc_tl_i32(tcg_ctx, cpu_crf[1], cpu_fpscr);
-        tcg_gen_shri_i32(tcg_ctx, cpu_crf[1], cpu_crf[1], FPSCR_OX);
+        tcg_gen_trunc_tl_i32(tcg_ctx, tcg_ctx->cpu_crf[1], tcg_ctx->cpu_fpscr);
+        tcg_gen_shri_i32(tcg_ctx, tcg_ctx->cpu_crf[1], tcg_ctx->cpu_crf[1], FPSCR_OX);
     }
     /* We can raise a deferred exception */
     gen_helper_float_check_status(tcg_ctx, tcg_ctx->cpu_env);
@@ -898,13 +898,13 @@ static void glue(gen_, name)(DisasContext *ctx)                               \
         return;                                                               \
     }                                                                         \
     gen_set_access_type(ctx, ACCESS_FLOAT);                                   \
-    EA = tcg_temp_new(tcg_ctx);                                                      \
-    t0 = tcg_temp_new_i64(tcg_ctx);                                                  \
+    EA = tcg_temp_new(tcg_ctx);                                               \
+    t0 = tcg_temp_new_i64(tcg_ctx);                                           \
     gen_addr_imm_index(ctx, EA, 0);                                           \
     gen_qemu_##ldop(ctx, t0, EA);                                             \
-    set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                             \
-    tcg_temp_free(tcg_ctx, EA);                                                        \
-    tcg_temp_free_i64(tcg_ctx, t0);                                                    \
+    set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                    \
+    tcg_temp_free(tcg_ctx, EA);                                               \
+    tcg_temp_free_i64(tcg_ctx, t0);                                           \
 }
 
 #define GEN_LDUF(name, ldop, opc, type)                                       \
@@ -927,7 +927,7 @@ static void glue(gen_, name##u)(DisasContext *ctx)                            \
     gen_addr_imm_index(ctx, EA, 0);                                           \
     gen_qemu_##ldop(ctx, t0, EA);                                             \
     set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                    \
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                    \
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[rA(ctx->opcode)], EA);           \
     tcg_temp_free(tcg_ctx, EA);                                               \
     tcg_temp_free_i64(tcg_ctx, t0);                                           \
 }
@@ -952,7 +952,7 @@ static void glue(gen_, name##ux)(DisasContext *ctx)                           \
     gen_addr_reg_index(ctx, EA);                                              \
     gen_qemu_##ldop(ctx, t0, EA);                                             \
     set_fpr(tcg_ctx, rD(ctx->opcode), t0);                                    \
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                    \
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[rA(ctx->opcode)], EA);           \
     tcg_temp_free(tcg_ctx, EA);                                               \
     tcg_temp_free_i64(tcg_ctx, t0);                                           \
 }
@@ -1172,7 +1172,7 @@ static void glue(gen_, name##u)(DisasContext *ctx)                            \
     gen_addr_imm_index(ctx, EA, 0);                                           \
     get_fpr(tcg_ctx, t0, rS(ctx->opcode));                                             \
     gen_qemu_##stop(ctx, t0, EA);                                             \
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                             \
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[rA(ctx->opcode)], EA);                             \
     tcg_temp_free(tcg_ctx, EA);                                                        \
     tcg_temp_free_i64(tcg_ctx, t0);                                                    \
 }
@@ -1197,7 +1197,7 @@ static void glue(gen_, name##ux)(DisasContext *ctx)                           \
     gen_addr_reg_index(ctx, EA);                                              \
     get_fpr(tcg_ctx, t0, rS(ctx->opcode));                                             \
     gen_qemu_##stop(ctx, t0, EA);                                             \
-    tcg_gen_mov_tl(tcg_ctx, cpu_gpr[rA(ctx->opcode)], EA);                             \
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[rA(ctx->opcode)], EA);                             \
     tcg_temp_free(tcg_ctx, EA);                                                        \
     tcg_temp_free_i64(tcg_ctx, t0);                                                    \
 }
@@ -1387,7 +1387,7 @@ static void gen_lfqu(DisasContext *ctx)
     gen_qemu_ld64_i64(ctx, t2, t1);
     set_fpr(tcg_ctx, (rd + 1) % 32, t2);
     if (ra != 0) {
-        tcg_gen_mov_tl(tcg_ctx, cpu_gpr[ra], t0);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[ra], t0);
     }
     tcg_temp_free(tcg_ctx, t0);
     tcg_temp_free(tcg_ctx, t1);
@@ -1414,7 +1414,7 @@ static void gen_lfqux(DisasContext *ctx)
     set_fpr(tcg_ctx, (rd + 1) % 32, t2);
     tcg_temp_free(tcg_ctx, t1);
     if (ra != 0) {
-        tcg_gen_mov_tl(tcg_ctx, cpu_gpr[ra], t0);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[ra], t0);
     }
     tcg_temp_free(tcg_ctx, t0);
     tcg_temp_free_i64(tcg_ctx, t2);
@@ -1480,7 +1480,7 @@ static void gen_stfqu(DisasContext *ctx)
     gen_qemu_st64_i64(ctx, t2, t1);
     tcg_temp_free(tcg_ctx, t1);
     if (ra != 0) {
-        tcg_gen_mov_tl(tcg_ctx, cpu_gpr[ra], t0);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[ra], t0);
     }
     tcg_temp_free(tcg_ctx, t0);
     tcg_temp_free_i64(tcg_ctx, t2);
@@ -1506,7 +1506,7 @@ static void gen_stfqux(DisasContext *ctx)
     gen_qemu_st64_i64(ctx, t2, t1);
     tcg_temp_free(tcg_ctx, t1);
     if (ra != 0) {
-        tcg_gen_mov_tl(tcg_ctx, cpu_gpr[ra], t0);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[ra], t0);
     }
     tcg_temp_free(tcg_ctx, t0);
     tcg_temp_free_i64(tcg_ctx, t2);
