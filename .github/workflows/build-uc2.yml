@@ -445,6 +445,15 @@ jobs:
             generators: 'Ninja',
             distro: ubuntu22.04
           }
+          - {
+            os: ubuntu-22.04,
+            arch: s390x,
+            name: 'ubuntu-s390x cmake',
+            artifact: 'ubuntu-cmake-s390x.7z',
+            archiver: '7za a',
+            generators: 'Ninja',
+            distro: ubuntu22.04
+          }
         compiler: [ gcc ]
     steps:
       - uses: actions/checkout@v4
@@ -518,6 +527,37 @@ jobs:
             cmake --build . --config ${{ env.BUILD_TYPE }}
             cmake --install . --strip
             ctest -VV -C ${{ env.BUILD_TYPE }}
+
+      - name: '🚧 Linux s390x build'
+        if: contains(matrix.config.arch, 's390x')
+        uses: appleboy/ssh-action@v1
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REPO: ${{ github.repository }}
+          BUILT_TYPE: ${{ env.BUILD_TYPE }}
+        with:
+          host: ${{ secrets.S390X_HOST }}
+          username: ${{ secrets.S390X_USERNAME }}
+          key: ${{ secrets.S390X_PRIVKEY }}
+          port: ${{ secrets.S390X_PORT }}
+          envs: GITHUB_SHA,GITHUB_REPO,BUILT_TYPE
+          script: |
+            bash -c "cd /work && rm -rf repo && pwd &&\
+            git clone https://github.com/$GITHUB_REPO repo && cd repo && git checkout $GITHUB_SHA &&\
+            mkdir build install && cd build && cmake .. -DCMAKE_BUILD_TYPE=$BUILT_TYPE \
+            -DCMAKE_INSTALL_PREFIX:PATH=install && cmake --build . --config $BUILT_TYPE -j 4 && \
+            ctest -VV -C $BUILT_TYPE && cmake --install . --strip"
+    
+      - name: '🚧 Linux s390x fetch artifacts'
+        if: contains(matrix.config.arch, 's390x')
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.S390X_HOST }}
+          username: ${{ secrets.S390X_USERNAME }}
+          key: ${{ secrets.S390X_PRIVKEY }}
+          port: ${{ secrets.S390X_PORT }}
+          source: "/work/repo/install"
+          target: /instdir
 
       - name: '📦 Pack artifact'
         if: always()
