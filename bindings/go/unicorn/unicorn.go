@@ -219,26 +219,18 @@ func (u *uc) MemWrite(addr uint64, data []byte) error {
 	if len(data) == 0 {
 		return nil
 	}
-<<<<<<< HEAD
-	return errReturn(C.uc_mem_write(u.handle, C.uint64_t(addr), unsafe.Pointer(&data[0]), C.uint64_t(len(data))))
-=======
 	return errReturn(
-		C.uc_mem_write(u.handle, C.uint64_t(addr), unsafe.Pointer(&data[0]), C.size_t(len(data))),
+		C.uc_mem_write(u.handle, C.uint64_t(addr), unsafe.Pointer(&data[0]), C.uint64_t(len(data))),
 	)
->>>>>>> 11cedbec (add UC_CTL go bindings)
 }
 
 func (u *uc) MemReadInto(dst []byte, addr uint64) error {
 	if len(dst) == 0 {
 		return nil
 	}
-<<<<<<< HEAD
-	return errReturn(C.uc_mem_read(u.handle, C.uint64_t(addr), unsafe.Pointer(&dst[0]), C.uint64_t(len(dst))))
-=======
 	return errReturn(
-		C.uc_mem_read(u.handle, C.uint64_t(addr), unsafe.Pointer(&dst[0]), C.size_t(len(dst))),
+		C.uc_mem_read(u.handle, C.uint64_t(addr), unsafe.Pointer(&dst[0]), C.uint64_t(len(dst))),
 	)
->>>>>>> 11cedbec (add UC_CTL go bindings)
 }
 
 func (u *uc) MemRead(addr, size uint64) ([]byte, error) {
@@ -255,17 +247,15 @@ func (u *uc) MemMap(addr, size uint64) error {
 }
 
 func (u *uc) MemMapPtr(addr, size uint64, prot int, ptr unsafe.Pointer) error {
-<<<<<<< HEAD
-	return errReturn(C.uc_mem_map_ptr(u.handle, C.uint64_t(addr), C.uint64_t(size), C.uint32_t(prot), ptr))
-=======
 	return errReturn(
-		C.uc_mem_map_ptr(u.handle, C.uint64_t(addr), C.size_t(size), C.uint32_t(prot), ptr),
+		C.uc_mem_map_ptr(u.handle, C.uint64_t(addr), C.uint64_t(size), C.uint32_t(prot), ptr),
 	)
->>>>>>> 11cedbec (add UC_CTL go bindings)
 }
 
 func (u *uc) MemProtect(addr, size uint64, prot int) error {
-	return errReturn(C.uc_mem_protect(u.handle, C.uint64_t(addr), C.uint64_t(size), C.uint32_t(prot)))
+	return errReturn(
+		C.uc_mem_protect(u.handle, C.uint64_t(addr), C.uint64_t(size), C.uint32_t(prot)),
+	)
 }
 
 func (u *uc) MemUnmap(addr, size uint64) error {
