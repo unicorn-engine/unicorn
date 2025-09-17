@@ -1,0 +1,1 @@
+Rust bindings has been moved to [here](https://github.com/unicorn-engine/unicorn-engine-rs).
