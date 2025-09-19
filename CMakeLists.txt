@@ -117,16 +117,26 @@ if (UNICORN_LOGGING)
     add_compile_options(-DUNICORN_LOGGING)
 endif()
 
-# Some distributions on some rare architecures don't auto link atomic for us and
+# Some distributions on some rare architectures don't auto link atomic for us and
 # we do this manually by adding flags.
 set(ATOMIC_LINKAGE_FIX FALSE)
 if(MSVC)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(MSVC_FLAG  -D__x86_64__)
-    elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        set(MSVC_FLAG  -D__i386__)
-    else()
-        message(FATAL_ERROR "Neither WIN64 or WIN32!")
+    include(CheckSymbolExists)
+    set(CMAKE_REQUIRED_QUIET YES)
+    check_symbol_exists("_M_X64" "" MSVC_ARCH_X64)
+    check_symbol_exists("_M_IX86" "" MSVC_ARCH_X86)
+    check_symbol_exists("_M_ARM64" "" MSVC_ARCH_ARM64)
+    unset(CMAKE_REQUIRED_QUIET)
+
+    if(MSVC_ARCH_X64)
+        set(MSVC_FLAG -D__x86_64__)
+        set(UNICORN_TARGET_ARCH "i386")
+    elseif(MSVC_ARCH_X86)
+        set(MSVC_FLAG -D__i386__)
+        set(UNICORN_TARGET_ARCH "i386")
+    elseif(MSVC_ARCH_ARM64)
+        set(MSVC_FLAG -D__aarch64__)
+        set(UNICORN_TARGET_ARCH "aarch64")
     endif()
 
     add_compile_options(
@@ -135,7 +145,7 @@ if(MSVC)
         -D_CRT_SECURE_NO_WARNINGS
         -DWIN32_LEAN_AND_MEAN
         ${MSVC_FLAG}
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/${UNICORN_TARGET_ARCH}
     )
 
     # Disable some warnings
@@ -1214,7 +1224,7 @@ if(MSVC)
         qemu/util/oslib-win32.c
         qemu/util/qemu-thread-win32.c
     )
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    if(MSVC_ARCH_X64)
         if(MSVC_VERSION LESS 1600 AND MSVC_IDE)
             add_custom_command(OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/build/setjmp-wrapper-win32.dir/setjmp-wrapper-win32.obj"
                 COMMAND ml64 /c /nologo /Fo"${CMAKE_CURRENT_SOURCE_DIR}/build/setjmp-wrapper-win32.dir/setjmp-wrapper-win32.obj" /W3 /errorReport:prompt /Ta"${CMAKE_CURRENT_SOURCE_DIR}/qemu/util/setjmp-wrapper-win32.asm"
