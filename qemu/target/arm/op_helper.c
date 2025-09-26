@@ -306,7 +306,7 @@ void HELPER(wfi)(CPUARMState *env, uint32_t insn_len)
 
         // the last callback may already asked to stop emulation
         if (env->uc->stop_request)
-            return;
+            break;
     }
 
     if (skip_wfi) {
