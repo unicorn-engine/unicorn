@@ -770,6 +770,15 @@ static uc_err uc_arm_context_restore(struct uc_struct *uc, uc_context *context)
     return UC_ERR_OK;
 }
 
+static bool arm_insn_hook_validate(uint32_t insn_enum)
+{
+    // arm only supports wfi now
+    if (insn_enum != UC_ARM_INS_WFI) {
+        return false;
+    }
+    return true;
+}
+
 DEFAULT_VISIBILITY
 void uc_init(struct uc_struct *uc)
 {
@@ -782,6 +791,7 @@ void uc_init(struct uc_struct *uc)
     uc->release = arm_release;
     uc->query = arm_query;
     uc->cpus_init = arm_cpus_init;
+    uc->insn_hook_validate = arm_insn_hook_validate;
     uc->opcode_hook_invalidate = arm_opcode_hook_invalidate;
     uc->cpu_context_size = offsetof(CPUARMState, cpu_watchpoint);
     uc->context_size = uc_arm_context_size;

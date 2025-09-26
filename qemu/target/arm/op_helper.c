@@ -284,6 +284,34 @@ void HELPER(wfi)(CPUARMState *env, uint32_t insn_len)
 {
     CPUState *cs = env_cpu(env);
     int target_el = check_wfx_trap(env, false);
+    uc_engine *uc = env->uc;
+    struct hook * hook;
+    bool skip_wfi = false;
+    bool synced = false;
+
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->pc))
+            continue;
+        if (hook->insn == UC_ARM_INS_WFI) {
+            uintptr_t pc = GETPC();
+            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
+                cpu_restore_state(uc->cpu, pc, false);
+                synced = true;
+            }
+            JIT_CALLBACK_GUARD_VAR(skip_wfi, ((uc_cb_insn_wfi_t)hook->callback)(env->uc, hook->user_data));
+        }
+
+        // the last callback may already asked to stop emulation
+        if (env->uc->stop_request)
+            return;
+    }
+
+    if (skip_wfi) {
+        return;
+    }
 
     if (cpu_has_work(cs)) {
         /* Don't bother to go into our "low power state" if

@@ -68,6 +68,13 @@ typedef struct uc_arm_cp_reg {
     uint64_t val;  // The value to read/write
 } uc_arm_cp_reg;
 
+// Callback function for tracing WFI instruction
+// @user_data: user data passed to tracing APIs.
+//
+// @return: true indicates the callback overwrites the WFI instruction while false
+//          indicates WFI instruction will still be executed.
+typedef int (*uc_cb_insn_wfi_t)(struct uc_struct *uc, void *user_data);
+
 //> ARM registers
 typedef enum uc_arm_reg {
     UC_ARM_REG_INVALID = 0,
@@ -227,6 +234,13 @@ typedef enum uc_arm_reg {
     UC_ARM_REG_FP = UC_ARM_REG_R11,
     UC_ARM_REG_IP = UC_ARM_REG_R12,
 } uc_arm_reg;
+
+typedef enum uc_arm_insn {
+    UC_ARM_INS_INVALID = 0,
+    UC_ARM_INS_WFI,
+
+    UC_ARM_INS_ENDING, // mark the end of the list of insn
+} uc_arm_insn;
 
 #ifdef __cplusplus
 }
