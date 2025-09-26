@@ -199,3 +199,7 @@ module Arm =
     let UC_ARM_REG_FP = 77
     let UC_ARM_REG_IP = 78
 
+    let UC_ARM_INS_INVALID = 0
+    let UC_ARM_INS_WFI = 1
+    let UC_ARM_INS_ENDING = 2
+

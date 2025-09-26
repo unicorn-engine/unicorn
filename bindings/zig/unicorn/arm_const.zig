@@ -194,4 +194,8 @@ pub const armConst = enum(c_int) {
 	ARM_REG_FP = 77,
 	ARM_REG_IP = 78,
 
+	ARM_INS_INVALID = 0,
+	ARM_INS_WFI = 1,
+	ARM_INS_ENDING = 2,
+
 };

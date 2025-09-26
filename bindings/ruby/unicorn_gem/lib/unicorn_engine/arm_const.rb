@@ -193,4 +193,8 @@ module UnicornEngine
 	UC_ARM_REG_SL = 76
 	UC_ARM_REG_FP = 77
 	UC_ARM_REG_IP = 78
+
+	UC_ARM_INS_INVALID = 0
+	UC_ARM_INS_WFI = 1
+	UC_ARM_INS_ENDING = 2
 end
