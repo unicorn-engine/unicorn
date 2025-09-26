@@ -2,16 +2,19 @@
 """
 # @author elicn
 
-from typing import Tuple, Type
+from typing import Any, Callable, Tuple, Type
 
 import ctypes
 
 # traditional unicorn imports
 from unicorn import arm_const as const
+from unicorn.unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
 
 # newly introduced unicorn imports
-from ..unicorn import Uc, check_maxbits
-from .types import UcTupledReg, UcReg128
+from ..unicorn import Uc, UcError, check_maxbits, uccallback
+from .types import uc_engine, UcTupledReg, UcReg128
+
+HOOK_INSN_WFI_CFUNC = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_void_p)
 
 ARMCPReg = Tuple[int, int, int, int, int, int, int, int]
 
@@ -43,6 +46,34 @@ class UcAArch32(Uc):
     REG_RANGE_CP = (const.UC_ARM_REG_CP_REG,)
 
     REG_RANGE_Q = range(const.UC_ARM_REG_Q0, const.UC_ARM_REG_Q15 + 1)
+
+    def hook_add(self, htype: int, callback: Callable, user_data: Any = None, begin: int = 1, end: int = 0, aux1: int = 0, aux2: int = 0) -> int:
+        if htype != UC_HOOK_INSN:
+            return super().hook_add(htype, callback, user_data, begin, end, aux1, aux2)
+        
+        insn = ctypes.c_int(aux1)
+
+        def __hook_insn_wfi():
+            @uccallback(self, HOOK_INSN_WFI_CFUNC)
+            def __hook_insn_wfi_cb(uc: Uc, key: int):
+                return callback(uc, user_data)
+
+            return __hook_insn_wfi_cb
+        
+
+        handlers = {
+            const.UC_ARM_INS_WFI: __hook_insn_wfi,
+        }
+
+        handler = handlers.get(insn.value)
+
+        if handler is None:
+            raise UcError(UC_ERR_ARG)
+        
+        fptr = handler()
+
+        return getattr(self, '_Uc__do_hook_add')(htype, fptr, begin, end, insn)
+        
 
     @classmethod
     def _select_reg_class(cls, reg_id: int) -> Type:
