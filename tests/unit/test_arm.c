@@ -12,6 +12,10 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_write(*uc, code_start, code, size));
 }
 
+typedef struct _WFI_HOOK_INSN_RESULT {
+    bool called;
+} WFI_HOOK_INSN_RESULT;
+
 static void test_arm_nop(void)
 {
     uc_engine *uc;
@@ -1032,6 +1036,32 @@ static void test_arm_svc_hvc_syndrome(void)
     OK(uc_close(uc));
 }
 
+static int test_arm_hook_insn_wfi_callback(uc_engine *uc, void *user_data)
+{
+    WFI_HOOK_INSN_RESULT *result = (WFI_HOOK_INSN_RESULT *)user_data;
+    result->called = true;
+    return 0;
+}
+
+static void test_arm_hook_insn_wfi(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\x30\xbf";
+    WFI_HOOK_INSN_RESULT result = {false};
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_arm_hook_insn_wfi_callback, &result, 1, 0,
+                   UC_ARM_INS_WFI));
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
+    TEST_CHECK(result.called == true);
+
+    OK(uc_hook_del(uc, hook));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -1063,4 +1093,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_cp15_c1_c0_2", test_arm_cp15_c1_c0_2},
              {"test_arm_v7_lpae", test_arm_v7_lpae},
              {"test_arm_svc_hvc_syndrome", test_arm_svc_hvc_syndrome},
+             {"test_arm_hook_insn_wfi", test_arm_hook_insn_wfi},
              {NULL, NULL}};
