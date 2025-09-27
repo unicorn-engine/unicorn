@@ -335,7 +335,8 @@ const
   UC_ARM64_INS_MSR = 2;
   UC_ARM64_INS_SYS = 3;
   UC_ARM64_INS_SYSL = 4;
-  UC_ARM64_INS_ENDING = 5;
+  UC_ARM64_INS_WFI = 5;
+  UC_ARM64_INS_ENDING = 6;
 
 implementation
 end.

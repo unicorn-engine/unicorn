@@ -332,6 +332,7 @@ pub const arm64Const = enum(c_int) {
 	ARM64_INS_MSR = 2,
 	ARM64_INS_SYS = 3,
 	ARM64_INS_SYSL = 4,
-	ARM64_INS_ENDING = 5,
+	ARM64_INS_WFI = 5,
+	ARM64_INS_ENDING = 6,
 
 };

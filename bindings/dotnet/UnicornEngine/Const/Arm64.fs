@@ -337,5 +337,6 @@ module Arm64 =
     let UC_ARM64_INS_MSR = 2
     let UC_ARM64_INS_SYS = 3
     let UC_ARM64_INS_SYSL = 4
-    let UC_ARM64_INS_ENDING = 5
+    let UC_ARM64_INS_WFI = 5
+    let UC_ARM64_INS_ENDING = 6
 
