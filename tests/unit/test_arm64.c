@@ -168,7 +168,7 @@ static void test_arm64_read_sctlr(void)
     OK(uc_close(uc));
 }
 
-static uint32_t test_arm64_mrs_hook_cb(uc_engine *uc, uc_arm64_reg reg,
+static uint32_t test_arm64_hook_insn_mrs_cb(uc_engine *uc, uc_arm64_reg reg,
                                        const uc_arm64_cp_reg *cp_reg)
 {
     uint64_t r_x2 = 0x114514;
@@ -179,7 +179,7 @@ static uint32_t test_arm64_mrs_hook_cb(uc_engine *uc, uc_arm64_reg reg,
     return 1;
 }
 
-static void test_arm64_mrs_hook(void)
+static void test_arm64_hook_insn_mrs(void)
 {
     uc_engine *uc;
     uc_hook hk;
@@ -190,7 +190,7 @@ static void test_arm64_mrs_hook(void)
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN | UC_MODE_ARM,
                     code, sizeof(code) - 1, UC_CPU_ARM64_A72);
 
-    OK(uc_hook_add(uc, &hk, UC_HOOK_INSN, (void *)test_arm64_mrs_hook_cb, NULL,
+    OK(uc_hook_add(uc, &hk, UC_HOOK_INSN, (void *)test_arm64_hook_insn_mrs_cb, NULL,
                    1, 0, UC_ARM64_INS_MRS));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
@@ -201,6 +201,32 @@ static void test_arm64_mrs_hook(void)
 
     OK(uc_hook_del(uc, hk));
 
+    OK(uc_close(uc));
+}
+
+static int test_arm64_hook_insn_wfi_callback(uc_engine *uc, void *user_data)
+{
+    WFI_HOOK_INSN_RESULT *result = (WFI_HOOK_INSN_RESULT *)user_data;
+    result->called = true;
+    return 0;
+}
+
+static void test_arm64_hook_insn_wfi(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\x7f\x20\x03\xd5"; // wfi
+    WFI_HOOK_INSN_RESULT result = {false};
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN | UC_MODE_ARM,
+                    code, sizeof(code) - 1, UC_CPU_ARM64_A72);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_arm64_hook_insn_wfi_callback, &result, 1, 0,
+                   UC_ARM64_INS_WFI));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    TEST_CHECK(result.called == true);
+
+    OK(uc_hook_del(uc, hook));
     OK(uc_close(uc));
 }
 
@@ -669,38 +695,13 @@ static void test_arm64_pc_guarantee(void)
     OK(uc_close(uc));
 }
 
-static int test_arm64_hook_insn_wfi_callback(uc_engine *uc, void *user_data)
-{
-    WFI_HOOK_INSN_RESULT *result = (WFI_HOOK_INSN_RESULT *)user_data;
-    result->called = true;
-    return 0;
-}
-
-static void test_arm64_hook_insn_wfi(void)
-{
-    uc_engine *uc;
-    uc_hook hook;
-    char code[] = "\x7f\x20\x03\xd5";
-    WFI_HOOK_INSN_RESULT result = {false};
-
-    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code),
-                    UC_CPU_ARM64_A72);
-    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_arm64_hook_insn_wfi_callback, &result, 1, 0,
-                   UC_ARM64_INS_WFI));
-
-    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
-    TEST_CHECK(result.called == true);
-
-    OK(uc_hook_del(uc, hook));
-    OK(uc_close(uc));
-}
-
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
              {"test_arm64_v8_pac", test_arm64_v8_pac},
              {"test_arm64_read_sctlr", test_arm64_read_sctlr},
-             {"test_arm64_mrs_hook", test_arm64_mrs_hook},
+             {"test_arm64_hook_insn_mrs", test_arm64_hook_insn_mrs},
+             {"test_arm64_hook_insn_wfi", test_arm64_hook_insn_wfi},
              {"test_arm64_correct_address_in_small_jump_hook",
               test_arm64_correct_address_in_small_jump_hook},
              {"test_arm64_correct_address_in_long_jump_hook",
@@ -713,5 +714,4 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_mem_prot_regress", test_arm64_mem_prot_regress},
              {"test_arm64_mem_hook_read_write", test_arm64_mem_hook_read_write},
              {"test_arm64_pc_guarantee", test_arm64_pc_guarantee},
-             {"test_arm64_hook_insn_wfi", test_arm64_hook_insn_wfi},
              {NULL, NULL}};
