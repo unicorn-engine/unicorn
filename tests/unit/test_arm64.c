@@ -17,6 +17,10 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_write(*uc, code_start, code, size));
 }
 
+typedef struct _WFI_HOOK_INSN_RESULT {
+    bool called;
+} WFI_HOOK_INSN_RESULT;
+
 static void test_arm64_until(void)
 {
     uc_engine *uc;
@@ -665,6 +669,32 @@ static void test_arm64_pc_guarantee(void)
     OK(uc_close(uc));
 }
 
+static int test_arm64_hook_insn_wfi_callback(uc_engine *uc, void *user_data)
+{
+    WFI_HOOK_INSN_RESULT *result = (WFI_HOOK_INSN_RESULT *)user_data;
+    result->called = true;
+    return 0;
+}
+
+static void test_arm64_hook_insn_wfi(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\x7f\x20\x03\xd5";
+    WFI_HOOK_INSN_RESULT result = {false};
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code),
+                    UC_CPU_ARM64_A72);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_arm64_hook_insn_wfi_callback, &result, 1, 0,
+                   UC_ARM64_INS_WFI));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    TEST_CHECK(result.called == true);
+
+    OK(uc_hook_del(uc, hook));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -683,4 +713,5 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_mem_prot_regress", test_arm64_mem_prot_regress},
              {"test_arm64_mem_hook_read_write", test_arm64_mem_hook_read_write},
              {"test_arm64_pc_guarantee", test_arm64_pc_guarantee},
+             {"test_arm64_hook_insn_wfi", test_arm64_hook_insn_wfi},
              {NULL, NULL}};
