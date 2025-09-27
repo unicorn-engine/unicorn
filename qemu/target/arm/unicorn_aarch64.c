@@ -440,6 +440,16 @@ static int arm64_cpus_init(struct uc_struct *uc, const char *cpu_model)
     return 0;
 }
 
+static bool arm64_insn_hook_validate(uint32_t insn_enum)
+{
+    if (insn_enum != UC_ARM64_INS_WFI && insn_enum != UC_ARM64_INS_MRS &&
+        insn_enum != UC_ARM64_INS_MSR && insn_enum != UC_ARM64_INS_SYS &&
+        insn_enum != UC_ARM64_INS_SYSL) {
+        return false;
+    }
+    return true;
+}
+
 DEFAULT_VISIBILITY
 void uc_init(struct uc_struct *uc)
 {
@@ -450,6 +460,7 @@ void uc_init(struct uc_struct *uc)
     uc->get_pc = arm64_get_pc;
     uc->release = arm64_release;
     uc->cpus_init = arm64_cpus_init;
+    uc->insn_hook_validate = arm64_insn_hook_validate;
     uc->cpu_context_size = offsetof(CPUARMState, cpu_watchpoint);
     uc_common_init(uc);
 }

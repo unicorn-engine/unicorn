@@ -383,6 +383,7 @@ typedef enum uc_arm64_insn {
     UC_ARM64_INS_SYS,
     UC_ARM64_INS_SYSL,
 
+    UC_ARM64_INS_WFI,
     UC_ARM64_INS_ENDING
 } uc_arm64_insn;
 
