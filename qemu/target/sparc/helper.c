@@ -244,4 +244,15 @@ void helper_power_down(CPUSPARCState *env)
     env->npc = env->pc + 4;
     cpu_loop_exit(cs);
 }
+
+void helper_uc_exit(CPUSPARCState *env)
+{
+    CPUState *cs = env_cpu(env);
+
+    cs->halted = 1;
+    cs->exception_index = EXCP_HLT;
+    env->pc = env->npc;
+    env->npc = env->pc + 4;
+    cpu_loop_exit(cs);
+}
 #endif
