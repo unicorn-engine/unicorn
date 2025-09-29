@@ -11462,7 +11462,7 @@ static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     // Unicorn: end address tells us to stop emulation
     if (uc_addr_is_exit(dc->uc, dcbase->pc_next)) {
         // imitate WFI instruction to halt emulation
-        dcbase->is_jmp = DISAS_WFI;
+        dcbase->is_jmp = DISAS_UC_EXIT;
     } else {
         dc->pc_curr = dc->base.pc_next;
         insn = arm_ldl_code(env, dc->base.pc_next, dc->sctlr_b);
@@ -11478,7 +11478,7 @@ static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         //
         // See discussion here: https://github.com/unicorn-engine/unicorn/issues/1536
         if (dc->uc->invalid_error) {
-            dcbase->is_jmp = DISAS_WFI;
+            dcbase->is_jmp = DISAS_UC_EXIT;
             return;
         }
 
@@ -11555,7 +11555,7 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     // Unicorn: end address tells us to stop emulation
     if (uc_addr_is_exit(uc, dcbase->pc_next)) {
         // imitate WFI instruction to halt emulation
-        dcbase->is_jmp = DISAS_WFI;
+        dcbase->is_jmp = DISAS_UC_EXIT;
         return;
     }
 
@@ -11753,6 +11753,21 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         case DISAS_SMC:
             gen_exception(tcg_ctx, EXCP_SMC, syn_aa32_smc(), 3);
             break;
+        case DISAS_UC_EXIT:
+        {
+            gen_set_pc_im(dc, dc->base.pc_next);
+
+            TCGv_i32 tmp = tcg_const_i32(tcg_ctx, (dc->thumb &&
+                                          !(dc->insn & (1U << 31))) ? 2 : 4);
+
+            gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env, tmp);
+            tcg_temp_free_i32(tcg_ctx, tmp);
+            /* The helper doesn't necessarily throw an exception, but we
+             * must go back to the main loop to check for interrupts anyway.
+             */
+            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
+            break;
+        }
         }
     }
 

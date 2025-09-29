@@ -1746,6 +1746,7 @@
 #define helper_usat16 helper_usat16_arm
 #define helper_setend helper_setend_arm
 #define helper_wfi helper_wfi_arm
+#define helper_uc_exit helper_uc_exit_arm
 #define helper_wfe helper_wfe_arm
 #define helper_yield helper_yield_arm
 #define helper_exception_internal helper_exception_internal_arm

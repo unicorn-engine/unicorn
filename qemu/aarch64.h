@@ -1820,6 +1820,7 @@
 #define helper_usat16 helper_usat16_aarch64
 #define helper_setend helper_setend_aarch64
 #define helper_wfi helper_wfi_aarch64
+#define helper_uc_exit helper_uc_exit_aarch64
 #define helper_wfe helper_wfe_aarch64
 #define helper_yield helper_yield_aarch64
 #define helper_exception_internal helper_exception_internal_aarch64
