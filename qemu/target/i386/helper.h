@@ -1,5 +1,6 @@
 DEF_HELPER_4(uc_tracecode, void, i32, i32, ptr, i64)
 DEF_HELPER_6(uc_traceopcode, void, ptr, i64, i64, i32, ptr, i64)
+DEF_HELPER_1(uc_exit, void, env)
 
 DEF_HELPER_FLAGS_4(cc_compute_all, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl, int)
 DEF_HELPER_FLAGS_4(cc_compute_c, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl, int)
@@ -60,7 +61,6 @@ DEF_HELPER_2(syscall, void, env, int)
 DEF_HELPER_2(sysret, void, env, int)
 #endif
 DEF_HELPER_2(hlt, void, env, int)
-DEF_HELPER_2(uc_exit, void, env, int)
 DEF_HELPER_2(monitor, void, env, tl)
 DEF_HELPER_2(mwait, void, env, int)
 DEF_HELPER_2(pause, void, env, int)

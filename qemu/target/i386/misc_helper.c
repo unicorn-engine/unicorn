@@ -658,16 +658,6 @@ void helper_hlt(CPUX86State *env, int next_eip_addend)
     do_hlt(cpu);
 }
 
-void helper_uc_exit(CPUX86State *env, int next_eip_addend)
-{
-    X86CPU *cpu = env_archcpu(env);
-
-    cpu_svm_check_intercept_param(env, SVM_EXIT_HLT, 0, GETPC());
-    env->eip += next_eip_addend;
-
-    do_hlt(cpu);
-}
-
 void helper_monitor(CPUX86State *env, target_ulong ptr)
 {
     if ((uint32_t)env->regs[R_ECX] != 0) {
@@ -741,4 +731,13 @@ void helper_wrpkru(CPUX86State *env, uint32_t ecx, uint64_t val)
 
     env->pkru = val;
     tlb_flush(cs);
+}
+
+void helper_uc_exit(CPUX86State *env)
+{
+    X86CPU *cpu = env_archcpu(env);
+
+    cpu_svm_check_intercept_param(env, SVM_EXIT_HLT, 0, GETPC());
+
+    do_hlt(cpu);
 }

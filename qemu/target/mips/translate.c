@@ -31071,7 +31071,6 @@ static void mips_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
         case DISAS_NORETURN:
             break;
         case DISAS_UC_EXIT:
-            // raise a special interrupt to quit
             gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env);
             break;
         default:

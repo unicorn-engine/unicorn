@@ -9423,7 +9423,7 @@ static void i386_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         // imitate the HLT instruction
         gen_update_cc_op(dc);
         gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
-        gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
+        gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env);
         break;
     default:
         break; // suppress compiler warnings

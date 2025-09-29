@@ -11757,16 +11757,7 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         case DISAS_UC_EXIT:
         {
             gen_set_pc_im(dc, dc->base.pc_next);
-
-            TCGv_i32 tmp = tcg_const_i32(tcg_ctx, (dc->thumb &&
-                                          !(dc->insn & (1U << 31))) ? 2 : 4);
-
-            gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env, tmp);
-            tcg_temp_free_i32(tcg_ctx, tmp);
-            /* The helper doesn't necessarily throw an exception, but we
-             * must go back to the main loop to check for interrupts anyway.
-             */
-            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
+            gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env);
             break;
         }
         }

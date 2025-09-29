@@ -14832,18 +14832,8 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         }
         case DISAS_UC_EXIT:
         {
-            /* This is a special case because we don't want to just halt the CPU
-             * if trying to debug across a WFI.
-             */
-            TCGv_i32 tmp = tcg_const_i32(tcg_ctx, 4);
-
             gen_a64_set_pc_im(tcg_ctx, dc->base.pc_next);
-            gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env, tmp);
-            tcg_temp_free_i32(tcg_ctx, tmp);
-            /* The helper doesn't necessarily throw an exception, but we
-             * must go back to the main loop to check for interrupts anyway.
-             */
-            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
+            gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env);
             break;
         }
         }

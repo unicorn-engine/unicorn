@@ -1,5 +1,6 @@
 DEF_HELPER_4(uc_tracecode, void, i32, i32, ptr, i64)
 DEF_HELPER_6(uc_traceopcode, void, ptr, i64, i64, i32, ptr, i64)
+DEF_HELPER_1(uc_exit, void, env)
 
 DEF_HELPER_3(raise_exception_err, noreturn, env, i32, int)
 DEF_HELPER_2(raise_exception, noreturn, env, i32)
@@ -382,7 +383,6 @@ DEF_HELPER_1(rdhwr_performance, tl, env)
 DEF_HELPER_1(rdhwr_xnp, tl, env)
 DEF_HELPER_2(pmon, void, env, int)
 DEF_HELPER_1(wait, void, env)
-DEF_HELPER_1(uc_exit, void, env)
 
 /* Loongson multimedia functions.  */
 DEF_HELPER_FLAGS_2(paddsh, TCG_CALL_NO_RWG_SE, i64, i64, i64)

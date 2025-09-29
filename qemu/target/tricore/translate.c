@@ -9282,7 +9282,6 @@ static void tricore_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         gen_goto_tb(ctx, 0, ctx->base.pc_next);
         break;
     case DISAS_UC_EXIT:
-        gen_save_pc(ctx, ctx->base.pc_next);
         gen_helper_uc_exit(ctx->uc->tcg_ctx, ctx->uc->tcg_ctx->cpu_env);
         break;
     case DISAS_NORETURN:
