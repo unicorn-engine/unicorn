@@ -1,12 +1,12 @@
 DEF_HELPER_4(uc_tracecode, void, i32, i32, ptr, i64)
 DEF_HELPER_6(uc_traceopcode, void, ptr, i64, i64, i32, ptr, i64)
-DEF_HELPER_1(uc_exit, void, env)
 
 #ifndef TARGET_SPARC64
 DEF_HELPER_1(rett, void, env)
 DEF_HELPER_2(wrpsr, void, env, tl)
 DEF_HELPER_1(rdpsr, tl, env)
 DEF_HELPER_1(power_down, void, env)
+DEF_HELPER_1(uc_exit, void, env)
 #else
 DEF_HELPER_FLAGS_2(wrpil, TCG_CALL_NO_RWG, void, env, tl)
 DEF_HELPER_2(wrgl, void, env, tl)
