@@ -6881,6 +6881,7 @@ static void s390x_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     if (uc_addr_is_exit(dc->uc, dcbase->pc_next)) {
         // imitate PGM exception to halt emulation
         dcbase->is_jmp = DISAS_UC_EXIT;
+        return;
     } else {
         dc->base.is_jmp = translate_one(env, dc);
         if (dc->base.is_jmp == DISAS_NEXT) {

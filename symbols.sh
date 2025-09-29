@@ -5620,7 +5620,7 @@ helper_sdivx \
 helper_udivx \
 helper_taddcctv \
 helper_tsubcctv \
-helper_power_down \
+helper_uc_exit \
 sparc_cpu_do_interrupt \
 leon3_irq_manager \
 sparc_cpu_do_interrupt \

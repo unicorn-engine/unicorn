@@ -1381,7 +1381,7 @@
 #define helper_udivx helper_udivx_sparc
 #define helper_taddcctv helper_taddcctv_sparc
 #define helper_tsubcctv helper_tsubcctv_sparc
-#define helper_power_down helper_power_down_sparc
+#define helper_uc_exit helper_uc_exit_sparc
 #define sparc_cpu_do_interrupt sparc_cpu_do_interrupt_sparc
 #define leon3_irq_manager leon3_irq_manager_sparc
 #define sparc_cpu_do_interrupt sparc_cpu_do_interrupt_sparc

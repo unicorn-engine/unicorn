@@ -5952,10 +5952,7 @@ static void sparc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
 
     // Unicorn: end address tells us to stop emulation
     if (uc_addr_is_exit(uc, dc->pc)) {
-#ifndef TARGET_SPARC64
-        gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
-#endif
-        dcbase->is_jmp = DISAS_NORETURN;
+        dcbase->is_jmp = DISAS_UC_EXIT;
         return;
     }
 
@@ -6011,6 +6008,12 @@ static void sparc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
         /* Exit TB */
         save_state(dc);
         tcg_gen_exit_tb(tcg_ctx, NULL, 0);
+        break;
+    
+    case DISAS_UC_EXIT:
+#ifndef TARGET_SPARC64
+        gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env);
+#endif
         break;
 
     default:
