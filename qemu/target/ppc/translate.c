@@ -3727,6 +3727,22 @@ static void gen_wait(DisasContext *ctx)
     gen_exception_nip(ctx, EXCP_HLT, ctx->base.pc_next);
 }
 
+static void gen_uc_exit(DisasContext *ctx)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv_i32 t0 = tcg_const_i32(tcg_ctx, 1);
+#ifdef _MSC_VER
+    tcg_gen_st_i32(tcg_ctx, t0, tcg_ctx->cpu_env,
+                   0 - offsetof(PowerPCCPU, env) + offsetof(CPUState, halted));
+#else
+    tcg_gen_st_i32(tcg_ctx, t0, tcg_ctx->cpu_env,
+                   -offsetof(PowerPCCPU, env) + offsetof(CPUState, halted));
+#endif
+    tcg_temp_free_i32(tcg_ctx, t0);
+    /* Stop translation, as the CPU is supposed to sleep from now */
+    gen_exception_nip(ctx, EXCP_HLT, ctx->base.pc_next);
+}
+
 #if defined(TARGET_PPC64)
 static void gen_doze(DisasContext *ctx)
 {
@@ -7627,8 +7643,7 @@ static void ppc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
 
     // Unicorn: end address tells us to stop emulation
     if (uc_addr_is_exit(uc, ctx->base.pc_next)) {
-        gen_wait(ctx);
-        dcbase->is_jmp = DISAS_NORETURN;
+        dcbase->is_jmp = DISAS_UC_EXIT;
         return;
     }
 
@@ -7720,6 +7735,10 @@ static void ppc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
     DisasContext *ctx = container_of(dcbase, DisasContext, base);
     TCGContext *tcg_ctx = cs->uc->tcg_ctx;
 
+    if (dcbase->is_jmp == DISAS_UC_EXIT) {
+        gen_uc_exit(ctx);
+        return;
+    }
 
     if (ctx->exception == POWERPC_EXCP_NONE) {
         gen_goto_tb(ctx, 0, ctx->base.pc_next);
