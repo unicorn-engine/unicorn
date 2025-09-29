@@ -4378,7 +4378,7 @@ helper_fcvt_d_wu \
 helper_fclass_d \
 riscv_raise_exception \
 helper_raise_exception \
-helper_uc_riscv_exit \
+helper_uc_exit \
 helper_csrrw \
 helper_csrrs \
 helper_csrrc \

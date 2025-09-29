@@ -1360,7 +1360,7 @@
 #define helper_fclass_d helper_fclass_d_riscv64
 #define riscv_raise_exception riscv_raise_exception_riscv64
 #define helper_raise_exception helper_raise_exception_riscv64
-#define helper_uc_riscv_exit helper_uc_riscv_exit_riscv64
+#define helper_uc_exit helper_uc_exit_riscv64
 #define helper_csrrw helper_csrrw_riscv64
 #define helper_csrrs helper_csrrs_riscv64
 #define helper_csrrc helper_csrrc_riscv64
