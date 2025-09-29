@@ -1836,6 +1836,7 @@
 #define helper_wrmsr helper_wrmsr_x86_64
 #define helper_rdmsr helper_rdmsr_x86_64
 #define helper_hlt helper_hlt_x86_64
+#define helper_uc_exit helper_uc_exit_x86_64
 #define helper_monitor helper_monitor_x86_64
 #define helper_mwait helper_mwait_x86_64
 #define helper_pause helper_pause_x86_64

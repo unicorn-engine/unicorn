@@ -4803,16 +4803,6 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 
     s->uc = env->uc;
 
-    // Unicorn: end address tells us to stop emulation
-    if (uc_addr_is_exit(env->uc, s->pc)) {
-        // imitate the HLT instruction
-        gen_update_cc_op(s);
-        gen_sync_pc(tcg_ctx, pc_start - s->cs_base);
-        gen_helper_hlt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
-        s->base.is_jmp = DISAS_NORETURN;
-        return s->pc;
-    }
-
     // Unicorn: callback might need to access to EFLAGS,
     // or want to stop emulation immediately
     if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, pc_start)) {
@@ -9385,6 +9375,12 @@ static void i386_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     target_ulong pc_next;
 
+    // Unicorn: end address tells us to stop emulation
+    if (uc_addr_is_exit(((CPUX86State *)cpu->env_ptr)->uc, dcbase->pc_next)) {
+        dc->base.is_jmp = DISAS_UC_EXIT;
+        return;
+    }
+    
     pc_next = disas_insn(dc, cpu);
 
     if (dc->tf || (dc->base.tb->flags & HF_INHIBIT_IRQ_MASK)) {
@@ -9416,10 +9412,19 @@ static void i386_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 static void i386_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
-    if (dc->base.is_jmp == DISAS_TOO_MANY) {
-        gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
-        gen_eob(dc);
+    switch (dc->base.is_jmp) {
+        case DISAS_TOO_MANY:
+            gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
+            gen_eob(dc);
+            break;
+        case DISAS_UC_EXIT:
+            // imitate the HLT instruction
+            gen_update_cc_op(dc);
+            gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
+            gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
+            break;
     }
 }
 

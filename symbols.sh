@@ -1839,6 +1839,7 @@ helper_rdpmc \
 helper_wrmsr \
 helper_rdmsr \
 helper_hlt \
+helper_uc_exit \
 helper_monitor \
 helper_mwait \
 helper_pause \

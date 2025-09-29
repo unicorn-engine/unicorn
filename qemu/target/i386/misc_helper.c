@@ -658,6 +658,16 @@ void helper_hlt(CPUX86State *env, int next_eip_addend)
     do_hlt(cpu);
 }
 
+void helper_uc_exit(CPUX86State *env, int next_eip_addend)
+{
+    X86CPU *cpu = env_archcpu(env);
+
+    cpu_svm_check_intercept_param(env, SVM_EXIT_HLT, 0, GETPC());
+    env->eip += next_eip_addend;
+
+    do_hlt(cpu);
+}
+
 void helper_monitor(CPUX86State *env, target_ulong ptr)
 {
     if ((uint32_t)env->regs[R_ECX] != 0) {

@@ -60,6 +60,7 @@ DEF_HELPER_2(syscall, void, env, int)
 DEF_HELPER_2(sysret, void, env, int)
 #endif
 DEF_HELPER_2(hlt, void, env, int)
+DEF_HELPER_2(uc_exit, void, env, int)
 DEF_HELPER_2(monitor, void, env, tl)
 DEF_HELPER_2(mwait, void, env, int)
 DEF_HELPER_2(pause, void, env, int)
