@@ -6537,7 +6537,7 @@ do_store_fpscr
 
 ppc64_SYMBOLS=${ppc_SYMBOLS}
 
-s390x_SYMBOLS="helper_uc_s390x_exit \
+s390x_SYMBOLS="helper_uc_exit \
 tcg_s390_tod_updated \
 tcg_s390_program_interrupt \
 tcg_s390_data_exception \

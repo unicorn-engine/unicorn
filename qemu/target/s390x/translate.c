@@ -1203,8 +1203,6 @@ typedef struct {
 /* We are exiting the TB to the main loop.  */
 #define DISAS_PC_STALE_NOCHAIN  DISAS_TARGET_4
 
-#define DISAS_UNICORN_HALT DISAS_TARGET_11
-
 /* Instruction flags */
 #define IF_AFP1     0x0001      /* r1 is a fp reg for HFP/FPS instructions */
 #define IF_AFP2     0x0002      /* r2 is a fp reg for HFP/FPS instructions */
@@ -6882,7 +6880,7 @@ static void s390x_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     // Unicorn: end address tells us to stop emulation
     if (uc_addr_is_exit(dc->uc, dcbase->pc_next)) {
         // imitate PGM exception to halt emulation
-        dcbase->is_jmp = DISAS_UNICORN_HALT;
+        dcbase->is_jmp = DISAS_UC_EXIT;
     } else {
         dc->base.is_jmp = translate_one(env, dc);
         if (dc->base.is_jmp == DISAS_NEXT) {
@@ -6902,11 +6900,11 @@ static void s390x_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
     switch (dc->base.is_jmp) {
-    case DISAS_UNICORN_HALT:
+    case DISAS_UC_EXIT:
         tcg_gen_insn_start(tcg_ctx, dc->base.pc_next, 0, 0);
         update_psw_addr(dc);
         update_cc_op(dc);
-        gen_helper_uc_s390x_exit(tcg_ctx, tcg_ctx->cpu_env);
+        gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env);
         break;
     case DISAS_GOTO_TB:
     case DISAS_NORETURN:
