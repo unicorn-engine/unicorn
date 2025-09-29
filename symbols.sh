@@ -1294,6 +1294,7 @@ gen_helper_cpsr_write \
 tlb_reset_dirty_by_vaddr \
 helper_stqcx_le_parallel \
 helper_stqcx_be_parallel \
+helper_uc_exit \
 "
 
 x86_64_SYMBOLS="
@@ -1839,7 +1840,6 @@ helper_rdpmc \
 helper_wrmsr \
 helper_rdmsr \
 helper_hlt \
-helper_uc_exit \
 helper_monitor \
 helper_mwait \
 helper_pause \
@@ -2354,7 +2354,6 @@ helper_usat \
 helper_usat16 \
 helper_setend \
 helper_wfi \
-helper_uc_exit \
 helper_wfe \
 helper_yield \
 helper_exception_internal \
@@ -3137,7 +3136,6 @@ helper_usat \
 helper_usat16 \
 helper_setend \
 helper_wfi \
-helper_uc_exit \
 helper_wfe \
 helper_yield \
 helper_exception_internal \
@@ -4378,7 +4376,6 @@ helper_fcvt_d_wu \
 helper_fclass_d \
 riscv_raise_exception \
 helper_raise_exception \
-helper_uc_exit \
 helper_csrrw \
 helper_csrrs \
 helper_csrrc \
@@ -5502,7 +5499,6 @@ helper_rdhwr_performance \
 helper_rdhwr_xnp \
 helper_pmon \
 helper_wait \
-helper_uc_exit \
 mips_cpu_do_unaligned_access \
 mips_cpu_do_transaction_failed \
 helper_msa_ld_b \
@@ -5621,7 +5617,6 @@ helper_udivx \
 helper_taddcctv \
 helper_tsubcctv \
 helper_power_down \
-helper_uc_exit \
 sparc_cpu_do_interrupt \
 leon3_irq_manager \
 sparc_cpu_do_interrupt \
@@ -6538,8 +6533,7 @@ do_store_fpscr
 
 ppc64_SYMBOLS=${ppc_SYMBOLS}
 
-s390x_SYMBOLS="helper_uc_exit \
-tcg_s390_tod_updated \
+s390x_SYMBOLS="tcg_s390_tod_updated \
 tcg_s390_program_interrupt \
 tcg_s390_data_exception \
 "
@@ -6554,7 +6548,6 @@ helper_fmsub \
 helper_pack \
 gen_intermediate_code \
 restore_state_to_opc \
-helper_uc_exit \
 "
 
 ARCHS="x86_64 arm aarch64 riscv32 riscv64 mips mipsel mips64 mips64el sparc sparc64 m68k ppc ppc64 s390x tricore"

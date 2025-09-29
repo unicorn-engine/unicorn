@@ -1294,6 +1294,7 @@
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_mips64
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_mips64
 #define helper_stqcx_be_parallel helper_stqcx_be_parallel_mips64
+#define helper_uc_exit helper_uc_exit_mips64
 #define helper_mfc0_mvpcontrol helper_mfc0_mvpcontrol_mips64
 #define helper_mfc0_mvpconf0 helper_mfc0_mvpconf0_mips64
 #define helper_mfc0_mvpconf1 helper_mfc0_mvpconf1_mips64
@@ -2385,7 +2386,6 @@
 #define helper_rdhwr_xnp helper_rdhwr_xnp_mips64
 #define helper_pmon helper_pmon_mips64
 #define helper_wait helper_wait_mips64
-#define helper_uc_exit helper_uc_exit_mips64
 #define mips_cpu_do_unaligned_access mips_cpu_do_unaligned_access_mips64
 #define mips_cpu_do_transaction_failed mips_cpu_do_transaction_failed_mips64
 #define helper_msa_ld_b helper_msa_ld_b_mips64

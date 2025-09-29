@@ -1294,6 +1294,7 @@
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_ppc64
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_ppc64
 #define helper_stqcx_be_parallel helper_stqcx_be_parallel_ppc64
+#define helper_uc_exit helper_uc_exit_ppc64
 #define ppc_cpu_unrealize ppc_cpu_unrealize_ppc64
 #define ppc_cpu_instance_finalize ppc_cpu_instance_finalize_ppc64
 #define ppc_cpu_do_interrupt ppc_cpu_do_interrupt_ppc64

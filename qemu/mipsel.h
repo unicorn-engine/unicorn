@@ -1294,6 +1294,7 @@
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_mipsel
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_mipsel
 #define helper_stqcx_be_parallel helper_stqcx_be_parallel_mipsel
+#define helper_uc_exit helper_uc_exit_mipsel
 #define helper_mfc0_mvpcontrol helper_mfc0_mvpcontrol_mipsel
 #define helper_mfc0_mvpconf0 helper_mfc0_mvpconf0_mipsel
 #define helper_mfc0_mvpconf1 helper_mfc0_mvpconf1_mipsel
@@ -2385,7 +2386,6 @@
 #define helper_rdhwr_xnp helper_rdhwr_xnp_mipsel
 #define helper_pmon helper_pmon_mipsel
 #define helper_wait helper_wait_mipsel
-#define helper_uc_exit helper_uc_exit_mipsel
 #define mips_cpu_do_unaligned_access mips_cpu_do_unaligned_access_mipsel
 #define mips_cpu_do_transaction_failed mips_cpu_do_transaction_failed_mipsel
 #define helper_msa_ld_b helper_msa_ld_b_mipsel

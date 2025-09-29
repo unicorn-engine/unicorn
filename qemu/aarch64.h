@@ -1294,6 +1294,7 @@
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_aarch64
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_aarch64
 #define helper_stqcx_be_parallel helper_stqcx_be_parallel_aarch64
+#define helper_uc_exit helper_uc_exit_aarch64
 #define cpu_aarch64_init cpu_aarch64_init_aarch64
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_aarch64
 #define arm_cpu_update_virq arm_cpu_update_virq_aarch64
@@ -1820,7 +1821,6 @@
 #define helper_usat16 helper_usat16_aarch64
 #define helper_setend helper_setend_aarch64
 #define helper_wfi helper_wfi_aarch64
-#define helper_uc_exit helper_uc_exit_aarch64
 #define helper_wfe helper_wfe_aarch64
 #define helper_yield helper_yield_aarch64
 #define helper_exception_internal helper_exception_internal_aarch64
