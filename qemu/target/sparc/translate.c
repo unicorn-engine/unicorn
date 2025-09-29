@@ -6011,8 +6011,10 @@ static void sparc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
         break;
     
     case DISAS_UC_EXIT:
+    #ifndef TARGET_SPARC64
         gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env);
         break;
+    #endif
 
     default:
         g_assert_not_reached();
