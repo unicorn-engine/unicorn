@@ -2794,7 +2794,7 @@ uint32_t helper_psw_read(CPUTriCoreState *env)
     return psw_read(env);
 }
 
-void helper_uc_tricore_exit(CPUTriCoreState *env)
+void helper_uc_exit(CPUTriCoreState *env)
 {
     CPUState *cs = env_cpu(env);
 
