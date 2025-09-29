@@ -2353,6 +2353,7 @@ helper_usat \
 helper_usat16 \
 helper_setend \
 helper_wfi \
+helper_uc_exit \
 helper_wfe \
 helper_yield \
 helper_exception_internal \
@@ -3135,6 +3136,7 @@ helper_usat \
 helper_usat16 \
 helper_setend \
 helper_wfi \
+helper_uc_exit \
 helper_wfe \
 helper_yield \
 helper_exception_internal \
