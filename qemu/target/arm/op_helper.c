@@ -336,34 +336,6 @@ void HELPER(wfi)(CPUARMState *env, uint32_t insn_len)
     cpu_loop_exit(cs);
 }
 
-void HELPER(emu_until_reached)(CPUARMState *env, uint32_t insn_len)
-{
-    CPUState *cs = env_cpu(env);
-    int target_el = check_wfx_trap(env, false);
-
-    if (cpu_has_work(cs)) {
-        /* Don't bother to go into our "low power state" if
-         * we would just wake up immediately.
-         */
-        return;
-    }
-
-    if (target_el) {
-        if (env->aarch64) {
-            env->pc -= insn_len;
-        } else {
-            env->regs[15] -= insn_len;
-        }
-
-        raise_exception(env, EXCP_UDEF, syn_wfx(1, 0xe, 0, insn_len == 2),
-                        target_el);
-    }
-
-    cs->exception_index = EXCP_HLT;
-    cs->halted = 1;
-    cpu_loop_exit(cs);
-}
-
 void HELPER(wfe)(CPUARMState *env)
 {
     /* This is a hint instruction that is semantically different

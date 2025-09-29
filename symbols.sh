@@ -2353,7 +2353,6 @@ helper_usat \
 helper_usat16 \
 helper_setend \
 helper_wfi \
-helper_emu_until_reached \
 helper_wfe \
 helper_yield \
 helper_exception_internal \
@@ -3136,7 +3135,6 @@ helper_usat \
 helper_usat16 \
 helper_setend \
 helper_wfi \
-helper_emu_until_reached \
 helper_wfe \
 helper_yield \
 helper_exception_internal \
