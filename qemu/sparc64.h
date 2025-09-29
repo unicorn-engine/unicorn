@@ -1294,6 +1294,7 @@
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_sparc64
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_sparc64
 #define helper_stqcx_be_parallel helper_stqcx_be_parallel_sparc64
+#define helper_uc_exit helper_uc_exit_sparc64
 #define helper_compute_psr helper_compute_psr_sparc64
 #define helper_compute_C_icc helper_compute_C_icc_sparc64
 #define cpu_sparc_set_id cpu_sparc_set_id_sparc64

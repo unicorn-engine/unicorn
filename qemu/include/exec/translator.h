@@ -37,7 +37,7 @@
 typedef enum DisasJumpType {
     DISAS_NEXT,
     DISAS_TOO_MANY,
-    DISAS_UC_EXIT,
+    DISAS_UC_EXIT, // Unicorn: Special disas state for exiting in the middle of tb.
     DISAS_NORETURN,
     DISAS_TARGET_0,
     DISAS_TARGET_1,

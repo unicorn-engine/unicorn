@@ -1294,6 +1294,7 @@
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_mips64el
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_mips64el
 #define helper_stqcx_be_parallel helper_stqcx_be_parallel_mips64el
+#define helper_uc_exit helper_uc_exit_mips64el
 #define helper_mfc0_mvpcontrol helper_mfc0_mvpcontrol_mips64el
 #define helper_mfc0_mvpconf0 helper_mfc0_mvpconf0_mips64el
 #define helper_mfc0_mvpconf1 helper_mfc0_mvpconf1_mips64el

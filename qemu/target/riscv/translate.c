@@ -34,11 +34,6 @@
 
 #include "exec/gen-icount.h"
 
-/*
- * Unicorn: Special disas state for exiting in the middle of tb.
- */
-#define DISAS_UC_EXIT    DISAS_TARGET_6
-
 typedef struct DisasContext {
     DisasContextBase base;
     /* pc_succ_insn points to the instruction following base.pc_next */
@@ -912,7 +907,7 @@ static void riscv_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         break;
     case DISAS_UC_EXIT:
         tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
-        gen_helper_uc_riscv_exit(ctx->uc->tcg_ctx, ctx->uc->tcg_ctx->cpu_env);
+        gen_helper_uc_exit(ctx->uc->tcg_ctx, ctx->uc->tcg_ctx->cpu_env);
         break;
     default:
         g_assert_not_reached();

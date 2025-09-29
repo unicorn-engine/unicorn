@@ -1294,6 +1294,7 @@
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_arm
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_arm
 #define helper_stqcx_be_parallel helper_stqcx_be_parallel_arm
+#define helper_uc_exit helper_uc_exit_arm
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_arm
 #define arm_cpu_update_virq arm_cpu_update_virq_arm
 #define arm_cpu_update_vfiq arm_cpu_update_vfiq_arm
@@ -1746,7 +1747,6 @@
 #define helper_usat16 helper_usat16_arm
 #define helper_setend helper_setend_arm
 #define helper_wfi helper_wfi_arm
-#define helper_uc_exit helper_uc_exit_arm
 #define helper_wfe helper_wfe_arm
 #define helper_yield helper_yield_arm
 #define helper_exception_internal helper_exception_internal_arm

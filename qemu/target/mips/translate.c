@@ -30942,9 +30942,7 @@ static void mips_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
 
     // Unicorn: end address tells us to stop emulation
     if (uc_addr_is_exit(uc, ctx->base.pc_next)) {
-        // raise a special interrupt to quit
-        gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
-        ctx->base.is_jmp = DISAS_NORETURN;
+        ctx->base.is_jmp = DISAS_UC_EXIT;
         return;
     }
 
@@ -31053,7 +31051,7 @@ static void mips_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
     DisasContext *ctx = container_of(dcbase, DisasContext, base);
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 
-    if (ctx->base.singlestep_enabled && ctx->base.is_jmp != DISAS_NORETURN) {
+    if (ctx->base.singlestep_enabled && (ctx->base.is_jmp == DISAS_NORETURN || ctx->base.is_jmp == DISAS_UC_EXIT)) {
         save_cpu_state(ctx, ctx->base.is_jmp != DISAS_EXIT);
         gen_helper_raise_exception_debug(tcg_ctx, tcg_ctx->cpu_env);
     } else {
@@ -31071,6 +31069,9 @@ static void mips_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
             tcg_gen_exit_tb(tcg_ctx, NULL, 0);
             break;
         case DISAS_NORETURN:
+            break;
+        case DISAS_UC_EXIT:
+            gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env);
             break;
         default:
             g_assert_not_reached();

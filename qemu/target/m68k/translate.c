@@ -6325,7 +6325,7 @@ static void m68k_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 
     // Unicorn: end address tells us to stop emulation
     if (uc_addr_is_exit(uc, dc->pc)) {
-        gen_exception(dc, dc->pc, EXCP_HLT);
+        dc->base.is_jmp = DISAS_UC_EXIT;
         return;
     }
 
@@ -6406,6 +6406,9 @@ static void m68k_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         } else {
             tcg_gen_exit_tb(tcg_ctx, NULL, 0);
         }
+        break;
+    case DISAS_UC_EXIT:
+        gen_exception(dc, dc->pc, EXCP_HLT);
         break;
     default:
         g_assert_not_reached();

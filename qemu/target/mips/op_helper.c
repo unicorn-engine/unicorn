@@ -1076,6 +1076,19 @@ void helper_wait(CPUMIPSState *env)
     raise_exception(env, EXCP_HLT);
 }
 
+void helper_uc_exit(CPUMIPSState *env)
+{
+    CPUState *cs = env_cpu(env);
+
+    cs->halted = 1;
+    cpu_reset_interrupt(cs, CPU_INTERRUPT_WAKE);
+    /*
+     * Last instruction in the block, PC was updated before
+     * - no need to recover PC and icount.
+     */
+    raise_exception(env, EXCP_HLT);
+}
+
 void mips_cpu_do_unaligned_access(CPUState *cs, vaddr addr,
                                   MMUAccessType access_type,
                                   int mmu_idx, uintptr_t retaddr)

@@ -33,11 +33,6 @@
 #include "exec/translator.h"
 #include "exec/gen-icount.h"
 
-/*
- * Unicorn: Special disas state for exiting in the middle of tb.
- */
-#define DISAS_UC_EXIT    DISAS_TARGET_6
-
 static const char *regnames_a[] = {
       "a0"  , "a1"  , "a2"  , "a3" , "a4"  , "a5" ,
       "a6"  , "a7"  , "a8"  , "a9" , "sp" , "a11" ,
@@ -9287,8 +9282,7 @@ static void tricore_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         gen_goto_tb(ctx, 0, ctx->base.pc_next);
         break;
     case DISAS_UC_EXIT:
-        gen_save_pc(ctx, ctx->base.pc_next);
-        gen_helper_uc_tricore_exit(ctx->uc->tcg_ctx, ctx->uc->tcg_ctx->cpu_env);
+        gen_helper_uc_exit(ctx->uc->tcg_ctx, ctx->uc->tcg_ctx->cpu_env);
         break;
     case DISAS_NORETURN:
         break;

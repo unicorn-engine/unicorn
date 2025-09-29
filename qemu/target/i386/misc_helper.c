@@ -732,3 +732,12 @@ void helper_wrpkru(CPUX86State *env, uint32_t ecx, uint64_t val)
     env->pkru = val;
     tlb_flush(cs);
 }
+
+void helper_uc_exit(CPUX86State *env)
+{
+    X86CPU *cpu = env_archcpu(env);
+
+    cpu_svm_check_intercept_param(env, SVM_EXIT_HLT, 0, GETPC());
+
+    do_hlt(cpu);
+}

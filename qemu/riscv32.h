@@ -1294,6 +1294,7 @@
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_riscv32
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_riscv32
 #define helper_stqcx_be_parallel helper_stqcx_be_parallel_riscv32
+#define helper_uc_exit helper_uc_exit_riscv32
 #define riscv_cpu_mmu_index riscv_cpu_mmu_index_riscv32
 #define riscv_cpu_exec_interrupt riscv_cpu_exec_interrupt_riscv32
 #define riscv_cpu_fp_enabled riscv_cpu_fp_enabled_riscv32
@@ -1360,7 +1361,6 @@
 #define helper_fclass_d helper_fclass_d_riscv32
 #define riscv_raise_exception riscv_raise_exception_riscv32
 #define helper_raise_exception helper_raise_exception_riscv32
-#define helper_uc_riscv_exit helper_uc_riscv_exit_riscv32
 #define helper_csrrw helper_csrrw_riscv32
 #define helper_csrrs helper_csrrs_riscv32
 #define helper_csrrc helper_csrrc_riscv32

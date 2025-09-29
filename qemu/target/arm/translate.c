@@ -11463,33 +11463,34 @@ static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     if (uc_addr_is_exit(dc->uc, dcbase->pc_next)) {
         // imitate WFI instruction to halt emulation
         dcbase->is_jmp = DISAS_UC_EXIT;
-    } else {
-        dc->pc_curr = dc->base.pc_next;
-        insn = arm_ldl_code(env, dc->base.pc_next, dc->sctlr_b);
-        dc->insn = insn;
-
-        // Unicorn:
-        //
-        // If we get an error during fetching code, we have to skip the instruction decoding
-        // to ensure the PC remains unchanged.
-        //
-        // This is to keep the same behavior with Unicorn1, though, it's inconsistent with
-        // official arm documents.
-        //
-        // See discussion here: https://github.com/unicorn-engine/unicorn/issues/1536
-        if (dc->uc->invalid_error) {
-            dcbase->is_jmp = DISAS_UC_EXIT;
-            return;
-        }
-
-        dc->base.pc_next += 4;
-        disas_arm_insn(dc, insn);
-
-        arm_post_translate_insn(dc);
-
-        /* ARM is a fixed-length ISA.  We performed the cross-page check
-           in init_disas_context by adjusting max_insns.  */
+        return;
     }
+    
+    dc->pc_curr = dc->base.pc_next;
+    insn = arm_ldl_code(env, dc->base.pc_next, dc->sctlr_b);
+    dc->insn = insn;
+
+    // Unicorn:
+    //
+    // If we get an error during fetching code, we have to skip the instruction decoding
+    // to ensure the PC remains unchanged.
+    //
+    // This is to keep the same behavior with Unicorn1, though, it's inconsistent with
+    // official arm documents.
+    //
+    // See discussion here: https://github.com/unicorn-engine/unicorn/issues/1536
+    if (dc->uc->invalid_error) {
+        dcbase->is_jmp = DISAS_UC_EXIT;
+        return;
+    }
+
+    dc->base.pc_next += 4;
+    disas_arm_insn(dc, insn);
+
+    arm_post_translate_insn(dc);
+
+    /* ARM is a fixed-length ISA.  We performed the cross-page check
+        in init_disas_context by adjusting max_insns.  */
 }
 
 static bool thumb_insn_is_unconditional(DisasContext *s, uint32_t insn)
@@ -11756,16 +11757,7 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         case DISAS_UC_EXIT:
         {
             gen_set_pc_im(dc, dc->base.pc_next);
-
-            TCGv_i32 tmp = tcg_const_i32(tcg_ctx, (dc->thumb &&
-                                          !(dc->insn & (1U << 31))) ? 2 : 4);
-
-            gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env, tmp);
-            tcg_temp_free_i32(tcg_ctx, tmp);
-            /* The helper doesn't necessarily throw an exception, but we
-             * must go back to the main loop to check for interrupts anyway.
-             */
-            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
+            gen_helper_uc_exit(tcg_ctx, tcg_ctx->cpu_env);
             break;
         }
         }

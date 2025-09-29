@@ -1294,6 +1294,7 @@
 #define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_tricore
 #define helper_stqcx_le_parallel helper_stqcx_le_parallel_tricore
 #define helper_stqcx_be_parallel helper_stqcx_be_parallel_tricore
+#define helper_uc_exit helper_uc_exit_tricore
 #define helper_fadd helper_fadd_tricore
 #define helper_fsub helper_fsub_tricore
 #define helper_fmul helper_fmul_tricore
@@ -1303,5 +1304,4 @@
 #define helper_pack helper_pack_tricore
 #define gen_intermediate_code gen_intermediate_code_tricore
 #define restore_state_to_opc restore_state_to_opc_tricore
-#define helper_uc_tricore_exit helper_uc_tricore_exit_tricore
 #endif

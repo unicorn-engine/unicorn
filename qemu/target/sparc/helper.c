@@ -245,3 +245,12 @@ void helper_power_down(CPUSPARCState *env)
     cpu_loop_exit(cs);
 }
 #endif
+
+void helper_uc_exit(CPUSPARCState *env)
+{
+    CPUState *cs = env_cpu(env);
+
+    cs->halted = 1;
+    cs->exception_index = EXCP_HLT;
+    cpu_loop_exit(cs);
+}

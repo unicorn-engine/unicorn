@@ -202,7 +202,7 @@ void helper_tlb_flush(CPURISCVState *env)
     }
 }
 
-void helper_uc_riscv_exit(CPURISCVState *env)
+void helper_uc_exit(CPURISCVState *env)
 {
     CPUState *cs = env_cpu(env);
 
