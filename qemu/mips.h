@@ -2385,6 +2385,7 @@
 #define helper_rdhwr_xnp helper_rdhwr_xnp_mips
 #define helper_pmon helper_pmon_mips
 #define helper_wait helper_wait_mips
+#define helper_uc_exit helper_uc_exit_mips
 #define mips_cpu_do_unaligned_access mips_cpu_do_unaligned_access_mips
 #define mips_cpu_do_transaction_failed mips_cpu_do_transaction_failed_mips
 #define helper_msa_ld_b helper_msa_ld_b_mips

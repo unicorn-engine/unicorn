@@ -5502,6 +5502,7 @@ helper_rdhwr_performance \
 helper_rdhwr_xnp \
 helper_pmon \
 helper_wait \
+helper_uc_exit \
 mips_cpu_do_unaligned_access \
 mips_cpu_do_transaction_failed \
 helper_msa_ld_b \
