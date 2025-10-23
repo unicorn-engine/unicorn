@@ -995,7 +995,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
         return NULL;
     }
 
-    return VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    return VirtualAlloc(NULL, size, MEM_RESERVE|MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 }
 void free_code_gen_buffer(struct uc_struct *uc)
 {
