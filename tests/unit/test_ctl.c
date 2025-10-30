@@ -398,6 +398,60 @@ static void test_noexec(void)
     OK(uc_close(uc));
 }
 
+struct hdata {
+        int counter;
+        uc_hook h;
+};
+
+static void test_del_code_hook_hook(uc_engine *uc, uint64_t addr, size_t size, void *data)
+{
+    struct hdata *d = data;
+    d->counter++;
+    uc_hook_del(uc, d->h);
+}
+
+
+static void test_del_code_hook(void)
+{
+    uc_engine *uc;
+    struct hdata data = {};
+    char code[] = "\x90\x90"; // nop
+                              // nop
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &data.h, UC_HOOK_CODE, test_del_code_hook_hook, &data, 1, 0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    TEST_CHECK(data.counter == 1);
+    OK(uc_close(uc));
+}
+
+static void test_del_block_hook_hook(uc_engine *uc, uint64_t addr, size_t size, void *data)
+{
+    struct hdata *d = data;
+    d->counter++;
+    if (d->counter == 3) {
+        uc_hook_del(uc, d->h);
+    }
+}
+
+static void test_del_block_hook(void)
+{
+    uc_engine *uc;
+    struct hdata data = {};
+    char code[] = "\x48\xC7\xC1\x05\x00\x00\x00\x48\xFF\xC9\x75\xFB"; // mov rcx, 0x05
+								      // loop:
+								      // dec rcx
+								      // jnz loop
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &data.h, UC_HOOK_BLOCK, test_del_block_hook_hook, &data, 1, 0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    TEST_CHECK(data.counter == 3);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_uc_ctl_mode", test_uc_ctl_mode},
     {"test_uc_ctl_page_size", test_uc_ctl_page_size},
@@ -416,4 +470,6 @@ TEST_LIST = {
     {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
     {"test_tlb_clear", test_tlb_clear},
     {"test_noexec", test_noexec},
+    {"test_del_code_hook", test_del_code_hook},
+    {"test_del_block_hook", test_del_block_hook},
     {NULL, NULL}};
