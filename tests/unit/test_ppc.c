@@ -107,15 +107,34 @@ static void test_ppc32_cr(void)
 
 static void test_ppc32_spr_time(void)
 {
-    char code[] = ("\x7c\x76\x02\xa6" // mfspr r3, DEC
-                   "\x7c\x6d\x42\xa6" // mfspr r3, TBUr
-    );
-
+    uint32_t r3_val;
     uc_engine *uc;
-    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
-                    sizeof(code) - 1);
 
-    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    char code_dec[] = "\x7c\x76\x02\xa6"; // mfspr r3, DEC
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code_dec,
+                    sizeof(code_dec) - 1);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code_dec) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_PPC_REG_3, &r3_val));
+    printf("DEC:  0x%08x\n", BEINT32(r3_val));
+    OK(uc_close(uc));
+
+    char code_tbur[] = "\x7c\x6d\x42\xa6"; // mfspr r3, TBUr
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code_tbur,
+                    sizeof(code_tbur) - 1);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code_tbur) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_PPC_REG_3, &r3_val));
+    printf("TBUr:  0x%08x\n", BEINT32(r3_val));
+    OK(uc_close(uc));
+
+    char code_tblr[] = "\x7c\x6c\x42\xa6"; // mfspr r3, TBLr
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code_tblr,
+                    sizeof(code_tblr) - 1);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code_tblr) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_PPC_REG_3, &r3_val));
+    printf("TBLr:  0x%08x\n", BEINT32(r3_val));
     OK(uc_close(uc));
 }
 
