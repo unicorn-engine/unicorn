@@ -154,6 +154,7 @@ static void v7m_msr_xpsr(CPUARMState *env, uint32_t mask, uint32_t reg,
     }
 
     xpsr_write(env, val, xpsrmask);
+    arm_rebuild_hflags(env);
 }
 
 static uc_err read_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
