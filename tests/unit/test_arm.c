@@ -286,8 +286,8 @@ static void test_arm_m_exc_return(void)
     int r_sp = 0x8000;
     uc_hook hook;
 
-    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, code,
-                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code,
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_M7);
     OK(uc_mem_map(uc, r_sp - 0x1000, 0x1000, UC_PROT_ALL));
     OK(uc_hook_add(uc, &hook, UC_HOOK_INTR,
                    test_arm_m_exc_return_hook_interrupt, NULL, 0, 0));
