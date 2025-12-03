@@ -645,6 +645,9 @@ typedef enum uc_control_type {
     // Read/write: @args = (uint64_t ptr, int key, uint64_t diversifier,
     //                      bool *valid)
     UC_CTL_PAUTH_AUTH,
+    // read the invalid_addr after an error
+    // Read: @args = (uint64_t*)
+    UC_CTL_INVALID_ADDR,
 } uc_control_type;
 
 /*
@@ -734,6 +737,8 @@ See sample_ctl.c for a detailed example.
     uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_PAUTH_STRIP, 3), (uint64_t)(ptr), (int)(key), (uint64_t *)(stripped_ptr))
 #define uc_ctl_pauth_auth(uc, ptr, key, diversifier, valid)                    \
     uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_PAUTH_AUTH, 4), (uint64_t)(ptr), (int)(key), (uint64_t)(diversifier), (uint64_t *)(valid))
+#define uc_ctl_get_invalid_addr(uc, addr)                                    \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_INVALID_ADDR, 1), (addr))
 
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
