@@ -892,11 +892,15 @@ uc_err uc_vmem_write(uc_engine *uc, uint64_t address, uc_prot prot,
         align = uc->target_page_align;
         pagesize = uc->target_page_size;
         len = MIN(size - count, (address & ~align) + pagesize - address);
-	if (uc_vmem_translate(uc, address, prot, &paddr) != UC_ERR_OK) {
+        if (uc_vmem_translate(uc, address, prot, &paddr) != UC_ERR_OK) {
             restore_jit_state(uc);
             return UC_ERR_WRITE_PROT;
-	}
+        }
         if (uc_mem_write(uc, paddr, bytes, len) != UC_ERR_OK) {
+            restore_jit_state(uc);
+            return UC_ERR_WRITE_PROT;
+        }
+        if (uc_ctl_remove_cache(uc, address, address + len) != UC_ERR_OK) {
             restore_jit_state(uc);
             return UC_ERR_WRITE_PROT;
         }
