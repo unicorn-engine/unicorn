@@ -191,6 +191,8 @@ const char *uc_strerror(uc_err code)
         return "Unhandled CPU exception (UC_ERR_EXCEPTION)";
     case UC_ERR_OVERFLOW:
         return "Provided buffer is too small (UC_ERR_OVERFLOW)";
+    case UC_ERR_MMU_FAULT:
+        return "The tlb_fill hook returned false (UC_ERR_MMU_FAULT)";
     }
 }
 
