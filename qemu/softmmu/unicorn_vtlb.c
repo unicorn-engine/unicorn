@@ -79,10 +79,25 @@ bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
     if (!handled) {
         e.paddr = address & TARGET_PAGE_MASK;
         mr = uc->memory_mapping(uc, e.paddr);
-        if (mr)
+        if (mr) {
             e.perms = mr->perms;
-        else
-            e.perms = UC_PROT_ALL;
+        } else {
+            e.perms = UC_PROT_NONE;
+	}
+        switch (rw) {
+        case MMU_DATA_LOAD:
+            e.perms |= UC_PROT_READ;
+            break;
+        case MMU_DATA_STORE:
+            e.perms |= UC_PROT_WRITE;
+            break;
+        case MMU_INST_FETCH:
+            e.perms |= UC_PROT_EXEC;
+            break;
+        default:
+            break;
+        }
+
     }
 
     switch (rw) {
