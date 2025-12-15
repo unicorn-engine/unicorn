@@ -51,6 +51,7 @@ bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
     bool handled = false;
     bool ret = false;
     struct uc_struct *uc = cs->uc;
+    MemoryRegion *mr;
     uc_tlb_entry e;
     struct hook *hook;
     HOOK_FOREACH_VAR_DECLARE;
@@ -77,20 +78,11 @@ bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
 
     if (!handled) {
         e.paddr = address & TARGET_PAGE_MASK;
-        switch (rw) {
-        case MMU_DATA_LOAD:
-            e.perms = UC_PROT_READ;
-            break;
-        case MMU_DATA_STORE:
-            e.perms = UC_PROT_WRITE;
-            break;
-        case MMU_INST_FETCH:
-            e.perms = UC_PROT_EXEC;
-            break;
-        default:
-            e.perms = 0;
-            break;
-        }
+        mr = uc->memory_mapping(uc, e.paddr);
+        if (mr)
+            e.perms = mr->perms;
+        else
+            e.perms = UC_PROT_ALL;
     }
 
     switch (rw) {

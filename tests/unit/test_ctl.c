@@ -392,7 +392,7 @@ static void test_noexec(void)
     OK(uc_mem_protect(uc, code_start, code_start + 0x1000, UC_PROT_EXEC));
 
     uc_assert_err(
-        UC_ERR_READ_PROT,
+        UC_ERR_EXCEPTION,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     OK(uc_close(uc));

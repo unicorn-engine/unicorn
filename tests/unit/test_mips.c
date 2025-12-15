@@ -222,6 +222,31 @@ static void test_mips_simple_coredump_2137(void)
     OK(uc_close(uc));
 }
 
+static void test_mips_EXCP_RI_virtual(void)
+{
+    uc_engine *uc;
+
+    /*
+     * b       0x1008
+     * lb      $v0, ($s8)
+     * b       0x1000
+     * addiu   $s0, $s0, 1
+    */
+    const char code[] = "\x01\x00\x00\x10\x00\x00\xc2\x83\xFD\xFF\x00\x10\x01\x00\x10\x26";
+    uint64_t base = 0x1000;
+
+    OK(uc_open(UC_ARCH_MIPS, UC_MODE_MIPS32, &uc));
+    OK(uc_mem_map(uc, base, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, base, code, sizeof(code) - 1));
+
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+
+    OK(uc_reg_write(uc, UC_MIPS_REG_S8, &base));
+    OK(uc_emu_start(uc, base, base + sizeof(code) - 1, 0, 20));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_mips_stop_at_branch", test_mips_stop_at_branch},
     {"test_mips_stop_at_delay_slot", test_mips_stop_at_delay_slot},
@@ -234,4 +259,5 @@ TEST_LIST = {
      test_mips_stop_delay_slot_from_qiling},
      {"test_mips_simple_coredump_2134", test_mips_simple_coredump_2134},
      {"test_mips_simple_coredump_2137", test_mips_simple_coredump_2137},
+     {"test_mips_EXCP_RI_virtual", test_mips_EXCP_RI_virtual},
     {NULL, NULL}};
