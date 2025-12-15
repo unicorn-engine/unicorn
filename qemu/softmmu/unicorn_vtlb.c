@@ -83,7 +83,7 @@ bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
             e.perms = mr->perms;
         } else {
             e.perms = UC_PROT_NONE;
-	}
+        }
         switch (rw) {
         case MMU_DATA_LOAD:
             e.perms |= UC_PROT_READ;
