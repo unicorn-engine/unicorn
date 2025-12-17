@@ -2060,6 +2060,17 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
     return UC_ERR_OK;
 }
 
+UNICORN_EXPORT
+uc_err uc_hook_set_user_data(uc_hook hh, void *user_data)
+{
+    struct hook *hook = (struct hook *)hh;
+    if (hook->type == UC_HOOK_BLOCK || hook->type == UC_HOOK_CODE) {
+        return UC_ERR_ARG;
+    }
+    hook->user_data = user_data;
+    return UC_ERR_OK;
+}
+
 // TCG helper
 // 2 arguments are enough for most opcodes. Load/Store needs 3 arguments but we
 // have memory hooks already. We may exceed the maximum arguments of a tcg

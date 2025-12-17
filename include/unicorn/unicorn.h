@@ -1150,6 +1150,21 @@ UNICORN_EXPORT
 uc_err uc_hook_del(uc_engine *uc, uc_hook hh);
 
 /*
+ change the user data from a hook callback.
+ This change the user-defined data for a given hook.
+ NOTE: It's undefinde behavior when called on a hook which was not initialized
+ by uc_hook_add or deleted by uc_hook_delete
+ @hh: handle returned by uc_hook_add()
+ @user_data: user-defined data. This will be passed to callback function in its
+      last argument @user_data
+
+ @return UC_ERR_OK on success, or UC_ERR_ARGS when the hook was block or code
+ hook
+*/
+UNICORN_EXPORT
+uc_err uc_hook_set_user_data(uc_hook hh, void *user_data);
+
+/*
  Variables to control which state should be stored in the context.
  Defaults to UC_CTL_CONTEXT_CPU. The options are used in a bitfield
  so to enable more then one content the binary or of the required
