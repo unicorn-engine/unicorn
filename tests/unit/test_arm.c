@@ -1165,6 +1165,31 @@ static void test_arm_hook_insn_wfi(void)
     OK(uc_close(uc));
 }
 
+static void test_arm_context(void)
+{
+    for (int model = 0; model < UC_CPU_ARM_ENDING; model++) {
+        uc_engine *uc;
+        uc_engine *uc2;
+        uc_context *ctx;
+
+        OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+        OK(uc_ctl_set_cpu_model(uc, model));
+
+        OK(uc_context_alloc(uc, &ctx));
+        OK(uc_context_save(uc, ctx));
+
+        OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc2));
+        OK(uc_ctl_set_cpu_model(uc2, model));
+
+        OK(uc_context_restore(uc2, ctx));
+
+        // One of these will abort on a double-free for bug-afflicted CPU models.
+        OK(uc_context_free(ctx));
+        OK(uc_close(uc));
+        OK(uc_close(uc2));
+    }
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -1199,4 +1224,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_v7_lpae", test_arm_v7_lpae},
              {"test_arm_svc_hvc_syndrome", test_arm_svc_hvc_syndrome},
              {"test_arm_hook_insn_wfi", test_arm_hook_insn_wfi},
+             {"test_arm_context", test_arm_context},
              {NULL, NULL}};
