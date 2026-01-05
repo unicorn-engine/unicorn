@@ -582,7 +582,7 @@ static void test_virtual_write(void)
     OK(uc_vmem_write(uc, 0x1000, UC_PROT_EXEC, code, sizeof(code)));
     OK(uc_vmem_write(uc, 0x2000, UC_PROT_READ, &rax, sizeof(rax)));
 
-    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 1));
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code), 0, 1));
     OK(uc_reg_read(uc, UC_X86_REG_RAX, &res));
     TEST_CHECK(rax == res);
 

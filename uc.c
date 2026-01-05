@@ -1999,6 +1999,18 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         return UC_ERR_OK;
     }
 
+    if (type & UC_HOOK_CODE || type & UC_HOOK_BLOCK) {
+        if (end <= begin) {
+            uc->tb_flush(uc);
+        } else {
+            uc->uc_invalidate_tb(uc, begin, end-begin);
+        }
+        if (uc->nested_level) {
+            uc->quit_request = true;
+            break_translation_loop(uc);
+        }
+    }
+
     while ((type >> i) > 0) {
         if ((type >> i) & 1) {
             // TODO: invalid hook error?

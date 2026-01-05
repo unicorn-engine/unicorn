@@ -398,6 +398,37 @@ static void test_noexec(void)
     OK(uc_close(uc));
 }
 
+static void test_add_block_hook_syscall_cb(uc_engine *uc, void *userdata)
+{
+    OK(uc_emu_stop(uc));
+}
+
+static void test_add_block_hook_block_cb(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+{
+    uint64_t *block_counter = user_data;
+    *block_counter += 1;
+}
+
+static void test_add_block_hook(void)
+{
+    uc_engine *uc;
+    uint64_t block_counter = 0;
+    uc_hook syscall_hook;
+    uc_hook block_hook;
+    /* nop
+     * syscall
+     */
+    char code[] = "\x90\x0F\x05";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &syscall_hook, UC_HOOK_INSN, &test_add_block_hook_syscall_cb, NULL, 1, 0, UC_X86_INS_SYSCALL));
+    OK(uc_emu_start(uc, code_start, 0, 0, 0));
+    OK(uc_hook_add(uc, &block_hook, UC_HOOK_BLOCK, &test_add_block_hook_block_cb, &block_counter, code_start, code_start+0x1000));
+    OK(uc_emu_start(uc, code_start, 0, 0, 0));
+    TEST_CHECK(block_counter == 1);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_uc_ctl_mode", test_uc_ctl_mode},
     {"test_uc_ctl_page_size", test_uc_ctl_page_size},
@@ -416,4 +447,5 @@ TEST_LIST = {
     {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
     {"test_tlb_clear", test_tlb_clear},
     {"test_noexec", test_noexec},
+    {"test_add_block_hook", test_add_block_hook},
     {NULL, NULL}};
