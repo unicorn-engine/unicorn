@@ -1003,7 +1003,7 @@ uc_err uc_vmem_read(uc_engine *uc, uint64_t address, uc_prot prot,
 */
 UNICORN_EXPORT
 uc_err uc_vmem_write(uc_engine *uc, uint64_t address, uc_prot prot,
-                           void *bytes, size_t size);
+                           const void *bytes, size_t size);
 
 /*
  Translate a virtuall address to a physical address

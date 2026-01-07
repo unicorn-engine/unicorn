@@ -860,10 +860,10 @@ uc_err uc_vmem_read(uc_engine *uc, uint64_t address, uc_prot prot,
 
 UNICORN_EXPORT
 uc_err uc_vmem_write(uc_engine *uc, uint64_t address, uc_prot prot,
-                           void *_bytes, size_t size)
+                           const void *_bytes, size_t size)
 {
     size_t count = 0, len;
-    uint8_t *bytes = _bytes;
+    const uint8_t *bytes = _bytes;
     uint64_t align;
     uint64_t pagesize;
     uint64_t paddr = 0;
