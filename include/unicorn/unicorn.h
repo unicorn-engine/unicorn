@@ -193,7 +193,9 @@ typedef enum uc_err {
     UC_ERR_RESOURCE,        // Insufficient resource: uc_emu_start()
     UC_ERR_EXCEPTION,       // Unhandled CPU exception
     UC_ERR_OVERFLOW,        // Provided buffer is not large enough: uc_reg_*2()
-    UC_ERR_MMU_FAULT,       // The tlb_fill hook returned false (see tlb_fill hook)
+    UC_ERR_MMU_READ,        // The tlb_fill hook returned false for a read access (see tlb_fill hook)
+    UC_ERR_MMU_WRITE,       // The tlb_fill hook returned false for a write operation (see tlb_fill hook)
+    UC_ERR_MMU_FETCH,       // The tlb_fill hook returned false for a fetch (see tlb_fill hook)
 } uc_err;
 
 /*
