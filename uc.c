@@ -1073,8 +1073,7 @@ static void clear_deleted_hooks(uc_engine *uc)
 }
 
 UNICORN_EXPORT
-uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
-                    uint64_t timeout, size_t count)
+uc_err uc_emu_run(uc_engine *uc, uint64_t until, uint64_t timeout, size_t count)
 {
     uc_err err;
 
@@ -1098,6 +1097,82 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         return UC_ERR_RESOURCE;
     }
     uc->nested_level++;
+
+    uc->skip_sync_pc_on_exit = false;
+    uc->stop_request = false;
+
+    uc->emu_count = count;
+    // remove count hook if counting isn't necessary
+    if (count <= 0 && uc->count_hook != 0) {
+        uc_hook_del(uc, uc->count_hook);
+        uc->count_hook = 0;
+
+        // In this case, we have to drop all translated blocks.
+        uc->tb_flush(uc);
+    }
+    // set up count hook to count instructions.
+    if (count > 0 && uc->count_hook == 0) {
+        uc_err err;
+        // callback to count instructions must be run before everything else,
+        // so instead of appending, we must insert the hook at the begin
+        // of the hook list
+        uc->hook_insert = 1;
+        err = uc_hook_add(uc, &uc->count_hook, UC_HOOK_CODE, hook_count_cb,
+                          NULL, 1, 0);
+        // restore to append mode for uc_hook_add()
+        uc->hook_insert = 0;
+        if (err != UC_ERR_OK) {
+            uc->nested_level--;
+            return err;
+        }
+    }
+
+    // If UC_CTL_UC_USE_EXITS is set, then the @until param won't have any
+    // effect. This is designed for the backward compatibility.
+    if (!uc->use_exits) {
+        uc->exits[uc->nested_level - 1] = until;
+    }
+
+    if (timeout) {
+        enable_emu_timer(uc, timeout * 1000); // microseconds -> nanoseconds
+    }
+
+    uc->vm_start(uc);
+
+    uc->nested_level--;
+
+    // emulation is done if and only if we exit the outer uc_emu_start
+    // or we may lost uc_emu_stop
+    if (uc->nested_level == 0) {
+        uc->emulation_done = true;
+
+        // remove hooks to delete
+        // make sure we delete all hooks at the first level.
+        clear_deleted_hooks(uc);
+
+        restore_jit_state(uc);
+    }
+
+    if (timeout) {
+        // wait for the timer to finish
+        qemu_thread_join(&uc->timer);
+    }
+
+    // We may be in a nested uc_emu_start and thus clear invalid_error
+    // once we are done.
+    err = uc->invalid_error;
+    uc->invalid_error = 0;
+    return err;
+}
+
+UNICORN_EXPORT
+uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
+                    uint64_t timeout, size_t count)
+{
+    // Avoid nested uc_emu_start saves wrong jit states.
+    if (uc->nested_level == 0) {
+        UC_INIT(uc);
+    }
 
     uint32_t begin_pc32 = READ_DWORD(begin);
     switch (uc->arch) {
@@ -1186,71 +1261,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         break;
 #endif
     }
-    uc->skip_sync_pc_on_exit = false;
-    uc->stop_request = false;
-
-    uc->emu_count = count;
-    // remove count hook if counting isn't necessary
-    if (count <= 0 && uc->count_hook != 0) {
-        uc_hook_del(uc, uc->count_hook);
-        uc->count_hook = 0;
-
-        // In this case, we have to drop all translated blocks.
-        uc->tb_flush(uc);
-    }
-    // set up count hook to count instructions.
-    if (count > 0 && uc->count_hook == 0) {
-        uc_err err;
-        // callback to count instructions must be run before everything else,
-        // so instead of appending, we must insert the hook at the begin
-        // of the hook list
-        uc->hook_insert = 1;
-        err = uc_hook_add(uc, &uc->count_hook, UC_HOOK_CODE, hook_count_cb,
-                          NULL, 1, 0);
-        // restore to append mode for uc_hook_add()
-        uc->hook_insert = 0;
-        if (err != UC_ERR_OK) {
-            uc->nested_level--;
-            return err;
-        }
-    }
-
-    // If UC_CTL_UC_USE_EXITS is set, then the @until param won't have any
-    // effect. This is designed for the backward compatibility.
-    if (!uc->use_exits) {
-        uc->exits[uc->nested_level - 1] = until;
-    }
-
-    if (timeout) {
-        enable_emu_timer(uc, timeout * 1000); // microseconds -> nanoseconds
-    }
-
-    uc->vm_start(uc);
-
-    uc->nested_level--;
-
-    // emulation is done if and only if we exit the outer uc_emu_start
-    // or we may lost uc_emu_stop
-    if (uc->nested_level == 0) {
-        uc->emulation_done = true;
-
-        // remove hooks to delete
-        // make sure we delete all hooks at the first level.
-        clear_deleted_hooks(uc);
-
-        restore_jit_state(uc);
-    }
-
-    if (timeout) {
-        // wait for the timer to finish
-        qemu_thread_join(&uc->timer);
-    }
-
-    // We may be in a nested uc_emu_start and thus clear invalid_error
-    // once we are done.
-    err = uc->invalid_error;
-    uc->invalid_error = 0;
-    return err;
+    return uc_emu_run(uc, until, timeout, count);
 }
 
 UNICORN_EXPORT
