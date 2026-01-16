@@ -146,7 +146,7 @@ static inline Int128 bswap128(Int128 a)
 #else /* !CONFIG_INT128 */
 
 typedef struct Int128 Int128;
-#if !(defined(_MSC_VER) && defined(__clang__))
+#if !defined(__clang__)
 typedef Int128 __int128_t;
 #endif
 
