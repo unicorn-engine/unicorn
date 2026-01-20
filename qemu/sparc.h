@@ -1402,6 +1402,7 @@
 #define gen_intermediate_code gen_intermediate_code_sparc
 #define sparc_tcg_init sparc_tcg_init_sparc
 #define restore_state_to_opc restore_state_to_opc_sparc
+#define restore_pc_to_opc restore_pc_to_opc_sparc
 #define cpu_set_cwp cpu_set_cwp_sparc
 #define cpu_get_psr cpu_get_psr_sparc
 #define cpu_put_psr_raw cpu_put_psr_raw_sparc

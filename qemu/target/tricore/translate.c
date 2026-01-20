@@ -9328,6 +9328,12 @@ restore_state_to_opc(CPUTriCoreState *env, TranslationBlock *tb,
     env->PC = data[0];
 }
 
+void restore_pc_to_opc(CPUTriCoreState *env, TranslationBlock *tb,
+                      target_ulong *data)
+{
+    env->PC = data[0];
+}
+
 /*
  *
  * Initialization

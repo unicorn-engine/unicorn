@@ -1037,7 +1037,7 @@ static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
      * skip_sync_pc_on_exit 
      */
     if (retaddr && !uc->skip_sync_pc_on_exit && mr && mr->terminates && !mr->ram) {
-        cpu_restore_state(uc->cpu, retaddr, false);
+        cpu_restore_pc_only(uc->cpu, retaddr, false);
     }
 
     r = memory_region_dispatch_read(uc, mr, mr_offset, &val, op, iotlbentry->attrs);
@@ -1077,9 +1077,9 @@ static void io_writex(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
     /* Restore the guest CPU state for non-RAM regions, and respect 
      * skip_sync_pc_on_exit 
      */
-    if (retaddr && !uc->skip_sync_pc_on_exit && mr && mr->terminates && !mr->ram) {
-        cpu_restore_state(uc->cpu, retaddr, false);
-    }
+        if (retaddr && !uc->skip_sync_pc_on_exit && mr && mr->terminates && !mr->ram) {
+            cpu_restore_pc_only(uc->cpu, retaddr, false);
+        }
 
     r = memory_region_dispatch_write(uc, mr, mr_offset, val, op, iotlbentry->attrs);
     if (r != MEMTX_OK) {
@@ -1583,7 +1583,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     if (!HOOK_BOUND_CHECK(hook, paddr))
                         continue;
                     if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                        cpu_restore_state(uc->cpu, retaddr, false);
+                        cpu_restore_pc_only(uc->cpu, retaddr, false);
                         synced = true;
                     }
                     JIT_CALLBACK_GUARD_VAR(handled,
@@ -1604,7 +1604,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     if (!HOOK_BOUND_CHECK(hook, paddr))
                         continue;
                     if (!synced &&!uc->skip_sync_pc_on_exit && retaddr) {
-                        cpu_restore_state(uc->cpu, retaddr, false);
+                        cpu_restore_pc_only(uc->cpu, retaddr, false);
                         synced = true;
                     }
                     JIT_CALLBACK_GUARD_VAR(handled, 
@@ -1672,7 +1672,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
             if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                cpu_restore_state(uc->cpu, retaddr, false);
+                cpu_restore_pc_only(uc->cpu, retaddr, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, paddr, size, 0, hook->user_data));
@@ -1704,7 +1704,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 if (!HOOK_BOUND_CHECK(hook, paddr))
                     continue;
                 if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                    cpu_restore_state(uc->cpu, retaddr, false);
+                    cpu_restore_pc_only(uc->cpu, retaddr, false);
                     synced = true;
                 }
                 JIT_CALLBACK_GUARD_VAR(handled, 
@@ -1754,7 +1754,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 if (!HOOK_BOUND_CHECK(hook, paddr))
                     continue;
                 if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                    cpu_restore_state(uc->cpu, retaddr, false);
+                    cpu_restore_pc_only(uc->cpu, retaddr, false);
                     synced = true;
                 }
                 JIT_CALLBACK_GUARD_VAR(handled,
@@ -1868,7 +1868,7 @@ _out:
                 if (!HOOK_BOUND_CHECK(hook, paddr))
                     continue;
                 if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                    cpu_restore_state(uc->cpu, retaddr, false);
+                    cpu_restore_pc_only(uc->cpu, retaddr, false);
                     synced = true;
                 }
                 JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ_AFTER, paddr, size, res, hook->user_data));
@@ -2216,7 +2216,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
             if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                cpu_restore_state(uc->cpu, retaddr, false);
+                cpu_restore_pc_only(uc->cpu, retaddr, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(uc, UC_MEM_WRITE, paddr, size, val, hook->user_data));
@@ -2235,7 +2235,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
             if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                cpu_restore_state(uc->cpu, retaddr, false);
+                cpu_restore_pc_only(uc->cpu, retaddr, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD_VAR(handled,
@@ -2288,7 +2288,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
             if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                cpu_restore_state(uc->cpu, retaddr, false);
+                cpu_restore_pc_only(uc->cpu, retaddr, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD_VAR(handled,

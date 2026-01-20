@@ -1376,6 +1376,7 @@
 #define gen_intermediate_code gen_intermediate_code_riscv64
 #define riscv_translate_init riscv_translate_init_riscv64
 #define restore_state_to_opc restore_state_to_opc_riscv64
+#define restore_pc_to_opc restore_pc_to_opc_riscv64
 #define cpu_riscv_init cpu_riscv_init_riscv64
 #define helper_fcvt_l_s helper_fcvt_l_s_riscv64
 #define helper_fcvt_lu_s helper_fcvt_lu_s_riscv64

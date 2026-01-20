@@ -125,7 +125,7 @@ void helper_cpuid(CPUX86State *env)
         if (hook->insn == UC_X86_INS_CPUID) {
             uintptr_t pc = GETPC();
             if (!synced && !uc->skip_sync_pc_on_exit && pc) {
-                cpu_restore_state(uc->cpu, pc, false);
+                cpu_restore_pc_only(uc->cpu, pc, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD_VAR(skip_cpuid, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
@@ -237,7 +237,7 @@ void helper_rdtsc(CPUX86State *env)
         if (hook->insn == UC_X86_INS_RDTSC) {
             uintptr_t pc = GETPC();
             if (!synced && !uc->skip_sync_pc_on_exit && pc) {
-                cpu_restore_state(uc->cpu, pc, false);
+                cpu_restore_pc_only(uc->cpu, pc, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD_VAR(skip_rdtsc, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
@@ -281,7 +281,7 @@ void helper_rdtscp(CPUX86State *env)
         if (hook->insn == UC_X86_INS_RDTSCP) {
             uintptr_t pc = GETPC();
             if (!synced && !uc->skip_sync_pc_on_exit && pc) {
-                cpu_restore_state(uc->cpu, pc, false);
+                cpu_restore_pc_only(uc->cpu, pc, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD_VAR(skip_rdtscp, ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));

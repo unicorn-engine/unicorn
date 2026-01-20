@@ -2401,6 +2401,7 @@
 #define cpu_mips_realize_env cpu_mips_realize_env_mips64
 #define cpu_state_reset cpu_state_reset_mips64
 #define restore_state_to_opc restore_state_to_opc_mips64
+#define restore_pc_to_opc restore_pc_to_opc_mips64
 #define ieee_rm ieee_rm_mips64
 #define mips_defs mips_defs_mips64
 #define mips_defs_number mips_defs_number_mips64

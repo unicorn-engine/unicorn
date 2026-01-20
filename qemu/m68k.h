@@ -1450,4 +1450,5 @@
 #define register_m68k_insns register_m68k_insns_m68k
 #define gen_intermediate_code gen_intermediate_code_m68k
 #define restore_state_to_opc restore_state_to_opc_m68k
+#define restore_pc_to_opc restore_pc_to_opc_m68k
 #endif

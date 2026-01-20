@@ -11826,3 +11826,13 @@ void restore_state_to_opc(CPUARMState *env, TranslationBlock *tb,
         env->exception.syndrome = data[2] << ARM_INSN_START_WORD2_SHIFT;
     }
 }
+
+void restore_pc_to_opc(CPUARMState *env, TranslationBlock *tb,
+                      target_ulong *data)
+{
+    if (is_a64(env)) {
+        env->pc = data[0];
+    } else {
+        env->regs[15] = data[0];
+    }
+}

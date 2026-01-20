@@ -167,6 +167,12 @@ void restore_state_to_opc(CPURISCVState *env, TranslationBlock *tb,
     env->pc = data[0];
 }
 
+void restore_pc_to_opc(CPURISCVState *env, TranslationBlock *tb,
+                      target_ulong *data)
+{
+    env->pc = data[0];
+}
+
 static void riscv_cpu_reset(CPUState *dev)
 {
     CPUState *cs = CPU(dev);

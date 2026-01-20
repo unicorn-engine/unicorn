@@ -1680,6 +1680,7 @@
 #define cpu_ppc_init cpu_ppc_init_ppc64
 #define gen_intermediate_code gen_intermediate_code_ppc64
 #define restore_state_to_opc restore_state_to_opc_ppc64
+#define restore_pc_to_opc restore_pc_to_opc_ppc64
 #define ppc_set_irq ppc_set_irq_ppc64
 #define ppc6xx_irq_init ppc6xx_irq_init_ppc64
 #define ppc40x_core_reset ppc40x_core_reset_ppc64

@@ -6976,3 +6976,9 @@ void restore_state_to_opc(CPUS390XState *env, TranslationBlock *tb,
     /* Record ILEN.  */
     env->int_pgm_ilen = data[2];
 }
+
+void restore_pc_to_opc(CPUS390XState *env, TranslationBlock *tb,
+                      target_ulong *data)
+{
+    env->psw.addr = data[0];
+}

@@ -1789,6 +1789,7 @@
 #define gen_sshl_i64 gen_sshl_i64_arm
 #define gen_intermediate_code gen_intermediate_code_arm
 #define restore_state_to_opc restore_state_to_opc_arm
+#define restore_pc_to_opc restore_pc_to_opc_arm
 #define helper_neon_qrdmlah_s16 helper_neon_qrdmlah_s16_arm
 #define helper_gvec_qrdmlah_s16 helper_gvec_qrdmlah_s16_arm
 #define helper_neon_qrdmlsh_s16 helper_neon_qrdmlsh_s16_arm

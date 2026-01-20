@@ -298,7 +298,7 @@ void HELPER(wfi)(CPUARMState *env, uint32_t insn_len)
         if (hook->insn == (env->aarch64 ? UC_ARM64_INS_WFI : UC_ARM_INS_WFI)) {
             uintptr_t pc = GETPC();
             if (!synced && !uc->skip_sync_pc_on_exit && pc) {
-                cpu_restore_state(uc->cpu, pc, false);
+                cpu_restore_pc_only(uc->cpu, pc, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD_VAR(skip_wfi, ((uc_cb_insn_wfi_t)hook->callback)(env->uc, hook->user_data));
