@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_mips
 #define helper_gvec_bitsel helper_gvec_bitsel_mips
 #define cpu_restore_state cpu_restore_state_mips
+#define cpu_restore_pc_only cpu_restore_pc_only_mips
 #define page_collection_lock page_collection_lock_mips
 #define page_collection_unlock page_collection_unlock_mips
 #define free_code_gen_buffer free_code_gen_buffer_mips

@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_sparc
 #define helper_gvec_bitsel helper_gvec_bitsel_sparc
 #define cpu_restore_state cpu_restore_state_sparc
+#define cpu_restore_pc_only cpu_restore_pc_only_sparc
 #define page_collection_lock page_collection_lock_sparc
 #define page_collection_unlock page_collection_unlock_sparc
 #define free_code_gen_buffer free_code_gen_buffer_sparc

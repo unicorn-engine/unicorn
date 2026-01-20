@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_ppc
 #define helper_gvec_bitsel helper_gvec_bitsel_ppc
 #define cpu_restore_state cpu_restore_state_ppc
+#define cpu_restore_pc_only cpu_restore_pc_only_ppc
 #define page_collection_lock page_collection_lock_ppc
 #define page_collection_unlock page_collection_unlock_ppc
 #define free_code_gen_buffer free_code_gen_buffer_ppc

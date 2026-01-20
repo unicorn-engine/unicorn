@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_riscv32
 #define helper_gvec_bitsel helper_gvec_bitsel_riscv32
 #define cpu_restore_state cpu_restore_state_riscv32
+#define cpu_restore_pc_only cpu_restore_pc_only_riscv32
 #define page_collection_lock page_collection_lock_riscv32
 #define page_collection_unlock page_collection_unlock_riscv32
 #define free_code_gen_buffer free_code_gen_buffer_riscv32

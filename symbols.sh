@@ -1257,6 +1257,7 @@ helper_gvec_umax32 \
 helper_gvec_umax64 \
 helper_gvec_bitsel \
 cpu_restore_state \
+cpu_restore_pc_only \
 page_collection_lock \
 page_collection_unlock \
 free_code_gen_buffer \

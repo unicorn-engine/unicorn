@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_arm
 #define helper_gvec_bitsel helper_gvec_bitsel_arm
 #define cpu_restore_state cpu_restore_state_arm
+#define cpu_restore_pc_only cpu_restore_pc_only_arm
 #define page_collection_lock page_collection_lock_arm
 #define page_collection_unlock page_collection_unlock_arm
 #define free_code_gen_buffer free_code_gen_buffer_arm

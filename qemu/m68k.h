@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_m68k
 #define helper_gvec_bitsel helper_gvec_bitsel_m68k
 #define cpu_restore_state cpu_restore_state_m68k
+#define cpu_restore_pc_only cpu_restore_pc_only_m68k
 #define page_collection_lock page_collection_lock_m68k
 #define page_collection_unlock page_collection_unlock_m68k
 #define free_code_gen_buffer free_code_gen_buffer_m68k
