@@ -1101,7 +1101,8 @@ static void test_arm_mmio_map_pc_sync(void)
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
     /* 
      * The PC value should be at the str inst, because that is when the MMIO_MAP
-     * write callback is called.
+     * write callback is called. If the PC has not been synced yet,
+     * our PC value would be 0x1000.
      */
     TEST_CHECK(result.pc_val == 0x1008);
 
@@ -1119,7 +1120,7 @@ static void test_arm_hook_condexec_corruption(void)
 {
     /*
      * Test to ensure that ARM condexec bits are not
-     * corrupted on a hook, and that only PC is restored.
+     * corrupted on a hook, and that only PC is synced.
      */
     uc_engine *uc;
     uc_hook hook;
@@ -1148,7 +1149,11 @@ static void test_arm_hook_condexec_corruption(void)
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code_main) - 1,
                     0, 0));
     
-    /* Ensure the MOVS instruction executed. */
+    /* 
+        Ensure the MOVS instruction executed. If condexec has been
+        corrupted, this MOVS instruction becomes conditional and
+        will not execute.
+    */
     OK(uc_reg_read(uc, UC_ARM_REG_R1, &reg));
     TEST_CHECK(reg == 0x96);
 
