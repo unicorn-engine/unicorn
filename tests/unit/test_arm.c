@@ -1108,6 +1108,53 @@ static void test_arm_mmio_map_pc_sync(void)
     OK(uc_close(uc));
 };
 
+static bool test_arm_hook_condexec_corruption_cb(uc_engine *uc, int type,
+                                                 uint64_t address, int size,
+                                                 int64_t value, void *user_data)
+{
+    return 0;
+}
+
+static void test_arm_hook_condexec_corruption(void)
+{
+    /*
+     * Test to ensure that ARM condexec bits are not
+     * corrupted on a hook, and that only PC is restored.
+     */
+    uc_engine *uc;
+    uc_hook hook;
+    uint32_t reg;
+    char code_main[] = "\x00\xf0\x7e\xf8\x00\xbf\x96\x21";
+    /*
+     * 00010000  00f07ef8   bl      0x1100
+     * 00010004  00bf       nop
+     * 00010006  9621       movs    r1, #0x96
+     */
+    char code_itte_fn[] = "\x9a\xbf\x00\xbf\x00\x48\x00\xbf\x70\x47";
+    /*
+     * 00010100  9abf       itte    ls
+     * 00010102  00bf       nop
+     * 00010104  0048       ldr     r0, [pc] @ trigger the mem hook!
+     * 00010106  00bf       nop
+     * 00010108  7047       bx      lr
+     */
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code_main, 
+                    sizeof(code_main) - 1, UC_CPU_ARM_CORTEX_A15);
+    OK(uc_mem_write(uc, 0x1100, code_itte_fn, sizeof(code_itte_fn) - 1));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ, 
+                   test_arm_hook_condexec_corruption_cb, NULL, 1, 0));
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code_main) - 1,
+                    0, 0));
+    
+    /* Ensure the MOVS instruction executed. */
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &reg));
+    TEST_CHECK(reg == 0x96);
+
+    OK(uc_close(uc));
+};
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -1141,4 +1188,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_svc_hvc_syndrome", test_arm_svc_hvc_syndrome},
              {"test_arm_hook_insn_wfi", test_arm_hook_insn_wfi},
              {"test_arm_mmio_map_pc_sync", test_arm_mmio_map_pc_sync},
+             {"test_arm_hook_condexec_corruption", test_arm_hook_condexec_corruption},
              {NULL, NULL}};
