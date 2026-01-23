@@ -1033,12 +1033,8 @@ static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
         cpu_io_recompile(cpu, retaddr);
     }
 
-    /* Restore the guest CPU state for non-RAM regions, and respect 
-     * skip_sync_pc_on_exit 
-     */
-    if (retaddr && !uc->skip_sync_pc_on_exit && mr && mr->terminates && !mr->ram) {
-        cpu_restore_pc_only(uc->cpu, retaddr, false);
-    }
+    /* Restore the guest CPU state to ensure the PC is synced */
+    cpu_restore_pc_only(uc->cpu, retaddr, false);
 
     r = memory_region_dispatch_read(uc, mr, mr_offset, &val, op, iotlbentry->attrs);
     if (r != MEMTX_OK) {
@@ -1074,12 +1070,8 @@ static void io_writex(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
     }
     cpu->mem_io_pc = retaddr;
 
-    /* Restore the guest CPU state for non-RAM regions, and respect 
-     * skip_sync_pc_on_exit 
-     */
-        if (retaddr && !uc->skip_sync_pc_on_exit && mr && mr->terminates && !mr->ram) {
-            cpu_restore_pc_only(uc->cpu, retaddr, false);
-        }
+    /* Restore the guest CPU state to ensure the PC is synced */
+    cpu_restore_pc_only(uc->cpu, retaddr, false);
 
     r = memory_region_dispatch_write(uc, mr, mr_offset, val, op, iotlbentry->attrs);
     if (r != MEMTX_OK) {
