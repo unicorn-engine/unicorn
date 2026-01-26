@@ -1282,10 +1282,10 @@ void host_cpuid(uint32_t function, uint32_t count,
 {
     uint32_t vec[4];
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+    /* MSVC on x86/x64 */
     __cpuidex((int*)vec, function, count);
-#else
-#ifdef __x86_64__
+#elif defined(__x86_64__)
     asm volatile("cpuid"
                  : "=a"(vec[0]), "=b"(vec[1]),
                    "=c"(vec[2]), "=d"(vec[3])
@@ -1303,7 +1303,6 @@ void host_cpuid(uint32_t function, uint32_t count,
 #else
     abort();
 #endif
-#endif // _MSC_VER
 
     if (eax)
         *eax = vec[0];

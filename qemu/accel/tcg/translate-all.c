@@ -927,7 +927,99 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     uc->seh_closure = closure;
     data = closure + CLOSURE_SIZE /2;
     
-#ifdef _WIN64
+#if defined(_WIN64) && defined(_M_ARM64)
+    /*
+     * ARM64 Windows trampoline.
+     * On ARM64 Windows, the calling convention passes first arg in x0, second in x1.
+     * We need to pass the uc pointer as the second argument to the handler.
+     *
+     * ARM64 instructions are 4 bytes each.
+     * We build a simple trampoline that:
+     * 1. Saves x1 and lr to data area
+     * 2. Loads uc pointer into x1
+     * 3. Loads handler address and calls it (using blr)
+     * 4. Restores x1 and lr
+     * 5. Returns
+     */
+    {
+        uint32_t *code = (uint32_t *)closure;
+        uint64_t data_addr = (uint64_t)data;
+        uint64_t handler_addr = (uint64_t)handler;
+        uint64_t uc_addr = (uint64_t)uc;
+
+        /* Store uc and handler pointers in data area */
+        memcpy(data + 0x00, &uc_addr, 8);      /* data[0x00]: uc pointer */
+        memcpy(data + 0x08, &handler_addr, 8); /* data[0x08]: handler pointer */
+        /* data[0x10]: saved x1 */
+        /* data[0x18]: saved lr */
+
+        /*
+         * Generate ARM64 code:
+         * We use x9 as scratch register (caller-saved, safe to clobber)
+         *
+         * Layout:
+         * code[0]:  ldr x9, [pc, #offset]   ; load &data from literal pool
+         * code[1]:  str x1, [x9, #0x10]     ; save x1 to data[0x10]
+         * code[2]:  str lr, [x9, #0x18]     ; save lr to data[0x18]
+         * code[3]:  ldr x1, [x9, #0x00]     ; load uc ptr into x1
+         * code[4]:  ldr x9, [x9, #0x08]     ; load handler ptr
+         * code[5]:  blr x9                  ; call handler (clobbers lr)
+         * code[6]:  ldr x9, [pc, #offset]   ; reload &data
+         * code[7]:  ldr x1, [x9, #0x10]     ; restore x1
+         * code[8]:  ldr lr, [x9, #0x18]     ; restore lr
+         * code[9]:  ret                     ; return via restored lr
+         * code[10]: nop                     ; padding for alignment
+         * code[11-12]: data_addr            ; 64-bit literal pool
+         */
+
+        int literal_offset;
+
+        /* code[0]: ldr x9, [pc, #offset] - load data pointer from literal pool */
+        /* LDR (literal) encoding: 0x58000000 | (imm19 << 5) | Rt */
+        literal_offset = (11 - 0) * 4; /* offset from code[0] to code[11] = 44 bytes */
+        code[0] = 0x58000009 | ((literal_offset / 4) << 5);
+
+        /* code[1]: str x1, [x9, #0x10] - save x1 */
+        /* STR (unsigned offset): 0xF9000000 | (imm12 << 10) | (Rn << 5) | Rt */
+        /* imm12 = offset/8, Rn=9, Rt=1 */
+        code[1] = 0xF9000121 | ((0x10 / 8) << 10);
+
+        /* code[2]: str lr, [x9, #0x18] - save lr (x30) */
+        /* Rn=9, Rt=30 (lr) */
+        code[2] = 0xF900013E | ((0x18 / 8) << 10);
+
+        /* code[3]: ldr x1, [x9, #0x00] - load uc pointer into x1 */
+        code[3] = 0xF9400121;
+
+        /* code[4]: ldr x9, [x9, #0x08] - load handler pointer into x9 */
+        code[4] = 0xF9400129 | ((0x08 / 8) << 10);
+
+        /* code[5]: blr x9 - call the handler */
+        code[5] = 0xD63F0120;
+
+        /* code[6]: ldr x9, [pc, #offset] - reload data pointer */
+        literal_offset = (11 - 6) * 4; /* offset from code[6] to code[11] = 20 bytes */
+        code[6] = 0x58000009 | ((literal_offset / 4) << 5);
+
+        /* code[7]: ldr x1, [x9, #0x10] - restore x1 */
+        code[7] = 0xF9400121 | ((0x10 / 8) << 10);
+
+        /* code[8]: ldr lr, [x9, #0x18] - restore lr (x30) */
+        code[8] = 0xF940013E | ((0x18 / 8) << 10);
+
+        /* code[9]: ret - return via lr */
+        code[9] = 0xD65F03C0;
+
+        /* code[10]: nop - padding for 8-byte alignment of literal pool */
+        code[10] = 0xD503201F;
+
+        /* code[11-12]: Literal pool - data address (64-bit) */
+        memcpy(&code[11], &data_addr, 8);
+
+        /* Flush instruction cache for the generated code */
+        FlushInstructionCache(GetCurrentProcess(), closure, 13 * 4);
+    }
+#elif defined(_WIN64)
     ptr = closure;
     *ptr = 0x48; // REX.w
     ptr += 1;
