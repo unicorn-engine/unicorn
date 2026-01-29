@@ -900,14 +900,17 @@ uc_err uc_vmem_write(uc_engine *uc, uint64_t address, uc_prot prot,
             restore_jit_state(uc);
             return UC_ERR_WRITE_PROT;
         }
-        if (uc_ctl_remove_cache(uc, address, address + len) != UC_ERR_OK) {
-            restore_jit_state(uc);
-            return UC_ERR_WRITE_PROT;
-        }
+        uc->uc_invalidate_tb(uc, address, len);
         bytes += len;
         address += len;
         count += len;
     }
+    if (uc->nested_level) {
+        uc->quit_request = true;
+	uc->skip_sync_pc_on_exit = true;
+        break_translation_loop(uc);
+    }
+
     assert(count == size);
     restore_jit_state(uc);
     return UC_ERR_OK;

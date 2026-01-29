@@ -589,6 +589,118 @@ static void test_virtual_write(void)
     OK(uc_close(uc));
 }
 
+static void test_virtual_write_tb_invalidation_callback(uc_engine *uc, uint64_t rip, uint32_t size, void *userdata)
+{
+    /*
+     * mov    rax,QWORD PTR ds:0x2000
+     * test   rax,rax
+     * je     rip+0x10000000
+     * mov    rbx,QWORD PTR ds:0x2008
+     * test   rax,rax
+     * jz     rip+0x10000000 <_main+0x22>
+     * hlt
+     */
+    char code1[] = { 0x48, 0x8B, 0x04, 0x25, 0x00, 0x20, 0x00, 0x00, 0x48, 0x85, 0xC0, 0x74, 0x10, 0x48, 0x8B, 0x1C, 0x25, 0x08, 0x20, 0x00, 0x00, 0x48, 0x85, 0xC0, 0x74, 0x03, 0xF4, 0x90, 0x90 };
+    /*
+     * mov    rax,QWORD PTR ds:0x2000
+     * test   rax,rax
+     * je     rip+0x10000000
+     * mov    rbx,QWORD PTR ds:0x2008
+     * test   rax,rax
+     * jz     rip+0x10000000
+     * hlt
+     */
+    char code2[] = { 0x48, 0x8B, 0x04, 0x25, 0x00, 0x28, 0x00, 0x00, 0x48, 0x85, 0xC0, 0x74, 0x10, 0x48, 0x8B, 0x1C, 0x25, 0x08, 0x28, 0x00, 0x00, 0x48, 0x85, 0xC0, 0x74, 0x03, 0xF4, 0x90, 0x90 };
+
+    int state = *(int*)userdata;
+
+    if (state == 0) {
+            return;
+    }
+    if (state == 1 && (rip & 0xff00) == 0x1000 && (rip & 0xff) == 0x0d) {
+        *(int*)userdata = 0; //hook is called twice because the loop break
+                             //so set state to 0 again to indicate we are done at this point
+        OK(uc_vmem_write(uc, 0x1800, UC_PROT_EXEC, code2, sizeof(code2)));
+        return;
+    }
+    if (state == 2 && (rip & 0xff00) == 0x1800 && (rip & 0xff) == 0x0d) {
+        *(int*)userdata = 0; //hook is called twice because the loop break
+                             //so set state to 0 again to indicate we are done at this point
+        OK(uc_vmem_write(uc, 0x1800, UC_PROT_EXEC, code1, sizeof(code1)));
+        return;
+    }
+}
+
+static void test_virtual_write_tb_invalidation(void)
+{
+    uc_engine *uc;
+    uc_hook hook1, hook2;
+    int state = 0;
+    uint64_t rax1 = 0x01;
+    uint64_t rbx1 = 0x02;
+    uint64_t rax2 = 0x11;
+    uint64_t rbx2 = 0x12;
+    uint64_t res = 0;
+    /*
+     * mov    rax,QWORD PTR ds:0x2000
+     * test   rax,rax
+     * je     1d <bla>
+     * mov    rbx,QWORD PTR ds:0x2008
+     * test   rax,rax
+     * je     1d <bla>
+     * hlt
+     * nop
+     * nop
+     * bla:
+     */
+    char code1[] = { 0x48, 0x8B, 0x04, 0x25, 0x00, 0x20, 0x00, 0x00, 0x48, 0x85, 0xC0, 0x74, 0x10, 0x48, 0x8B, 0x1C, 0x25, 0x08, 0x20, 0x00, 0x00, 0x48, 0x85, 0xC0, 0x74, 0x03, 0xF4, 0x90, 0x90 };
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook1, UC_HOOK_TLB_FILL, test_virtual_write_tlb_fill, NULL, 1, 0));
+    OK(uc_hook_add(uc, &hook2, UC_HOOK_BLOCK, &test_virtual_write_tb_invalidation_callback, &state, 1, 0));
+    OK(uc_mem_map(uc, 0x0, 0x2000, UC_PROT_ALL));
+
+    OK(uc_vmem_write(uc, 0x1000, UC_PROT_EXEC, code1, sizeof(code1)));
+    OK(uc_vmem_write(uc, 0x1800, UC_PROT_EXEC, code1, sizeof(code1)));
+    OK(uc_vmem_write(uc, 0x2000, UC_PROT_READ, &rax1, sizeof(rax1)));
+    OK(uc_vmem_write(uc, 0x2008, UC_PROT_READ, &rbx1, sizeof(rbx1)));
+    OK(uc_vmem_write(uc, 0x2800, UC_PROT_READ, &rax2, sizeof(rax2)));
+    OK(uc_vmem_write(uc, 0x2808, UC_PROT_READ, &rbx2, sizeof(rbx2)));
+
+    /*
+     * run all code once to ensure that the tb are created
+     */
+    OK(uc_emu_start(uc, 0x1000, 0, 0, 0));
+    OK(uc_emu_start(uc, 0x1800, 0, 0, 0));
+
+    /*
+     * state one:
+     * run code1 at 0x1000
+     * write code2 to 0x1800
+     * run code2 at 0x1800
+     */
+    state = 1;
+    OK(uc_emu_start(uc, 0x1000, 0, 0, 0));
+    OK(uc_emu_start(uc, 0x1800, 0, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &res));
+    TEST_CHECK(rax2 == res);
+    OK(uc_reg_read(uc, UC_X86_REG_RBX, &res));
+    TEST_CHECK(rbx2 == res);
+
+    state = 2;
+    OK(uc_emu_start(uc, 0x1000, 0, 0, 0));
+    OK(uc_emu_start(uc, 0x1800, 0, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &res));
+    TEST_CHECK(rax2 == res);
+    OK(uc_reg_read(uc, UC_X86_REG_RBX, &res));
+    TEST_CHECK(rbx1 == res);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -608,4 +720,5 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
               test_mem_read_and_write_large_memory_block},
              {"test_virtual_to_physical", test_virtual_to_physical},
              {"test_virtual_write", test_virtual_write},
+             {"test_virtual_write_tb_invalidation", test_virtual_write_tb_invalidation},
              {NULL, NULL}};
