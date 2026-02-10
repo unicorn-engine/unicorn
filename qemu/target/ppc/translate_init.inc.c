@@ -205,7 +205,6 @@ static void spr_write_decr(DisasContext *ctx, int sprn, int gprn)
 
 /* SPR common to all non-embedded PowerPC, except 601 */
 /* Time base */
-#if 0
 static void spr_read_tbl(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -218,11 +217,7 @@ static void spr_read_tbl(DisasContext *ctx, int gprn, int sprn)
         gen_stop_exception(ctx);
     }
 }
-#else
-#define spr_read_tbl spr_read_generic
-#endif
 
-#if 0
 static void spr_read_tbu(DisasContext *ctx, int gprn, int sprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -235,9 +230,6 @@ static void spr_read_tbu(DisasContext *ctx, int gprn, int sprn)
         gen_stop_exception(ctx);
     }
 }
-#else
-#define spr_read_tbu spr_read_generic
-#endif
 
 #if 0
 // ATTRIBUTE_UNUSED
@@ -255,7 +247,6 @@ static void spr_read_atbu(DisasContext *ctx, int gprn, int sprn)
 }
 #endif
 
-#if 0
 static void spr_write_tbl(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -268,12 +259,7 @@ static void spr_write_tbl(DisasContext *ctx, int sprn, int gprn)
         gen_stop_exception(ctx);
     }
 }
-#else
-#define spr_write_tbl spr_write_generic
-#endif
 
-
-#if 0
 static void spr_write_tbu(DisasContext *ctx, int sprn, int gprn)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -286,9 +272,6 @@ static void spr_write_tbu(DisasContext *ctx, int sprn, int gprn)
         gen_stop_exception(ctx);
     }
 }
-#else
-#define spr_write_tbu spr_write_generic
-#endif
 
 #if 0
 // ATTRIBUTE_UNUSED
@@ -10158,6 +10141,10 @@ static void ppc_cpu_reset(CPUState *dev)
     s->exception_index = POWERPC_EXCP_NONE;
     env->error_code = 0;
     ppc_irq_reset(cpu);
+
+    if (!env->tb_env) {
+        cpu_ppc_tb_init(env, 512000000);
+    }
 
     /* tininess for underflow is detected before rounding */
     set_float_detect_tininess(float_tininess_before_rounding,
