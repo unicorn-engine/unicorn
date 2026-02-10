@@ -119,9 +119,44 @@ static void test_ppc32_spr_time(void)
     OK(uc_close(uc));
 }
 
+static void test_ppc32_spr_mftb(void)
+{
+    uc_engine *uc;
+    uint32_t r3,r4,r6,r7;
+    uint64_t t1,t2;
+
+    char code[] = (
+        "\x7c\x6d\x42\xe6" //        mftbu r3
+        "\x7c\x8c\x42\xe6" //        mftb  r4
+        "\x38\xa0\x00\x00" //        li    r5, 0
+        "\x38\xa5\x00\x01" // .loop: addi  r5, r5, 1
+        "\x2c\x05\x04\x00" //        cmpwi r5, 1024
+        "\x41\x80\xff\xf8" //        blt .loop
+        "\x7c\xcd\x42\xe6" //        mftbu r6
+        "\x7c\xec\x42\xe6" //        mftb  r7
+    );
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_PPC_REG_3, &r3));
+    OK(uc_reg_read(uc, UC_PPC_REG_4, &r4));
+    OK(uc_reg_read(uc, UC_PPC_REG_6, &r6));
+    OK(uc_reg_read(uc, UC_PPC_REG_7, &r7));
+
+    OK(uc_close(uc));
+
+    t1 = ((uint64_t)r3 << 32) | r4;
+    t2 = ((uint64_t)r6 << 32) | r7;
+    TEST_CHECK(t1 != t2);
+}
+
 TEST_LIST = {{"test_ppc32_add", test_ppc32_add},
              {"test_ppc32_fadd", test_ppc32_fadd},
              {"test_ppc32_sc", test_ppc32_sc},
              {"test_ppc32_cr", test_ppc32_cr},
              {"test_ppc32_spr_time", test_ppc32_spr_time},
+             {"test_ppc32_spr_mftb", test_ppc32_spr_mftb},
              {NULL, NULL}};
