@@ -887,7 +887,7 @@ static LONG __fastcall code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct u
             uint8_t* base_end = base + COMMIT_COUNT * 4096;
             uint32_t size = COMMIT_COUNT * 4096;
             if (base_end >= right) {
-                size = base_end - base;
+                size = right - base;
                 // whoops, we are almost run out of memory! Commit all instead
             }
             if (VirtualAlloc(base, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)) {
