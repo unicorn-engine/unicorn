@@ -89,3 +89,24 @@ fn test_ppc32_spr_time() {
     uc.emu_start(CODE_START, CODE_START + code.len() as u64, 0, 0)
         .unwrap();
 }
+
+#[test]
+fn test_ppc64_add() {
+    let code = [
+        0x7f, 0x46, 0x1a, 0x14, // add r26, r6, r3
+    ];
+    let r3: u64 = 42;
+    let r6: u64 = 1337;
+
+    let mut uc = uc_common_setup(Arch::PPC, Mode::PPC64 | Mode::BIG_ENDIAN, None, &code, ());
+
+    uc.reg_write(RegisterPPC::R3, r3).unwrap();
+    uc.reg_write(RegisterPPC::R6, r6).unwrap();
+
+    uc.emu_start(CODE_START, CODE_START + code.len() as u64, 0, 0)
+        .unwrap();
+
+    let reg = uc.reg_read(RegisterPPC::R26).unwrap();
+
+    assert_eq!(reg, 1379);
+}
