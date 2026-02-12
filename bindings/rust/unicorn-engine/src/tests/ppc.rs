@@ -93,7 +93,7 @@ fn test_ppc32_spr_time() {
 #[test]
 fn test_ppc64_add() {
     let code = [
-        0x7f, 0x46, 0x1a, 0x14, // add r26, r6, r3
+        0x7f, 0x46, 0x1a, 0x14, // add 26, 6, 3
     ];
     let r3: u64 = 42;
     let r6: u64 = 1337;

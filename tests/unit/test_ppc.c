@@ -119,12 +119,11 @@ static void test_ppc32_spr_time(void)
     OK(uc_close(uc));
 }
 
-// ===== PPC64 tests =====
 
 static void test_ppc64_add(void)
 {
     uc_engine *uc;
-    char code[] = "\x7f\x46\x1a\x14"; // ADD r26, r6, r3
+    char code[] = "\x7f\x46\x1a\x14"; // ADD 26, 6, 3
     uint64_t reg;
 
     uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_PPC64 | UC_MODE_BIG_ENDIAN,
@@ -147,7 +146,7 @@ static void test_ppc64_add(void)
 static void test_ppc64_add_large(void)
 {
     uc_engine *uc;
-    char code[] = "\x7f\x46\x1a\x14"; // ADD r26, r6, r3
+    char code[] = "\x7f\x46\x1a\x14"; // ADD 26, 6, 3
     uint64_t reg;
 
     uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_PPC64 | UC_MODE_BIG_ENDIAN,
@@ -170,7 +169,7 @@ static void test_ppc64_add_large(void)
 static void test_ppc64_fadd(void)
 {
     uc_engine *uc;
-    char code[] = "\xfc\xc4\x28\x2a"; // fadd f6, f4, f5
+    char code[] = "\xfc\xc4\x28\x2a"; // fadd 6, 4, 5
     uint64_t r_msr;
     uint64_t r_fpr4, r_fpr5, r_fpr6;
 
@@ -179,11 +178,11 @@ static void test_ppc64_fadd(void)
 
     OK(uc_reg_read(uc, UC_PPC_REG_MSR, &r_msr));
     r_msr |= (1 << 13);                           // enable FP
-    r_msr |= (1ULL << 63);                         // SF bit for 64-bit mode
+    r_msr |= (1ULL << 63);                         // SF bit
     OK(uc_reg_write(uc, UC_PPC_REG_MSR, &r_msr));
 
-    r_fpr4 = 0xC053400000000000ULL;
-    r_fpr5 = 0x400C000000000000ULL;
+    r_fpr4 = 0xC053400000000000ul;
+    r_fpr5 = 0x400C000000000000ul;
     OK(uc_reg_write(uc, UC_PPC_REG_FPR4, &r_fpr4));
     OK(uc_reg_write(uc, UC_PPC_REG_FPR5, &r_fpr5));
 
@@ -191,7 +190,7 @@ static void test_ppc64_fadd(void)
 
     OK(uc_reg_read(uc, UC_PPC_REG_FPR6, &r_fpr6));
 
-    TEST_CHECK(r_fpr6 == 0xC052600000000000ULL);
+    TEST_CHECK(r_fpr6 == 0xC052600000000000ul);
 
     OK(uc_close(uc));
 }
@@ -242,9 +241,8 @@ static void test_ppc64_cr(void)
 static void test_ppc64_ld(void)
 {
     uc_engine *uc;
-    char code[] = "\xe8\x64\x00\x00"; // ld r3, 0(r4)
+    char code[] = "\xe8\x64\x00\x00"; // ld 3, 0(4)
     uint64_t reg;
-    // Data in big-endian: 0x123456789ABCDEF0
     char data[] = "\x12\x34\x56\x78\x9A\xBC\xDE\xF0";
     uint64_t data_addr = 0x2000;
 
@@ -268,7 +266,7 @@ static void test_ppc64_ld(void)
 static void test_ppc64_std(void)
 {
     uc_engine *uc;
-    char code[] = "\xf8\x64\x00\x00"; // std r3, 0(r4)
+    char code[] = "\xf8\x64\x00\x00"; // std 3, 0(4)
     uint64_t reg;
     uint64_t data_addr = 0x2000;
     uint8_t buf[8];
@@ -285,7 +283,6 @@ static void test_ppc64_std(void)
 
     OK(uc_mem_read(uc, data_addr, buf, 8));
 
-    // Big-endian: first byte should be 0xAA
     TEST_CHECK(buf[0] == 0xAA);
     TEST_CHECK(buf[1] == 0xBB);
     TEST_CHECK(buf[2] == 0xCC);
