@@ -2061,11 +2061,18 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_set_user_data(uc_hook hh, void *user_data)
+uc_err uc_hook_set_user_data(uc_engine *uc, uc_hook hh, void *user_data)
 {
     struct hook *hook = (struct hook *)hh;
     if (hook->type == UC_HOOK_BLOCK || hook->type == UC_HOOK_CODE) {
-        return UC_ERR_ARG;
+        if (uc->nested_level) {
+            return UC_ERR_ARG;
+        }
+        if (hook->end < hook->begin) {
+            uc->tb_flush(uc);
+        } else {
+            uc->uc_invalidate_tb(uc, hook->begin, hook->end - hook->begin);
+        }
     }
     hook->user_data = user_data;
     return UC_ERR_OK;
