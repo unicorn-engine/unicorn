@@ -1154,6 +1154,7 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh);
  This change the user-defined data for a given hook.
  NOTE: It's undefinde behavior when called on a hook which was not initialized
  by uc_hook_add or deleted by uc_hook_delete
+ @uc: handle returned by uc_open()
  @hh: handle returned by uc_hook_add()
  @user_data: user-defined data. This will be passed to callback function in its
       last argument @user_data
@@ -1162,7 +1163,7 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh);
  hook
 */
 UNICORN_EXPORT
-uc_err uc_hook_set_user_data(uc_hook hh, void *user_data);
+uc_err uc_hook_set_user_data(uc_engine *uc, uc_hook hh, void *user_data);
 
 /*
  Variables to control which state should be stored in the context.
