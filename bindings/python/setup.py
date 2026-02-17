@@ -7,6 +7,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import sysconfig
 from setuptools import setup
 from setuptools.command.build_py import build_py
 from setuptools.command.sdist import sdist
@@ -149,5 +150,6 @@ class CustomBuild(build_py):
 setup(
     cmdclass={'build_py': CustomBuild, 'sdist': CustomSDist},
     has_ext_modules=lambda: True,  # It's not a Pure Python wheel,
-    options={"bdist_wheel": {"py_limited_api": "cp37"}},  # to have ABI3 tagged wheel
+    # Build ABI3 tagged wheel only if interpreter is not free-threaded
+    options={"bdist_wheel": {"py_limited_api": False if bool(sysconfig.get_config_var("Py_GIL_DISABLED")) else "cp37"}},
 )
