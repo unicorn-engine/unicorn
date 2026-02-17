@@ -2051,6 +2051,7 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
                                  uc);
             g_hash_table_remove_all(hook->hooked_regions);
             hook->to_delete = true;
+            hook->user_data = NULL;
             uc->hooks_count[i]--;
             hook_append(&uc->hooks_to_del, hook);
         }
