@@ -54,7 +54,7 @@
 #  define LOG_TB(...) do { } while (0)
 #endif
 
-#if 0
+#if 1
 static void cpu_ppc_tb_stop (CPUPPCState *env);
 static void cpu_ppc_tb_start (CPUPPCState *env);
 #endif
@@ -90,7 +90,9 @@ void ppc_set_irq(PowerPCCPU *cpu, int n_IRQ, int level)
                 env->pending_interrupts, CPU(cpu)->interrupt_request);
 }
 
-#if 0
+#if 1
+// Broadway clock speed
+#define TB_TIMER_CLOCK (243000000u/4000)
 /* PowerPC 6xx / 7xx internal IRQ controller */
 static void ppc6xx_set_irq(void *opaque, int pin, int level)
 {
@@ -111,6 +113,7 @@ static void ppc6xx_set_irq(void *opaque, int pin, int level)
             LOG_IRQ("%s: %s the time base\n",
                         __func__, level ? "start" : "stop");
             if (level) {
+                cpu_ppc_tb_init(env, TB_TIMER_CLOCK);
                 cpu_ppc_tb_start(env);
             } else {
                 cpu_ppc_tb_stop(env);
@@ -174,6 +177,7 @@ static void ppc6xx_set_irq(void *opaque, int pin, int level)
 
 void ppc6xx_irq_init(PowerPCCPU *cpu)
 {
+    ppc6xx_set_irq((void*)cpu, PPC6xx_INPUT_TBEN, 1);
 #if 0
     CPUPPCState *env = &cpu->env;
 
@@ -735,7 +739,7 @@ void cpu_ppc_store_tbu40(CPUPPCState *env, uint64_t value)
                      &tb_env->tb_offset, tb);
 }
 
-#if 0
+#if 1
 static void cpu_ppc_tb_stop (CPUPPCState *env)
 {
     ppc_tb_t *tb_env = env->tb_env;
@@ -1565,5 +1569,6 @@ void ppc_irq_reset(PowerPCCPU *cpu)
     CPUPPCState *env = &cpu->env;
 
     env->irq_input_state = 0;
+    ppc6xx_set_irq((void*)cpu, PPC6xx_INPUT_TBEN, 0);
 //    kvmppc_set_interrupt(cpu, PPC_INTERRUPT_EXT, 0);
 }
