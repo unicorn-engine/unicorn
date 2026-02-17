@@ -1159,8 +1159,8 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh);
  @user_data: user-defined data. This will be passed to callback function in its
       last argument @user_data
 
- @return UC_ERR_OK on success, or UC_ERR_ARGS when the hook was block or code
- hook
+ @return UC_ERR_OK on success, or UC_ERR_ARG when the hook was block or code
+ hook and emulation is runnings
 */
 UNICORN_EXPORT
 uc_err uc_hook_set_user_data(uc_engine *uc, uc_hook hh, void *user_data);
