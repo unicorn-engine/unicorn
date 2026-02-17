@@ -907,7 +907,7 @@ uc_err uc_vmem_write(uc_engine *uc, uint64_t address, uc_prot prot,
     }
     if (uc->nested_level) {
         uc->quit_request = true;
-	uc->skip_sync_pc_on_exit = true;
+        uc->skip_sync_pc_on_exit = true;
         break_translation_loop(uc);
     }
 
