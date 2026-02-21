@@ -2128,6 +2128,80 @@ static void test_x86_hook_insn_rdtscp(void)
     OK(uc_close(uc));
 }
 
+static int test_x86_hook_insn_wrmsr_cb(uc_engine *uc, void *user_data)
+{
+    *(int *)user_data = 1;
+    return 0;
+}
+
+static void test_x86_hook_insn_wrmsr(void)
+{
+    /* WRMSR (0f 30) */
+    char code[] = "\x0F\x30";
+    int fired = 0;
+
+    uc_engine *uc;
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof code - 1);
+
+    uint64_t rcx = 0x174; /* MSR_IA32_SYSENTER_CS */
+    uint64_t rax = 0x10;
+    uint64_t rdx = 0;
+    OK(uc_reg_write(uc, UC_X86_REG_RCX, &rcx));
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_write(uc, UC_X86_REG_RDX, &rdx));
+
+    uc_hook hook;
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_x86_hook_insn_wrmsr_cb,
+                   &fired, 1, 0, UC_X86_INS_WRMSR));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof code - 1, 0, 0));
+
+    OK(uc_hook_del(uc, hook));
+    TEST_CHECK(fired == 1);
+    OK(uc_close(uc));
+}
+
+static int test_x86_hook_insn_rdmsr_cb(uc_engine *uc, void *user_data)
+{
+    uint64_t eax = 0xDEAD;
+    uint64_t edx = 0xBEEF;
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &eax));
+    OK(uc_reg_write(uc, UC_X86_REG_RDX, &edx));
+    *(int *)user_data = 1;
+    return 1; /* skip underlying rdmsr */
+}
+
+static void test_x86_hook_insn_rdmsr(void)
+{
+    /* RDMSR (0f 32) */
+    char code[] = "\x0F\x32";
+    int fired = 0;
+
+    uc_engine *uc;
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof code - 1);
+
+    uint64_t rcx = 0x174; /* MSR_IA32_SYSENTER_CS */
+    OK(uc_reg_write(uc, UC_X86_REG_RCX, &rcx));
+
+    uc_hook hook;
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_x86_hook_insn_rdmsr_cb,
+                   &fired, 1, 0, UC_X86_INS_RDMSR));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof code - 1, 0, 0));
+
+    OK(uc_hook_del(uc, hook));
+    TEST_CHECK(fired == 1);
+
+    uint64_t eax = 0;
+    uint64_t edx = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &eax));
+    OK(uc_reg_read(uc, UC_X86_REG_RDX, &edx));
+    TEST_CHECK(eax == 0xDEAD);
+    TEST_CHECK(edx == 0xBEEF);
+
+    OK(uc_close(uc));
+}
+
 static void test_x86_dr7()
 {
     uc_engine *uc;
@@ -2262,6 +2336,8 @@ TEST_LIST = {
     {"test_x86_ro_segfault", test_x86_ro_segfault},
     {"test_x86_hook_insn_rdtsc", test_x86_hook_insn_rdtsc},
     {"test_x86_hook_insn_rdtscp", test_x86_hook_insn_rdtscp},
+    {"test_x86_hook_insn_wrmsr", test_x86_hook_insn_wrmsr},
+    {"test_x86_hook_insn_rdmsr", test_x86_hook_insn_rdmsr},
     {"test_x86_dr7", test_x86_dr7},
     {"test_x86_hook_block", test_x86_hook_block},
     {"test_x86_mem_hooks_pc_guarantee", test_x86_mem_hooks_pc_guarantee},
