@@ -595,6 +595,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = (uint32_t)env->segs[R_FS].base;
             break;
+        case UC_X86_REG_XCR0:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->xcr0;
+            break;
         }
         break;
 
@@ -1092,6 +1096,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = (uint64_t)env->segs[R_GS].base;
             break;
+        case UC_X86_REG_XCR0:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->xcr0;
+            break;
         }
         break;
 #endif
@@ -1482,6 +1490,11 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             env->segs[R_GS].base = *(uint32_t *)value;
             continue;
             */
+        case UC_X86_REG_XCR0:
+            CHECK_REG_TYPE(uint64_t);
+            env->xcr0 = *(uint64_t *)value;
+            cpu_sync_bndcs_hflags(env);
+            break;
         }
         break;
 
@@ -2002,6 +2015,11 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             CHECK_REG_TYPE(uint64_t);
             env->segs[R_GS].base = *(uint64_t *)value;
             return 0;
+        case UC_X86_REG_XCR0:
+            CHECK_REG_TYPE(uint64_t);
+            env->xcr0 = *(uint64_t *)value;
+            cpu_sync_bndcs_hflags(env);
+            break;
         }
         break;
 #endif
