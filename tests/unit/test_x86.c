@@ -2201,6 +2201,100 @@ static void test_x86_mem_hooks_pc_guarantee(void)
     OK(uc_close(uc));
 }
 
+// Test that AAA sets PF, ZF, SF based on the result AL value.
+// Bug: AAA previously left these flags stale from the prior instruction.
+static void test_x86_aaa_flags(void)
+{
+    uc_engine *uc;
+
+    // INC ECX sets PF from ECX result (to create a conflicting PF state).
+    // AAA then adjusts AL and must set PF = parity(AL), ZF, SF independently.
+    //
+    // Case: EAX = 0x030A  (AH=3, AL=0x0A)
+    //   AL low nibble (0x0A & 0x0F = 0x0A) > 9, so adjustment fires:
+    //     AL = (0x0A + 6) & 0x0F = 0x00
+    //     AH = 3 + 1 = 4
+    //     CF = 1, AF = 1
+    //   Result AL = 0x00: PF=1 (even parity), ZF=1, SF=0
+    //
+    // INC ECX (0x41) ; AAA (0x37)
+    char code[] = "\x41\x37";
+
+    uint32_t r_eax = 0x030A;
+    uint32_t r_ecx = 0x0000; // INC 0 -> 1, PF=0 (odd parity of 1)
+    uint32_t r_eflags;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &r_eflags));
+
+    // EAX should be 0x0400 (AH=4, AL=0)
+    TEST_CHECK(r_eax == 0x0400);
+    // PF (bit 2) = 1 (AL=0x00 has even parity)
+    TEST_CHECK((r_eflags & 0x04) != 0);
+    // ZF (bit 6) = 1 (AL == 0)
+    TEST_CHECK((r_eflags & 0x40) != 0);
+    // SF (bit 7) = 0 (AL bit 7 clear)
+    TEST_CHECK((r_eflags & 0x80) == 0);
+    // CF (bit 0) = 1 (adjustment fired)
+    TEST_CHECK((r_eflags & 0x01) != 0);
+
+    OK(uc_close(uc));
+}
+
+// Test that AAS sets PF, ZF, SF based on the result AL value.
+static void test_x86_aas_flags(void)
+{
+    uc_engine *uc;
+
+    // Case: EAX = 0x030A  (AH=3, AL=0x0A)
+    //   AL low nibble > 9, so adjustment fires:
+    //     AL = (0x0A - 6) & 0x0F = 0x04
+    //     AH = 3 - 1 = 2
+    //     CF = 1, AF = 1
+    //   Result AL = 0x04: PF=0 (odd parity of 0x04), ZF=0, SF=0
+    //
+    // INC ECX (0x41) ; AAS (0x3F)
+    char code[] = "\x41\x3f";
+
+    uint32_t r_eax = 0x030A;
+    uint32_t r_ecx = 0x0002; // INC 2 -> 3, PF=1 (even parity of 3)
+    uint32_t r_eflags;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &r_eflags));
+
+    // EAX should be 0x0204 (AH=2, AL=4)
+    TEST_CHECK(r_eax == 0x0204);
+    // PF (bit 2) = 0 (AL=0x04 has odd parity: one bit set)
+    TEST_CHECK((r_eflags & 0x04) == 0);
+    // ZF (bit 6) = 0 (AL != 0)
+    TEST_CHECK((r_eflags & 0x40) == 0);
+    // SF (bit 7) = 0 (AL bit 7 clear)
+    TEST_CHECK((r_eflags & 0x80) == 0);
+    // CF (bit 0) = 1 (adjustment fired)
+    TEST_CHECK((r_eflags & 0x01) != 0);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2265,4 +2359,6 @@ TEST_LIST = {
     {"test_x86_dr7", test_x86_dr7},
     {"test_x86_hook_block", test_x86_hook_block},
     {"test_x86_mem_hooks_pc_guarantee", test_x86_mem_hooks_pc_guarantee},
+    {"test_x86_aaa_flags", test_x86_aaa_flags},
+    {"test_x86_aas_flags", test_x86_aas_flags},
     {NULL, NULL}};

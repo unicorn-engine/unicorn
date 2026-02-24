@@ -202,6 +202,14 @@ void helper_aaa(CPUX86State *env)
         al &= 0x0f;
     }
     env->regs[R_EAX] = (env->regs[R_EAX] & ~0xffff) | al | (ah << 8);
+    /* Compute PF, ZF, SF from result AL, clear OF -- matches observed
+       hardware behaviour (and the approach used by helper_daa/helper_das).
+       Intel documents these flags as undefined after AAA, but real CPUs
+       consistently set them based on the masked AL result. */
+    eflags &= CC_C | CC_A;
+    eflags |= (al == 0) << 6; /* zf */
+    eflags |= parity_table[al]; /* pf */
+    eflags |= (al & 0x80); /* sf */
     CC_SRC = eflags;
 }
 
@@ -226,6 +234,11 @@ void helper_aas(CPUX86State *env)
         al &= 0x0f;
     }
     env->regs[R_EAX] = (env->regs[R_EAX] & ~0xffff) | al | (ah << 8);
+    /* Compute PF, ZF, SF from result AL, clear OF -- same fix as AAA above. */
+    eflags &= CC_C | CC_A;
+    eflags |= (al == 0) << 6; /* zf */
+    eflags |= parity_table[al]; /* pf */
+    eflags |= (al & 0x80); /* sf */
     CC_SRC = eflags;
 }
 
