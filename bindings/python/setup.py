@@ -7,6 +7,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import re
 from setuptools import setup
 from setuptools.command.build_py import build_py
 from setuptools.command.sdist import sdist
@@ -14,6 +15,7 @@ from setuptools.command.sdist import sdist
 log = logging.getLogger(__name__)
 
 # are we building from the repository or from a source distribution?
+DEFAULT_VERSION = "2.1.4"
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 LIBS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'lib')
 HEADERS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'include')
@@ -128,6 +130,24 @@ def build_libraries():
         shutil.copy(os.path.join(BUILD_DIR, LIBRARY_FILE), LIBS_DIR)
         shutil.copy(os.path.join(BUILD_DIR, STATIC_LIBRARY_FILE), LIBS_DIR)
 
+def get_version():
+    try:
+        # we follow the version in CMakeLists.txt, which is the source of truth for the version number
+        cmake_path = os.path.join(UC_DIR, 'CMakeLists.txt')
+        if os.path.exists(cmake_path):
+            with open(cmake_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            major = re.search(r'set\(UNICORN_VERSION_MAJOR\s+(\d+)\)', content)
+            minor = re.search(r'set\(UNICORN_VERSION_MINOR\s+(\d+)\)', content)
+            patch = re.search(r'set\(UNICORN_VERSION_PATCH\s+(\d+)\)', content)
+
+            if major and minor and patch:
+                return "%s.%s.%s" % (major.group(1), minor.group(1), patch.group(1))
+    except Exception:
+        pass
+
+    return DEFAULT_VERSION
 
 class CustomSDist(sdist):
     def run(self):
@@ -147,6 +167,7 @@ class CustomBuild(build_py):
 
 
 setup(
+    version=get_version(),
     cmdclass={'build_py': CustomBuild, 'sdist': CustomSDist},
     has_ext_modules=lambda: True,  # It's not a Pure Python wheel,
     options={"bdist_wheel": {"py_limited_api": "cp37"}},  # to have ABI3 tagged wheel
