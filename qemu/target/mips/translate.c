@@ -30951,6 +30951,7 @@ static void mips_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     dyn_is_slot = tcg_const_i32(tcg_ctx, 0);
     slot_op = tcg_last_op(tcg_ctx);
     tcg_gen_mov_i32(tcg_ctx, tcg_ctx->delay_slot_flag, dyn_is_slot);
+    tcg_temp_free_i32(tcg_ctx, dyn_is_slot);
 
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, ctx->base.pc_next)) {
