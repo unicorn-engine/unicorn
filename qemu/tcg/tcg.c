@@ -291,6 +291,12 @@ static void set_jmp_reset_offset(TCGContext *s, int which)
     assert(s->tb_jmp_reset_offset[which] == off);
 }
 
+/* Signal overflow, starting over with fewer guest insns. */
+static void QEMU_NORETURN tcg_raise_tb_overflow(TCGContext *s)
+{
+    siglongjmp(s->jmp_trans, -2);
+}
+
 #include "tcg-target.inc.c"
 
 /* compare a pointer @ptr and a tb_tc @s */
@@ -896,18 +902,23 @@ void tcg_func_start(TCGContext *s)
     QSIMPLEQ_INIT(&s->labels);
 }
 
-static inline TCGTemp *tcg_temp_alloc(TCGContext *s)
+static TCGTemp *tcg_temp_alloc(TCGContext *s)
 {
     int n = s->nb_temps++;
-    tcg_debug_assert(n < TCG_MAX_TEMPS);
+
+    if (n >= TCG_MAX_TEMPS) {
+        /* Signal overflow, starting over with fewer guest insns. */
+        tcg_raise_tb_overflow(s);
+    }
     return memset(&s->temps[n], 0, sizeof(TCGTemp));
 }
 
-static inline TCGTemp *tcg_global_alloc(TCGContext *s)
+static TCGTemp *tcg_global_alloc(TCGContext *s)
 {
     TCGTemp *ts;
 
     tcg_debug_assert(s->nb_globals == s->nb_temps);
+    tcg_debug_assert(s->nb_globals < TCG_MAX_TEMPS);
     s->nb_globals++;
     ts = tcg_temp_alloc(s);
     ts->temp_global = 1;
@@ -3049,6 +3060,11 @@ static void temp_load(TCGContext *s, TCGTemp *ts, TCGRegSet desired_regs,
         ts->mem_coherent = 0;
         break;
     case TEMP_VAL_MEM:
+        // if mem_allocated is false, ts->mem_base == 0x0 and will
+        //  trigger a null ptr deref. Allocate the frame.
+        if (!ts->mem_allocated) {
+            temp_allocate_frame(s, ts);
+        }
         reg = tcg_reg_alloc(s, desired_regs, allocated_regs,
                             preferred_regs, ts->indirect_base);
         tcg_out_ld(s, ts->type, reg, ts->mem_base->reg, ts->mem_offset);
