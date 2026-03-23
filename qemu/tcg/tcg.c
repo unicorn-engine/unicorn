@@ -886,6 +886,7 @@ void tcg_func_start(TCGContext *s)
     s->nb_ops = 0;
     s->nb_labels = 0;
     s->current_frame_offset = s->frame_start;
+    s->delay_slot_flag = NULL;
 
 #ifdef CONFIG_DEBUG_TCG
     s->goto_tb_issue_mask = 0;
