@@ -361,6 +361,16 @@ enum {
     OPC_CLO      = 0x21 | OPC_SPECIAL2,
     OPC_DCLZ     = 0x24 | OPC_SPECIAL2,
     OPC_DCLO     = 0x25 | OPC_SPECIAL2,
+    /* Cavium Octeon (cnMIPS) */
+    OPC_OCT_DMUL   = 0x03 | OPC_SPECIAL2,
+    OPC_OCT_SEQ    = 0x2A | OPC_SPECIAL2,
+    OPC_OCT_SNE    = 0x2B | OPC_SPECIAL2,
+    OPC_OCT_SEQI   = 0x2E | OPC_SPECIAL2,
+    OPC_OCT_SNEI   = 0x2F | OPC_SPECIAL2,
+    OPC_OCT_CINS   = 0x32 | OPC_SPECIAL2,
+    OPC_OCT_CINS32 = 0x33 | OPC_SPECIAL2,
+    OPC_OCT_EXTS   = 0x3A | OPC_SPECIAL2,
+    OPC_OCT_EXTS32 = 0x3B | OPC_SPECIAL2,
     /* Special */
     OPC_SDBBP    = 0x3F | OPC_SPECIAL2,
 };
@@ -27178,6 +27188,139 @@ static void decode_opc_mxu(CPUMIPSState *env, DisasContext *ctx)
 #endif /* !defined(TARGET_MIPS64) */
 
 
+#if defined(TARGET_MIPS64)
+/* Cavium Octeon (cnMIPS) extensions: SEQ/SNE, SEQI/SNEI, DMUL,
+   CINS/CINS32, EXTS/EXTS32, BBIT0/BBIT1/BBIT032/BBIT132. */
+
+static void gen_octeon_set_eq(DisasContext *ctx, uint32_t opc,
+                              int rd, int rs, int rt)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0, t1;
+
+    if (rd == 0) {
+        return;
+    }
+    t0 = tcg_temp_new(tcg_ctx);
+    t1 = tcg_temp_new(tcg_ctx);
+    gen_load_gpr(tcg_ctx, t0, rs);
+    gen_load_gpr(tcg_ctx, t1, rt);
+    tcg_gen_setcond_tl(tcg_ctx,
+                       (opc == OPC_OCT_SEQ) ? TCG_COND_EQ : TCG_COND_NE,
+                       tcg_ctx->cpu_gpr[rd], t0, t1);
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
+}
+
+static void gen_octeon_set_eq_imm(DisasContext *ctx, uint32_t opc,
+                                  int rt, int rs, int32_t imm)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0;
+
+    if (rt == 0) {
+        return;
+    }
+    t0 = tcg_temp_new(tcg_ctx);
+    gen_load_gpr(tcg_ctx, t0, rs);
+    tcg_gen_setcondi_tl(tcg_ctx,
+                        (opc == OPC_OCT_SEQI) ? TCG_COND_EQ : TCG_COND_NE,
+                        tcg_ctx->cpu_gpr[rt], t0, imm);
+    tcg_temp_free(tcg_ctx, t0);
+}
+
+static void gen_octeon_dmul(DisasContext *ctx, int rd, int rs, int rt)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0, t1;
+
+    if (rd == 0) {
+        return;
+    }
+    t0 = tcg_temp_new(tcg_ctx);
+    t1 = tcg_temp_new(tcg_ctx);
+    gen_load_gpr(tcg_ctx, t0, rs);
+    gen_load_gpr(tcg_ctx, t1, rt);
+    tcg_gen_mul_tl(tcg_ctx, tcg_ctx->cpu_gpr[rd], t0, t1);
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
+}
+
+/* CINS:   rt = (rs & ((1<<(lenm1+1))-1)) << p
+   CINS32: rt = (rs & ((1<<(lenm1+1))-1)) << (p + 32) */
+static void gen_octeon_cins(DisasContext *ctx, int rt, int rs,
+                            int p, int lenm1, bool plus32)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0;
+    int pos = p + (plus32 ? 32 : 0);
+    int len = lenm1 + 1;
+
+    if (rt == 0) {
+        return;
+    }
+    /* Result is unpredictable if pos+len > 64; clamp to avoid TCG asserts. */
+    if (pos + len > 64) {
+        len = 64 - pos;
+    }
+    t0 = tcg_temp_new(tcg_ctx);
+    gen_load_gpr(tcg_ctx, t0, rs);
+    tcg_gen_deposit_z_tl(tcg_ctx, tcg_ctx->cpu_gpr[rt], t0, pos, len);
+    tcg_temp_free(tcg_ctx, t0);
+}
+
+/* EXTS:   rt = sign_extend(rs<p+lenm1:p>)
+   EXTS32: rt = sign_extend(rs<p+32+lenm1:p+32>) */
+static void gen_octeon_exts(DisasContext *ctx, int rt, int rs,
+                            int p, int lenm1, bool plus32)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0;
+    int pos = p + (plus32 ? 32 : 0);
+    int len = lenm1 + 1;
+
+    if (rt == 0) {
+        return;
+    }
+    if (pos + len > 64) {
+        len = 64 - pos;
+    }
+    t0 = tcg_temp_new(tcg_ctx);
+    gen_load_gpr(tcg_ctx, t0, rs);
+    tcg_gen_sextract_tl(tcg_ctx, tcg_ctx->cpu_gpr[rt], t0, pos, len);
+    tcg_temp_free(tcg_ctx, t0);
+}
+
+/* BBIT0/BBIT1/BBIT032/BBIT132: branch if rs<bit_pos> is clear/set.
+   Mirrors the bookkeeping in gen_compute_branch() for a 4-byte
+   conditional branch with a 4-byte delay slot. */
+static void gen_octeon_bbit(DisasContext *ctx, bool bit_set, bool plus32,
+                            int rs, int p, int16_t offset)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0;
+    int bit_pos = p + (plus32 ? 32 : 0);
+
+    if (ctx->hflags & MIPS_HFLAG_BMASK) {
+        generate_exception_end(ctx, EXCP_RI);
+        return;
+    }
+
+    t0 = tcg_temp_new(tcg_ctx);
+    gen_load_gpr(tcg_ctx, t0, rs);
+    tcg_gen_extract_tl(tcg_ctx, t0, t0, bit_pos, 1);
+    tcg_gen_setcondi_tl(tcg_ctx,
+                        bit_set ? TCG_COND_NE : TCG_COND_EQ,
+                        tcg_ctx->bcond, t0, 0);
+    tcg_temp_free(tcg_ctx, t0);
+
+    ctx->btarget = ctx->base.pc_next + 4 + ((target_long)offset << 2);
+    ctx->hflags |= MIPS_HFLAG_BC;
+    ctx->hflags |= MIPS_HFLAG_BDS32;
+}
+#endif /* TARGET_MIPS64 */
+
+
 static void decode_opc_special2_legacy(CPUMIPSState *env, DisasContext *ctx)
 {
     int rs, rt, rd;
@@ -27242,6 +27385,40 @@ static void decode_opc_special2_legacy(CPUMIPSState *env, DisasContext *ctx)
     case OPC_DMODU_G_2F:
         check_insn(ctx, INSN_LOONGSON2F);
         gen_loongson_integer(ctx, op1, rd, rs, rt);
+        break;
+    case OPC_OCT_DMUL:
+        check_insn(ctx, INSN_OCTEON);
+        check_mips_64(ctx);
+        gen_octeon_dmul(ctx, rd, rs, rt);
+        break;
+    case OPC_OCT_SEQ:
+    case OPC_OCT_SNE:
+        check_insn(ctx, INSN_OCTEON);
+        gen_octeon_set_eq(ctx, op1, rd, rs, rt);
+        break;
+    case OPC_OCT_SEQI:
+    case OPC_OCT_SNEI:
+        check_insn(ctx, INSN_OCTEON);
+        gen_octeon_set_eq_imm(ctx, op1, rt, rs,
+                              sextract32(ctx->opcode, 6, 10));
+        break;
+    case OPC_OCT_CINS:
+    case OPC_OCT_CINS32:
+        check_insn(ctx, INSN_OCTEON);
+        check_mips_64(ctx);
+        gen_octeon_cins(ctx, rt, rs,
+                        (ctx->opcode >> 6) & 0x1f,
+                        (ctx->opcode >> 11) & 0x1f,
+                        op1 == OPC_OCT_CINS32);
+        break;
+    case OPC_OCT_EXTS:
+    case OPC_OCT_EXTS32:
+        check_insn(ctx, INSN_OCTEON);
+        check_mips_64(ctx);
+        gen_octeon_exts(ctx, rt, rs,
+                        (ctx->opcode >> 6) & 0x1f,
+                        (ctx->opcode >> 11) & 0x1f,
+                        op1 == OPC_OCT_EXTS32);
         break;
 #endif
     default:            /* Invalid */
@@ -30659,6 +30836,11 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx)
             /* OPC_BC, OPC_BALC */
             gen_compute_compact_branch(ctx, op, 0, 0,
                                        sextract32(ctx->opcode << 2, 0, 28));
+#if defined(TARGET_MIPS64)
+        } else if (ctx->insn_flags & INSN_OCTEON) {
+            /* Octeon BBIT0 / BBIT1: branch on lower-32 bit clear/set */
+            gen_octeon_bbit(ctx, op == OPC_BALC, false, rs, rt, imm);
+#endif
         } else {
             /* OPC_LWC2, OPC_SWC2 */
             /* COP2: Not implemented. */
@@ -30676,6 +30858,11 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx)
                 /* OPC_JIC, OPC_JIALC */
                 gen_compute_compact_branch(ctx, op, 0, rt, imm);
             }
+#if defined(TARGET_MIPS64)
+        } else if (ctx->insn_flags & INSN_OCTEON) {
+            /* Octeon BBIT032 / BBIT132: branch on upper-32 bit clear/set */
+            gen_octeon_bbit(ctx, op == OPC_BNEZC, true, rs, rt, imm);
+#endif
         } else {
             /* OPC_LWC2, OPC_SWC2 */
             /* COP2: Not implemented. */
