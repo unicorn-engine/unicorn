@@ -398,6 +398,97 @@ static void test_noexec(void)
     OK(uc_close(uc));
 }
 
+// Regression test for issue #2320. uc_context_restore() used to trust
+// context_size, fv and last_block from the user-visible struct. Mutating
+// any of them produced a heap-overflow / wild-pointer-deref crash. The
+// save_magic header tag now catches all three tamper cases up front.
+//
+// We mirror the public layout of struct uc_context so the test can poke
+// individual fields without including uc_priv.h.
+struct ctl_test_uc_context_layout {
+    size_t context_size;
+    int    mode;
+    int    arch;
+    int    snapshot_level;
+    unsigned char ramblock_freed;
+    void  *last_block;
+    void  *fv;
+    uint64_t save_magic;
+};
+
+static void test_uc_context_restore_rejects_tampering(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_context_alloc(uc, &ctx));
+
+    // 1. Restore from a fresh context (save_magic == 0).
+    uc_assert_err(UC_ERR_ARG, uc_context_restore(uc, ctx));
+
+    // 2. Real save then untampered restore is still the happy path.
+    OK(uc_context_save(uc, ctx));
+    OK(uc_context_restore(uc, ctx));
+
+    // 3. Tamper with context_size between save and restore.
+    {
+        struct ctl_test_uc_context_layout *h =
+            (struct ctl_test_uc_context_layout *)ctx;
+        size_t saved = h->context_size;
+        h->context_size = 0x100000;
+        uc_assert_err(UC_ERR_ARG, uc_context_restore(uc, ctx));
+        h->context_size = saved;
+    }
+
+    // 4. Tamper with fv (only material in MEMORY mode but the magic
+    //    binds it regardless, so a normal CPU-only restore catches it).
+    {
+        struct ctl_test_uc_context_layout *h =
+            (struct ctl_test_uc_context_layout *)ctx;
+        void *saved = h->fv;
+        h->fv = (void *)0xdeadbeefULL;
+        uc_assert_err(UC_ERR_ARG, uc_context_restore(uc, ctx));
+        h->fv = saved;
+    }
+
+    // 5. Tamper with last_block.
+    {
+        struct ctl_test_uc_context_layout *h =
+            (struct ctl_test_uc_context_layout *)ctx;
+        void *saved = h->last_block;
+        h->last_block = (void *)0xdeadbeefULL;
+        uc_assert_err(UC_ERR_ARG, uc_context_restore(uc, ctx));
+        h->last_block = saved;
+    }
+
+    // 6. After undoing all tampers we should still be valid.
+    OK(uc_context_restore(uc, ctx));
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
+// A context saved against one engine must not restore into another
+// engine instance even with the same arch/mode.
+static void test_uc_context_restore_rejects_cross_engine(void)
+{
+    uc_engine *uc1, *uc2;
+    uc_context *ctx;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc1));
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc2));
+    OK(uc_context_alloc(uc1, &ctx));
+    OK(uc_context_save(uc1, ctx));
+
+    uc_assert_err(UC_ERR_ARG, uc_context_restore(uc2, ctx));
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc1));
+    OK(uc_close(uc2));
+}
+
 TEST_LIST = {
     {"test_uc_ctl_mode", test_uc_ctl_mode},
     {"test_uc_ctl_page_size", test_uc_ctl_page_size},
@@ -416,4 +507,8 @@ TEST_LIST = {
     {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
     {"test_tlb_clear", test_tlb_clear},
     {"test_noexec", test_noexec},
+    {"test_uc_context_restore_rejects_tampering",
+     test_uc_context_restore_rejects_tampering},
+    {"test_uc_context_restore_rejects_cross_engine",
+     test_uc_context_restore_rejects_cross_engine},
     {NULL, NULL}};

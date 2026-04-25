@@ -329,6 +329,19 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         uc->errnum = UC_ERR_OK;
         uc->arch = arch;
         uc->mode = mode;
+
+        // Per-engine seed used to tag uc_context blobs in
+        // uc_context_save() and verify them in uc_context_restore().
+        // It just needs to be unguessable by code that can mutate the
+        // user-visible context struct (which lives in the same process),
+        // not cryptographically strong. The engine pointer alone is
+        // hard to predict under ASLR; mixing in a clock value adds a
+        // few more bits and avoids zero-seeds in pathological builds.
+        uc->context_seed = ((uint64_t)(uintptr_t)uc << 1) ^
+                           ((uint64_t)time(NULL) << 32) ^ 0x9E3779B97F4A7C15ULL;
+        if (uc->context_seed == 0) {
+            uc->context_seed = 0x9E3779B97F4A7C15ULL;
+        }
         uc->reg_read = default_reg_read;
         uc->reg_write = default_reg_write;
 
@@ -2254,6 +2267,32 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
     return UC_ERR_OK;
 }
 
+// Tamper-evidence tag for a uc_context. Recomputed in uc_context_save()
+// and uc_context_restore() from all the fields the restore path will
+// trust; mixing in the engine's per-instance context_seed makes it
+// impractical for code that mutates the public uc_context struct to
+// forge a matching tag without also reading uc_struct (which is opaque).
+static uint64_t uc_context_compute_magic(uc_engine *uc, uc_context *context)
+{
+    uint64_t h = uc->context_seed;
+    h ^= (uint64_t)context->context_size;
+    h ^= ((uint64_t)(uint32_t)context->arch) << 32;
+    h ^= (uint64_t)(uint32_t)context->mode;
+    h ^= (uint64_t)(uintptr_t)context->fv;
+    h ^= (uint64_t)(uintptr_t)context->last_block;
+    h ^= (uint64_t)(uint32_t)context->snapshot_level;
+    h ^= (uint64_t)context->ramblock_freed;
+    // Final mixing step (xorshift) so a single field flip changes
+    // many output bits.
+    h ^= h >> 33;
+    h *= 0xff51afd7ed558ccdULL;
+    h ^= h >> 33;
+    h *= 0xc4ceb9fe1a85ec53ULL;
+    h ^= h >> 33;
+    // 0 is reserved for "never saved", so steer away from it.
+    return h ? h : 0x9E3779B97F4A7C15ULL;
+}
+
 UNICORN_EXPORT
 uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 {
@@ -2262,12 +2301,16 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 
     UC_INIT(uc);
 
-    *_context = g_malloc(size);
+    // Zero-init so save_magic / fv / last_block start at known values
+    // (g_malloc0 is calloc; same as the existing g_malloc + explicit
+    // fv = NULL, just covers the new fields too).
+    *_context = g_malloc0(size);
     if (*_context) {
         (*_context)->context_size = size - sizeof(uc_context);
         (*_context)->arch = uc->arch;
         (*_context)->mode = uc->mode;
-        (*_context)->fv = NULL;
+        // save_magic stays 0; uc_context_restore() reads that as
+        // "never saved" and refuses with UC_ERR_ARG.
         restore_jit_state(uc);
         return UC_ERR_OK;
     } else {
@@ -2330,14 +2373,19 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
     if (uc->context_content & UC_CTL_CONTEXT_CPU) {
         if (!uc->context_save) {
             memcpy(context->data, uc->cpu->env_ptr, context->context_size);
+            context->save_magic = uc_context_compute_magic(uc, context);
             restore_jit_state(uc);
             return UC_ERR_OK;
         } else {
             ret = uc->context_save(uc, context);
+            if (ret == UC_ERR_OK) {
+                context->save_magic = uc_context_compute_magic(uc, context);
+            }
             restore_jit_state(uc);
             return ret;
         }
     }
+    context->save_magic = uc_context_compute_magic(uc, context);
     restore_jit_state(uc);
     return ret;
 }
@@ -2586,6 +2634,19 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
     UC_INIT(uc);
     uc_err ret;
+
+    // Refuse contexts that were never populated by uc_context_save() on
+    // this engine, or whose header fields have been mutated since save.
+    // Without this, restoring a fresh / cross-engine / tampered context
+    // propagates wrong sizes or wild host pointers (fv, last_block) into
+    // the engine and crashes inside flatview_copy() / find_ram_offset().
+    if (context->save_magic == 0 ||
+        context->save_magic != uc_context_compute_magic(uc, context) ||
+        context->arch != uc->arch ||
+        context->mode != uc->mode) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
 
     if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
         uc->snapshot_level = context->snapshot_level;

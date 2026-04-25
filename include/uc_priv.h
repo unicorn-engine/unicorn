@@ -422,6 +422,10 @@ struct uc_struct {
                           // workaround to treat the IT block as a whole block.
     bool init_done;       // Whether the initialization is done.
 
+    // Per-engine seed for tagging uc_context blobs in uc_context_save()
+    // and verifying them in uc_context_restore(). Set in uc_open().
+    uint64_t context_seed;
+
     sigjmp_buf jmp_bufs[UC_MAX_NESTED_LEVEL]; // To support nested uc_emu_start
     int nested_level;                         // Current nested_level
 
@@ -451,6 +455,11 @@ struct uc_context {
     bool ramblock_freed;  // wheter there was a some ramblock freed
     RAMBlock *last_block; // The last element of the ramblock list
     FlatView *fv;         // The current flatview of the memory
+    // Tamper-evidence: set by uc_context_save() to a hash of all the
+    // critical fields above mixed with the engine's context_seed.
+    // uc_context_restore() recomputes the hash and refuses contexts
+    // whose fields have been mutated (or that were never saved).
+    uint64_t save_magic;
     char data[0];         // context
 };
 
