@@ -769,6 +769,14 @@ static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
 {
     size_t count = 0, len;
 
+    // A wrap-around range can never be a single mapped extent. Reject it
+    // here so the loop below can't walk from the top of the address space
+    // back to 0 and convince callers that a wrapping range is "valid".
+    // uc_mem_map() rejects the same condition in mem_map_check().
+    if (size != 0 && (address + size - 1) < address) {
+        return false;
+    }
+
     while (count < size) {
         MemoryRegion *mr = uc->memory_mapping(uc, address);
         if (mr) {

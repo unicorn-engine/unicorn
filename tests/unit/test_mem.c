@@ -589,6 +589,38 @@ static void test_virtual_write(void)
     OK(uc_close(uc));
 }
 
+// Regression test for issue #2321. With two legal mappings (top page and
+// page 0), an address+size that wraps used to let check_mem_area() walk
+// from the top of the address space back to 0 and treat the wrapping
+// range as fully mapped. uc_mem_read then memcpy'd 0x2000 bytes into a
+// 0x1000 buffer; uc_mem_unmap silently dropped both regions. After the
+// fix, check_mem_area() rejects the wrap up front so the four entry
+// points fall back to their existing not-mapped error codes.
+static void test_mem_addr_size_wraparound(void)
+{
+    uc_engine *uc;
+    uint8_t buf[0x1000];
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0,                     0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0xFFFFFFFFFFFFF000ULL, 0x1000, UC_PROT_ALL));
+
+    uc_assert_err(UC_ERR_READ_UNMAPPED,
+        uc_mem_read(uc, 0xFFFFFFFFFFFFF000ULL, buf, 0x2000));
+    uc_assert_err(UC_ERR_WRITE_UNMAPPED,
+        uc_mem_write(uc, 0xFFFFFFFFFFFFF000ULL, buf, 0x2000));
+    uc_assert_err(UC_ERR_NOMEM,
+        uc_mem_unmap(uc, 0xFFFFFFFFFFFFF000ULL, 0x2000));
+    uc_assert_err(UC_ERR_NOMEM,
+        uc_mem_protect(uc, 0xFFFFFFFFFFFFF000ULL, 0x2000, UC_PROT_READ));
+
+    // The non-wrapping single-page case must still work for both regions.
+    OK(uc_mem_read(uc, 0xFFFFFFFFFFFFF000ULL, buf, 0x1000));
+    OK(uc_mem_read(uc, 0,                     buf, 0x1000));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -608,4 +640,5 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
               test_mem_read_and_write_large_memory_block},
              {"test_virtual_to_physical", test_virtual_to_physical},
              {"test_virtual_write", test_virtual_write},
+             {"test_mem_addr_size_wraparound", test_mem_addr_size_wraparound},
              {NULL, NULL}};
