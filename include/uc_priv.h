@@ -451,6 +451,17 @@ struct uc_context {
     bool ramblock_freed;  // wheter there was a some ramblock freed
     RAMBlock *last_block; // The last element of the ramblock list
     FlatView *fv;         // The current flatview of the memory
+    // Mirrors uc->context_content at uc_context_save() time. 0 means
+    // the context was allocated but never saved; uc_context_restore()
+    // refuses such contexts. Also gates the per-bit restore branches
+    // and the uc_context_reg_*() entry points.
+    uc_context_content context_content;
+    // Engine the memory state was captured against. Set only when
+    // UC_CTL_CONTEXT_MEMORY is included; checked on restore to refuse
+    // a memory-restore against a different uc_engine. CPU-only
+    // contexts leave this NULL and stay portable across engines with
+    // matching arch/mode.
+    struct uc_struct *engine;
     char data[0];         // context
 };
 

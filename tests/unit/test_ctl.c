@@ -398,6 +398,94 @@ static void test_noexec(void)
     OK(uc_close(uc));
 }
 
+// Regression test for #2319. uc_context_alloc() followed by
+// uc_context_restore() (no save in between) used to abort the host
+// process via the cpu_asidx_from_attrs() assertion in cpu.h.
+static void test_uc_context_restore_without_save(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    uint8_t code[] = {0x90}; // nop
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_context_alloc(uc, &ctx));
+
+    uc_assert_err(UC_ERR_ARG, uc_context_restore(uc, ctx));
+
+    // The engine must still be usable.
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code)));
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code), 0, 1));
+
+    // Saving then restoring works as before.
+    OK(uc_context_save(uc, ctx));
+    OK(uc_context_restore(uc, ctx));
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
+// Regression test for #2320. A context whose memory state was captured
+// against engine A must not restore into engine B; the fv / last_block
+// pointers it carries are live host pointers tied to A's address space.
+// CPU-only contexts stay portable across engines with matching arch
+// and mode.
+static void test_uc_context_restore_cross_engine(void)
+{
+    uc_engine *uc1, *uc2;
+    uc_context *ctx_cpu, *ctx_mem;
+
+    // CPU-only: cross-engine restore must succeed (no engine-specific
+    // state captured).
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc1));
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc2));
+    OK(uc_context_alloc(uc1, &ctx_cpu));
+    OK(uc_context_save(uc1, ctx_cpu));
+    OK(uc_context_restore(uc2, ctx_cpu));
+    OK(uc_context_free(ctx_cpu));
+
+    // Memory-mode: cross-engine restore must be refused.
+    OK(uc_ctl(uc1, UC_CTL_WRITE(UC_CTL_CONTEXT_MODE, 1),
+              UC_CTL_CONTEXT_CPU | UC_CTL_CONTEXT_MEMORY));
+    OK(uc_ctl(uc2, UC_CTL_WRITE(UC_CTL_CONTEXT_MODE, 1),
+              UC_CTL_CONTEXT_CPU | UC_CTL_CONTEXT_MEMORY));
+    OK(uc_mem_map(uc1, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc2, 0x1000, 0x1000, UC_PROT_ALL));
+
+    OK(uc_context_alloc(uc1, &ctx_mem));
+    OK(uc_context_save(uc1, ctx_mem));
+    uc_assert_err(UC_ERR_ARG, uc_context_restore(uc2, ctx_mem));
+    OK(uc_context_restore(uc1, ctx_mem));
+
+    OK(uc_context_free(ctx_mem));
+    OK(uc_close(uc1));
+    OK(uc_close(uc2));
+}
+
+// uc_context_reg_*() must reject contexts that don't carry CPU state
+// (memory-only snapshots), since their data buffer is empty.
+static void test_uc_context_reg_rejects_memory_only(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    int regid = UC_X86_REG_RAX;
+    uint64_t value = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl(uc, UC_CTL_WRITE(UC_CTL_CONTEXT_MODE, 1),
+              UC_CTL_CONTEXT_MEMORY));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    uc_assert_err(UC_ERR_ARG, uc_context_reg_read(ctx, regid, &value));
+    uc_assert_err(UC_ERR_ARG, uc_context_reg_write(ctx, regid, &value));
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_uc_ctl_mode", test_uc_ctl_mode},
     {"test_uc_ctl_page_size", test_uc_ctl_page_size},
@@ -416,4 +504,10 @@ TEST_LIST = {
     {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
     {"test_tlb_clear", test_tlb_clear},
     {"test_noexec", test_noexec},
+    {"test_uc_context_restore_without_save",
+     test_uc_context_restore_without_save},
+    {"test_uc_context_restore_cross_engine",
+     test_uc_context_restore_cross_engine},
+    {"test_uc_context_reg_rejects_memory_only",
+     test_uc_context_reg_rejects_memory_only},
     {NULL, NULL}};

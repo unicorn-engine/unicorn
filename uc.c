@@ -2262,12 +2262,16 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 
     UC_INIT(uc);
 
-    *_context = g_malloc(size);
+    // Zero-initialise the whole allocation so a stray uc_context_restore()
+    // before any uc_context_save() sees context_content == 0 and bails out
+    // with UC_ERR_ARG instead of feeding garbage snapshot_level / fv /
+    // last_block into the engine and tripping the cpu_asidx_from_attrs()
+    // assertion in cpu.h. Covers #2319.
+    *_context = g_malloc0(size);
     if (*_context) {
         (*_context)->context_size = size - sizeof(uc_context);
         (*_context)->arch = uc->arch;
         (*_context)->mode = uc->mode;
-        (*_context)->fv = NULL;
         restore_jit_state(uc);
         return UC_ERR_OK;
     } else {
@@ -2302,6 +2306,16 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
     UC_INIT(uc);
     uc_err ret = UC_ERR_OK;
+
+    // Tag the context with what we are about to save and which engine
+    // owns the memory state. uc_context_restore() refuses contexts whose
+    // context_content is 0 (never saved, #2319), arch/mode mismatches
+    // the destination engine, or whose engine pointer doesn't match on
+    // a memory restore (#2320). uc_context_reg_*() refuses memory-only
+    // snapshots via context_content as well.
+    context->context_content = uc->context_content;
+    context->engine =
+        (uc->context_content & UC_CTL_CONTEXT_MEMORY) ? uc : NULL;
 
     if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
         if (!context->fv) {
@@ -2458,9 +2472,28 @@ static context_reg_rw_t find_context_reg_rw(uc_arch arch, uc_mode mode)
     return rw;
 }
 
+// Refuse register r/w on memory-only contexts: their data buffer
+// holds no CPU state, so the call would just shuffle zeros into the
+// caller's value (read) or be lost on the next restore (write).
+// Untouched contexts (context_content == 0) are left alone, so the
+// uc_context_alloc + uc_context_reg_write + uc_context_save pattern
+// keeps working.
+static inline uc_err uc_context_check_cpu_state(const uc_context *ctx)
+{
+    if ((ctx->context_content & UC_CTL_CONTEXT_MEMORY) &&
+        !(ctx->context_content & UC_CTL_CONTEXT_CPU)) {
+        return UC_ERR_ARG;
+    }
+    return UC_ERR_OK;
+}
+
 UNICORN_EXPORT
 uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value)
 {
+    uc_err err = uc_context_check_cpu_state(ctx);
+    if (err) {
+        return err;
+    }
     int setpc = 0;
     size_t size = (size_t)-1;
     return find_context_reg_rw(ctx->arch, ctx->mode)
@@ -2470,6 +2503,10 @@ uc_err uc_context_reg_write(uc_context *ctx, int regid, const void *value)
 UNICORN_EXPORT
 uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value)
 {
+    uc_err err = uc_context_check_cpu_state(ctx);
+    if (err) {
+        return err;
+    }
     size_t size = (size_t)-1;
     return find_context_reg_rw(ctx->arch, ctx->mode)
         .read(ctx->data, ctx->mode, regid, value, &size);
@@ -2479,6 +2516,10 @@ UNICORN_EXPORT
 uc_err uc_context_reg_write2(uc_context *ctx, int regid, const void *value,
                              size_t *size)
 {
+    uc_err err = uc_context_check_cpu_state(ctx);
+    if (err) {
+        return err;
+    }
     int setpc = 0;
     return find_context_reg_rw(ctx->arch, ctx->mode)
         .write(ctx->data, ctx->mode, regid, value, size, &setpc);
@@ -2488,6 +2529,10 @@ UNICORN_EXPORT
 uc_err uc_context_reg_read2(uc_context *ctx, int regid, void *value,
                             size_t *size)
 {
+    uc_err err = uc_context_check_cpu_state(ctx);
+    if (err) {
+        return err;
+    }
     return find_context_reg_rw(ctx->arch, ctx->mode)
         .read(ctx->data, ctx->mode, regid, value, size);
 }
@@ -2496,6 +2541,10 @@ UNICORN_EXPORT
 uc_err uc_context_reg_write_batch(uc_context *ctx, int const *regs,
                                   void *const *vals, int count)
 {
+    uc_err err = uc_context_check_cpu_state(ctx);
+    if (err) {
+        return err;
+    }
     reg_write_t reg_write = find_context_reg_rw(ctx->arch, ctx->mode).write;
     void *env = ctx->data;
     int mode = ctx->mode;
@@ -2519,6 +2568,10 @@ UNICORN_EXPORT
 uc_err uc_context_reg_read_batch(uc_context *ctx, int const *regs, void **vals,
                                  int count)
 {
+    uc_err err = uc_context_check_cpu_state(ctx);
+    if (err) {
+        return err;
+    }
     reg_read_t reg_read = find_context_reg_rw(ctx->arch, ctx->mode).read;
     void *env = ctx->data;
     int mode = ctx->mode;
@@ -2542,6 +2595,10 @@ uc_err uc_context_reg_write_batch2(uc_context *ctx, int const *regs,
                                    const void *const *vals, size_t *sizes,
                                    int count)
 {
+    uc_err err = uc_context_check_cpu_state(ctx);
+    if (err) {
+        return err;
+    }
     reg_write_t reg_write = find_context_reg_rw(ctx->arch, ctx->mode).write;
     void *env = ctx->data;
     int mode = ctx->mode;
@@ -2564,6 +2621,10 @@ UNICORN_EXPORT
 uc_err uc_context_reg_read_batch2(uc_context *ctx, int const *regs,
                                   void *const *vals, size_t *sizes, int count)
 {
+    uc_err err = uc_context_check_cpu_state(ctx);
+    if (err) {
+        return err;
+    }
     reg_read_t reg_read = find_context_reg_rw(ctx->arch, ctx->mode).read;
     void *env = ctx->data;
     int mode = ctx->mode;
@@ -2587,7 +2648,32 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
     UC_INIT(uc);
     uc_err ret;
 
-    if (uc->context_content & UC_CTL_CONTEXT_MEMORY) {
+    // Refuse never-saved contexts (#2319) and ones whose recorded
+    // arch/mode does not match the destination engine (#2320). Both
+    // would otherwise propagate uninitialised or wrong-sized state into
+    // the engine and trip cpu_asidx_from_attrs() or read garbage host
+    // pointers out of fv / last_block.
+    if (context->context_content == 0 ||
+        context->arch != uc->arch ||
+        context->mode != uc->mode) {
+        restore_jit_state(uc);
+        return UC_ERR_ARG;
+    }
+
+    // Each restore branch is gated on both sides advertising the
+    // matching content bit. Restoring a CPU-only context onto an engine
+    // that asks for memory restore (or vice versa) is silently a no-op
+    // for the missing branch, matching the maintainer's intent of
+    // avoiding "restore a CPU context as a memory context".
+    if ((uc->context_content & UC_CTL_CONTEXT_MEMORY) &&
+        (context->context_content & UC_CTL_CONTEXT_MEMORY)) {
+        // The fv / last_block fields the memory restore is about to
+        // dereference are live host pointers that only make sense on
+        // the engine that captured them.
+        if (context->engine != uc) {
+            restore_jit_state(uc);
+            return UC_ERR_ARG;
+        }
         uc->snapshot_level = context->snapshot_level;
         if (!uc->flatview_copy(uc, uc->address_space_memory.current_map,
                                context->fv, true)) {
@@ -2604,7 +2690,8 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
         uc->tcg_flush_tlb(uc);
     }
 
-    if (uc->context_content & UC_CTL_CONTEXT_CPU) {
+    if ((uc->context_content & UC_CTL_CONTEXT_CPU) &&
+        (context->context_content & UC_CTL_CONTEXT_CPU)) {
         if (!uc->context_restore) {
             memcpy(uc->cpu->env_ptr, context->data, context->context_size);
             restore_jit_state(uc);
@@ -2615,6 +2702,7 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
             return ret;
         }
     }
+    restore_jit_state(uc);
     return UC_ERR_OK;
 }
 
