@@ -412,6 +412,15 @@ static void test_uc_context_restore_without_save(void)
 
     uc_assert_err(UC_ERR_ARG, uc_context_restore(uc, ctx));
 
+    // reg_*() on a never-saved context is also refused, symmetric
+    // with restore.
+    {
+        int regid = UC_X86_REG_RAX;
+        uint64_t value = 0;
+        uc_assert_err(UC_ERR_ARG, uc_context_reg_read(ctx, regid, &value));
+        uc_assert_err(UC_ERR_ARG, uc_context_reg_write(ctx, regid, &value));
+    }
+
     // The engine must still be usable.
     OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
     OK(uc_mem_write(uc, 0x1000, code, sizeof(code)));

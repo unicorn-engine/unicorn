@@ -2472,16 +2472,13 @@ static context_reg_rw_t find_context_reg_rw(uc_arch arch, uc_mode mode)
     return rw;
 }
 
-// Refuse register r/w on memory-only contexts: their data buffer
-// holds no CPU state, so the call would just shuffle zeros into the
-// caller's value (read) or be lost on the next restore (write).
-// Untouched contexts (context_content == 0) are left alone, so the
-// uc_context_alloc + uc_context_reg_write + uc_context_save pattern
-// keeps working.
+// Refuse register r/w unless the context advertises CPU state. This
+// rejects both memory-only snapshots (whose data buffer holds no CPU
+// state) and never-saved contexts (context_content == 0), which is
+// symmetric with uc_context_restore() refusing context_content == 0.
 static inline uc_err uc_context_check_cpu_state(const uc_context *ctx)
 {
-    if ((ctx->context_content & UC_CTL_CONTEXT_MEMORY) &&
-        !(ctx->context_content & UC_CTL_CONTEXT_CPU)) {
+    if (!(ctx->context_content & UC_CTL_CONTEXT_CPU)) {
         return UC_ERR_ARG;
     }
     return UC_ERR_OK;
