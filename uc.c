@@ -2059,6 +2059,8 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
             hook->to_delete = true;
             uc->hooks_count[i]--;
             hook_append(&uc->hooks_to_del, hook);
+            if (hook->type == UC_HOOK_CODE || hook->type == UC_HOOK_BLOCK)
+                break_translation_loop(uc);
         }
     }
 
