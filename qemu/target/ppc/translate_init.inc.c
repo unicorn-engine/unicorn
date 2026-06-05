@@ -10123,6 +10123,11 @@ static void ppc_cpu_reset(CPUState *dev)
     }
 #endif
 
+    /* hreg_store_msr only allows setting MSR_HV when env->msr already has it
+     * set; pre-seed it so the reset value's HV bit isn't silently dropped.
+     * Without this POWER9+ start with msr_hv=0, breaking real-mode fetch
+     * because POWERPC_MMU_3_00 always uses VRMA and needs msr_hv=1. */
+    env->msr = msr & env->msr_mask;
     hreg_store_msr(env, msr, 1);
 
     env->nip = env->hreset_vector | env->excp_prefix;
