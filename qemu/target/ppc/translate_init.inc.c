@@ -11015,6 +11015,8 @@ PowerPCCPU *cpu_ppc_init(struct uc_struct *uc)
     } else if (uc->cpu_model + UC_CPU_PPC32_7457A_V1_2 + 1 >= ARRAY_SIZE(ppc_cpus)) {
         free(cpu);
         return NULL;
+    } else {
+        uc->cpu_model += UC_CPU_PPC32_7457A_V1_2 + 1;
     }
 #else
     if (uc->cpu_model == INT_MAX) {
