@@ -2796,7 +2796,11 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
             UC_INIT(uc);
 
             int *model = va_arg(args, int *);
-            *model = uc->cpu_model;
+            if (uc->arch == UC_ARCH_PPC && (uc->mode & UC_MODE_64)) {
+                *model = uc->cpu_model - UC_CPU_PPC32_ENDING;
+            } else {
+                *model = uc->cpu_model;
+            }
 
             save_jit_state(uc);
         } else {
@@ -2851,6 +2855,10 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 if (uc->mode & UC_MODE_64 && model >= UC_CPU_PPC64_ENDING) {
                     err = UC_ERR_ARG;
                     break;
+                }
+
+                if (uc->mode & UC_MODE_64) {
+                    model += UC_CPU_PPC32_ENDING;
                 }
             } else if (uc->arch == UC_ARCH_RISCV) {
                 if (uc->mode & UC_MODE_32 && model >= UC_CPU_RISCV32_ENDING) {
