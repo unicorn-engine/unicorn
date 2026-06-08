@@ -153,10 +153,84 @@ static void test_ppc32_spr_mftb(void)
     TEST_CHECK(t1 != t2);
 }
 
+static void test_ppc64_load_imm64(void)
+{
+    uc_engine *uc;
+
+    char code[] =
+        ("\x3C\x60\xDE\xAD" // lis  r3, 0xDEAD
+         "\x60\x63\xBE\xEF" // ori  r3, r3, 0xBEEF
+         "\x78\x63\x07\xC6" // sldi r3, r3, 32
+         "\x64\x63\xCA\xFE" // oris r3, r3, 0xCAFE
+         "\x60\x63\xBA\xBE" // ori  r3, r3, 0xBABE
+        );
+    uint64_t r3 = 0;
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_PPC64 | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_PPC_REG_3, &r3));
+    TEST_CHECK(r3 == 0xDEADBEEFCAFEBABEULL);
+
+    OK(uc_close(uc));
+}
+
+static void test_ppc64_std(void)
+{
+    uc_engine *uc;
+    char code[] = "\xf8\x64\x00\x00"; // std r3, 0(r4)
+    uint64_t r3 = 0xAABBCCDD11223344ULL;
+    uint64_t r4 = code_start + 0x2000;
+    uint8_t buf[8];
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_PPC64 | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1);
+
+    OK(uc_reg_write(uc, UC_PPC_REG_3, &r3));
+    OK(uc_reg_write(uc, UC_PPC_REG_4, &r4));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_mem_read(uc, r4, buf, sizeof(buf)));
+    TEST_CHECK(buf[0] == 0xAA && buf[1] == 0xBB && buf[2] == 0xCC &&
+               buf[3] == 0xDD);
+    TEST_CHECK(buf[4] == 0x11 && buf[5] == 0x22 && buf[6] == 0x33 &&
+               buf[7] == 0x44);
+
+    OK(uc_close(uc));
+}
+
+static void test_ppc64_ld(void)
+{
+    uc_engine *uc;
+    char code[] = "\xe8\x64\x00\x00"; // ld r3, 0(r4)
+    uint64_t r4 = code_start + 0x2000;
+    uint64_t r3 = 0;
+    char data[] = "\x12\x34\x56\x78\x9A\xBC\xDE\xF0";
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_PPC64 | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1);
+
+    OK(uc_mem_write(uc, r4, data, sizeof(data) - 1));
+    OK(uc_reg_write(uc, UC_PPC_REG_4, &r4));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_PPC_REG_3, &r3));
+    TEST_CHECK(r3 == 0x123456789ABCDEF0ULL);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_ppc32_add", test_ppc32_add},
              {"test_ppc32_fadd", test_ppc32_fadd},
              {"test_ppc32_sc", test_ppc32_sc},
              {"test_ppc32_cr", test_ppc32_cr},
              {"test_ppc32_spr_time", test_ppc32_spr_time},
              {"test_ppc32_spr_mftb", test_ppc32_spr_mftb},
+             {"test_ppc64_load_imm64", test_ppc64_load_imm64},
+             {"test_ppc64_std", test_ppc64_std},
+             {"test_ppc64_ld", test_ppc64_ld},
              {NULL, NULL}};
