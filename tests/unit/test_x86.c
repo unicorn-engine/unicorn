@@ -2201,6 +2201,59 @@ static void test_x86_mem_hooks_pc_guarantee(void)
     OK(uc_close(uc));
 }
 
+// Regression test for an order-dependent TB-chaining fall-through (#2341).
+// func_a (mov eax, 0xfffffffe; ret) and func_b are laid out back to back, so
+// func_a_end == func_b_start. func_a's `ret` returns to func_a_end, which is
+// also the emu_start `until`, so emulation must stop there. The bug: emulating
+// func_b first cached a non-halting TB at func_a_end (it was not an exit
+// address then); func_a then chained into that stale block and ran past
+// `until` into func_b, faulting at the return slot. Emulating func_a first
+// always worked, so the fault was order-dependent.
+static void test_x86_tb_chain_until_after_chaining(void)
+{
+    uc_engine *uc;
+    char func_a[] = "\xb8\xfe\xff\xff\xff\xc3";
+    // push r15/r14/r13/r12/rbp/rbx; sub rsp,8; mov rax,[0x3000]; test rax,rax;
+    // je .l; nop; .l: mov r13d,0xffffffff; mov eax,r13d; add rsp,8;
+    // pop rbx/rbp/r12/r13/r14/r15; ret
+    char func_b[] = "\x41\x57\x41\x56\x41\x55\x41\x54\x55\x53\x48\x83\xec\x08"
+                    "\x48\xa1\x00\x30\x00\x00\x00\x00\x00\x00\x48\x85\xc0\x74"
+                    "\x01\x90\x41\xbd\xff\xff\xff\xff\xeb\x00\x44\x89\xe8\x48"
+                    "\x83\xc4\x08\x5b\x5d\x41\x5c\x41\x5d\x41\x5e\x41\x5f\xc3";
+    uint64_t func_a_end = code_start + sizeof(func_a) - 1;
+    uint64_t func_b_end = func_a_end + sizeof(func_b) - 1;
+    uint64_t rsp = 0x7ffff0;
+    uint64_t ret_addr, rax, rip;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, code_start, 0x2000, UC_PROT_ALL)); // func_a, func_b
+    OK(uc_mem_map(uc, 0x3000, 0x1000, UC_PROT_ALL));     // read by func_b
+    OK(uc_mem_map(uc, 0x700000, 0x100000, UC_PROT_ALL)); // stack
+    OK(uc_mem_write(uc, code_start, func_a, sizeof(func_a) - 1));
+    OK(uc_mem_write(uc, func_a_end, func_b, sizeof(func_b) - 1));
+
+    // Emulate func_b first so a non-halting TB is cached at func_a_end. The
+    // seeded return address (== until) lets func_b's `ret` end the run.
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &rsp));
+    ret_addr = LEINT64(func_b_end);
+    OK(uc_mem_write(uc, rsp, &ret_addr, sizeof(ret_addr)));
+    OK(uc_emu_start(uc, func_a_end, func_b_end, 0, 0));
+
+    // Now run func_a with until == func_a_end. It must stop there, not chain
+    // into the stale block and fall through into func_b.
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &rsp));
+    ret_addr = LEINT64(func_a_end);
+    OK(uc_mem_write(uc, rsp, &ret_addr, sizeof(ret_addr)));
+    OK(uc_emu_start(uc, code_start, func_a_end, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &rip));
+    TEST_CHECK(rax == 0xfffffffe);
+    TEST_CHECK(rip == func_a_end);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2265,4 +2318,6 @@ TEST_LIST = {
     {"test_x86_dr7", test_x86_dr7},
     {"test_x86_hook_block", test_x86_hook_block},
     {"test_x86_mem_hooks_pc_guarantee", test_x86_mem_hooks_pc_guarantee},
+    {"test_x86_tb_chain_until_after_chaining",
+     test_x86_tb_chain_until_after_chaining},
     {NULL, NULL}};
