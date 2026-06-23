@@ -312,7 +312,22 @@ target_ulong helper_##name(CPUMIPSState *env, target_ulong arg, int mem_idx)  \
         }                                                                     \
         do_raise_exception(env, EXCP_AdEL, GETPC());                          \
     }                                                                         \
-    env->CP0_LLAddr = do_translate_address(env, arg, 0, GETPC());             \
+    /*                                                                        \
+     * Unicorn: under UC_TLB_VIRTUAL the guest's MIPS segment layout does not \
+     * apply - the soft-TLB fill hook provides an identity/virtual mapping,   \
+     * so any address may be valid (e.g. MIPS64 useg above the 2GB limit).    \
+     * cpu_mips_translate_address() walks the MIPS segments and would raise a \
+     * spurious EXCP_AdEL for such addresses, even though the actual load      \
+     * below goes through the soft-TLB and succeeds. Skip the segment-based   \
+     * translation in virtual-TLB mode and record the (virtual) address; the  \
+     * real access still validates permissions via the TLB-fill hook.         \
+     */                                                                       \
+    if (CPU_GET_CLASS(env_cpu(env))->tlb_fill !=                              \
+        CPU_GET_CLASS(env_cpu(env))->tlb_fill_cpu) {                          \
+        env->CP0_LLAddr = arg;                                                \
+    } else {                                                                  \
+        env->CP0_LLAddr = do_translate_address(env, arg, 0, GETPC());         \
+    }                                                                         \
     env->lladdr = arg;                                                        \
     env->llval = do_cast cpu_##insn##_mmuidx_ra(env, arg, mem_idx, GETPC());  \
     return env->llval;                                                        \
