@@ -314,17 +314,23 @@ target_ulong helper_##name(CPUMIPSState *env, target_ulong arg, int mem_idx)  \
     }                                                                         \
     /*                                                                        \
      * Unicorn: under UC_TLB_VIRTUAL the guest's MIPS segment layout does not \
-     * apply - the soft-TLB fill hook provides an identity/virtual mapping,   \
-     * so any address may be valid (e.g. MIPS64 useg above the 2GB limit).    \
+     * apply - the soft-TLB fill hook supplies the mapping and may translate  \
+     * a page to any physical address (it is not necessarily identity).       \
      * cpu_mips_translate_address() walks the MIPS segments and would raise a \
-     * spurious EXCP_AdEL for such addresses, even though the actual load      \
-     * below goes through the soft-TLB and succeeds. Skip the segment-based   \
-     * translation in virtual-TLB mode and record the (virtual) address; the  \
-     * real access still validates permissions via the TLB-fill hook.         \
+     * spurious EXCP_AdEL for addresses outside useg (e.g. a MIPS64 address    \
+     * above the 2GB limit), even though the load below goes through the      \
+     * soft-TLB and succeeds. So in virtual-TLB mode skip the segment walk    \
+     * and recover the hook-mapped physical address from the soft-TLB, which  \
+     * is what CP0_LLAddr is architecturally meant to hold.                   \
      */                                                                       \
     if (CPU_GET_CLASS(env_cpu(env))->tlb_fill !=                              \
         CPU_GET_CLASS(env_cpu(env))->tlb_fill_cpu) {                          \
-        env->CP0_LLAddr = arg;                                                \
+        target_ulong paddr;                                                   \
+        if (tlb_vaddr_to_paddr(env, arg, MMU_DATA_LOAD, mem_idx, &paddr)) {   \
+            env->CP0_LLAddr = paddr;                                          \
+        } else {                                                              \
+            env->CP0_LLAddr = arg;                                            \
+        }                                                                     \
     } else {                                                                  \
         env->CP0_LLAddr = do_translate_address(env, arg, 0, GETPC());         \
     }                                                                         \
