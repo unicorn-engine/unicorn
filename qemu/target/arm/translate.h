@@ -22,6 +22,8 @@ typedef struct DisasContext {
     /* Thumb-2 conditional execution bits.  */
     int condexec_mask;
     int condexec_cond;
+    int eci;
+    bool eci_handled;
     int thumb;
     int sctlr_b;
     MemOp be_data;
@@ -29,10 +31,17 @@ typedef struct DisasContext {
     ARMMMUIdx mmu_idx; /* MMU index to use for normal loads/stores */
     uint8_t tbii;      /* TBI1|TBI0 for insns */
     uint8_t tbid;      /* TBI1|TBI0 for data */
+    uint8_t tcma;      /* TCMA1|TCMA0 for MTE */
     bool ns;        /* Use non-secure CPREG bank on access */
     int fp_excp_el; /* FP exception EL or 0 if enabled */
     int sve_excp_el; /* SVE exception EL or 0 if enabled */
+    int sme_excp_el; /* SME exception EL or 0 if enabled */
     int sve_len;     /* SVE vector length in bytes */
+    int svl;         /* Streaming SVE vector length in bytes */
+    bool pstate_sm;
+    bool pstate_za;
+    bool sme_trap_nonstreaming;
+    bool is_nonstreaming;
     /* Flag indicating that exceptions from secure mode are routed to EL3. */
     bool secure_routed_to_el3;
     bool vfp_enabled; /* FP enabled via FPSCR.EN */
@@ -44,6 +53,7 @@ typedef struct DisasContext {
     bool v8m_fpccr_s_wrong; /* true if v8M FPCCR.S != v8m_secure */
     bool v7m_new_fp_ctxt_needed; /* ASPEN set but no active FP context */
     bool v7m_lspact; /* FPCCR.LSPACT set */
+    bool mve_no_pred;
     /* Immediate value in AArch32 SVC insn; must be set if is_jmp == DISAS_SWI
      * so that top level loop can generate correct syndrome information.
      */
@@ -76,6 +86,9 @@ typedef struct DisasContext {
     bool unpriv;
     /* True if v8.3-PAuth is active.  */
     bool pauth_active;
+    /* True if v8.5-MemTag allocation tag access is active. */
+    bool ata;
+    bool mte_active[2];
     /* True with v8.5-BTI and SCTLR_ELx.BT* set.  */
     bool bt;
     /* True if any CP15 access is trapped by HSTR_EL2 */

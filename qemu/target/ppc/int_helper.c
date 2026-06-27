@@ -303,6 +303,81 @@ target_ulong helper_popcntw(target_ulong val)
                                            0x0000ffff0000ffffULL);
     return val;
 }
+
+uint64_t helper_CFUGED(uint64_t src, uint64_t mask)
+{
+    target_ulong m, left = 0, right = 0;
+    unsigned int n, i = 64;
+    bool bit = false;
+
+    if (mask == 0 || mask == -1) {
+        return src;
+    }
+
+    while (i) {
+        n = ctz64(mask);
+        if (n > i) {
+            n = i;
+        }
+
+        m = (1ULL << n) - 1;
+        if (bit) {
+            right = ror64(right | (src & m), n);
+        } else {
+            left = ror64(left | (src & m), n);
+        }
+
+        src >>= n;
+        mask >>= n;
+        i -= n;
+        bit = !bit;
+        mask = ~mask;
+    }
+
+    if (bit) {
+        n = ctpop64(mask);
+    } else {
+        n = 64 - ctpop64(mask);
+    }
+
+    return left | (right >> n);
+}
+
+uint64_t helper_PDEPD(uint64_t src, uint64_t mask)
+{
+    int i, o;
+    uint64_t result = 0;
+
+    if (mask == -1) {
+        return src;
+    }
+
+    for (i = 0; mask != 0; i++) {
+        o = ctz64(mask);
+        mask &= mask - 1;
+        result |= ((src >> i) & 1) << o;
+    }
+
+    return result;
+}
+
+uint64_t helper_PEXTD(uint64_t src, uint64_t mask)
+{
+    int i, o;
+    uint64_t result = 0;
+
+    if (mask == -1) {
+        return src;
+    }
+
+    for (o = 0; mask != 0; o++) {
+        i = ctz64(mask);
+        mask &= mask - 1;
+        result |= ((src >> i) & 1) << o;
+    }
+
+    return result;
+}
 #else
 target_ulong helper_popcntb(target_ulong val)
 {
@@ -656,6 +731,149 @@ VABSDU(w, u32)
 VCF(ux, uint32_to_float32, u32)
 VCF(sx, int32_to_float32, s32)
 #undef VCF
+
+typedef int64_t do_ger(uint32_t, uint32_t, uint32_t);
+
+static int64_t ger_rank8(uint32_t a, uint32_t b, uint32_t mask)
+{
+    int64_t psum = 0;
+    int i;
+
+    for (i = 0; i < 8; i++, mask >>= 1) {
+        if (mask & 1) {
+            psum += (int64_t)sextract32(a, 4 * i, 4) *
+                    sextract32(b, 4 * i, 4);
+        }
+    }
+    return psum;
+}
+
+static int64_t ger_rank4(uint32_t a, uint32_t b, uint32_t mask)
+{
+    int64_t psum = 0;
+    int i;
+
+    for (i = 0; i < 4; i++, mask >>= 1) {
+        if (mask & 1) {
+            psum += sextract32(a, 8 * i, 8) *
+                    (int64_t)extract32(b, 8 * i, 8);
+        }
+    }
+    return psum;
+}
+
+static int64_t ger_rank2(uint32_t a, uint32_t b, uint32_t mask)
+{
+    int64_t psum = 0;
+    int i;
+
+    for (i = 0; i < 2; i++, mask >>= 1) {
+        if (mask & 1) {
+            psum += (int64_t)sextract32(a, 16 * i, 16) *
+                    sextract32(b, 16 * i, 16);
+        }
+    }
+    return psum;
+}
+
+static void xviger(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                   ppc_acc_t *at, uint32_t mask, bool sat, bool acc,
+                   do_ger ger)
+{
+    uint8_t pmsk = ger_mask_pmsk(mask);
+    uint8_t xmsk = ger_mask_xmsk(mask);
+    uint8_t ymsk = ger_mask_ymsk(mask);
+    uint8_t xmsk_bit;
+    uint8_t ymsk_bit;
+    int64_t psum;
+    int i;
+    int j;
+
+    for (i = 0, xmsk_bit = 1 << 3; i < 4; i++, xmsk_bit >>= 1) {
+        for (j = 0, ymsk_bit = 1 << 3; j < 4; j++, ymsk_bit >>= 1) {
+            if ((xmsk_bit & xmsk) && (ymsk_bit & ymsk)) {
+                psum = ger(a->VsrW(i), b->VsrW(j), pmsk);
+                if (acc) {
+                    psum += at[i].VsrSW(j);
+                }
+                if (sat && psum > INT32_MAX) {
+                    set_vscr_sat(env);
+                    at[i].VsrSW(j) = INT32_MAX;
+                } else if (sat && psum < INT32_MIN) {
+                    set_vscr_sat(env);
+                    at[i].VsrSW(j) = INT32_MIN;
+                } else {
+                    at[i].VsrSW(j) = (int32_t)psum;
+                }
+            } else {
+                at[i].VsrSW(j) = 0;
+            }
+        }
+    }
+}
+
+QEMU_FLATTEN
+void helper_XVI4GER8(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                     ppc_acc_t *at, uint32_t mask)
+{
+    xviger(env, a, b, at, mask, false, false, ger_rank8);
+}
+
+QEMU_FLATTEN
+void helper_XVI4GER8PP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    xviger(env, a, b, at, mask, false, true, ger_rank8);
+}
+
+QEMU_FLATTEN
+void helper_XVI8GER4(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                     ppc_acc_t *at, uint32_t mask)
+{
+    xviger(env, a, b, at, mask, false, false, ger_rank4);
+}
+
+QEMU_FLATTEN
+void helper_XVI8GER4PP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    xviger(env, a, b, at, mask, false, true, ger_rank4);
+}
+
+QEMU_FLATTEN
+void helper_XVI8GER4SPP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                        ppc_acc_t *at, uint32_t mask)
+{
+    xviger(env, a, b, at, mask, true, true, ger_rank4);
+}
+
+QEMU_FLATTEN
+void helper_XVI16GER2(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                      ppc_acc_t *at, uint32_t mask)
+{
+    xviger(env, a, b, at, mask, false, false, ger_rank2);
+}
+
+QEMU_FLATTEN
+void helper_XVI16GER2S(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    xviger(env, a, b, at, mask, true, false, ger_rank2);
+}
+
+QEMU_FLATTEN
+void helper_XVI16GER2PP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                        ppc_acc_t *at, uint32_t mask)
+{
+    xviger(env, a, b, at, mask, false, true, ger_rank2);
+}
+
+QEMU_FLATTEN
+void helper_XVI16GER2SPP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                         ppc_acc_t *at, uint32_t mask)
+{
+    xviger(env, a, b, at, mask, true, true, ger_rank2);
+}
 
 #define VCMP_DO(suffix, compare, element, record)                       \
     void helper_vcmp##suffix(CPUPPCState *env, ppc_avr_t *r,            \
@@ -1129,6 +1347,138 @@ void helper_vpermr(CPUPPCState *env, ppc_avr_t *r, ppc_avr_t *a, ppc_avr_t *b,
     *r = result;
 }
 
+void helper_XXPERMX(ppc_vsr_t *t, ppc_vsr_t *s0, ppc_vsr_t *s1,
+                    ppc_vsr_t *pcv, target_ulong uim)
+{
+    int i;
+    ppc_vsr_t tmp = { .u64 = { 0, 0 } };
+
+    for (i = 0; i < ARRAY_SIZE(t->u8); i++) {
+        if ((pcv->VsrB(i) >> 5) == uim) {
+            int idx = pcv->VsrB(i) & 0x1f;
+
+            if (idx < ARRAY_SIZE(t->u8)) {
+                tmp.VsrB(i) = s0->VsrB(idx);
+            } else {
+                tmp.VsrB(i) = s1->VsrB(idx - ARRAY_SIZE(t->u8));
+            }
+        }
+    }
+
+    *t = tmp;
+}
+
+void helper_VDIVSQ(ppc_avr_t *t, ppc_avr_t *a, ppc_avr_t *b)
+{
+    Int128 neg1 = int128_makes64(-1);
+    Int128 int128_min = int128_make128(0, INT64_MIN);
+
+    if (likely(int128_nz(b->s128) &&
+               (int128_ne(a->s128, int128_min) ||
+                int128_ne(b->s128, neg1)))) {
+        t->s128 = int128_divs(a->s128, b->s128);
+    } else {
+        t->s128 = a->s128;
+    }
+}
+
+void helper_VDIVUQ(ppc_avr_t *t, ppc_avr_t *a, ppc_avr_t *b)
+{
+    if (int128_nz(b->s128)) {
+        t->s128 = int128_divu(a->s128, b->s128);
+    } else {
+        t->s128 = a->s128;
+    }
+}
+
+void helper_VDIVESD(ppc_avr_t *t, ppc_avr_t *a, ppc_avr_t *b)
+{
+    int i;
+
+    for (i = 0; i < 2; i++) {
+        int64_t high = a->s64[i];
+        uint64_t low = 0;
+
+        if (unlikely((high == INT64_MIN && b->s64[i] == -1) ||
+                     !b->s64[i])) {
+            t->s64[i] = a->s64[i];
+        } else {
+            divs128(&low, &high, b->s64[i]);
+            t->s64[i] = low;
+        }
+    }
+}
+
+void helper_VDIVEUD(ppc_avr_t *t, ppc_avr_t *a, ppc_avr_t *b)
+{
+    int i;
+
+    for (i = 0; i < 2; i++) {
+        uint64_t high = a->u64[i];
+        uint64_t low = 0;
+
+        if (unlikely(!b->u64[i])) {
+            t->u64[i] = a->u64[i];
+        } else {
+            divu128(&low, &high, b->u64[i]);
+            t->u64[i] = low;
+        }
+    }
+}
+
+void helper_VDIVESQ(ppc_avr_t *t, ppc_avr_t *a, ppc_avr_t *b)
+{
+    Int128 high = a->s128;
+    Int128 low = int128_zero();
+    Int128 int128_min = int128_make128(0, INT64_MIN);
+    Int128 neg1 = int128_makes64(-1);
+
+    if (unlikely(!int128_nz(b->s128) ||
+                 (int128_eq(b->s128, neg1) &&
+                  int128_eq(high, int128_min)))) {
+        t->s128 = a->s128;
+    } else {
+        divs256(&low, &high, b->s128);
+        t->s128 = low;
+    }
+}
+
+void helper_VDIVEUQ(ppc_avr_t *t, ppc_avr_t *a, ppc_avr_t *b)
+{
+    Int128 high = a->s128;
+    Int128 low = int128_zero();
+
+    if (unlikely(!int128_nz(b->s128))) {
+        t->s128 = a->s128;
+    } else {
+        divu256(&low, &high, b->s128);
+        t->s128 = low;
+    }
+}
+
+void helper_VMODSQ(ppc_avr_t *t, ppc_avr_t *a, ppc_avr_t *b)
+{
+    Int128 neg1 = int128_makes64(-1);
+    Int128 int128_min = int128_make128(0, INT64_MIN);
+
+    if (likely(int128_nz(b->s128) &&
+               (int128_ne(a->s128, int128_min) ||
+                int128_ne(b->s128, neg1)))) {
+        t->s128 = int128_rems(a->s128, b->s128);
+    } else {
+        t->s128 = int128_zero();
+    }
+}
+
+void helper_VMODUQ(ppc_avr_t *t, ppc_avr_t *a, ppc_avr_t *b)
+{
+    if (likely(int128_nz(b->s128))) {
+        t->s128 = int128_remu(a->s128, b->s128);
+    } else {
+        t->s128 = int128_zero();
+    }
+}
+
 #if defined(HOST_WORDS_BIGENDIAN)
 #define VBPERMQ_INDEX(avr, i) ((avr)->u8[(i)])
 #define VBPERMD_INDEX(i) (i)
@@ -1179,6 +1529,99 @@ void helper_vbpermq(ppc_avr_t *r, ppc_avr_t *a, ppc_avr_t *b)
 
 #undef VBPERMQ_INDEX
 #undef VBPERMQ_DW
+
+#define XXGENPCV_BE_EXP(NAME, SZ) \
+void glue(helper_, glue(NAME, _be_exp))(ppc_vsr_t *t, ppc_vsr_t *b) \
+{                                                                   \
+    ppc_vsr_t tmp;                                                  \
+                                                                    \
+    tmp.VsrD(0) = 0x1011121314151617;                               \
+    tmp.VsrD(1) = 0x18191A1B1C1D1E1F;                               \
+                                                                    \
+    for (int i = 0, j = 0; i < ARRAY_SIZE(b->u8); i += SZ) {        \
+        if (b->VsrB(i) & 0x80) {                                    \
+            for (int k = 0; k < SZ; k++) {                          \
+                tmp.VsrB(i + k) = j + k;                            \
+            }                                                       \
+            j += SZ;                                                \
+        }                                                           \
+    }                                                               \
+                                                                    \
+    *t = tmp;                                                       \
+}
+
+#define XXGENPCV_BE_COMP(NAME, SZ) \
+void glue(helper_, glue(NAME, _be_comp))(ppc_vsr_t *t, ppc_vsr_t *b)\
+{                                                                   \
+    ppc_vsr_t tmp = { .u64 = { 0, 0 } };                            \
+                                                                    \
+    for (int i = 0, j = 0; i < ARRAY_SIZE(b->u8); i += SZ) {        \
+        if (b->VsrB(i) & 0x80) {                                    \
+            for (int k = 0; k < SZ; k++) {                          \
+                tmp.VsrB(j + k) = i + k;                            \
+            }                                                       \
+            j += SZ;                                                \
+        }                                                           \
+    }                                                               \
+                                                                    \
+    *t = tmp;                                                       \
+}
+
+#define XXGENPCV_LE_EXP(NAME, SZ) \
+void glue(helper_, glue(NAME, _le_exp))(ppc_vsr_t *t, ppc_vsr_t *b) \
+{                                                                   \
+    ppc_vsr_t tmp;                                                  \
+                                                                    \
+    tmp.VsrD(0) = 0x1F1E1D1C1B1A1918;                               \
+    tmp.VsrD(1) = 0x1716151413121110;                               \
+                                                                    \
+    for (int i = 0, j = 0; i < ARRAY_SIZE(b->u8); i += SZ) {        \
+        const int idx = ARRAY_SIZE(b->u8) - i - SZ;                 \
+        if (b->VsrB(idx) & 0x80) {                                  \
+            for (int k = 0, rk = SZ - 1; k < SZ; k++, rk--) {       \
+                tmp.VsrB(idx + rk) = j + k;                         \
+            }                                                       \
+            j += SZ;                                                \
+        }                                                           \
+    }                                                               \
+                                                                    \
+    *t = tmp;                                                       \
+}
+
+#define XXGENPCV_LE_COMP(NAME, SZ) \
+void glue(helper_, glue(NAME, _le_comp))(ppc_vsr_t *t, ppc_vsr_t *b)\
+{                                                                   \
+    ppc_vsr_t tmp = { .u64 = { 0, 0 } };                            \
+                                                                    \
+    for (int i = 0, j = 0; i < ARRAY_SIZE(b->u8); i += SZ) {        \
+        if (b->VsrB(ARRAY_SIZE(b->u8) - i - SZ) & 0x80) {           \
+            for (int k = 0, rk = SZ - 1; k < SZ; k++, rk--) {       \
+                const int idx = ARRAY_SIZE(b->u8) - j - SZ;         \
+                tmp.VsrB(idx + rk) = i + k;                         \
+            }                                                       \
+            j += SZ;                                                \
+        }                                                           \
+    }                                                               \
+                                                                    \
+    *t = tmp;                                                       \
+}
+
+#define XXGENPCV(NAME, SZ) \
+    XXGENPCV_BE_EXP(NAME, SZ)  \
+    XXGENPCV_BE_COMP(NAME, SZ) \
+    XXGENPCV_LE_EXP(NAME, SZ)  \
+    XXGENPCV_LE_COMP(NAME, SZ)
+
+XXGENPCV(XXGENPCVBM, 1)
+XXGENPCV(XXGENPCVHM, 2)
+XXGENPCV(XXGENPCVWM, 4)
+XXGENPCV(XXGENPCVDM, 8)
+
+#undef XXGENPCV_BE_EXP
+#undef XXGENPCV_BE_COMP
+#undef XXGENPCV_LE_EXP
+#undef XXGENPCV_LE_COMP
+#undef XXGENPCV
 
 #define PMSUM(name, srcfld, trgfld, trgtyp)                   \
 void helper_##name(ppc_avr_t *r, ppc_avr_t *a, ppc_avr_t *b)  \
@@ -1421,6 +1864,34 @@ void helper_vlogefp(CPUPPCState *env, ppc_avr_t *r, ppc_avr_t *b)
     }
 }
 
+#define VSTRI(NAME, ELEM, NUM_ELEMS, LEFT)                         \
+    uint32_t helper_##NAME(ppc_avr_t *t, ppc_avr_t *b)             \
+    {                                                              \
+        int i, idx, crf = 0;                                       \
+                                                                   \
+        for (i = 0; i < NUM_ELEMS; i++) {                          \
+            idx = LEFT ? i : NUM_ELEMS - i - 1;                    \
+            if (b->Vsr##ELEM(idx)) {                               \
+                t->Vsr##ELEM(idx) = b->Vsr##ELEM(idx);             \
+            } else {                                               \
+                crf = 0b0010;                                      \
+                break;                                             \
+            }                                                      \
+        }                                                          \
+                                                                   \
+        for (; i < NUM_ELEMS; i++) {                               \
+            idx = LEFT ? i : NUM_ELEMS - i - 1;                    \
+            t->Vsr##ELEM(idx) = 0;                                 \
+        }                                                          \
+                                                                   \
+        return crf;                                                \
+    }
+VSTRI(VSTRIBL, B, 16, true)
+VSTRI(VSTRIBR, B, 16, false)
+VSTRI(VSTRIHL, H, 8, true)
+VSTRI(VSTRIHR, H, 8, false)
+#undef VSTRI
+
 #if defined(HOST_WORDS_BIGENDIAN)
 #define VEXTU_X_DO(name, size, left)                                \
     target_ulong glue(helper_, name)(target_ulong a, ppc_avr_t *b)  \
@@ -1518,6 +1989,88 @@ void helper_vslo(ppc_avr_t *r, ppc_avr_t *a, ppc_avr_t *b)
     memset(&r->u8[0], 0, sh);
 #endif
 }
+
+#if defined(HOST_WORDS_BIGENDIAN)
+#define ELEM_ADDR(VEC, IDX, SIZE) (&(VEC)->u8[IDX])
+#else
+#define ELEM_ADDR(VEC, IDX, SIZE) (&(VEC)->u8[15 - (IDX)] - (SIZE) + 1)
+#endif
+
+#define VINSX(SUFFIX, TYPE)                                             \
+void glue(glue(helper_VINS, SUFFIX), LX)(CPUPPCState *env,              \
+                                         ppc_avr_t *t, uint64_t val,    \
+                                         target_ulong index)             \
+{                                                                       \
+    const int maxidx = ARRAY_SIZE(t->u8) - sizeof(TYPE);                \
+    target_long idx = index;                                            \
+                                                                        \
+    if (idx < 0 || idx > maxidx) {                                      \
+        idx = idx < 0 ? sizeof(TYPE) - idx : idx;                       \
+        qemu_log_mask(LOG_GUEST_ERROR,                                  \
+                      "Invalid index for Vector Insert Element after "  \
+                      "0x" TARGET_FMT_lx ", RA = " TARGET_FMT_ld       \
+                      " > %d\n", env->nip, idx, maxidx);               \
+    } else {                                                            \
+        TYPE src = val;                                                 \
+        memcpy(ELEM_ADDR(t, idx, sizeof(TYPE)), &src, sizeof(TYPE));    \
+    }                                                                   \
+}
+VINSX(B, uint8_t)
+VINSX(H, uint16_t)
+VINSX(W, uint32_t)
+VINSX(D, uint64_t)
+#undef ELEM_ADDR
+#undef VINSX
+
+#if defined(HOST_WORDS_BIGENDIAN)
+#define VEXTDVLX(NAME, SIZE)                                            \
+void helper_##NAME(CPUPPCState *env, ppc_avr_t *t, ppc_avr_t *a,        \
+                   ppc_avr_t *b, target_ulong index)                    \
+{                                                                       \
+    const target_long idx = index;                                      \
+    ppc_avr_t tmp[2] = { *a, *b };                                      \
+    uint8_t *tmp_bytes = (uint8_t *)tmp;                                \
+                                                                        \
+    memset(t, 0, sizeof(*t));                                           \
+    if (idx >= 0 && idx + SIZE <= sizeof(tmp)) {                        \
+        memcpy(&t->u8[ARRAY_SIZE(t->u8) / 2 - SIZE],                   \
+               tmp_bytes + idx, SIZE);                                 \
+    } else {                                                            \
+        qemu_log_mask(LOG_GUEST_ERROR,                                  \
+                      "Invalid index for " #NAME " after 0x"           \
+                      TARGET_FMT_lx ", RC = " TARGET_FMT_ld            \
+                      " > %d\n", env->nip,                             \
+                      idx < 0 ? SIZE - idx : idx, 32 - SIZE);           \
+    }                                                                   \
+}
+#else
+#define VEXTDVLX(NAME, SIZE)                                            \
+void helper_##NAME(CPUPPCState *env, ppc_avr_t *t, ppc_avr_t *a,        \
+                   ppc_avr_t *b, target_ulong index)                    \
+{                                                                       \
+    const target_long idx = index;                                      \
+    ppc_avr_t tmp[2] = { *b, *a };                                      \
+    uint8_t *tmp_bytes = (uint8_t *)tmp;                                \
+                                                                        \
+    memset(t, 0, sizeof(*t));                                           \
+    if (idx >= 0 && idx + SIZE <= sizeof(tmp)) {                        \
+        memcpy(&t->u8[ARRAY_SIZE(t->u8) / 2],                           \
+               tmp_bytes + sizeof(tmp) - SIZE - idx, SIZE);             \
+    } else {                                                            \
+        qemu_log_mask(LOG_GUEST_ERROR,                                  \
+                      "Invalid index for " #NAME " after 0x"           \
+                      TARGET_FMT_lx ", RC = " TARGET_FMT_ld            \
+                      " > %d\n", env->nip,                             \
+                      idx < 0 ? SIZE - idx : idx, 32 - SIZE);           \
+    }                                                                   \
+}
+#endif
+
+VEXTDVLX(VEXTDUBVLX, 1)
+VEXTDVLX(VEXTDUHVLX, 2)
+VEXTDVLX(VEXTDUWVLX, 4)
+VEXTDVLX(VEXTDDVLX, 8)
+#undef VEXTDVLX
 
 #if defined(HOST_WORDS_BIGENDIAN)
 #define VINSERT(suffix, element)                                            \

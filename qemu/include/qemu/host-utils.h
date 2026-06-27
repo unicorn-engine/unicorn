@@ -23,11 +23,20 @@
  * THE SOFTWARE.
  */
 
+/* Portions of this work are licensed under the terms of the GNU GPL,
+ * version 2 or later. See the COPYING file in the top-level directory.
+ */
+
 #ifndef HOST_UTILS_H
 #define HOST_UTILS_H
 
+#include "qemu/compiler.h"
 #include "qemu/bswap.h"
 #include "qemu/int128.h"
+
+#if defined(_MSC_VER) && defined(_M_X64)
+#include <intrin.h>
+#endif
 
 #ifdef CONFIG_INT128
 static inline void mulu64(uint64_t *plow, uint64_t *phigh,
@@ -74,43 +83,45 @@ static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
     #endif
 }
 
-static inline int divu128(uint64_t *plow, uint64_t *phigh, uint64_t divisor)
+static inline uint64_t muldiv64_round_up(uint64_t a, uint32_t b, uint32_t c)
 {
-    if (divisor == 0) {
-        return 1;
-    } else {
-        __uint128_t dividend = ((__uint128_t)*phigh << 64) | *plow;
-        __uint128_t result = dividend / divisor;
-        *plow = result;
-        *phigh = dividend % divisor;
-        return result > UINT64_MAX;
-    }
+    return ((__int128_t)a * b + c - 1) / c;
 }
 
-static inline int divs128(int64_t *plow, int64_t *phigh, int64_t divisor)
+static inline uint64_t divu128(uint64_t *plow, uint64_t *phigh,
+                               uint64_t divisor)
 {
-    if (divisor == 0) {
-        return 1;
-    } else {
-        __int128_t dividend = ((__int128_t)*phigh << 64) | *plow;
-        __int128_t result = dividend / divisor;
-        *plow = result;
-        *phigh = dividend % divisor;
-        return result != *plow;
-    }
+    __uint128_t dividend = ((__uint128_t)*phigh << 64) | *plow;
+    __uint128_t result = dividend / divisor;
+
+    *plow = result;
+    *phigh = result >> 64;
+    return dividend % divisor;
+}
+
+static inline int64_t divs128(uint64_t *plow, int64_t *phigh,
+                              int64_t divisor)
+{
+    __int128_t dividend = ((__int128_t)*phigh << 64) | *plow;
+    __int128_t result = dividend / divisor;
+
+    *plow = result;
+    *phigh = result >> 64;
+    return dividend % divisor;
 }
 #else
-void muls64(uint64_t *phigh, uint64_t *plow, int64_t a, int64_t b);
-void mulu64(uint64_t *phigh, uint64_t *plow, uint64_t a, uint64_t b);
-int divu128(uint64_t *plow, uint64_t *phigh, uint64_t divisor);
-int divs128(int64_t *plow, int64_t *phigh, int64_t divisor);
+void muls64(uint64_t *plow, uint64_t *phigh, int64_t a, int64_t b);
+void mulu64(uint64_t *plow, uint64_t *phigh, uint64_t a, uint64_t b);
+uint64_t divu128(uint64_t *plow, uint64_t *phigh, uint64_t divisor);
+int64_t divs128(uint64_t *plow, int64_t *phigh, int64_t divisor);
 
-static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
+static inline uint64_t muldiv64_rounding(uint64_t a, uint32_t b, uint32_t c,
+                                  bool round_up)
 {
     union {
         uint64_t ll;
         struct {
-#ifdef HOST_WORDS_BIGENDIAN
+#if HOST_BIG_ENDIAN
             uint32_t high, low;
 #else
             uint32_t low, high;
@@ -121,11 +132,24 @@ static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
 
     u.ll = a;
     rl = (uint64_t)u.l.low * (uint64_t)b;
+    if (round_up) {
+        rl += c - 1;
+    }
     rh = (uint64_t)u.l.high * (uint64_t)b;
     rh += (rl >> 32);
     res.l.high = rh / c;
     res.l.low = (((rh % c) << 32) + (rl & 0xffffffff)) / c;
     return res.ll;
+}
+
+static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
+{
+    return muldiv64_rounding(a, b, c, false);
+}
+
+static inline uint64_t muldiv64_round_up(uint64_t a, uint32_t b, uint32_t c)
+{
+    return muldiv64_rounding(a, b, c, true);
 }
 #endif
 
@@ -419,6 +443,9 @@ static inline int ctpop64(uint64_t val)
  */
 static inline uint8_t revbit8(uint8_t x)
 {
+#if __has_builtin(__builtin_bitreverse8)
+    return __builtin_bitreverse8(x);
+#else
     /* Assign the correct nibble position.  */
     x = ((x & 0xf0) >> 4)
       | ((x & 0x0f) << 4);
@@ -428,6 +455,7 @@ static inline uint8_t revbit8(uint8_t x)
       | ((x & 0x22) << 1)
       | ((x & 0x11) << 3);
     return x;
+#endif
 }
 
 /**
@@ -436,6 +464,9 @@ static inline uint8_t revbit8(uint8_t x)
  */
 static inline uint16_t revbit16(uint16_t x)
 {
+#if __has_builtin(__builtin_bitreverse16)
+    return __builtin_bitreverse16(x);
+#else
     /* Assign the correct byte position.  */
     x = bswap16(x);
     /* Assign the correct nibble position.  */
@@ -447,6 +478,7 @@ static inline uint16_t revbit16(uint16_t x)
       | ((x & 0x2222) << 1)
       | ((x & 0x1111) << 3);
     return x;
+#endif
 }
 
 /**
@@ -455,6 +487,9 @@ static inline uint16_t revbit16(uint16_t x)
  */
 static inline uint32_t revbit32(uint32_t x)
 {
+#if __has_builtin(__builtin_bitreverse32)
+    return __builtin_bitreverse32(x);
+#else
     /* Assign the correct byte position.  */
     x = bswap32(x);
     /* Assign the correct nibble position.  */
@@ -466,6 +501,7 @@ static inline uint32_t revbit32(uint32_t x)
       | ((x & 0x22222222u) << 1)
       | ((x & 0x11111111u) << 3);
     return x;
+#endif
 }
 
 /**
@@ -474,6 +510,9 @@ static inline uint32_t revbit32(uint32_t x)
  */
 static inline uint64_t revbit64(uint64_t x)
 {
+#if __has_builtin(__builtin_bitreverse64)
+    return __builtin_bitreverse64(x);
+#else
     /* Assign the correct byte position.  */
     x = bswap64(x);
     /* Assign the correct nibble position.  */
@@ -485,6 +524,315 @@ static inline uint64_t revbit64(uint64_t x)
       | ((x & 0x2222222222222222ull) << 1)
       | ((x & 0x1111111111111111ull) << 3);
     return x;
+#endif
+}
+
+/**
+ * Return the absolute value of a 64-bit integer as an unsigned 64-bit value
+ */
+static inline uint64_t uabs64(int64_t v)
+{
+    return v < 0 ? -v : v;
+}
+
+/**
+ * sadd32_overflow - addition with overflow indication
+ * @x, @y: addends
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x + @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool sadd32_overflow(int32_t x, int32_t y, int32_t *ret)
+{
+#ifdef _MSC_VER
+    uint32_t ux = x;
+    uint32_t uy = y;
+    uint32_t ur = ux + uy;
+
+    *ret = (int32_t)ur;
+    return ((~(ux ^ uy) & (ux ^ ur)) >> 31) != 0;
+#else
+    return __builtin_add_overflow(x, y, ret);
+#endif
+}
+
+/**
+ * sadd64_overflow - addition with overflow indication
+ * @x, @y: addends
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x + @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool sadd64_overflow(int64_t x, int64_t y, int64_t *ret)
+{
+#ifdef _MSC_VER
+    uint64_t ux = x;
+    uint64_t uy = y;
+    uint64_t ur = ux + uy;
+
+    *ret = (int64_t)ur;
+    return ((~(ux ^ uy) & (ux ^ ur)) >> 63) != 0;
+#else
+    return __builtin_add_overflow(x, y, ret);
+#endif
+}
+
+/**
+ * uadd32_overflow - addition with overflow indication
+ * @x, @y: addends
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x + @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool uadd32_overflow(uint32_t x, uint32_t y, uint32_t *ret)
+{
+#ifdef _MSC_VER
+    *ret = x + y;
+    return *ret < x;
+#else
+    return __builtin_add_overflow(x, y, ret);
+#endif
+}
+
+/**
+ * uadd64_overflow - addition with overflow indication
+ * @x, @y: addends
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x + @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool uadd64_overflow(uint64_t x, uint64_t y, uint64_t *ret)
+{
+#ifdef _MSC_VER
+    *ret = x + y;
+    return *ret < x;
+#else
+    return __builtin_add_overflow(x, y, ret);
+#endif
+}
+
+/**
+ * ssub32_overflow - subtraction with overflow indication
+ * @x: Minuend
+ * @y: Subtrahend
+ * @ret: Output for difference
+ *
+ * Computes *@ret = @x - @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool ssub32_overflow(int32_t x, int32_t y, int32_t *ret)
+{
+#ifdef _MSC_VER
+    uint32_t ux = x;
+    uint32_t uy = y;
+    uint32_t ur = ux - uy;
+
+    *ret = (int32_t)ur;
+    return (((ux ^ uy) & (ux ^ ur)) >> 31) != 0;
+#else
+    return __builtin_sub_overflow(x, y, ret);
+#endif
+}
+
+/**
+ * ssub64_overflow - subtraction with overflow indication
+ * @x: Minuend
+ * @y: Subtrahend
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x - @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool ssub64_overflow(int64_t x, int64_t y, int64_t *ret)
+{
+#ifdef _MSC_VER
+    uint64_t ux = x;
+    uint64_t uy = y;
+    uint64_t ur = ux - uy;
+
+    *ret = (int64_t)ur;
+    return (((ux ^ uy) & (ux ^ ur)) >> 63) != 0;
+#else
+    return __builtin_sub_overflow(x, y, ret);
+#endif
+}
+
+/**
+ * usub32_overflow - subtraction with overflow indication
+ * @x: Minuend
+ * @y: Subtrahend
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x - @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool usub32_overflow(uint32_t x, uint32_t y, uint32_t *ret)
+{
+#ifdef _MSC_VER
+    *ret = x - y;
+    return x < y;
+#else
+    return __builtin_sub_overflow(x, y, ret);
+#endif
+}
+
+/**
+ * usub64_overflow - subtraction with overflow indication
+ * @x: Minuend
+ * @y: Subtrahend
+ * @ret: Output for sum
+ *
+ * Computes *@ret = @x - @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool usub64_overflow(uint64_t x, uint64_t y, uint64_t *ret)
+{
+#ifdef _MSC_VER
+    *ret = x - y;
+    return x < y;
+#else
+    return __builtin_sub_overflow(x, y, ret);
+#endif
+}
+
+/**
+ * smul32_overflow - multiplication with overflow indication
+ * @x, @y: Input multipliers
+ * @ret: Output for product
+ *
+ * Computes *@ret = @x * @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool smul32_overflow(int32_t x, int32_t y, int32_t *ret)
+{
+    return __builtin_mul_overflow(x, y, ret);
+}
+
+/**
+ * smul64_overflow - multiplication with overflow indication
+ * @x, @y: Input multipliers
+ * @ret: Output for product
+ *
+ * Computes *@ret = @x * @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool smul64_overflow(int64_t x, int64_t y, int64_t *ret)
+{
+    return __builtin_mul_overflow(x, y, ret);
+}
+
+/**
+ * umul32_overflow - multiplication with overflow indication
+ * @x, @y: Input multipliers
+ * @ret: Output for product
+ *
+ * Computes *@ret = @x * @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool umul32_overflow(uint32_t x, uint32_t y, uint32_t *ret)
+{
+    return __builtin_mul_overflow(x, y, ret);
+}
+
+/**
+ * umul64_overflow - multiplication with overflow indication
+ * @x, @y: Input multipliers
+ * @ret: Output for product
+ *
+ * Computes *@ret = @x * @y, and returns true if and only if that
+ * value has been truncated.
+ */
+static inline bool umul64_overflow(uint64_t x, uint64_t y, uint64_t *ret)
+{
+    return __builtin_mul_overflow(x, y, ret);
+}
+
+/*
+ * Unsigned 128x64 multiplication.
+ * Returns true if the result got truncated to 128 bits.
+ * Otherwise, returns false and the multiplication result via plow and phigh.
+ */
+static inline bool mulu128(uint64_t *plow, uint64_t *phigh, uint64_t factor)
+{
+#if defined(CONFIG_INT128)
+    bool res;
+    __uint128_t r;
+    __uint128_t f = ((__uint128_t)*phigh << 64) | *plow;
+    res = __builtin_mul_overflow(f, factor, &r);
+
+    *plow = r;
+    *phigh = r >> 64;
+
+    return res;
+#else
+    uint64_t dhi = *phigh;
+    uint64_t dlo = *plow;
+    uint64_t ahi;
+    uint64_t blo, bhi;
+
+    if (dhi == 0) {
+        mulu64(plow, phigh, dlo, factor);
+        return false;
+    }
+
+    mulu64(plow, &ahi, dlo, factor);
+    mulu64(&blo, &bhi, dhi, factor);
+
+    return uadd64_overflow(ahi, blo, phigh) || bhi != 0;
+#endif
+}
+
+/**
+ * uadd64_carry - addition with carry-in and carry-out
+ * @x, @y: addends
+ * @pcarry: in-out carry value
+ *
+ * Computes @x + @y + *@pcarry, placing the carry-out back
+ * into *@pcarry and returning the 64-bit sum.
+ */
+static inline uint64_t uadd64_carry(uint64_t x, uint64_t y, bool *pcarry)
+{
+#if __has_builtin(__builtin_addcll)
+    unsigned long long c = *pcarry;
+    x = __builtin_addcll(x, y, c, &c);
+    *pcarry = c & 1;
+    return x;
+#else
+    bool c = *pcarry;
+    /* This is clang's internal expansion of __builtin_addc. */
+    c = uadd64_overflow(x, c, &x);
+    c |= uadd64_overflow(x, y, &x);
+    *pcarry = c;
+    return x;
+#endif
+}
+
+/**
+ * usub64_borrow - subtraction with borrow-in and borrow-out
+ * @x, @y: addends
+ * @pborrow: in-out borrow value
+ *
+ * Computes @x - @y - *@pborrow, placing the borrow-out back
+ * into *@pborrow and returning the 64-bit sum.
+ */
+static inline uint64_t usub64_borrow(uint64_t x, uint64_t y, bool *pborrow)
+{
+#if __has_builtin(__builtin_subcll) && !defined(BUILTIN_SUBCLL_BROKEN)
+    unsigned long long b = *pborrow;
+    x = __builtin_subcll(x, y, b, &b);
+    *pborrow = b & 1;
+    return x;
+#else
+    bool b = *pborrow;
+    b = usub64_overflow(x, b, &x);
+    b |= usub64_overflow(x, y, &x);
+    *pborrow = b;
+    return x;
+#endif
 }
 
 /* Host type specific sizes of these routines.  */
@@ -584,4 +932,85 @@ void urshift(uint64_t *plow, uint64_t *phigh, int32_t shift);
  */
 void ulshift(uint64_t *plow, uint64_t *phigh, int32_t shift, bool *overflow);
 
+/* From the GNU Multi Precision Library - longlong.h __udiv_qrnnd
+ * (https://gmplib.org/repo/gmp/file/tip/longlong.h)
+ *
+ * Licensed under the GPLv2/LGPLv3
+ */
+static inline uint64_t udiv_qrnnd(uint64_t *r, uint64_t n1,
+                                  uint64_t n0, uint64_t d)
+{
+#if defined(_MSC_VER) && defined(_M_X64)
+    return _udiv128(n1, n0, d, r);
+#elif defined(__x86_64__)
+    uint64_t q;
+    asm("divq %4" : "=a"(q), "=d"(*r) : "0"(n0), "1"(n1), "rm"(d));
+    return q;
+#elif defined(__s390x__) && !defined(__clang__)
+    /* Need to use a TImode type to get an even register pair for DLGR.  */
+    unsigned __int128 n = (unsigned __int128)n1 << 64 | n0;
+    asm("dlgr %0, %1" : "+r"(n) : "r"(d));
+    *r = n >> 64;
+    return n;
+#elif defined(_ARCH_PPC64) && defined(_ARCH_PWR7)
+    /* From Power ISA 2.06, programming note for divdeu.  */
+    uint64_t q1, q2, Q, r1, r2, R;
+    asm("divdeu %0,%2,%4; divdu %1,%3,%4"
+        : "=&r"(q1), "=r"(q2)
+        : "r"(n1), "r"(n0), "r"(d));
+    r1 = -(q1 * d);         /* low part of (n1<<64) - (q1 * d) */
+    r2 = n0 - (q2 * d);
+    Q = q1 + q2;
+    R = r1 + r2;
+    if (R >= d || R < r2) { /* overflow implies R > d */
+        Q += 1;
+        R -= d;
+    }
+    *r = R;
+    return Q;
+#else
+    uint64_t d0, d1, q0, q1, r1, r0, m;
+
+    d0 = (uint32_t)d;
+    d1 = d >> 32;
+
+    r1 = n1 % d1;
+    q1 = n1 / d1;
+    m = q1 * d0;
+    r1 = (r1 << 32) | (n0 >> 32);
+    if (r1 < m) {
+        q1 -= 1;
+        r1 += d;
+        if (r1 >= d) {
+            if (r1 < m) {
+                q1 -= 1;
+                r1 += d;
+            }
+        }
+    }
+    r1 -= m;
+
+    r0 = r1 % d1;
+    q0 = r1 / d1;
+    m = q0 * d0;
+    r0 = (r0 << 32) | (uint32_t)n0;
+    if (r0 < m) {
+        q0 -= 1;
+        r0 += d;
+        if (r0 >= d) {
+            if (r0 < m) {
+                q0 -= 1;
+                r0 += d;
+            }
+        }
+    }
+    r0 -= m;
+
+    *r = r0;
+    return (q1 << 32) | q0;
+#endif
+}
+
+Int128 divu256(Int128 *plow, Int128 *phigh, Int128 divisor);
+Int128 divs256(Int128 *plow, Int128 *phigh, Int128 divisor);
 #endif

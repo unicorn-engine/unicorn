@@ -338,7 +338,8 @@ bool cpu_restore_state(CPUState *cpu, uintptr_t host_pc, bool will_exit)
      * tcg_init_ctx.code_gen_buffer check_offset will wrap to way
      * above the code_gen_buffer_size
      */
-    check_offset = host_pc - (uintptr_t) uc->tcg_ctx->code_gen_buffer;
+    check_offset = (uintptr_t)tcg_splitwx_to_rw((void *)host_pc) -
+        (uintptr_t)uc->tcg_ctx->code_gen_buffer;
 
     if (check_offset < uc->tcg_ctx->code_gen_buffer_size) {
         tb = tcg_tb_lookup(tcg_ctx, host_pc);
@@ -1742,7 +1743,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     }
 
     gen_code_buf = tcg_ctx->code_gen_ptr;
-    tb->tc.ptr = gen_code_buf;
+    tb->tc.ptr = (tcg_insn_unit *)tcg_splitwx_to_rx(gen_code_buf);
     tb->pc = pc;
     tb->cs_base = cs_base;
     tb->flags = flags;

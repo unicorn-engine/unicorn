@@ -6,6 +6,7 @@ open System
 
 [<AutoOpen>]
 module Riscv =
+    let UC_RISCV_VLEN_MAX = 1024
 
     // RISCV32 CPU
 
@@ -223,7 +224,50 @@ module Riscv =
     let UC_RISCV_REG_F31 = 189
     let UC_RISCV_REG_PC = 190
     let UC_RISCV_REG_PRIV = 191
-    let UC_RISCV_REG_ENDING = 192
+
+    // Vector CSRs
+    let UC_RISCV_REG_VSTART = 192
+    let UC_RISCV_REG_VXSAT = 193
+    let UC_RISCV_REG_VXRM = 194
+    let UC_RISCV_REG_VCSR = 195
+    let UC_RISCV_REG_VL = 196
+    let UC_RISCV_REG_VTYPE = 197
+    let UC_RISCV_REG_VLENB = 198
+
+    // Vector registers
+    let UC_RISCV_REG_V0 = 199
+    let UC_RISCV_REG_V1 = 200
+    let UC_RISCV_REG_V2 = 201
+    let UC_RISCV_REG_V3 = 202
+    let UC_RISCV_REG_V4 = 203
+    let UC_RISCV_REG_V5 = 204
+    let UC_RISCV_REG_V6 = 205
+    let UC_RISCV_REG_V7 = 206
+    let UC_RISCV_REG_V8 = 207
+    let UC_RISCV_REG_V9 = 208
+    let UC_RISCV_REG_V10 = 209
+    let UC_RISCV_REG_V11 = 210
+    let UC_RISCV_REG_V12 = 211
+    let UC_RISCV_REG_V13 = 212
+    let UC_RISCV_REG_V14 = 213
+    let UC_RISCV_REG_V15 = 214
+    let UC_RISCV_REG_V16 = 215
+    let UC_RISCV_REG_V17 = 216
+    let UC_RISCV_REG_V18 = 217
+    let UC_RISCV_REG_V19 = 218
+    let UC_RISCV_REG_V20 = 219
+    let UC_RISCV_REG_V21 = 220
+    let UC_RISCV_REG_V22 = 221
+    let UC_RISCV_REG_V23 = 222
+    let UC_RISCV_REG_V24 = 223
+    let UC_RISCV_REG_V25 = 224
+    let UC_RISCV_REG_V26 = 225
+    let UC_RISCV_REG_V27 = 226
+    let UC_RISCV_REG_V28 = 227
+    let UC_RISCV_REG_V29 = 228
+    let UC_RISCV_REG_V30 = 229
+    let UC_RISCV_REG_V31 = 230
+    let UC_RISCV_REG_ENDING = 231
 
     // Alias registers
     let UC_RISCV_REG_ZERO = 1

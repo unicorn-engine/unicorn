@@ -8410,7 +8410,7 @@ POWERPC_FAMILY(POWER7)(CPUClass *oc, void *data)
                         PPC2_PERM_ISA206 | PPC2_DIVE_ISA206 |
                         PPC2_ATOMIC_ISA206 | PPC2_FP_CVT_ISA206 |
                         PPC2_FP_TST_ISA206 | PPC2_FP_CVT_S64 |
-                        PPC2_PM_ISA206;
+                        PPC2_PM_ISA206 | PPC2_BCDA_ISA206;
     pcc->msr_mask = (1ull << MSR_SF) |
                     (1ull << MSR_VR) |
                     (1ull << MSR_VSX) |
@@ -8578,7 +8578,7 @@ POWERPC_FAMILY(POWER8)(CPUClass *oc, void *data)
                         PPC2_FP_TST_ISA206 | PPC2_BCTAR_ISA207 |
                         PPC2_LSQ_ISA207 | PPC2_ALTIVEC_207 |
                         PPC2_ISA205 | PPC2_ISA207S | PPC2_FP_CVT_S64 |
-                        PPC2_TM | PPC2_PM_ISA206;
+                        PPC2_TM | PPC2_PM_ISA206 | PPC2_BCDA_ISA206;
     pcc->msr_mask = (1ull << MSR_SF) |
                     (1ull << MSR_HV) |
                     (1ull << MSR_TM) |
@@ -8789,7 +8789,8 @@ POWERPC_FAMILY(POWER9)(CPUClass *oc, void *data)
                         PPC2_FP_TST_ISA206 | PPC2_BCTAR_ISA207 |
                         PPC2_LSQ_ISA207 | PPC2_ALTIVEC_207 |
                         PPC2_ISA205 | PPC2_ISA207S | PPC2_FP_CVT_S64 |
-                        PPC2_TM | PPC2_ISA300 | PPC2_PRCNTL;
+                        PPC2_TM | PPC2_ISA300 | PPC2_PRCNTL |
+                        PPC2_BCDA_ISA206;
     pcc->msr_mask = (1ull << MSR_SF) |
                     (1ull << MSR_HV) |
                     (1ull << MSR_TM) |
@@ -8851,6 +8852,17 @@ static struct ppc_radix_page_info POWER10_radix_page_info = {
     }
 };
 
+static void register_power10_hash_sprs(CPUPPCState *env)
+{
+    spr_register(env, SPR_HASHKEYR, "HASHKEYR",
+                 SPR_NOACCESS, SPR_NOACCESS,
+                 spr_read_generic, spr_write_generic, 0);
+    spr_register_hv(env, SPR_HASHPKEYR, "HASHPKEYR",
+                    SPR_NOACCESS, SPR_NOACCESS,
+                    SPR_NOACCESS, SPR_NOACCESS,
+                    spr_read_generic, spr_write_generic, 0);
+}
+
 static void init_proc_POWER10(CPUPPCState *env)
 {
     /* Common Registers */
@@ -8890,6 +8902,7 @@ static void init_proc_POWER10(CPUPPCState *env)
     spr_register_kvm_hv(env, SPR_PSSCR, "PSSCR", NULL, NULL, NULL, NULL,
                         spr_read_generic, spr_write_generic,
                         KVM_REG_PPC_PSSCR, 0);
+    register_power10_hash_sprs(env);
 
     /* env variables */
     env->dcache_line_size = 128;
@@ -9000,7 +9013,8 @@ POWERPC_FAMILY(POWER10)(CPUClass *oc, void *data)
                         PPC2_FP_TST_ISA206 | PPC2_BCTAR_ISA207 |
                         PPC2_LSQ_ISA207 | PPC2_ALTIVEC_207 |
                         PPC2_ISA205 | PPC2_ISA207S | PPC2_FP_CVT_S64 |
-                        PPC2_TM | PPC2_ISA300 | PPC2_PRCNTL;
+                        PPC2_TM | PPC2_ISA300 | PPC2_PRCNTL |
+                        PPC2_ISA310 | PPC2_BCDA_ISA206;
     pcc->msr_mask = (1ull << MSR_SF) |
                     (1ull << MSR_HV) |
                     (1ull << MSR_TM) |
@@ -10121,6 +10135,14 @@ static void ppc_cpu_reset(CPUState *dev)
     if (env->mmu_model & POWERPC_MMU_64) {
         msr |= (1ULL << MSR_SF);
     }
+    /*
+     * Power-on reset enters HV mode on server CPUs. The compact init path
+     * reaches here with env->msr cleared, while hreg_store_msr() only changes
+     * HV from an existing HV state.
+     */
+    if (msr & MSR_HVB) {
+        env->msr |= MSR_HVB;
+    }
 #endif
 
     hreg_store_msr(env, msr, 1);
@@ -11015,6 +11037,8 @@ PowerPCCPU *cpu_ppc_init(struct uc_struct *uc)
     } else if (uc->cpu_model + UC_CPU_PPC32_7457A_V1_2 + 1 >= ARRAY_SIZE(ppc_cpus)) {
         free(cpu);
         return NULL;
+    } else {
+        uc->cpu_model += UC_CPU_PPC32_7457A_V1_2 + 1;
     }
 #else
     if (uc->cpu_model == INT_MAX) {

@@ -79,6 +79,9 @@ module Common =
     let UC_ERR_RESOURCE = 20
     let UC_ERR_EXCEPTION = 21
     let UC_ERR_OVERFLOW = 22
+    let UC_ERR_MMU_READ = 23
+    let UC_ERR_MMU_WRITE = 24
+    let UC_ERR_MMU_FETCH = 25
 
     let UC_PROT_NONE = 0
     let UC_PROT_READ = 1
@@ -155,6 +158,7 @@ module Common =
     let UC_CTL_PAUTH_SIGN = 15
     let UC_CTL_PAUTH_STRIP = 16
     let UC_CTL_PAUTH_AUTH = 17
+    let UC_CTL_INVALID_ADDR = 18
     let UC_CTL_CONTEXT_CPU = 1
     let UC_CTL_CONTEXT_MEMORY = 2
 

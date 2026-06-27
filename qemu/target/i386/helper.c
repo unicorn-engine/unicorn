@@ -22,6 +22,17 @@
 #include "exec/exec-all.h"
 #include "sysemu/tcg.h"
 
+void cpu_sync_avx_hflag(CPUX86State *env)
+{
+    if ((env->cr[4] & CR4_OSXSAVE_MASK)
+        && (env->xcr0 & (XSTATE_SSE_MASK | XSTATE_YMM_MASK))
+            == (XSTATE_SSE_MASK | XSTATE_YMM_MASK)) {
+        env->hflags |= HF_AVX_EN_MASK;
+    } else {
+        env->hflags &= ~HF_AVX_EN_MASK;
+    }
+}
+
 void cpu_sync_bndcs_hflags(CPUX86State *env)
 {
     uint32_t hflags = env->hflags;
@@ -168,7 +179,7 @@ void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4)
     }
 
     /* Clear bits we're going to recompute.  */
-    hflags = env->hflags & ~(HF_OSFXSR_MASK | HF_SMAP_MASK);
+    hflags = env->hflags & ~(HF_OSFXSR_MASK | HF_SMAP_MASK | HF_UMIP_MASK);
 
     /* SSE handling */
     if (!(env->features[FEAT_1_EDX] & CPUID_SSE)) {
@@ -184,15 +195,25 @@ void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4)
     if (new_cr4 & CR4_SMAP_MASK) {
         hflags |= HF_SMAP_MASK;
     }
+    if (!(env->features[FEAT_7_0_ECX] & CPUID_7_0_ECX_UMIP)) {
+        new_cr4 &= ~CR4_UMIP_MASK;
+    }
+    if (new_cr4 & CR4_UMIP_MASK) {
+        hflags |= HF_UMIP_MASK;
+    }
 
     if (!(env->features[FEAT_7_0_ECX] & CPUID_7_0_ECX_PKU)) {
         new_cr4 &= ~CR4_PKE_MASK;
+    }
+    if (!(env->features[FEAT_7_0_ECX] & CPUID_7_0_ECX_PKS)) {
+        new_cr4 &= ~CR4_PKS_MASK;
     }
 
     env->cr[4] = new_cr4;
     env->hflags = hflags;
 
     cpu_sync_bndcs_hflags(env);
+    cpu_sync_avx_hflag(env);
 }
 
 hwaddr x86_cpu_get_phys_page_attrs_debug(CPUState *cs, vaddr addr,

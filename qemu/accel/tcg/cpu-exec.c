@@ -26,6 +26,7 @@
 #include "qemu/timer.h"
 #include "exec/tb-hash.h"
 #include "exec/tb-lookup.h"
+#include "hw/core/tcg-cpu-ops.h"
 #include "sysemu/cpus.h"
 #include "uc_priv.h"
 
@@ -74,7 +75,6 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
          * counter hit zero); we must restore the guest PC to the address
          * of the start of the TB.
          */
-        CPUClass *cc = CPU_GET_CLASS(cpu);
         if (!HOOK_EXISTS(env->uc, UC_HOOK_CODE)) {
             // We should sync pc for R/W error.
             switch (env->uc->invalid_error) {
@@ -91,12 +91,7 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
                 default:
                     // If we receive a quit request, users has sync-ed PC themselves.
                     if (!cpu->uc->quit_request) {
-                        if (cc->synchronize_from_tb) {
-                            cc->synchronize_from_tb(cpu, last_tb);
-                        } else {
-                            assert(cc->set_pc);
-                            cc->set_pc(cpu, last_tb->pc);
-                        }
+                        cpu_tcg_synchronize_from_tb(cpu, last_tb);
                     }
             }
         }
@@ -204,7 +199,9 @@ void tb_set_jmp_target(TranslationBlock *tb, int n, uintptr_t addr)
     if (TCG_TARGET_HAS_direct_jump) {
         uintptr_t offset = tb->jmp_target_arg[n];
         uintptr_t tc_ptr = (uintptr_t)tb->tc.ptr;
-        tb_target_set_jmp_target(tc_ptr, tc_ptr + offset, addr);
+        uintptr_t jmp_rx = tc_ptr + offset;
+        uintptr_t jmp_rw = (uintptr_t)tcg_splitwx_to_rw((void *)jmp_rx);
+        tb_target_set_jmp_target(tc_ptr, jmp_rx, jmp_rw, addr);
     } else {
         tb->jmp_target_arg[n] = addr;
     }
@@ -321,7 +318,6 @@ static inline bool cpu_handle_halt(CPUState *cpu)
 
 static inline void cpu_handle_debug_exception(CPUState *cpu)
 {
-    CPUClass *cc = CPU_GET_CLASS(cpu);
     CPUWatchpoint *wp;
 
     if (!cpu->watchpoint_hit) {
@@ -330,7 +326,7 @@ static inline void cpu_handle_debug_exception(CPUState *cpu)
         }
     }
 
-    cc->debug_excp_handler(cpu);
+    cpu_tcg_debug_excp_handler(cpu);
 }
 
 static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
@@ -355,7 +351,9 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
             }
         }
         if (!catched) {
-            uc->invalid_error = UC_ERR_INSN_INVALID;
+            if (uc->invalid_error == UC_ERR_OK) {
+                uc->invalid_error = UC_ERR_INSN_INVALID;
+            }
             // we want to stop emulation
             *ret = EXCP_HLT;
             return true;
@@ -433,8 +431,6 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
 static inline bool cpu_handle_interrupt(CPUState *cpu,
                                         TranslationBlock **last_tb)
 {
-    CPUClass *cc = CPU_GET_CLASS(cpu);
-
     /* Clear the interrupt flag now since we're processing
      * cpu->interrupt_request and cpu->exit_request.
      * Ensure zeroing happens before reading cpu->exit_request or
@@ -476,7 +472,7 @@ static inline bool cpu_handle_interrupt(CPUState *cpu,
            True when it is, and we should restart on a new TB,
            and via longjmp via cpu_loop_exit.  */
         else {
-            if (cc->cpu_exec_interrupt(cpu, interrupt_request)) {
+            if (cpu_tcg_exec_interrupt(cpu, interrupt_request)) {
                 //replay_interrupt();
                 cpu->exception_index = -1;
                 *last_tb = NULL;
@@ -562,7 +558,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 
     // rcu_read_lock();
 
-    cc->cpu_exec_enter(cpu);
+    cpu_tcg_exec_enter(cpu);
 
     /* Calculate difference between guest clock and host clock.
      * This delay includes the delay of the last cycle, so
@@ -624,7 +620,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     // Unicorn: Clear any TCG exit flag that might have been left set by exit requests
     uc->cpu->tcg_exit_req = 0;
 
-    cc->cpu_exec_exit(cpu);
+    cpu_tcg_exec_exit(cpu);
     // rcu_read_unlock();
 
     return ret;

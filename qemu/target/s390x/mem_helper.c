@@ -463,6 +463,28 @@ void HELPER(mvc)(CPUS390XState *env, uint32_t l, uint64_t dest, uint64_t src)
     do_helper_mvc(env, l, dest, src, GETPC());
 }
 
+/* move right to left */
+void HELPER(mvcrl)(CPUS390XState *env, uint64_t l, uint64_t dest,
+                   uint64_t src)
+{
+    const int mmu_idx = cpu_mmu_index(env, false);
+    uintptr_t ra = GETPC();
+    S390Access srca, desta;
+    int32_t i;
+
+    /* MVCRL always copies one more byte than specified - maximum is 256 */
+    l++;
+
+    srca = access_prepare(env, src, l, MMU_DATA_LOAD, mmu_idx, ra);
+    desta = access_prepare(env, dest, l, MMU_DATA_STORE, mmu_idx, ra);
+
+    for (i = l - 1; i >= 0; i--) {
+        uint8_t byte = access_get_byte(env, &srca, i, ra);
+
+        access_set_byte(env, &desta, i, byte, ra);
+    }
+}
+
 /* move inverse  */
 void HELPER(mvcin)(CPUS390XState *env, uint32_t l, uint64_t dest, uint64_t src)
 {
@@ -2434,7 +2456,8 @@ void HELPER(ex)(CPUS390XState *env, uint32_t ilen, uint64_t r1, uint64_t addr)
         insn |= (uint64_t)cpu_lduw_code(env, addr + 2) << 32;
         break;
     case 6:
-        insn |= (uint64_t)(uint32_t)cpu_ldl_code(env, addr + 2) << 16;
+        insn |= (uint64_t)cpu_lduw_code(env, addr + 2) << 32;
+        insn |= (uint64_t)cpu_lduw_code(env, addr + 4) << 16;
         break;
     default:
         g_assert_not_reached();

@@ -35,6 +35,7 @@
 #define H2(x)  (x)
 #define H4(x)  (x)
 #endif
+#define H8(x)  (x)
 
 #define SET_QC() env->vfp.qc[0] = 1
 
@@ -201,188 +202,284 @@ void HELPER(gvec_qrdmlsh_s32)(void *vd, void *vn, void *vm,
  * All elements are treated equally, no matter where they are.
  */
 
-void HELPER(gvec_sdot_b)(void *vd, void *vn, void *vm, uint32_t desc)
+#define DO_DOT(NAME, TYPED, TYPEN, TYPEM)                              \
+void HELPER(NAME)(void *vd, void *vn, void *vm, void *va, uint32_t desc) \
+{                                                                       \
+    intptr_t i, oprsz = simd_oprsz(desc);                               \
+    TYPED *d = vd, *a = va;                                             \
+    TYPEN *n = vn;                                                      \
+    TYPEM *m = vm;                                                      \
+                                                                        \
+    for (i = 0; i < oprsz / sizeof(TYPED); i++) {                       \
+        d[i] = a[i] +                                                   \
+               (TYPED)n[i * 4 + 0] * m[i * 4 + 0] +                    \
+               (TYPED)n[i * 4 + 1] * m[i * 4 + 1] +                    \
+               (TYPED)n[i * 4 + 2] * m[i * 4 + 2] +                    \
+               (TYPED)n[i * 4 + 3] * m[i * 4 + 3];                     \
+    }                                                                   \
+    clear_tail(d, oprsz, simd_maxsz(desc));                             \
+}
+
+DO_DOT(gvec_sdot_b, int32_t, int8_t, int8_t)
+DO_DOT(gvec_udot_b, uint32_t, uint8_t, uint8_t)
+DO_DOT(gvec_usdot_b, uint32_t, uint8_t, int8_t)
+DO_DOT(gvec_sdot_h, int64_t, int16_t, int16_t)
+DO_DOT(gvec_udot_h, uint64_t, uint16_t, uint16_t)
+
+#define DO_DOT_IDX(NAME, TYPED, TYPEN, TYPEM, H)                       \
+void HELPER(NAME)(void *vd, void *vn, void *vm, void *va, uint32_t desc) \
+{                                                                       \
+    intptr_t i = 0, oprsz = simd_oprsz(desc);                           \
+    intptr_t oprsz_n = oprsz / sizeof(TYPED);                           \
+    intptr_t segend = MIN(16 / sizeof(TYPED), oprsz_n);                 \
+    intptr_t index = simd_data(desc);                                   \
+    TYPED *d = vd, *a = va;                                             \
+    TYPEN *n = vn;                                                      \
+    TYPEM *m_indexed = (TYPEM *)vm + H(index) * 4;                      \
+                                                                        \
+    do {                                                                \
+        TYPED m0 = m_indexed[i * 4 + 0];                                \
+        TYPED m1 = m_indexed[i * 4 + 1];                                \
+        TYPED m2 = m_indexed[i * 4 + 2];                                \
+        TYPED m3 = m_indexed[i * 4 + 3];                                \
+                                                                        \
+        do {                                                            \
+            d[i] = a[i] +                                               \
+                   n[i * 4 + 0] * m0 +                                  \
+                   n[i * 4 + 1] * m1 +                                  \
+                   n[i * 4 + 2] * m2 +                                  \
+                   n[i * 4 + 3] * m3;                                   \
+        } while (++i < segend);                                         \
+        segend = i + (16 / sizeof(TYPED));                              \
+    } while (i < oprsz_n);                                              \
+    clear_tail(d, oprsz, simd_maxsz(desc));                             \
+}
+
+DO_DOT_IDX(gvec_sdot_idx_b, int32_t, int8_t, int8_t, H4)
+DO_DOT_IDX(gvec_udot_idx_b, uint32_t, uint8_t, uint8_t, H4)
+DO_DOT_IDX(gvec_sudot_idx_b, int32_t, int8_t, uint8_t, H4)
+DO_DOT_IDX(gvec_usdot_idx_b, int32_t, uint8_t, int8_t, H4)
+DO_DOT_IDX(gvec_sdot_idx_h, int64_t, int16_t, int16_t, H8)
+DO_DOT_IDX(gvec_udot_idx_h, uint64_t, uint16_t, uint16_t, H8)
+
+#undef DO_DOT
+#undef DO_DOT_IDX
+
+static uint32_t do_smmla_b(uint32_t sum, void *vn, void *vm)
 {
-    intptr_t i, opr_sz = simd_oprsz(desc);
-    uint32_t *d = vd;
     int8_t *n = vn, *m = vm;
+    intptr_t k;
 
-    for (i = 0; i < opr_sz / 4; ++i) {
-        d[i] += n[i * 4 + 0] * m[i * 4 + 0]
-              + n[i * 4 + 1] * m[i * 4 + 1]
-              + n[i * 4 + 2] * m[i * 4 + 2]
-              + n[i * 4 + 3] * m[i * 4 + 3];
+    for (k = 0; k < 8; k++) {
+        sum += n[H1(k)] * m[H1(k)];
     }
-    clear_tail(d, opr_sz, simd_maxsz(desc));
+    return sum;
 }
 
-void HELPER(gvec_udot_b)(void *vd, void *vn, void *vm, uint32_t desc)
+static uint32_t do_ummla_b(uint32_t sum, void *vn, void *vm)
 {
-    intptr_t i, opr_sz = simd_oprsz(desc);
-    uint32_t *d = vd;
     uint8_t *n = vn, *m = vm;
+    intptr_t k;
 
-    for (i = 0; i < opr_sz / 4; ++i) {
-        d[i] += n[i * 4 + 0] * m[i * 4 + 0]
-              + n[i * 4 + 1] * m[i * 4 + 1]
-              + n[i * 4 + 2] * m[i * 4 + 2]
-              + n[i * 4 + 3] * m[i * 4 + 3];
+    for (k = 0; k < 8; k++) {
+        sum += n[H1(k)] * m[H1(k)];
     }
-    clear_tail(d, opr_sz, simd_maxsz(desc));
+    return sum;
 }
 
-void HELPER(gvec_sdot_h)(void *vd, void *vn, void *vm, uint32_t desc)
+static uint32_t do_usmmla_b(uint32_t sum, void *vn, void *vm)
 {
-    intptr_t i, opr_sz = simd_oprsz(desc);
-    uint64_t *d = vd;
-    int16_t *n = vn, *m = vm;
-
-    for (i = 0; i < opr_sz / 8; ++i) {
-        d[i] += (int64_t)n[i * 4 + 0] * m[i * 4 + 0]
-              + (int64_t)n[i * 4 + 1] * m[i * 4 + 1]
-              + (int64_t)n[i * 4 + 2] * m[i * 4 + 2]
-              + (int64_t)n[i * 4 + 3] * m[i * 4 + 3];
-    }
-    clear_tail(d, opr_sz, simd_maxsz(desc));
-}
-
-void HELPER(gvec_udot_h)(void *vd, void *vn, void *vm, uint32_t desc)
-{
-    intptr_t i, opr_sz = simd_oprsz(desc);
-    uint64_t *d = vd;
-    uint16_t *n = vn, *m = vm;
-
-    for (i = 0; i < opr_sz / 8; ++i) {
-        d[i] += (uint64_t)n[i * 4 + 0] * m[i * 4 + 0]
-              + (uint64_t)n[i * 4 + 1] * m[i * 4 + 1]
-              + (uint64_t)n[i * 4 + 2] * m[i * 4 + 2]
-              + (uint64_t)n[i * 4 + 3] * m[i * 4 + 3];
-    }
-    clear_tail(d, opr_sz, simd_maxsz(desc));
-}
-
-void HELPER(gvec_sdot_idx_b)(void *vd, void *vn, void *vm, uint32_t desc)
-{
-    intptr_t i, segend, opr_sz = simd_oprsz(desc), opr_sz_4 = opr_sz / 4;
-    intptr_t index = simd_data(desc);
-    uint32_t *d = vd;
-    int8_t *n = vn;
-    int8_t *m_indexed = (int8_t *)vm + index * 4;
-
-    /* Notice the special case of opr_sz == 8, from aa64/aa32 advsimd.
-     * Otherwise opr_sz is a multiple of 16.
-     */
-    segend = MIN(4, opr_sz_4);
-    i = 0;
-    do {
-        int8_t m0 = m_indexed[i * 4 + 0];
-        int8_t m1 = m_indexed[i * 4 + 1];
-        int8_t m2 = m_indexed[i * 4 + 2];
-        int8_t m3 = m_indexed[i * 4 + 3];
-
-        do {
-            d[i] += n[i * 4 + 0] * m0
-                  + n[i * 4 + 1] * m1
-                  + n[i * 4 + 2] * m2
-                  + n[i * 4 + 3] * m3;
-        } while (++i < segend);
-        segend = i + 4;
-    } while (i < opr_sz_4);
-
-    clear_tail(d, opr_sz, simd_maxsz(desc));
-}
-
-void HELPER(gvec_udot_idx_b)(void *vd, void *vn, void *vm, uint32_t desc)
-{
-    intptr_t i, segend, opr_sz = simd_oprsz(desc), opr_sz_4 = opr_sz / 4;
-    intptr_t index = simd_data(desc);
-    uint32_t *d = vd;
     uint8_t *n = vn;
-    uint8_t *m_indexed = (uint8_t *)vm + index * 4;
+    int8_t *m = vm;
+    intptr_t k;
 
-    /* Notice the special case of opr_sz == 8, from aa64/aa32 advsimd.
-     * Otherwise opr_sz is a multiple of 16.
-     */
-    segend = MIN(4, opr_sz_4);
-    i = 0;
-    do {
-        uint8_t m0 = m_indexed[i * 4 + 0];
-        uint8_t m1 = m_indexed[i * 4 + 1];
-        uint8_t m2 = m_indexed[i * 4 + 2];
-        uint8_t m3 = m_indexed[i * 4 + 3];
-
-        do {
-            d[i] += n[i * 4 + 0] * m0
-                  + n[i * 4 + 1] * m1
-                  + n[i * 4 + 2] * m2
-                  + n[i * 4 + 3] * m3;
-        } while (++i < segend);
-        segend = i + 4;
-    } while (i < opr_sz_4);
-
-    clear_tail(d, opr_sz, simd_maxsz(desc));
+    for (k = 0; k < 8; k++) {
+        sum += n[H1(k)] * m[H1(k)];
+    }
+    return sum;
 }
 
-void HELPER(gvec_sdot_idx_h)(void *vd, void *vn, void *vm, uint32_t desc)
+static void do_mmla_b(void *vd, void *vn, void *vm, void *va, uint32_t desc,
+                      uint32_t (*inner_loop)(uint32_t, void *, void *))
 {
-    intptr_t i, opr_sz = simd_oprsz(desc), opr_sz_8 = opr_sz / 8;
-    intptr_t index = simd_data(desc);
-    uint64_t *d = vd;
-    int16_t *n = vn;
-    int16_t *m_indexed = (int16_t *)vm + index * 4;
+    intptr_t seg, oprsz = simd_oprsz(desc);
+    char *n = vn, *m = vm;
 
-    /* This is supported by SVE only, so opr_sz is always a multiple of 16.
-     * Process the entire segment all at once, writing back the results
-     * only after we've consumed all of the inputs.
-     */
-    for (i = 0; i < opr_sz_8 ; i += 2) {
-        uint64_t d0, d1;
+    for (seg = 0; seg < oprsz; seg += 16) {
+        uint32_t *d = (uint32_t *)((char *)vd + seg);
+        uint32_t *a = (uint32_t *)((char *)va + seg);
+        uint32_t sum0, sum1, sum2, sum3;
 
-        d0  = n[i * 4 + 0] * (int64_t)m_indexed[i * 4 + 0];
-        d0 += n[i * 4 + 1] * (int64_t)m_indexed[i * 4 + 1];
-        d0 += n[i * 4 + 2] * (int64_t)m_indexed[i * 4 + 2];
-        d0 += n[i * 4 + 3] * (int64_t)m_indexed[i * 4 + 3];
-        d1  = n[i * 4 + 4] * (int64_t)m_indexed[i * 4 + 0];
-        d1 += n[i * 4 + 5] * (int64_t)m_indexed[i * 4 + 1];
-        d1 += n[i * 4 + 6] * (int64_t)m_indexed[i * 4 + 2];
-        d1 += n[i * 4 + 7] * (int64_t)m_indexed[i * 4 + 3];
+        sum0 = a[H4(0)];
+        sum0 = inner_loop(sum0, n + seg, m + seg);
+        sum1 = a[H4(1)];
+        sum1 = inner_loop(sum1, n + seg, m + seg + 8);
+        sum2 = a[H4(2)];
+        sum2 = inner_loop(sum2, n + seg + 8, m + seg);
+        sum3 = a[H4(3)];
+        sum3 = inner_loop(sum3, n + seg + 8, m + seg + 8);
 
-        d[i + 0] += d0;
-        d[i + 1] += d1;
+        d[H4(0)] = sum0;
+        d[H4(1)] = sum1;
+        d[H4(2)] = sum2;
+        d[H4(3)] = sum3;
     }
-
-    clear_tail(d, opr_sz, simd_maxsz(desc));
+    clear_tail(vd, oprsz, simd_maxsz(desc));
 }
 
-void HELPER(gvec_udot_idx_h)(void *vd, void *vn, void *vm, uint32_t desc)
+#define DO_MMLA_B(NAME, INNER)                                          \
+void HELPER(NAME)(void *vd, void *vn, void *vm, void *va, uint32_t desc) \
+{                                                                       \
+    do_mmla_b(vd, vn, vm, va, desc, INNER);                             \
+}
+
+DO_MMLA_B(gvec_smmla_b, do_smmla_b)
+DO_MMLA_B(gvec_ummla_b, do_ummla_b)
+DO_MMLA_B(gvec_usmmla_b, do_usmmla_b)
+
+#undef DO_MMLA_B
+
+static float32 bfdotadd(float32 sum, uint32_t e1, uint32_t e2)
 {
-    intptr_t i, opr_sz = simd_oprsz(desc), opr_sz_8 = opr_sz / 8;
-    intptr_t index = simd_data(desc);
-    uint64_t *d = vd;
-    uint16_t *n = vn;
-    uint16_t *m_indexed = (uint16_t *)vm + index * 4;
+    float_status bf_status = {
+        .tininess_before_rounding = float_tininess_before_rounding,
+        .float_rounding_mode = float_round_to_odd_inf,
+        .flush_to_zero = true,
+        .flush_inputs_to_zero = true,
+        .default_nan_mode = true,
+    };
+    float32 t1;
+    float32 t2;
 
-    /* This is supported by SVE only, so opr_sz is always a multiple of 16.
-     * Process the entire segment all at once, writing back the results
-     * only after we've consumed all of the inputs.
-     */
-    for (i = 0; i < opr_sz_8 ; i += 2) {
-        uint64_t d0, d1;
+    t1 = float32_mul(e1 << 16, e2 << 16, &bf_status);
+    t2 = float32_mul(e1 & 0xffff0000u, e2 & 0xffff0000u, &bf_status);
+    t1 = float32_add(t1, t2, &bf_status);
+    return float32_add(sum, t1, &bf_status);
+}
 
-        d0  = n[i * 4 + 0] * (uint64_t)m_indexed[i * 4 + 0];
-        d0 += n[i * 4 + 1] * (uint64_t)m_indexed[i * 4 + 1];
-        d0 += n[i * 4 + 2] * (uint64_t)m_indexed[i * 4 + 2];
-        d0 += n[i * 4 + 3] * (uint64_t)m_indexed[i * 4 + 3];
-        d1  = n[i * 4 + 4] * (uint64_t)m_indexed[i * 4 + 0];
-        d1 += n[i * 4 + 5] * (uint64_t)m_indexed[i * 4 + 1];
-        d1 += n[i * 4 + 6] * (uint64_t)m_indexed[i * 4 + 2];
-        d1 += n[i * 4 + 7] * (uint64_t)m_indexed[i * 4 + 3];
+void HELPER(gvec_bfdot)(void *vd, void *vn, void *vm, void *va, uint32_t desc)
+{
+    intptr_t i;
+    intptr_t oprsz = simd_oprsz(desc);
+    float32 *d = vd;
+    float32 *a = va;
+    uint32_t *n = vn;
+    uint32_t *m = vm;
 
-        d[i + 0] += d0;
-        d[i + 1] += d1;
+    for (i = 0; i < oprsz / 4; ++i) {
+        d[i] = bfdotadd(a[i], n[i], m[i]);
     }
+    clear_tail(d, oprsz, simd_maxsz(desc));
+}
 
-    clear_tail(d, opr_sz, simd_maxsz(desc));
+void HELPER(gvec_bfdot_idx)(void *vd, void *vn, void *vm,
+                            void *va, uint32_t desc)
+{
+    intptr_t i;
+    intptr_t j;
+    intptr_t oprsz = simd_oprsz(desc);
+    intptr_t index = simd_data(desc);
+    intptr_t elements = oprsz / 4;
+    intptr_t eltspersegment = MIN(16 / 4, elements);
+    float32 *d = vd;
+    float32 *a = va;
+    uint32_t *n = vn;
+    uint32_t *m = vm;
+
+    for (i = 0; i < elements; i += eltspersegment) {
+        uint32_t m_idx = m[i + H4(index)];
+
+        for (j = i; j < i + eltspersegment; j++) {
+            d[j] = bfdotadd(a[j], n[j], m_idx);
+        }
+    }
+    clear_tail(d, oprsz, simd_maxsz(desc));
+}
+
+void HELPER(gvec_bfmmla)(void *vd, void *vn, void *vm, void *va, uint32_t desc)
+{
+    intptr_t s;
+    intptr_t oprsz = simd_oprsz(desc);
+    float32 *d = vd;
+    float32 *a = va;
+    uint32_t *n = vn;
+    uint32_t *m = vm;
+
+    for (s = 0; s < oprsz / 4; s += 4) {
+        float32 sum00;
+        float32 sum01;
+        float32 sum10;
+        float32 sum11;
+
+        sum00 = a[s + H4(0)];
+        sum00 = bfdotadd(sum00, n[s + H4(0)], m[s + H4(0)]);
+        sum00 = bfdotadd(sum00, n[s + H4(1)], m[s + H4(1)]);
+
+        sum01 = a[s + H4(1)];
+        sum01 = bfdotadd(sum01, n[s + H4(0)], m[s + H4(2)]);
+        sum01 = bfdotadd(sum01, n[s + H4(1)], m[s + H4(3)]);
+
+        sum10 = a[s + H4(2)];
+        sum10 = bfdotadd(sum10, n[s + H4(2)], m[s + H4(0)]);
+        sum10 = bfdotadd(sum10, n[s + H4(3)], m[s + H4(1)]);
+
+        sum11 = a[s + H4(3)];
+        sum11 = bfdotadd(sum11, n[s + H4(2)], m[s + H4(2)]);
+        sum11 = bfdotadd(sum11, n[s + H4(3)], m[s + H4(3)]);
+
+        d[s + H4(0)] = sum00;
+        d[s + H4(1)] = sum01;
+        d[s + H4(2)] = sum10;
+        d[s + H4(3)] = sum11;
+    }
+    clear_tail(d, oprsz, simd_maxsz(desc));
+}
+
+void HELPER(gvec_bfmlal)(void *vd, void *vn, void *vm, void *va,
+                         void *stat, uint32_t desc)
+{
+    intptr_t i;
+    intptr_t oprsz = simd_oprsz(desc);
+    intptr_t sel = simd_data(desc);
+    float32 *d = vd;
+    float32 *a = va;
+    bfloat16 *n = vn;
+    bfloat16 *m = vm;
+
+    for (i = 0; i < oprsz / 4; ++i) {
+        float32 nn = n[H2(i * 2 + sel)] << 16;
+        float32 mm = m[H2(i * 2 + sel)] << 16;
+
+        d[H4(i)] = float32_muladd(nn, mm, a[H4(i)], 0, stat);
+    }
+    clear_tail(d, oprsz, simd_maxsz(desc));
+}
+
+void HELPER(gvec_bfmlal_idx)(void *vd, void *vn, void *vm,
+                             void *va, void *stat, uint32_t desc)
+{
+    intptr_t i;
+    intptr_t j;
+    intptr_t oprsz = simd_oprsz(desc);
+    intptr_t sel = extract32(desc, SIMD_DATA_SHIFT, 1);
+    intptr_t index = extract32(desc, SIMD_DATA_SHIFT + 1, 3);
+    intptr_t elements = oprsz / 4;
+    intptr_t eltspersegment = MIN(16 / 4, elements);
+    float32 *d = vd;
+    float32 *a = va;
+    bfloat16 *n = vn;
+    bfloat16 *m = vm;
+
+    for (i = 0; i < elements; i += eltspersegment) {
+        float32 m_idx = m[H2(2 * i + index)] << 16;
+
+        for (j = i; j < i + eltspersegment; j++) {
+            float32 n_j = n[H2(2 * j + sel)] << 16;
+
+            d[H4(j)] = float32_muladd(n_j, m_idx, a[H4(j)], 0, stat);
+        }
+    }
+    clear_tail(d, oprsz, simd_maxsz(desc));
 }
 
 void HELPER(gvec_fcaddh)(void *vd, void *vn, void *vm,
@@ -1005,6 +1102,30 @@ void HELPER(gvec_fmlal_a64)(void *vd, void *vn, void *vm,
              get_flush_inputs_to_zero(&env->vfp.fp_status_f16));
 }
 
+void HELPER(sve2_fmlal_zzzw_s)(void *vd, void *vn, void *vm, void *va,
+                               void *venv, uint32_t desc)
+{
+    intptr_t i, oprsz = simd_oprsz(desc) / sizeof(float32);
+    uint16_t negn = extract32(desc, SIMD_DATA_SHIFT, 1) << 15;
+    intptr_t sel = extract32(desc, SIMD_DATA_SHIFT + 1, 1);
+    float16 *n = vn, *m = vm;
+    float32 *d = vd, *a = va;
+    CPUARMState *env = venv;
+    float_status *status = &env->vfp.fp_status;
+    bool fz16 = get_flush_inputs_to_zero(&env->vfp.fp_status_f16);
+
+    for (i = 0; i < oprsz; i++) {
+        intptr_t idx = i * 2 + sel;
+        float16 nn_16 = n[H2(idx)] ^ negn;
+        float16 mm_16 = m[H2(idx)];
+        float32 nn = float16_to_float32_by_bits(nn_16, fz16);
+        float32 mm = float16_to_float32_by_bits(mm_16, fz16);
+        float32 aa = a[H4(i)];
+
+        d[H4(i)] = float32_muladd(nn, mm, aa, 0, status);
+    }
+}
+
 static void do_fmlal_idx(float32 *d, void *vn, void *vm, float_status *fpst,
                          uint32_t desc, bool fz16)
 {
@@ -1047,6 +1168,35 @@ void HELPER(gvec_fmlal_idx_a64)(void *vd, void *vn, void *vm,
     CPUARMState *env = venv;
     do_fmlal_idx(vd, vn, vm, &env->vfp.fp_status, desc,
                  get_flush_inputs_to_zero(&env->vfp.fp_status_f16));
+}
+
+void HELPER(sve2_fmlal_zzxw_s)(void *vd, void *vn, void *vm, void *va,
+                               void *venv, uint32_t desc)
+{
+    intptr_t i, j, oprsz = simd_oprsz(desc);
+    uint16_t negn = extract32(desc, SIMD_DATA_SHIFT, 1) << 15;
+    intptr_t sel = extract32(desc, SIMD_DATA_SHIFT + 1, 1);
+    intptr_t idx = extract32(desc, SIMD_DATA_SHIFT + 2, 3);
+    float16 *n = vn, *m = vm;
+    float32 *d = vd, *a = va;
+    CPUARMState *env = venv;
+    float_status *status = &env->vfp.fp_status;
+    bool fz16 = get_flush_inputs_to_zero(&env->vfp.fp_status_f16);
+
+    for (i = 0; i < oprsz; i += 16) {
+        intptr_t hbase = i / sizeof(float16);
+        intptr_t sbase = i / sizeof(float32);
+        float16 mm_16 = m[H2(hbase + idx)];
+        float32 mm = float16_to_float32_by_bits(mm_16, fz16);
+
+        for (j = 0; j < 4; j++) {
+            float16 nn_16 = n[H2(hbase + j * 2 + sel)] ^ negn;
+            float32 nn = float16_to_float32_by_bits(nn_16, fz16);
+            float32 aa = a[H4(sbase + j)];
+
+            d[H4(sbase + j)] = float32_muladd(nn, mm, aa, 0, status);
+        }
+    }
 }
 
 void HELPER(gvec_sshl_b)(void *vd, void *vn, void *vm, uint32_t desc)
@@ -1262,4 +1412,75 @@ void HELPER(sve2_pmull_h)(void *vd, void *vn, void *vm, uint32_t desc)
         d[i] = pmull_h(nn, mm);
     }
 }
+
+static uint64_t pmull_d(uint64_t op1, uint64_t op2)
+{
+    uint64_t result = 0;
+    int i;
+
+    for (i = 0; i < 32; i++) {
+#ifdef _MSC_VER
+        uint64_t mask = 0 - ((op1 >> i) & 1);
+#else
+        uint64_t mask = -((op1 >> i) & 1);
 #endif
+        result ^= (op2 << i) & mask;
+    }
+    return result;
+}
+
+void HELPER(sve2_pmull_d)(void *vd, void *vn, void *vm, uint32_t desc)
+{
+    intptr_t sel = H4(simd_data(desc));
+    intptr_t i, opr_sz = simd_oprsz(desc);
+    uint32_t *n = vn, *m = vm;
+    uint64_t *d = vd;
+
+    for (i = 0; i < opr_sz / 8; i++) {
+        d[i] = pmull_d(n[2 * i + sel], m[2 * i + sel]);
+    }
+}
+#endif
+
+#define DO_SABA(NAME, STYPE, UTYPE)                                     \
+void HELPER(NAME)(void *vd, void *vn, void *vm, uint32_t desc)          \
+{                                                                       \
+    intptr_t i, opr_sz = simd_oprsz(desc);                              \
+    STYPE *d = vd, *n = vn, *m = vm;                                     \
+                                                                        \
+    for (i = 0; i < opr_sz / sizeof(STYPE); i++) {                      \
+        UTYPE diff = n[i] < m[i] ? (UTYPE)m[i] - (UTYPE)n[i] :          \
+                     (UTYPE)n[i] - (UTYPE)m[i];                         \
+                                                                        \
+        d[i] = (STYPE)((UTYPE)d[i] + diff);                             \
+    }                                                                   \
+    clear_tail(d, opr_sz, simd_maxsz(desc));                            \
+}
+
+DO_SABA(gvec_saba_b, int8_t, uint8_t)
+DO_SABA(gvec_saba_h, int16_t, uint16_t)
+DO_SABA(gvec_saba_s, int32_t, uint32_t)
+DO_SABA(gvec_saba_d, int64_t, uint64_t)
+
+#undef DO_SABA
+
+#define DO_UABA(NAME, TYPE)                                             \
+void HELPER(NAME)(void *vd, void *vn, void *vm, uint32_t desc)          \
+{                                                                       \
+    intptr_t i, opr_sz = simd_oprsz(desc);                              \
+    TYPE *d = vd, *n = vn, *m = vm;                                      \
+                                                                        \
+    for (i = 0; i < opr_sz / sizeof(TYPE); i++) {                       \
+        TYPE diff = n[i] < m[i] ? m[i] - n[i] : n[i] - m[i];            \
+                                                                        \
+        d[i] += diff;                                                   \
+    }                                                                   \
+    clear_tail(d, opr_sz, simd_maxsz(desc));                            \
+}
+
+DO_UABA(gvec_uaba_b, uint8_t)
+DO_UABA(gvec_uaba_h, uint16_t)
+DO_UABA(gvec_uaba_s, uint32_t)
+DO_UABA(gvec_uaba_d, uint64_t)
+
+#undef DO_UABA

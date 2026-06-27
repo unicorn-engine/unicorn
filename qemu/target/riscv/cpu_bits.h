@@ -12,6 +12,10 @@
 /* Floating point round mode */
 #define FSR_RD_SHIFT        5
 #define FSR_RD              (0x7 << FSR_RD_SHIFT)
+#define FSR_VXRM_SHIFT      9
+#define FSR_VXRM            (0x3 << FSR_VXRM_SHIFT)
+#define FSR_VXSAT_SHIFT     8
+#define FSR_VXSAT           (0x1 << FSR_VXSAT_SHIFT)
 
 /* Floating point accrued exception flags */
 #define FPEXC_NX            0x01
@@ -47,6 +51,22 @@
 #define CSR_FFLAGS          0x001
 #define CSR_FRM             0x002
 #define CSR_FCSR            0x003
+#define CSR_SEED            0x015
+
+/* User Vector CSRs */
+#define CSR_VSTART          0x008
+#define CSR_VXSAT           0x009
+#define CSR_VXRM            0x00a
+#define CSR_VCSR            0x00f
+#define CSR_VL              0xc20
+#define CSR_VTYPE           0xc21
+#define CSR_VLENB           0xc22
+
+/* VCSR fields */
+#define VCSR_VXSAT_SHIFT    0
+#define VCSR_VXSAT          (0x1 << VCSR_VXSAT_SHIFT)
+#define VCSR_VXRM_SHIFT     1
+#define VCSR_VXRM           (0x3 << VCSR_VXRM_SHIFT)
 
 /* User Timers and Counters */
 #define CSR_CYCLE           0xc00
@@ -171,6 +191,8 @@
 
 /* Legacy Supervisor Trap Handling (priv v1.9.1) */
 #define CSR_SBADADDR        0x143
+#define CSR_STIMECMP        0x14D
+#define CSR_STIMECMPH       0x15D
 
 /* Supervisor Protection and Translation */
 #define CSR_SPTBR           0x180
@@ -209,6 +231,8 @@
 #define CSR_VSCAUSE         0x242
 #define CSR_VSTVAL          0x243
 #define CSR_VSIP            0x244
+#define CSR_VSTIMECMP       0x24D
+#define CSR_VSTIMECMPH      0x25D
 #define CSR_VSATP           0x280
 
 #define CSR_MTINST          0x34a
@@ -306,6 +330,14 @@
 #define CSR_MHPMEVENT29     0x33d
 #define CSR_MHPMEVENT30     0x33e
 #define CSR_MHPMEVENT31     0x33f
+
+/* seed CSR bits */
+#define SEED_OPST           (0x3u << 30)
+#define SEED_OPST_BIST      (0x0u << 30)
+#define SEED_OPST_WAIT      (0x1u << 30)
+#define SEED_OPST_ES16      (0x2u << 30)
+#define SEED_OPST_DEAD      (0x3u << 30)
+
 #define CSR_MHPMCOUNTER3H   0xb83
 #define CSR_MHPMCOUNTER4H   0xb84
 #define CSR_MHPMCOUNTER5H   0xb85
@@ -352,6 +384,7 @@
 #define MSTATUS_SPIE        0x00000020
 #define MSTATUS_MPIE        0x00000080
 #define MSTATUS_SPP         0x00000100
+#define MSTATUS_VS          0x00000600
 #define MSTATUS_MPP         0x00001800
 #define MSTATUS_FS          0x00006000
 #define MSTATUS_XS          0x00018000
@@ -364,10 +397,10 @@
 #define MSTATUS_TW          0x20000000 /* since: priv-1.10 */
 #define MSTATUS_TSR         0x40000000 /* since: priv-1.10 */
 #if defined(TARGET_RISCV64)
-#define MSTATUS_MTL         0x4000000000ULL
+#define MSTATUS_GVA         0x4000000000ULL
 #define MSTATUS_MPV         0x8000000000ULL
 #elif defined(TARGET_RISCV32)
-#define MSTATUS_MTL         0x00000040
+#define MSTATUS_GVA         0x00000040
 #define MSTATUS_MPV         0x00000080
 #endif
 
@@ -406,6 +439,7 @@
 #define SSTATUS_UPIE        0x00000010
 #define SSTATUS_SPIE        0x00000020
 #define SSTATUS_SPP         0x00000100
+#define SSTATUS_VS          0x00000600
 #define SSTATUS_FS          0x00006000
 #define SSTATUS_XS          0x00018000
 #define SSTATUS_PUM         0x00040000 /* until: priv-1.9.1 */
@@ -422,13 +456,16 @@
 #endif
 
 /* hstatus CSR bits */
-#define HSTATUS_SPRV         0x00000001
+#define HSTATUS_VSBE         0x00000020
+#define HSTATUS_GVA          0x00000040
 #define HSTATUS_SPV          0x00000080
-#define HSTATUS_SP2P         0x00000100
-#define HSTATUS_SP2V         0x00000200
+#define HSTATUS_SPVP         0x00000100
+#define HSTATUS_HU           0x00000200
+#define HSTATUS_VGEIN        0x0003F000
 #define HSTATUS_VTVM         0x00100000
 #define HSTATUS_VTW          0x00200000
 #define HSTATUS_VTSR         0x00400000
+#define HSTATUS_VSXL         0x300000000ULL
 
 #define HSTATUS32_WPRI       0xFF8FF87E
 #define HSTATUS64_WPRI       0xFFFFFFFFFF8FF87EULL
@@ -530,6 +567,7 @@
 #define RISCV_EXCP_STORE_PAGE_FAULT              0xf /* since: priv-1.10.0 */
 #define RISCV_EXCP_INST_GUEST_PAGE_FAULT         0x14
 #define RISCV_EXCP_LOAD_GUEST_ACCESS_FAULT       0x15
+#define RISCV_EXCP_VIRT_INSTRUCTION_FAULT        0x16
 #define RISCV_EXCP_STORE_GUEST_AMO_ACCESS_FAULT  0x17
 #define RISCV_EXCP_UNICORN_END                   0x8888
 

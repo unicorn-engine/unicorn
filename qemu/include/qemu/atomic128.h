@@ -6,7 +6,7 @@
  * This work is licensed under the terms of the GNU GPL, version 2 or later.
  * See the COPYING file in the top-level directory.
  *
- * See docs/devel/atomics.txt for discussion about the guarantees each
+ * See docs/devel/atomics.rst for discussion about the guarantees each
  * atomic primitive is meant to provide.
  */
 
@@ -44,7 +44,7 @@
 #if defined(CONFIG_ATOMIC128)
 static inline Int128 atomic16_cmpxchg(Int128 *ptr, Int128 cmp, Int128 new)
 {
-    return atomic_cmpxchg__nocheck(ptr, cmp, new);
+    return qatomic_cmpxchg__nocheck(ptr, cmp, new);
 }
 # define HAVE_CMPXCHG128 1
 #elif defined(CONFIG_CMPXCHG128)
@@ -99,12 +99,12 @@ Int128 QEMU_ERROR("unsupported atomic")
 #if defined(CONFIG_ATOMIC128)
 static inline Int128 atomic16_read(Int128 *ptr)
 {
-    return atomic_read__nocheck(ptr);
+    return qatomic_read__nocheck(ptr);
 }
 
 static inline void atomic16_set(Int128 *ptr, Int128 val)
 {
-    atomic_set__nocheck(ptr, val);
+    qatomic_set__nocheck(ptr, val);
 }
 
 # define HAVE_ATOMIC128 1

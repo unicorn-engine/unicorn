@@ -12,11 +12,11 @@ const int SPARC64_REGS_STORAGE_SIZE = offsetof(CPUSPARCState, irq_manager);
 
 static bool sparc_stop_interrupt(struct uc_struct *uc, int intno)
 {
-    switch(intno) {
-        default:
-            return false;
-        case TT_ILL_INSN:
-            return true;
+    switch (intno) {
+    default:
+        return false;
+    case TT_ILL_INSN:
+        return true;
     }
 }
 
@@ -29,6 +29,74 @@ static void sparc_set_pc(struct uc_struct *uc, uint64_t address)
 static uint64_t sparc_get_pc(struct uc_struct *uc)
 {
     return ((CPUSPARCState *)uc->cpu->env_ptr)->pc;
+}
+
+static uint32_t sparc_get_fpr_f(CPUSPARCState *env, unsigned int reg)
+{
+    CPU_DoubleU *fpr = &env->fpr[reg / 2];
+
+    return (reg & 1) ? fpr->l.lower : fpr->l.upper;
+}
+
+static void sparc_set_fpr_f(CPUSPARCState *env, unsigned int reg,
+                            uint32_t value)
+{
+    CPU_DoubleU *fpr = &env->fpr[reg / 2];
+
+    if (reg & 1) {
+        fpr->l.lower = value;
+    } else {
+        fpr->l.upper = value;
+    }
+}
+
+static uint32_t sparc64_fpr_number(unsigned int regid)
+{
+    return 32 + (regid - UC_SPARC_REG_F32) * 2;
+}
+
+static uint32_t sparc_get_fcc(CPUSPARCState *env, unsigned int offset)
+{
+    return ((env->fsr >> (FSR_FCC0_SHIFT + offset)) & 1) |
+           (((env->fsr >> (FSR_FCC1_SHIFT + offset)) & 1) << 1);
+}
+
+static void sparc_set_fcc(CPUSPARCState *env, unsigned int offset,
+                          uint32_t value)
+{
+    target_ulong mask = (FSR_FCC0 | FSR_FCC1) << offset;
+
+    env->fsr &= ~mask;
+    if (value & 1) {
+        env->fsr |= FSR_FCC0 << offset;
+    }
+    if (value & 2) {
+        env->fsr |= FSR_FCC1 << offset;
+    }
+}
+
+static unsigned int sparc_fcc_offset(unsigned int regid)
+{
+    static const unsigned int fcc_offsets[] = { 0, 22, 24, 26 };
+
+    return fcc_offsets[regid - UC_SPARC_REG_FCC0];
+}
+
+static target_ulong sparc_get_ccr(CPUSPARCState *env)
+{
+    if (env->cc_op != CC_OP_FLAGS && env->cc_op != CC_OP_DYNAMIC) {
+        return cpu_get_ccr(env);
+    }
+    return ((env->xcc >> PSR_CARRY_SHIFT) << 4) |
+           ((env->psr & PSR_ICC) >> PSR_CARRY_SHIFT);
+}
+
+static void sparc_set_ccr(CPUSPARCState *env, target_ulong value)
+{
+    env->xcc = ((value >> 4) & 0xf) << PSR_CARRY_SHIFT;
+    env->psr = (env->psr & ~PSR_ICC) |
+               ((value & 0xf) << PSR_CARRY_SHIFT);
+    env->cc_op = CC_OP_FLAGS;
 }
 
 static void sparc_release(void *ctx)
@@ -85,7 +153,7 @@ static void reg_reset(struct uc_struct *uc)
 
 DEFAULT_VISIBILITY
 uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
-                       size_t *size)
+                size_t *size)
 {
     CPUSPARCState *env = _env;
     uc_err ret = UC_ERR_ARG;
@@ -93,6 +161,15 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7) {
         CHECK_REG_TYPE(uint64_t);
         *(uint64_t *)value = env->gregs[regid - UC_SPARC_REG_G0];
+    } else if (regid >= UC_SPARC_REG_F0 && regid <= UC_SPARC_REG_F31) {
+        CHECK_REG_TYPE(uint32_t);
+        *(uint32_t *)value = sparc_get_fpr_f(env,
+                                             regid - UC_SPARC_REG_F0);
+    } else if (regid >= UC_SPARC_REG_F32 && regid <= UC_SPARC_REG_F62) {
+        uint32_t reg = sparc64_fpr_number(regid);
+
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->fpr[reg / 2].ll;
     } else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7) {
         CHECK_REG_TYPE(uint64_t);
         *(uint64_t *)value = env->regwptr[regid - UC_SPARC_REG_O0];
@@ -102,8 +179,20 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
     } else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7) {
         CHECK_REG_TYPE(uint64_t);
         *(uint64_t *)value = env->regwptr[16 + regid - UC_SPARC_REG_I0];
+    } else if (regid >= UC_SPARC_REG_FCC0 && regid <= UC_SPARC_REG_FCC3) {
+        CHECK_REG_TYPE(uint32_t);
+        *(uint32_t *)value = sparc_get_fcc(env, sparc_fcc_offset(regid));
+    } else if (regid == UC_SPARC_REG_ICC) {
+        CHECK_REG_TYPE(uint32_t);
+        *(uint32_t *)value = sparc_get_ccr(env) & 0xf;
+    } else if (regid == UC_SPARC_REG_Y) {
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->y;
+    } else if (regid == UC_SPARC_REG_XCC) {
+        CHECK_REG_TYPE(uint32_t);
+        *(uint32_t *)value = (sparc_get_ccr(env) >> 4) & 0xf;
     } else {
-        switch(regid) {
+        switch (regid) {
         default:
             break;
         case UC_SPARC_REG_PC:
@@ -113,12 +202,13 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         }
     }
 
+    CHECK_RET_DEPRECATE(ret, regid);
     return ret;
 }
 
 DEFAULT_VISIBILITY
 uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
-                        size_t *size, int *setpc)
+                 size_t *size, int *setpc)
 {
     CPUSPARCState *env = _env;
     uc_err ret = UC_ERR_ARG;
@@ -126,6 +216,14 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7) {
         CHECK_REG_TYPE(uint64_t);
         env->gregs[regid - UC_SPARC_REG_G0] = *(uint64_t *)value;
+    } else if (regid >= UC_SPARC_REG_F0 && regid <= UC_SPARC_REG_F31) {
+        CHECK_REG_TYPE(uint32_t);
+        sparc_set_fpr_f(env, regid - UC_SPARC_REG_F0, *(uint32_t *)value);
+    } else if (regid >= UC_SPARC_REG_F32 && regid <= UC_SPARC_REG_F62) {
+        uint32_t reg = sparc64_fpr_number(regid);
+
+        CHECK_REG_TYPE(uint64_t);
+        env->fpr[reg / 2].ll = *(uint64_t *)value;
     } else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7) {
         CHECK_REG_TYPE(uint64_t);
         env->regwptr[regid - UC_SPARC_REG_O0] = *(uint64_t *)value;
@@ -135,8 +233,28 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
     } else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7) {
         CHECK_REG_TYPE(uint64_t);
         env->regwptr[16 + regid - UC_SPARC_REG_I0] = *(uint64_t *)value;
+    } else if (regid >= UC_SPARC_REG_FCC0 && regid <= UC_SPARC_REG_FCC3) {
+        CHECK_REG_TYPE(uint32_t);
+        sparc_set_fcc(env, sparc_fcc_offset(regid), *(uint32_t *)value);
+    } else if (regid == UC_SPARC_REG_ICC) {
+        target_ulong ccr;
+
+        CHECK_REG_TYPE(uint32_t);
+        ccr = sparc_get_ccr(env) & ~0xf;
+        ccr |= *(uint32_t *)value & 0xf;
+        sparc_set_ccr(env, ccr);
+    } else if (regid == UC_SPARC_REG_Y) {
+        CHECK_REG_TYPE(uint64_t);
+        env->y = *(uint64_t *)value;
+    } else if (regid == UC_SPARC_REG_XCC) {
+        target_ulong ccr;
+
+        CHECK_REG_TYPE(uint32_t);
+        ccr = sparc_get_ccr(env) & ~0xf0;
+        ccr |= (*(uint32_t *)value & 0xf) << 4;
+        sparc_set_ccr(env, ccr);
     } else {
-        switch(regid) {
+        switch (regid) {
         default:
             break;
         case UC_SPARC_REG_PC:
@@ -148,6 +266,7 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         }
     }
 
+    CHECK_RET_DEPRECATE(ret, regid);
     return ret;
 }
 

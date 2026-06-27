@@ -179,6 +179,13 @@ void helper_write_crN(CPUX86State *env, int reg, target_ulong t0)
         cpu_x86_update_cr3(env, t0);
         break;
     case 4:
+        if (t0 & cr4_reserved_bits(env)) {
+            raise_exception_ra(env, EXCP0D_GPF, GETPC());
+        }
+        if (((t0 ^ env->cr[4]) & CR4_LA57_MASK) &&
+            (env->hflags & HF_CS64_MASK)) {
+            raise_exception_ra(env, EXCP0D_GPF, GETPC());
+        }
         cpu_x86_update_cr4(env, (uint32_t)t0);
         break;
     case 8:
@@ -209,6 +216,11 @@ void helper_invlpg(CPUX86State *env, target_ulong addr)
 
     cpu_svm_check_intercept_param(env, SVM_EXIT_INVLPG, 0, GETPC());
     tlb_flush_page(CPU(cpu), addr);
+}
+
+void helper_flush_page(CPUX86State *env, target_ulong addr)
+{
+    tlb_flush_page(env_cpu(env), addr);
 }
 
 void helper_rdtsc(CPUX86State *env)
@@ -315,6 +327,7 @@ void helper_rdpmc(CPUX86State *env)
 
 void helper_wrmsr(CPUX86State *env)
 {
+    CPUState *cs = env_cpu(env);
     uint64_t val;
 
     cpu_svm_check_intercept_param(env, SVM_EXIT_MSR, 1, GETPC());
@@ -448,6 +461,33 @@ void helper_wrmsr(CPUX86State *env)
     case MSR_TSC_AUX:
         env->tsc_aux = val;
         break;
+    case MSR_IA32_XSS: {
+        uint64_t valid;
+
+        valid = ((uint64_t)env->features[FEAT_XSAVE_XSS_HI] << 32) |
+                env->features[FEAT_XSAVE_XSS_LO];
+        env->xss = val & valid;
+        break;
+    }
+    case MSR_IA32_XFD:
+        env->msr_xfd = val;
+        break;
+    case MSR_IA32_XFD_ERR:
+        env->msr_xfd_err = val;
+        break;
+    case MSR_IA32_PKRS:
+        if (val & 0xffffffff00000000ull) {
+            raise_exception_ra(env, EXCP0D_GPF, GETPC());
+        }
+        env->pkrs = val;
+        tlb_flush(cs);
+        break;
+    case MSR_ARCH_LBR_CTL:
+        env->msr_lbr_ctl = val;
+        break;
+    case MSR_ARCH_LBR_DEPTH:
+        env->msr_lbr_depth = val;
+        break;
     case MSR_IA32_MISC_ENABLE:
         env->msr_ia32_misc_enable = val;
         break;
@@ -458,6 +498,27 @@ void helper_wrmsr(CPUX86State *env)
         cpu_sync_bndcs_hflags(env);
         break;
     default:
+        if ((uint32_t)env->regs[R_ECX] >= MSR_ARCH_LBR_FROM_0 &&
+            (uint32_t)env->regs[R_ECX] <
+            MSR_ARCH_LBR_FROM_0 + ARCH_LBR_NR_ENTRIES) {
+            env->lbr_records[(uint32_t)env->regs[R_ECX] -
+                             MSR_ARCH_LBR_FROM_0].from = val;
+            break;
+        }
+        if ((uint32_t)env->regs[R_ECX] >= MSR_ARCH_LBR_TO_0 &&
+            (uint32_t)env->regs[R_ECX] <
+            MSR_ARCH_LBR_TO_0 + ARCH_LBR_NR_ENTRIES) {
+            env->lbr_records[(uint32_t)env->regs[R_ECX] -
+                             MSR_ARCH_LBR_TO_0].to = val;
+            break;
+        }
+        if ((uint32_t)env->regs[R_ECX] >= MSR_ARCH_LBR_INFO_0 &&
+            (uint32_t)env->regs[R_ECX] <
+            MSR_ARCH_LBR_INFO_0 + ARCH_LBR_NR_ENTRIES) {
+            env->lbr_records[(uint32_t)env->regs[R_ECX] -
+                             MSR_ARCH_LBR_INFO_0].info = val;
+            break;
+        }
         if ((uint32_t)env->regs[R_ECX] >= MSR_MC0_CTL
             && (uint32_t)env->regs[R_ECX] < MSR_MC0_CTL +
             (4 * env->mcg_cap & 0xff)) {
@@ -609,10 +670,49 @@ void helper_rdmsr(CPUX86State *env)
     case MSR_IA32_BNDCFGS:
         val = env->msr_bndcfgs;
         break;
-     case MSR_IA32_UCODE_REV:
+    case MSR_IA32_XSS:
+        val = env->xss;
+        break;
+    case MSR_IA32_XFD:
+        val = env->msr_xfd;
+        break;
+    case MSR_IA32_XFD_ERR:
+        val = env->msr_xfd_err;
+        break;
+    case MSR_IA32_PKRS:
+        val = env->pkrs;
+        break;
+    case MSR_ARCH_LBR_CTL:
+        val = env->msr_lbr_ctl;
+        break;
+    case MSR_ARCH_LBR_DEPTH:
+        val = env->msr_lbr_depth;
+        break;
+    case MSR_IA32_UCODE_REV:
         val = x86_cpu->ucode_rev;
         break;
     default:
+        if ((uint32_t)env->regs[R_ECX] >= MSR_ARCH_LBR_FROM_0 &&
+            (uint32_t)env->regs[R_ECX] <
+            MSR_ARCH_LBR_FROM_0 + ARCH_LBR_NR_ENTRIES) {
+            val = env->lbr_records[(uint32_t)env->regs[R_ECX] -
+                                   MSR_ARCH_LBR_FROM_0].from;
+            break;
+        }
+        if ((uint32_t)env->regs[R_ECX] >= MSR_ARCH_LBR_TO_0 &&
+            (uint32_t)env->regs[R_ECX] <
+            MSR_ARCH_LBR_TO_0 + ARCH_LBR_NR_ENTRIES) {
+            val = env->lbr_records[(uint32_t)env->regs[R_ECX] -
+                                   MSR_ARCH_LBR_TO_0].to;
+            break;
+        }
+        if ((uint32_t)env->regs[R_ECX] >= MSR_ARCH_LBR_INFO_0 &&
+            (uint32_t)env->regs[R_ECX] <
+            MSR_ARCH_LBR_INFO_0 + ARCH_LBR_NR_ENTRIES) {
+            val = env->lbr_records[(uint32_t)env->regs[R_ECX] -
+                                   MSR_ARCH_LBR_INFO_0].info;
+            break;
+        }
         if ((uint32_t)env->regs[R_ECX] >= MSR_MC0_CTL
             && (uint32_t)env->regs[R_ECX] < MSR_MC0_CTL +
             (4 * env->mcg_cap & 0xff)) {

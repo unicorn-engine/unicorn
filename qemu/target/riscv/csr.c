@@ -19,6 +19,7 @@
 
 #include "qemu/osdep.h"
 #include "qemu/log.h"
+#include "qemu/guest-random.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
 
@@ -29,10 +30,23 @@ static int read_frm(CPURISCVState *env, int csrno, target_ulong *val);
 static int write_frm(CPURISCVState *env, int csrno, target_ulong val);
 static int read_fcsr(CPURISCVState *env, int csrno, target_ulong *val);
 static int write_fcsr(CPURISCVState *env, int csrno, target_ulong val);
+static int read_vtype(CPURISCVState *env, int csrno, target_ulong *val);
+static int read_vl(CPURISCVState *env, int csrno, target_ulong *val);
+static int read_vlenb(CPURISCVState *env, int csrno, target_ulong *val);
+static int read_vxrm(CPURISCVState *env, int csrno, target_ulong *val);
+static int write_vxrm(CPURISCVState *env, int csrno, target_ulong val);
+static int read_vxsat(CPURISCVState *env, int csrno, target_ulong *val);
+static int write_vxsat(CPURISCVState *env, int csrno, target_ulong val);
+static int read_vstart(CPURISCVState *env, int csrno, target_ulong *val);
+static int write_vstart(CPURISCVState *env, int csrno, target_ulong val);
+static int read_vcsr(CPURISCVState *env, int csrno, target_ulong *val);
+static int write_vcsr(CPURISCVState *env, int csrno, target_ulong val);
 static int ctr(CPURISCVState *env, int csrno);
 static int read_instret(CPURISCVState *env, int csrno, target_ulong *val);
 static int read_time(CPURISCVState *env, int csrno, target_ulong *val);
 static int any(CPURISCVState *env, int csrno);
+static int vs(CPURISCVState *env, int csrno);
+static int seed(CPURISCVState *env, int csrno);
 static int read_zero(CPURISCVState *env, int csrno, target_ulong *val);
 static int read_mhartid(CPURISCVState *env, int csrno, target_ulong *val);
 static int read_mstatus(CPURISCVState *env, int csrno, target_ulong *val);
@@ -103,6 +117,11 @@ static int read_htinst(CPURISCVState *env, int csrno, target_ulong *val);
 static int write_htinst(CPURISCVState *env, int csrno, target_ulong val);
 static int read_hgatp(CPURISCVState *env, int csrno, target_ulong *val);
 static int write_hgatp(CPURISCVState *env, int csrno, target_ulong val);
+static int sstc(CPURISCVState *env, int csrno);
+static int read_stimecmp(CPURISCVState *env, int csrno, target_ulong *val);
+static int write_stimecmp(CPURISCVState *env, int csrno, target_ulong val);
+static int read_vstimecmp(CPURISCVState *env, int csrno, target_ulong *val);
+static int write_vstimecmp(CPURISCVState *env, int csrno, target_ulong val);
 static int read_htimedelta(CPURISCVState *env, int csrno, target_ulong *val);
 static int write_htimedelta(CPURISCVState *env, int csrno, target_ulong val);
 static int read_vsstatus(CPURISCVState *env, int csrno, target_ulong *val);
@@ -132,6 +151,8 @@ static int write_pmpcfg(CPURISCVState *env, int csrno, target_ulong val);
 static int read_pmpaddr(CPURISCVState *env, int csrno, target_ulong *val);
 static int write_pmpaddr(CPURISCVState *env, int csrno, target_ulong val);
 static int pmp(CPURISCVState *env, int csrno);
+static int rmw_seed(CPURISCVState *env, int csrno, target_ulong *ret_value,
+                    target_ulong new_value, target_ulong write_mask);
 
 #if defined(TARGET_RISCV32)
 static int read_instreth(CPURISCVState *env, int csrno, target_ulong *val);
@@ -140,6 +161,11 @@ static int read_mstatush(CPURISCVState *env, int csrno, target_ulong *val);
 static int write_mstatush(CPURISCVState *env, int csrno, target_ulong val);
 static int read_htimedeltah(CPURISCVState *env, int csrno, target_ulong *val);
 static int write_htimedeltah(CPURISCVState *env, int csrno, target_ulong val);
+static int sstc_32(CPURISCVState *env, int csrno);
+static int read_stimecmph(CPURISCVState *env, int csrno, target_ulong *val);
+static int write_stimecmph(CPURISCVState *env, int csrno, target_ulong val);
+static int read_vstimecmph(CPURISCVState *env, int csrno, target_ulong *val);
+static int write_vstimecmph(CPURISCVState *env, int csrno, target_ulong val);
 #endif
 
 /* CSR function table constants */
@@ -153,6 +179,18 @@ static riscv_csr_operations csr_ops[CSR_TABLE_SIZE] = {
     [CSR_FFLAGS] =              { fs,   read_fflags,      write_fflags      },
     [CSR_FRM] =                 { fs,   read_frm,         write_frm         },
     [CSR_FCSR] =                { fs,   read_fcsr,        write_fcsr        },
+
+    /* User Vector CSRs */
+    [CSR_VSTART] =              { vs,   read_vstart,      write_vstart      },
+    [CSR_VXSAT] =               { vs,   read_vxsat,       write_vxsat       },
+    [CSR_VXRM] =                { vs,   read_vxrm,        write_vxrm        },
+    [CSR_VCSR] =                { vs,   read_vcsr,        write_vcsr        },
+    [CSR_VL] =                  { vs,   read_vl                             },
+    [CSR_VTYPE] =               { vs,   read_vtype                          },
+    [CSR_VLENB] =               { vs,   read_vlenb                          },
+
+    /* Crypto Extension */
+    [CSR_SEED] =                { seed, NULL,             NULL, rmw_seed    },
 
     /* User Timers and Counters */
     [CSR_CYCLE] =               { ctr,  read_instret                        },
@@ -219,6 +257,10 @@ static riscv_csr_operations csr_ops[CSR_TABLE_SIZE] = {
     [CSR_SCAUSE] =              { smode, read_scause,      write_scause      },
     [CSR_SBADADDR] =            { smode, read_sbadaddr,    write_sbadaddr    },
     [CSR_SIP] =                 { smode, NULL,     NULL,     rmw_sip         },
+    [CSR_STIMECMP] =            { sstc,  read_stimecmp,    write_stimecmp    },
+#if defined(TARGET_RISCV32)
+    [CSR_STIMECMPH] =           { sstc_32, read_stimecmph, write_stimecmph   },
+#endif
 
     /* Supervisor Protection and Translation */
     [CSR_SATP] =                { smode, read_satp,        write_satp        },
@@ -246,6 +288,10 @@ static riscv_csr_operations csr_ops[CSR_TABLE_SIZE] = {
     [CSR_VSCAUSE] =             { hmode,   read_vscause,     write_vscause    },
     [CSR_VSTVAL] =              { hmode,   read_vstval,      write_vstval     },
     [CSR_VSATP] =               { hmode,   read_vsatp,       write_vsatp      },
+    [CSR_VSTIMECMP] =           { sstc,    read_vstimecmp,   write_vstimecmp  },
+#if defined(TARGET_RISCV32)
+    [CSR_VSTIMECMPH] =          { sstc_32, read_vstimecmph,  write_vstimecmph },
+#endif
 
     [CSR_MTVAL2] =              { hmode,   read_mtval2,      write_mtval2     },
     [CSR_MTINST] =              { hmode,   read_mtinst,      write_mtinst     },
@@ -484,6 +530,31 @@ static int any(CPURISCVState *env, int csrno)
     return 0;
 }
 
+static int vs(CPURISCVState *env, int csrno)
+{
+    RISCVCPU *cpu = env_archcpu(env);
+
+    if (!(riscv_has_ext(env, RVV) || cpu->cfg.ext_zve32f ||
+          cpu->cfg.ext_zve64f)) {
+        return -1;
+    }
+    if (!env->debugger && !riscv_cpu_vector_enabled(env)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int seed(CPURISCVState *env, int csrno)
+{
+    RISCVCPU *cpu = env_archcpu(env);
+
+    if (!cpu->cfg.ext_zkr || env->priv != PRV_M) {
+        return -1;
+    }
+    return 0;
+}
+
 static int smode(CPURISCVState *env, int csrno)
 {
     return -!riscv_has_ext(env, RVS);
@@ -568,6 +639,84 @@ static int write_fcsr(CPURISCVState *env, int csrno, target_ulong val)
     return 0;
 }
 
+/* User Vector CSRs */
+static int read_vtype(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    target_ulong vill = env->vill ?
+        ((target_ulong)1 << (TARGET_LONG_BITS - 1)) : 0;
+
+    *val = vill | env->vtype;
+    return 0;
+}
+
+static int read_vl(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    *val = env->vl;
+    return 0;
+}
+
+static int read_vlenb(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    *val = env_archcpu(env)->cfg.vlen >> 3;
+    return 0;
+}
+
+static int read_vxrm(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    *val = env->vxrm;
+    return 0;
+}
+
+static int write_vxrm(CPURISCVState *env, int csrno, target_ulong val)
+{
+    env->mstatus |= MSTATUS_VS | MSTATUS_SD;
+    env->vxrm = val & (VCSR_VXRM >> VCSR_VXRM_SHIFT);
+    return 0;
+}
+
+static int read_vxsat(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    *val = env->vxsat & (VCSR_VXSAT >> VCSR_VXSAT_SHIFT);
+    return 0;
+}
+
+static int write_vxsat(CPURISCVState *env, int csrno, target_ulong val)
+{
+    env->mstatus |= MSTATUS_VS | MSTATUS_SD;
+    env->vxsat = val & (VCSR_VXSAT >> VCSR_VXSAT_SHIFT);
+    return 0;
+}
+
+static int read_vstart(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    *val = env->vstart;
+    return 0;
+}
+
+static int write_vstart(CPURISCVState *env, int csrno, target_ulong val)
+{
+    RISCVCPU *cpu = env_archcpu(env);
+
+    env->mstatus |= MSTATUS_VS | MSTATUS_SD;
+    env->vstart = val & (cpu->cfg.vlen - 1);
+    return 0;
+}
+
+static int read_vcsr(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    *val = (env->vxrm << VCSR_VXRM_SHIFT) |
+           (env->vxsat << VCSR_VXSAT_SHIFT);
+    return 0;
+}
+
+static int write_vcsr(CPURISCVState *env, int csrno, target_ulong val)
+{
+    env->mstatus |= MSTATUS_VS | MSTATUS_SD;
+    env->vxrm = (val & VCSR_VXRM) >> VCSR_VXRM_SHIFT;
+    env->vxsat = (val & VCSR_VXSAT) >> VCSR_VXSAT_SHIFT;
+    return 0;
+}
+
 /* User Timers and Counters */
 static int read_instret(CPURISCVState *env, int csrno, target_ulong *val)
 {
@@ -611,6 +760,117 @@ static int read_timeh(CPURISCVState *env, int csrno, target_ulong *val)
 }
 #endif
 
+static int sstc(CPURISCVState *env, int csrno)
+{
+    CPUState *cs = env_cpu(env);
+    RISCVCPU *cpu = RISCV_CPU(cs);
+
+    if (!cpu->cfg.ext_sstc || !env->rdtime_fn) {
+        return -1;
+    }
+
+    if (csrno == CSR_VSTIMECMP || csrno == CSR_VSTIMECMPH) {
+        return hmode(env, csrno);
+    }
+
+    return (env->priv == PRV_M) ? 0 : -1;
+}
+
+#if defined(TARGET_RISCV32)
+static int sstc_32(CPURISCVState *env, int csrno)
+{
+    return sstc(env, csrno);
+}
+#endif
+
+static int read_vstimecmp(CPURISCVState *env, int csrno, target_ulong *val)
+{
+#if defined(TARGET_RISCV32)
+    *val = env->vstimecmp & 0xffffffff;
+#else
+    *val = env->vstimecmp;
+#endif
+    return 0;
+}
+
+#if defined(TARGET_RISCV32)
+static int read_vstimecmph(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    *val = env->vstimecmp >> 32;
+    return 0;
+}
+#endif
+
+static int write_vstimecmp(CPURISCVState *env, int csrno, target_ulong val)
+{
+#if defined(TARGET_RISCV32)
+    env->vstimecmp = deposit64(env->vstimecmp, 0, 32, (uint64_t)val);
+#else
+    env->vstimecmp = val;
+#endif
+    return 0;
+}
+
+#if defined(TARGET_RISCV32)
+static int write_vstimecmph(CPURISCVState *env, int csrno, target_ulong val)
+{
+    env->vstimecmp = deposit64(env->vstimecmp, 32, 32, (uint64_t)val);
+    return 0;
+}
+#endif
+
+static int read_stimecmp(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    if (riscv_cpu_virt_enabled(env)) {
+        return read_vstimecmp(env, csrno, val);
+    }
+
+#if defined(TARGET_RISCV32)
+    *val = env->stimecmp & 0xffffffff;
+#else
+    *val = env->stimecmp;
+#endif
+    return 0;
+}
+
+#if defined(TARGET_RISCV32)
+static int read_stimecmph(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    if (riscv_cpu_virt_enabled(env)) {
+        return read_vstimecmph(env, csrno, val);
+    }
+
+    *val = env->stimecmp >> 32;
+    return 0;
+}
+#endif
+
+static int write_stimecmp(CPURISCVState *env, int csrno, target_ulong val)
+{
+    if (riscv_cpu_virt_enabled(env)) {
+        return write_vstimecmp(env, csrno, val);
+    }
+
+#if defined(TARGET_RISCV32)
+    env->stimecmp = deposit64(env->stimecmp, 0, 32, (uint64_t)val);
+#else
+    env->stimecmp = val;
+#endif
+    return 0;
+}
+
+#if defined(TARGET_RISCV32)
+static int write_stimecmph(CPURISCVState *env, int csrno, target_ulong val)
+{
+    if (riscv_cpu_virt_enabled(env)) {
+        return write_vstimecmph(env, csrno, val);
+    }
+
+    env->stimecmp = deposit64(env->stimecmp, 32, 32, (uint64_t)val);
+    return 0;
+}
+#endif
+
 /* Machine constants */
 
 #define M_MODE_INTERRUPTS  (MIP_MSIP | MIP_MTIP | MIP_MEIP)
@@ -621,31 +881,41 @@ static const target_ulong delegable_ints = S_MODE_INTERRUPTS |
                                            VS_MODE_INTERRUPTS;
 static const target_ulong all_ints = M_MODE_INTERRUPTS | S_MODE_INTERRUPTS |
                                      VS_MODE_INTERRUPTS;
-static const target_ulong delegable_excps =
-    (1ULL << (RISCV_EXCP_INST_ADDR_MIS)) |
-    (1ULL << (RISCV_EXCP_INST_ACCESS_FAULT)) |
-    (1ULL << (RISCV_EXCP_ILLEGAL_INST)) |
-    (1ULL << (RISCV_EXCP_BREAKPOINT)) |
-    (1ULL << (RISCV_EXCP_LOAD_ADDR_MIS)) |
-    (1ULL << (RISCV_EXCP_LOAD_ACCESS_FAULT)) |
-    (1ULL << (RISCV_EXCP_STORE_AMO_ADDR_MIS)) |
-    (1ULL << (RISCV_EXCP_STORE_AMO_ACCESS_FAULT)) |
-    (1ULL << (RISCV_EXCP_U_ECALL)) |
-    (1ULL << (RISCV_EXCP_S_ECALL)) |
-    (1ULL << (RISCV_EXCP_VS_ECALL)) |
-    (1ULL << (RISCV_EXCP_M_ECALL)) |
-    (1ULL << (RISCV_EXCP_INST_PAGE_FAULT)) |
-    (1ULL << (RISCV_EXCP_LOAD_PAGE_FAULT)) |
-    (1ULL << (RISCV_EXCP_STORE_PAGE_FAULT)) |
-    (1ULL << (RISCV_EXCP_INST_GUEST_PAGE_FAULT)) |
-    (1ULL << (RISCV_EXCP_LOAD_GUEST_ACCESS_FAULT)) |
-    (1ULL << (RISCV_EXCP_STORE_GUEST_AMO_ACCESS_FAULT));
+#define DELEGABLE_EXCPS \
+    ((1ULL << (RISCV_EXCP_INST_ADDR_MIS)) | \
+     (1ULL << (RISCV_EXCP_INST_ACCESS_FAULT)) | \
+     (1ULL << (RISCV_EXCP_ILLEGAL_INST)) | \
+     (1ULL << (RISCV_EXCP_BREAKPOINT)) | \
+     (1ULL << (RISCV_EXCP_LOAD_ADDR_MIS)) | \
+     (1ULL << (RISCV_EXCP_LOAD_ACCESS_FAULT)) | \
+     (1ULL << (RISCV_EXCP_STORE_AMO_ADDR_MIS)) | \
+     (1ULL << (RISCV_EXCP_STORE_AMO_ACCESS_FAULT)) | \
+     (1ULL << (RISCV_EXCP_U_ECALL)) | \
+     (1ULL << (RISCV_EXCP_S_ECALL)) | \
+     (1ULL << (RISCV_EXCP_VS_ECALL)) | \
+     (1ULL << (RISCV_EXCP_M_ECALL)) | \
+     (1ULL << (RISCV_EXCP_INST_PAGE_FAULT)) | \
+     (1ULL << (RISCV_EXCP_LOAD_PAGE_FAULT)) | \
+     (1ULL << (RISCV_EXCP_STORE_PAGE_FAULT)) | \
+     (1ULL << (RISCV_EXCP_INST_GUEST_PAGE_FAULT)) | \
+     (1ULL << (RISCV_EXCP_LOAD_GUEST_ACCESS_FAULT)) | \
+     (1ULL << (RISCV_EXCP_VIRT_INSTRUCTION_FAULT)) | \
+     (1ULL << (RISCV_EXCP_STORE_GUEST_AMO_ACCESS_FAULT)))
+static const target_ulong delegable_excps = DELEGABLE_EXCPS;
+static const target_ulong vs_delegable_excps = DELEGABLE_EXCPS &
+    ~((1ULL << (RISCV_EXCP_S_ECALL)) |
+      (1ULL << (RISCV_EXCP_VS_ECALL)) |
+      (1ULL << (RISCV_EXCP_M_ECALL)) |
+      (1ULL << (RISCV_EXCP_INST_GUEST_PAGE_FAULT)) |
+      (1ULL << (RISCV_EXCP_LOAD_GUEST_ACCESS_FAULT)) |
+      (1ULL << (RISCV_EXCP_VIRT_INSTRUCTION_FAULT)) |
+      (1ULL << (RISCV_EXCP_STORE_GUEST_AMO_ACCESS_FAULT)));
 static const target_ulong sstatus_v1_9_mask = SSTATUS_SIE | SSTATUS_SPIE |
-    SSTATUS_UIE | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_FS | SSTATUS_XS |
-    SSTATUS_SUM | SSTATUS_SD;
+    SSTATUS_UIE | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_VS | SSTATUS_FS |
+    SSTATUS_XS | SSTATUS_SUM | SSTATUS_SD;
 static const target_ulong sstatus_v1_10_mask = SSTATUS_SIE | SSTATUS_SPIE |
-    SSTATUS_UIE | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_FS | SSTATUS_XS |
-    SSTATUS_SUM | SSTATUS_MXR | SSTATUS_SD;
+    SSTATUS_UIE | SSTATUS_UPIE | SSTATUS_SPP | SSTATUS_VS | SSTATUS_FS |
+    SSTATUS_XS | SSTATUS_SUM | SSTATUS_MXR | SSTATUS_SD;
 static const target_ulong sip_writable_mask = SIP_SSIP | MIP_USIP | MIP_UEIP;
 static const target_ulong hip_writable_mask = MIP_VSSIP | MIP_VSTIP | MIP_VSEIP;
 static const target_ulong vsip_writable_mask = MIP_VSSIP;
@@ -711,7 +981,8 @@ static int write_mstatus(CPURISCVState *env, int csrno, target_ulong val)
             tlb_flush(env_cpu(env));
         }
         mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE |
-            MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV | MSTATUS_SUM |
+            MSTATUS_SPP | MSTATUS_VS | MSTATUS_FS | MSTATUS_MPRV |
+            MSTATUS_SUM |
             MSTATUS_MPP | MSTATUS_MXR |
             (validate_vm(env, get_field(val, MSTATUS_VM)) ?
                 MSTATUS_VM : 0);
@@ -722,21 +993,23 @@ static int write_mstatus(CPURISCVState *env, int csrno, target_ulong val)
             tlb_flush(env_cpu(env));
         }
         mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE |
-            MSTATUS_SPP | MSTATUS_FS | MSTATUS_MPRV | MSTATUS_SUM |
-            MSTATUS_MPP | MSTATUS_MXR | MSTATUS_TVM | MSTATUS_TSR |
+            MSTATUS_SPP | MSTATUS_VS | MSTATUS_FS | MSTATUS_MPRV |
+            MSTATUS_SUM | MSTATUS_MPP | MSTATUS_MXR | MSTATUS_TVM |
+            MSTATUS_TSR |
             MSTATUS_TW;
 #if defined(TARGET_RISCV64)
             /*
-             * RV32: MPV and MTL are not in mstatus. The current plan is to
+             * RV32: MPV and GVA are not in mstatus. The current plan is to
              * add them to mstatush. For now, we just don't support it.
              */
-            mask |= MSTATUS_MTL | MSTATUS_MPV;
+            mask |= MSTATUS_GVA | MSTATUS_MPV;
 #endif
     }
 
     mstatus = (mstatus & ~mask) | (val & mask);
 
-    dirty = ((mstatus & MSTATUS_FS) == MSTATUS_FS) |
+    dirty = ((mstatus & MSTATUS_VS) == MSTATUS_VS) |
+            ((mstatus & MSTATUS_FS) == MSTATUS_FS) |
             ((mstatus & MSTATUS_XS) == MSTATUS_XS);
     mstatus = set_field(mstatus, MSTATUS_SD, dirty);
     env->mstatus = mstatus;
@@ -757,7 +1030,7 @@ static int write_mstatush(CPURISCVState *env, int csrno, target_ulong val)
         tlb_flush(env_cpu(env));
     }
 
-    val &= MSTATUS_MPV | MSTATUS_MTL;
+    val &= MSTATUS_MPV | MSTATUS_GVA;
 
     env->mstatush = val;
 
@@ -1201,6 +1474,10 @@ static int write_satp(CPURISCVState *env, int csrno, target_ulong val)
 static int read_hstatus(CPURISCVState *env, int csrno, target_ulong *val)
 {
     *val = env->hstatus;
+#ifdef TARGET_RISCV64
+    *val = set_field(*val, HSTATUS_VSXL, MXL_RV64);
+#endif
+    *val = set_field(*val, HSTATUS_VSBE, 0);
     return 0;
 }
 
@@ -1218,7 +1495,7 @@ static int read_hedeleg(CPURISCVState *env, int csrno, target_ulong *val)
 
 static int write_hedeleg(CPURISCVState *env, int csrno, target_ulong val)
 {
-    env->hedeleg = val;
+    env->hedeleg = val & vs_delegable_excps;
     return 0;
 }
 
@@ -1507,6 +1784,24 @@ static int write_pmpaddr(CPURISCVState *env, int csrno, target_ulong val)
     return 0;
 }
 
+static int rmw_seed(CPURISCVState *env, int csrno, target_ulong *ret_value,
+                    target_ulong new_value, target_ulong write_mask)
+{
+    uint16_t random_v;
+    target_ulong rval;
+
+    if (qemu_guest_getrandom(&random_v, sizeof(random_v)) < 0) {
+        rval = SEED_OPST_DEAD;
+    } else {
+        rval = random_v | SEED_OPST_ES16;
+    }
+
+    if (ret_value) {
+        *ret_value = rval;
+    }
+    return 0;
+}
+
 /*
  * riscv_csrrw - read and/or update control and status register
  *
@@ -1601,4 +1896,3 @@ int riscv_csrrw_debug(CPURISCVState *env, int csrno, target_ulong *ret_value,
     env->debugger = false;
     return ret;
 }
-

@@ -223,17 +223,71 @@ static void gen_a64_set_pc(DisasContext *s, TCGv_i64 src)
  */
 static TCGv_i64 clean_data_tbi(DisasContext *s, TCGv_i64 addr)
 {
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i64 clean = new_tmp_a64(s);
-    /*
-     * In order to get the correct value in the FAR_ELx register,
-     * we must present the memory subsystem with the "dirty" address
-     * including the TBI.  In system mode we can make this work via
-     * the TLB, dropping the TBI during translation.  But for user-only
-     * mode we don't have that option, and must remove the top byte now.
-     */
-    tcg_gen_mov_i64(tcg_ctx, clean, addr);
+
+    gen_top_byte_ignore(s, clean, addr, s->tbid);
     return clean;
+}
+
+static void gen_address_with_allocation_tag0(TCGContext *tcg_ctx,
+                                             TCGv_i64 dst, TCGv_i64 src)
+{
+    tcg_gen_andi_i64(tcg_ctx, dst, src, ~MAKE_64BIT_MASK(56, 4));
+}
+
+static TCGv_i64 gen_mte_check1_mmuidx(DisasContext *s, TCGv_i64 addr,
+                                      bool is_write, bool tag_checked,
+                                      int log2_size, bool is_unpriv,
+                                      int core_idx)
+{
+    if (tag_checked && s->mte_active[is_unpriv]) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        TCGv_i64 ret = new_tmp_a64(s);
+        TCGv_i32 tcg_desc;
+        int desc = 0;
+
+        FIELD_DP32(desc, MTEDESC, MIDX, core_idx, desc);
+        FIELD_DP32(desc, MTEDESC, TBI, s->tbid, desc);
+        FIELD_DP32(desc, MTEDESC, TCMA, s->tcma, desc);
+        FIELD_DP32(desc, MTEDESC, WRITE, is_write, desc);
+        FIELD_DP32(desc, MTEDESC, SIZEM1, (1 << log2_size) - 1, desc);
+
+        tcg_desc = tcg_const_i32(tcg_ctx, desc);
+        gen_helper_mte_check(tcg_ctx, ret, tcg_ctx->cpu_env, tcg_desc, addr);
+        tcg_temp_free_i32(tcg_ctx, tcg_desc);
+        return ret;
+    }
+    return clean_data_tbi(s, addr);
+}
+
+static TCGv_i64 gen_mte_check1(DisasContext *s, TCGv_i64 addr, bool is_write,
+                               bool tag_checked, int log2_size)
+{
+    return gen_mte_check1_mmuidx(s, addr, is_write, tag_checked, log2_size,
+                                 false, get_mem_index(s));
+}
+
+TCGv_i64 gen_mte_checkN(DisasContext *s, TCGv_i64 addr, bool is_write,
+                        bool tag_checked, int size)
+{
+    if (tag_checked && s->mte_active[0]) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        TCGv_i64 ret = new_tmp_a64(s);
+        TCGv_i32 tcg_desc;
+        int desc = 0;
+
+        FIELD_DP32(desc, MTEDESC, MIDX, get_mem_index(s), desc);
+        FIELD_DP32(desc, MTEDESC, TBI, s->tbid, desc);
+        FIELD_DP32(desc, MTEDESC, TCMA, s->tcma, desc);
+        FIELD_DP32(desc, MTEDESC, WRITE, is_write, desc);
+        FIELD_DP32(desc, MTEDESC, SIZEM1, size - 1, desc);
+
+        tcg_desc = tcg_const_i32(tcg_ctx, desc);
+        gen_helper_mte_check(tcg_ctx, ret, tcg_ctx->cpu_env, tcg_desc, addr);
+        tcg_temp_free_i32(tcg_ctx, tcg_desc);
+        return ret;
+    }
+    return clean_data_tbi(s, addr);
 }
 
 typedef struct DisasCompare64 {
@@ -637,6 +691,19 @@ static void gen_gvec_op3_ool(DisasContext *s, bool is_q, int rd,
                        is_q ? 16 : 8, vec_full_reg_size(s), data, fn);
 }
 
+static void gen_gvec_op4_ool(DisasContext *s, bool is_q, int rd, int rn,
+                             int rm, int ra, int data,
+                             gen_helper_gvec_4 *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, rd),
+                       vec_full_reg_offset(s, rn),
+                       vec_full_reg_offset(s, rm),
+                       vec_full_reg_offset(s, ra),
+                       is_q ? 16 : 8, vec_full_reg_size(s), data, fn);
+}
+
 /* Expand a 3-operand + env pointer operation using
  * an out-of-line helper.
  */
@@ -662,6 +729,21 @@ static void gen_gvec_op3_fpst(DisasContext *s, bool is_q, int rd, int rn,
     tcg_gen_gvec_3_ptr(tcg_ctx, vec_full_reg_offset(s, rd),
                        vec_full_reg_offset(s, rn),
                        vec_full_reg_offset(s, rm), fpst,
+                       is_q ? 16 : 8, vec_full_reg_size(s), data, fn);
+    tcg_temp_free_ptr(tcg_ctx, fpst);
+}
+
+static void gen_gvec_op4_fpst(DisasContext *s, bool is_q, int rd, int rn,
+                              int rm, int ra, bool is_fp16, int data,
+                              gen_helper_gvec_4_ptr *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr fpst = get_fpstatus_ptr(tcg_ctx, is_fp16);
+
+    tcg_gen_gvec_4_ptr(tcg_ctx, vec_full_reg_offset(s, rd),
+                       vec_full_reg_offset(s, rn),
+                       vec_full_reg_offset(s, rm),
+                       vec_full_reg_offset(s, ra), fpst,
                        is_q ? 16 : 8, vec_full_reg_size(s), data, fn);
     tcg_temp_free_ptr(tcg_ctx, fpst);
 }
@@ -854,14 +936,17 @@ static void gen_adc_CC(TCGContext *tcg_ctx, int sf, TCGv_i64 dest, TCGv_i64 t0, 
  * Store from GPR register to memory.
  */
 static void do_gpr_st_memidx(DisasContext *s, TCGv_i64 source,
-                             TCGv_i64 tcg_addr, int size, int memidx,
+                             TCGv_i64 tcg_addr, MemOp memop, int memidx,
                              bool iss_valid,
                              unsigned int iss_srt,
                              bool iss_sf, bool iss_ar)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int size = memop & MO_SIZE;
+
     g_assert(size <= 3);
-    tcg_gen_qemu_st_i64(tcg_ctx, source, tcg_addr, memidx, s->be_data + size);
+    tcg_gen_qemu_st_i64(tcg_ctx, source, tcg_addr, memidx,
+                        s->be_data | memop);
 
     if (iss_valid) {
         uint32_t syn;
@@ -878,12 +963,12 @@ static void do_gpr_st_memidx(DisasContext *s, TCGv_i64 source,
 }
 
 static void do_gpr_st(DisasContext *s, TCGv_i64 source,
-                      TCGv_i64 tcg_addr, int size,
+                      TCGv_i64 tcg_addr, MemOp memop,
                       bool iss_valid,
                       unsigned int iss_srt,
                       bool iss_sf, bool iss_ar)
 {
-    do_gpr_st_memidx(s, source, tcg_addr, size, get_mem_index(s),
+    do_gpr_st_memidx(s, source, tcg_addr, memop, get_mem_index(s),
                      iss_valid, iss_srt, iss_sf, iss_ar);
 }
 
@@ -892,21 +977,22 @@ static void do_gpr_st(DisasContext *s, TCGv_i64 source,
  */
 static void do_gpr_ld_memidx(DisasContext *s,
                              TCGv_i64 dest, TCGv_i64 tcg_addr,
-                             int size, bool is_signed,
+                             MemOp memop, bool is_signed,
                              bool extend, int memidx,
                              bool iss_valid, unsigned int iss_srt,
                              bool iss_sf, bool iss_ar)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    MemOp memop = s->be_data + size;
+    int size = memop & MO_SIZE;
+    MemOp mop = s->be_data | memop;
 
     g_assert(size <= 3);
 
     if (is_signed) {
-        memop += MO_SIGN;
+        mop |= MO_SIGN;
     }
 
-    tcg_gen_qemu_ld_i64(tcg_ctx, dest, tcg_addr, memidx, memop);
+    tcg_gen_qemu_ld_i64(tcg_ctx, dest, tcg_addr, memidx, mop);
 
     if (extend && is_signed) {
         g_assert(size < 3);
@@ -929,11 +1015,11 @@ static void do_gpr_ld_memidx(DisasContext *s,
 
 static void do_gpr_ld(DisasContext *s,
                       TCGv_i64 dest, TCGv_i64 tcg_addr,
-                      int size, bool is_signed, bool extend,
+                      MemOp memop, bool is_signed, bool extend,
                       bool iss_valid, unsigned int iss_srt,
                       bool iss_sf, bool iss_ar)
 {
-    do_gpr_ld_memidx(s, dest, tcg_addr, size, is_signed, extend,
+    do_gpr_ld_memidx(s, dest, tcg_addr, memop, is_signed, extend,
                      get_mem_index(s),
                      iss_valid, iss_srt, iss_sf, iss_ar);
 }
@@ -1154,7 +1240,7 @@ static void do_vec_ld(DisasContext *s, int destidx, int element,
  * unallocated-encoding checks (otherwise the syndrome information
  * for the resulting exception will be incorrect).
  */
-static inline bool fp_access_check(DisasContext *s)
+static bool fp_access_check_only(DisasContext *s)
 {
     assert(!s->fp_access_checked);
     s->fp_access_checked = true;
@@ -1168,17 +1254,68 @@ static inline bool fp_access_check(DisasContext *s)
     return false;
 }
 
+static bool nonstreaming_check(DisasContext *s)
+{
+    if (s->sme_trap_nonstreaming && s->is_nonstreaming) {
+        gen_exception_insn(s, s->pc_curr, EXCP_UDEF,
+                           syn_smetrap(SME_ET_Streaming, false),
+                           default_exception_el(s));
+        return false;
+    }
+    return true;
+}
+
+static inline bool fp_access_check(DisasContext *s)
+{
+    return fp_access_check_only(s) && nonstreaming_check(s);
+}
+
 /* Check that SVE access is enabled.  If it is, return true.
  * If not, emit code to generate an appropriate exception and return false.
  */
 bool sve_access_check(DisasContext *s)
 {
+    if (dc_isar_feature(aa64_sme, s) && s->pstate_sm) {
+        return sme_enabled_check(s) && nonstreaming_check(s);
+    }
     if (s->sve_excp_el) {
         gen_exception_insn(s, s->pc_curr, EXCP_UDEF, syn_sve_access_trap(),
                            s->sve_excp_el);
         return false;
     }
     return fp_access_check(s);
+}
+
+bool sme_enabled_check(DisasContext *s)
+{
+    if (s->sme_excp_el &&
+        (!s->fp_excp_el || s->sme_excp_el <= s->fp_excp_el)) {
+        gen_exception_insn(s, s->pc_curr, EXCP_UDEF,
+                           syn_smetrap(SME_ET_AccessTrap, false),
+                           s->sme_excp_el);
+        return false;
+    }
+    return fp_access_check_only(s);
+}
+
+bool sme_enabled_check_with_svcr(DisasContext *s, unsigned req)
+{
+    if (!sme_enabled_check(s)) {
+        return false;
+    }
+    if ((req & R_SVCR_SM_MASK) && !s->pstate_sm) {
+        gen_exception_insn(s, s->pc_curr, EXCP_UDEF,
+                           syn_smetrap(SME_ET_NotStreaming, false),
+                           default_exception_el(s));
+        return false;
+    }
+    if ((req & R_SVCR_ZA_MASK) && !s->pstate_za) {
+        gen_exception_insn(s, s->pc_curr, EXCP_UDEF,
+                           syn_smetrap(SME_ET_InactiveZA, false),
+                           default_exception_el(s));
+        return false;
+    }
+    return true;
 }
 
 /*
@@ -1427,6 +1564,7 @@ static void handle_hint(DisasContext *s, uint32_t insn,
         break;
     case 4: // 0b00100: /* SEV */
     case 5: // 0b00101: /* SEVL */
+    case 6: // 0b00110: /* DGH */
         /* we treat all as NOP at least for now */
         break;
     case 7: // 0b00111: /* XPACLRI */
@@ -1684,6 +1822,38 @@ static void handle_msr_i(DisasContext *s, uint32_t insn,
         tcg_temp_free_i32(tcg_ctx, t1);
         break;
 
+    case 0x1b: /* SVCR* */
+        if (!dc_isar_feature(aa64_sme, s) || crm < 2 || crm > 7) {
+            goto do_unallocated;
+        }
+        t1 = tcg_const_i32(tcg_ctx, (crm & 1) * 3);
+        {
+            TCGv_i32 mask = tcg_const_i32(tcg_ctx, (crm >> 1) & 3);
+
+            gen_helper_set_svcr(tcg_ctx, tcg_ctx->cpu_env, t1, mask);
+            tcg_temp_free_i32(tcg_ctx, mask);
+        }
+        tcg_temp_free_i32(tcg_ctx, t1);
+        break;
+
+    case 0x1c: /* TCO */
+        if (dc_isar_feature(aa64_mte, s)) {
+            if (crm & 1) {
+                set_pstate_bits(tcg_ctx, PSTATE_TCO);
+            } else {
+                clear_pstate_bits(tcg_ctx, PSTATE_TCO);
+            }
+            t1 = tcg_const_i32(tcg_ctx, s->current_el);
+            gen_helper_rebuild_hflags_a64(tcg_ctx, tcg_ctx->cpu_env, t1);
+            tcg_temp_free_i32(tcg_ctx, t1);
+            s->base.is_jmp = DISAS_UPDATE;
+        } else if (dc_isar_feature(aa64_mte_insn_reg, s)) {
+            s->base.is_jmp = DISAS_NEXT;
+        } else {
+            goto do_unallocated;
+        }
+        break;
+
     case 0x1e: /* DAIFSet */
         t1 = tcg_const_i32(tcg_ctx, crm);
         gen_helper_msr_i_daifset(tcg_ctx, tcg_ctx->cpu_env, t1);
@@ -1769,7 +1939,7 @@ static TCGLabel *gen_hook_sys(DisasContext *s, uint32_t insn, struct hook *hk)
     gen_helper_uc_hooksys64(tcg_ctx, tcg_skip, tcg_ctx->cpu_env, tcg_insn, tcg_hk);
 
     tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_NE, tcg_skip, 0, label);
-    
+
     tcg_temp_free_i32(tcg_ctx, tcg_skip);
     tcg_temp_free_i32(tcg_ctx, tcg_insn);
     tcg_temp_free_ptr(tcg_ctx, tcg_hk);
@@ -1916,8 +2086,56 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
         return;
     case ARM_CP_DC_ZVA:
         /* Writes clear the aligned block of memory which rt points into. */
-        tcg_rt = clean_data_tbi(s, cpu_reg(s, rt));
+        if (s->mte_active[0]) {
+            TCGv_i32 tcg_desc;
+            int desc = 0;
+
+            FIELD_DP32(desc, MTEDESC, MIDX, get_mem_index(s), desc);
+            FIELD_DP32(desc, MTEDESC, TBI, s->tbid, desc);
+            FIELD_DP32(desc, MTEDESC, TCMA, s->tcma, desc);
+            tcg_rt = new_tmp_a64(s);
+            tcg_desc = tcg_const_i32(tcg_ctx, desc);
+            gen_helper_mte_check_zva(tcg_ctx, tcg_rt, tcg_ctx->cpu_env,
+                                     tcg_desc, cpu_reg(s, rt));
+            tcg_temp_free_i32(tcg_ctx, tcg_desc);
+        } else {
+            tcg_rt = clean_data_tbi(s, cpu_reg(s, rt));
+        }
         gen_helper_dc_zva(tcg_ctx, tcg_ctx->cpu_env, tcg_rt);
+        may_gen_set_label(s, label);
+        return;
+    case ARM_CP_DC_GVA:
+        {
+            TCGv_i64 clean_addr, tag;
+
+            tcg_rt = cpu_reg(s, rt);
+            clean_addr = clean_data_tbi(s, tcg_rt);
+            gen_helper_dc_gva_probe(tcg_ctx, tcg_ctx->cpu_env, clean_addr);
+            if (s->ata) {
+                tag = tcg_temp_new_i64(tcg_ctx);
+                tcg_gen_shri_i64(tcg_ctx, tag, tcg_rt, 56);
+                gen_helper_stzgm_tags(tcg_ctx, tcg_ctx->cpu_env, clean_addr,
+                                      tag);
+                tcg_temp_free_i64(tcg_ctx, tag);
+            }
+        }
+        may_gen_set_label(s, label);
+        return;
+    case ARM_CP_DC_GZVA:
+        {
+            TCGv_i64 clean_addr, tag;
+
+            tcg_rt = cpu_reg(s, rt);
+            clean_addr = clean_data_tbi(s, tcg_rt);
+            gen_helper_dc_zva(tcg_ctx, tcg_ctx->cpu_env, clean_addr);
+            if (s->ata) {
+                tag = tcg_temp_new_i64(tcg_ctx);
+                tcg_gen_shri_i64(tcg_ctx, tag, tcg_rt, 56);
+                gen_helper_stzgm_tags(tcg_ctx, tcg_ctx->cpu_env, clean_addr,
+                                      tag);
+                tcg_temp_free_i64(tcg_ctx, tag);
+            }
+        }
         may_gen_set_label(s, label);
         return;
     default:
@@ -1927,6 +2145,9 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
         may_gen_set_label(s, label);
         return;
     } else if ((ri->type & ARM_CP_SVE) && !sve_access_check(s)) {
+        may_gen_set_label(s, label);
+        return;
+    } else if ((ri->type & ARM_CP_SME) && !sme_enabled_check(s)) {
         may_gen_set_label(s, label);
         return;
     }
@@ -2499,7 +2720,7 @@ static void gen_compare_and_swap(DisasContext *s, int rs, int rt,
     if (rn == 31) {
         gen_check_sp_alignment(s);
     }
-    clean_addr = clean_data_tbi(s, cpu_reg_sp(s, rn));
+    clean_addr = gen_mte_check1(s, cpu_reg_sp(s, rn), true, rn != 31, size);
     tcg_gen_atomic_cmpxchg_i64(tcg_ctx, tcg_rs, clean_addr, tcg_rs, tcg_rt, memidx,
                                size | MO_ALIGN | s->be_data);
 }
@@ -2518,7 +2739,8 @@ static void gen_compare_and_swap_pair(DisasContext *s, int rs, int rt,
     if (rn == 31) {
         gen_check_sp_alignment(s);
     }
-    clean_addr = clean_data_tbi(s, cpu_reg_sp(s, rn));
+    clean_addr = gen_mte_check1(s, cpu_reg_sp(s, rn), true, rn != 31,
+                                size + 1);
 
     if (size == 2) {
         TCGv_i64 cmp = tcg_temp_new_i64(tcg_ctx);
@@ -2644,7 +2866,8 @@ static void disas_ldst_excl(DisasContext *s, uint32_t insn)
         if (is_lasr) {
             tcg_gen_mb(tcg_ctx, TCG_MO_ALL | TCG_BAR_STRL);
         }
-        clean_addr = clean_data_tbi(s, cpu_reg_sp(s, rn));
+        clean_addr = gen_mte_check1(s, cpu_reg_sp(s, rn), true, rn != 31,
+                                    size);
         gen_store_exclusive(s, rs, rt, rt2, clean_addr, size, false);
         return;
 
@@ -2653,7 +2876,8 @@ static void disas_ldst_excl(DisasContext *s, uint32_t insn)
         if (rn == 31) {
             gen_check_sp_alignment(s);
         }
-        clean_addr = clean_data_tbi(s, cpu_reg_sp(s, rn));
+        clean_addr = gen_mte_check1(s, cpu_reg_sp(s, rn), false, rn != 31,
+                                    size);
         s->is_ldex = true;
         gen_load_exclusive(s, rt, rt2, clean_addr, size, false);
         if (is_lasr) {
@@ -2673,8 +2897,9 @@ static void disas_ldst_excl(DisasContext *s, uint32_t insn)
             gen_check_sp_alignment(s);
         }
         tcg_gen_mb(tcg_ctx, TCG_MO_ALL | TCG_BAR_STRL);
-        clean_addr = clean_data_tbi(s, cpu_reg_sp(s, rn));
-        do_gpr_st(s, cpu_reg(s, rt), clean_addr, size, true, rt,
+        clean_addr = gen_mte_check1(s, cpu_reg_sp(s, rn), true, rn != 31,
+                                    size);
+        do_gpr_st(s, cpu_reg(s, rt), clean_addr, size | MO_ALIGN, true, rt,
                   disas_ldst_compute_iss_sf(size, false, 0), is_lasr);
         return;
 
@@ -2689,9 +2914,11 @@ static void disas_ldst_excl(DisasContext *s, uint32_t insn)
         if (rn == 31) {
             gen_check_sp_alignment(s);
         }
-        clean_addr = clean_data_tbi(s, cpu_reg_sp(s, rn));
-        do_gpr_ld(s, cpu_reg(s, rt), clean_addr, size, false, false, true, rt,
-                  disas_ldst_compute_iss_sf(size, false, 0), is_lasr);
+        clean_addr = gen_mte_check1(s, cpu_reg_sp(s, rn), false, rn != 31,
+                                    size);
+        do_gpr_ld(s, cpu_reg(s, rt), clean_addr, size | MO_ALIGN, false,
+                  false, true, rt, disas_ldst_compute_iss_sf(size, false, 0),
+                  is_lasr);
         tcg_gen_mb(tcg_ctx, TCG_MO_ALL | TCG_BAR_LDAQ);
         return;
 
@@ -2703,7 +2930,8 @@ static void disas_ldst_excl(DisasContext *s, uint32_t insn)
             if (is_lasr) {
                 tcg_gen_mb(tcg_ctx, TCG_MO_ALL | TCG_BAR_STRL);
             }
-            clean_addr = clean_data_tbi(s, cpu_reg_sp(s, rn));
+            clean_addr = gen_mte_check1(s, cpu_reg_sp(s, rn), true,
+                                        rn != 31, size);
             gen_store_exclusive(s, rs, rt, rt2, clean_addr, size, true);
             return;
         }
@@ -2721,7 +2949,8 @@ static void disas_ldst_excl(DisasContext *s, uint32_t insn)
             if (rn == 31) {
                 gen_check_sp_alignment(s);
             }
-            clean_addr = clean_data_tbi(s, cpu_reg_sp(s, rn));
+            clean_addr = gen_mte_check1(s, cpu_reg_sp(s, rn), false,
+                                        rn != 31, size);
             s->is_ldex = true;
             gen_load_exclusive(s, rt, rt2, clean_addr, size, true);
             if (is_lasr) {
@@ -2825,7 +3054,7 @@ static void disas_ld_lit(DisasContext *s, uint32_t insn)
  * +-----+-------+---+---+-------+---+-------+-------+------+------+
  *
  * opc: LDP/STP/LDNP/STNP        00 -> 32 bit, 10 -> 64 bit
- *      LDPSW                    01
+ *      LDPSW/STGP               01
  *      LDP/STP/LDNP/STNP (SIMD) 00 -> 32 bit, 01 -> 64 bit, 10 -> 128 bit
  *   V: 0 -> GPR, 1 -> Vector
  * idx: 00 -> signed offset with non-temporal hint, 01 -> post-index,
@@ -2851,6 +3080,7 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
     bool is_signed = false;
     bool postindex = false;
     bool wback = false;
+    bool set_tag = false;
 
     TCGv_i64 clean_addr, dirty_addr;
 
@@ -2863,6 +3093,13 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
 
     if (is_vector) {
         size = 2 + opc;
+    } else if (opc == 1 && !is_load) {
+        if (!dc_isar_feature(aa64_mte_insn_reg, s) || index == 0) {
+            unallocated_encoding(s);
+            return;
+        }
+        size = 3;
+        set_tag = true;
     } else {
         size = 2 + extract32(opc, 1, 1);
         is_signed = extract32(opc, 0, 1);
@@ -2903,7 +3140,7 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
         return;
     }
 
-    offset <<= size;
+    offset <<= (set_tag ? LOG2_TAG_GRANULE : size);
 
     if (rn == 31) {
         gen_check_sp_alignment(s);
@@ -2913,7 +3150,17 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
     if (!postindex) {
         tcg_gen_addi_i64(tcg_ctx, dirty_addr, dirty_addr, offset);
     }
-    clean_addr = clean_data_tbi(s, dirty_addr);
+
+    if (set_tag) {
+        if (s->ata) {
+            gen_helper_stg(tcg_ctx, tcg_ctx->cpu_env, dirty_addr, dirty_addr);
+        } else {
+            gen_helper_stg_stub(tcg_ctx, tcg_ctx->cpu_env, dirty_addr);
+        }
+    }
+
+    clean_addr = gen_mte_checkN(s, dirty_addr, !is_load,
+                                (wback || rn != 31) && !set_tag, 2 << size);
 
     if (is_vector) {
         if (is_load) {
@@ -2995,6 +3242,7 @@ static void disas_ldst_reg_imm9(DisasContext *s, uint32_t insn,
     bool iss_valid = !is_vector;
     bool post_index;
     bool writeback;
+    int memidx;
 
     TCGv_i64 clean_addr, dirty_addr;
 
@@ -3052,7 +3300,10 @@ static void disas_ldst_reg_imm9(DisasContext *s, uint32_t insn,
     if (!post_index) {
         tcg_gen_addi_i64(tcg_ctx, dirty_addr, dirty_addr, imm9);
     }
-    clean_addr = clean_data_tbi(s, dirty_addr);
+    memidx = is_unpriv ? get_a64_user_mem_index(s) : get_mem_index(s);
+    clean_addr = gen_mte_check1_mmuidx(s, dirty_addr, is_store,
+                                       writeback || rn != 31, size,
+                                       is_unpriv, memidx);
 
     if (is_vector) {
         if (is_store) {
@@ -3062,7 +3313,6 @@ static void disas_ldst_reg_imm9(DisasContext *s, uint32_t insn,
         }
     } else {
         TCGv_i64 tcg_rt = cpu_reg(s, rt);
-        int memidx = is_unpriv ? get_a64_user_mem_index(s) : get_mem_index(s);
         bool iss_sf = disas_ldst_compute_iss_sf(size, is_signed, opc);
 
         if (is_store) {
@@ -3160,7 +3410,7 @@ static void disas_ldst_reg_roffset(DisasContext *s, uint32_t insn,
     ext_and_shift_reg(tcg_ctx, tcg_rm, tcg_rm, opt, shift ? size : 0);
 
     tcg_gen_add_i64(tcg_ctx, dirty_addr, dirty_addr, tcg_rm);
-    clean_addr = clean_data_tbi(s, dirty_addr);
+    clean_addr = gen_mte_check1(s, dirty_addr, is_store, true, size);
 
     if (is_vector) {
         if (is_store) {
@@ -3246,7 +3496,7 @@ static void disas_ldst_reg_unsigned_imm(DisasContext *s, uint32_t insn,
     dirty_addr = read_cpu_reg_sp(s, rn, 1);
     offset = imm12 << size;
     tcg_gen_addi_i64(tcg_ctx, dirty_addr, dirty_addr, offset);
-    clean_addr = clean_data_tbi(s, dirty_addr);
+    clean_addr = gen_mte_check1(s, dirty_addr, is_store, rn != 31, size);
 
     if (is_vector) {
         if (is_store) {
@@ -3290,8 +3540,9 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
     int o3_opc = extract32(insn, 12, 4);
     bool r = extract32(insn, 22, 1);
     bool a = extract32(insn, 23, 1);
-    TCGv_i64 tcg_rs, clean_addr;
+    TCGv_i64 tcg_rs, tcg_rt, clean_addr;
     AtomicThreeOpFn *fn;
+    MemOp mop = s->be_data | size | MO_ALIGN;
 
     if (is_vector || !dc_isar_feature(aa64_atomics, s)) {
         unallocated_encoding(s);
@@ -3312,9 +3563,11 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
         break;
     case 004: /* LDSMAX */
         fn = tcg_gen_atomic_fetch_smax_i64;
+        mop |= MO_SIGN;
         break;
     case 005: /* LDSMIN */
         fn = tcg_gen_atomic_fetch_smin_i64;
+        mop |= MO_SIGN;
         break;
     case 006: /* LDUMAX */
         fn = tcg_gen_atomic_fetch_umax_i64;
@@ -3340,7 +3593,7 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
     if (rn == 31) {
         gen_check_sp_alignment(s);
     }
-    clean_addr = clean_data_tbi(s, cpu_reg_sp(s, rn));
+    clean_addr = gen_mte_check1(s, cpu_reg_sp(s, rn), false, rn != 31, size);
 
     if (o3_opc == 014) {
         /*
@@ -3357,6 +3610,7 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
     }
 
     tcg_rs = read_cpu_reg(s, rs, true);
+    tcg_rt = cpu_reg(s, rt);
 
     if (o3_opc == 1) { /* LDCLR */
         tcg_gen_not_i64(tcg_ctx, tcg_rs, tcg_rs);
@@ -3365,8 +3619,25 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
     /* The tcg atomic primitives are all full barriers.  Therefore we
      * can ignore the Acquire and Release bits of this instruction.
      */
-    fn(tcg_ctx, cpu_reg(s, rt), clean_addr, tcg_rs, get_mem_index(s),
-       s->be_data | size | MO_ALIGN);
+    fn(tcg_ctx, tcg_rt, clean_addr, tcg_rs, get_mem_index(s), mop);
+
+    if (mop & MO_SIGN) {
+        switch (size) {
+        case MO_8:
+            tcg_gen_ext8u_i64(tcg_ctx, tcg_rt, tcg_rt);
+            break;
+        case MO_16:
+            tcg_gen_ext16u_i64(tcg_ctx, tcg_rt, tcg_rt);
+            break;
+        case MO_32:
+            tcg_gen_ext32u_i64(tcg_ctx, tcg_rt, tcg_rt);
+            break;
+        case MO_64:
+            break;
+        default:
+            g_assert_not_reached();
+        }
+    }
 }
 
 /*
@@ -3418,7 +3689,8 @@ static void disas_ldst_pac(DisasContext *s, uint32_t insn,
     tcg_gen_addi_i64(tcg_ctx, dirty_addr, dirty_addr, offset);
 
     /* Note that "clean" and "dirty" here refer to TBI not PAC.  */
-    clean_addr = clean_data_tbi(s, dirty_addr);
+    clean_addr = gen_mte_check1(s, dirty_addr, false, is_wback || rn != 31,
+                                size);
 
     tcg_rt = cpu_reg(s, rt);
     do_gpr_ld(s, tcg_rt, clean_addr, size, /* is_signed */ false,
@@ -3501,14 +3773,15 @@ static void disas_ldst_ldapr_stlr(DisasContext *s, uint32_t insn)
     if (is_store) {
         /* Store-Release semantics */
         tcg_gen_mb(tcg_ctx, TCG_MO_ALL | TCG_BAR_STRL);
-        do_gpr_st(s, cpu_reg(s, rt), clean_addr, size, true, rt, iss_sf, true);
+        do_gpr_st(s, cpu_reg(s, rt), clean_addr, size | MO_ALIGN, true, rt,
+                  iss_sf, true);
     } else {
         /*
          * Load-AcquirePC semantics; we implement as the slightly more
          * restrictive Load-Acquire.
          */
-        do_gpr_ld(s, cpu_reg(s, rt), clean_addr, size, is_signed, extend,
-                  true, rt, iss_sf, true);
+        do_gpr_ld(s, cpu_reg(s, rt), clean_addr, size | MO_ALIGN, is_signed,
+                  extend, true, rt, iss_sf, true);
         tcg_gen_mb(tcg_ctx, TCG_MO_ALL | TCG_BAR_LDAQ);
     }
 }
@@ -3586,6 +3859,7 @@ static void disas_ldst_multiple_struct(DisasContext *s, uint32_t insn)
     int elements; /* elements per vector */
     int rpt;    /* num iterations */
     int selem;  /* structure elements */
+    int total;
     int r;
 
     if (extract32(insn, 31, 1) || extract32(insn, 21, 1)) {
@@ -3652,6 +3926,8 @@ static void disas_ldst_multiple_struct(DisasContext *s, uint32_t insn)
         endian = MO_LE;
     }
 
+    total = rpt * selem * (is_q ? 16 : 8);
+
     /* Consecutive little-endian elements from a single register
      * can be promoted to a larger little-endian operation.
      */
@@ -3662,7 +3938,8 @@ static void disas_ldst_multiple_struct(DisasContext *s, uint32_t insn)
     elements = (is_q ? 16 : 8) / ebytes;
 
     tcg_rn = cpu_reg_sp(s, rn);
-    clean_addr = clean_data_tbi(s, tcg_rn);
+    clean_addr = gen_mte_checkN(s, tcg_rn, is_store,
+                                is_postidx || rn != 31, total);
     tcg_ebytes = tcg_const_i64(tcg_ctx, ebytes);
 
     for (r = 0; r < rpt; r++) {
@@ -3806,7 +4083,8 @@ static void disas_ldst_single_struct(DisasContext *s, uint32_t insn)
     }
 
     tcg_rn = cpu_reg_sp(s, rn);
-    clean_addr = clean_data_tbi(s, tcg_rn);
+    clean_addr = gen_mte_checkN(s, tcg_rn, !is_load,
+                                is_postidx || rn != 31, selem << scale);
     tcg_ebytes = tcg_const_i64(tcg_ctx, ebytes);
 
     for (xs = 0; xs < selem; xs++) {
@@ -3842,6 +4120,189 @@ static void disas_ldst_single_struct(DisasContext *s, uint32_t insn)
     }
 }
 
+/*
+ * Load/Store memory tags
+ *
+ *  31 30 29         24     22  21     12    10      5      0
+ * +-----+-------------+-----+---+------+-----+------+------+
+ * | 1 1 | 0 1 1 0 0 1 | op1 | 1 | imm9 | op2 |  Rn  |  Rt  |
+ * +-----+-------------+-----+---+------+-----+------+------+
+ */
+static void disas_ldst_tag(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int rt = extract32(insn, 0, 5);
+    int rn = extract32(insn, 5, 5);
+    int64_t offset = sextract64(insn, 12, 9) << LOG2_TAG_GRANULE;
+    int op2 = extract32(insn, 10, 2);
+    int op1 = extract32(insn, 22, 2);
+    bool is_load = false;
+    bool is_pair = false;
+    bool is_zero = false;
+    bool is_mult = false;
+    int index = 0;
+    TCGv_i64 addr, clean_addr, tcg_rt;
+
+    if (extract32(insn, 30, 2) != 3) {
+        goto do_unallocated;
+    }
+
+    switch (op1) {
+    case 0:
+        if (op2 == 0) {
+            if (s->current_el == 0 || offset != 0) {
+                goto do_unallocated;
+            }
+            is_mult = true;
+            is_zero = true;
+        } else {
+            index = op2 - 2;
+        }
+        break;
+    case 1:
+        if (op2 == 0) {
+            is_load = true;
+        } else {
+            is_zero = true;
+            index = op2 - 2;
+        }
+        break;
+    case 2:
+        if (op2 == 0) {
+            if (s->current_el == 0 || offset != 0) {
+                goto do_unallocated;
+            }
+            is_mult = true;
+        } else {
+            is_pair = true;
+            index = op2 - 2;
+        }
+        break;
+    case 3:
+        if (op2 == 0) {
+            if (s->current_el == 0 || offset != 0) {
+                goto do_unallocated;
+            }
+            is_mult = true;
+            is_load = true;
+        } else {
+            is_pair = true;
+            is_zero = true;
+            index = op2 - 2;
+        }
+        break;
+    default:
+    do_unallocated:
+        unallocated_encoding(s);
+        return;
+    }
+
+    if (!dc_isar_feature(aa64_mte_insn_reg, s)) {
+        goto do_unallocated;
+    }
+
+    if (rn == 31) {
+        gen_check_sp_alignment(s);
+    }
+
+    addr = read_cpu_reg_sp(s, rn, true);
+    if (index >= 0) {
+        tcg_gen_addi_i64(tcg_ctx, addr, addr, offset);
+    }
+
+    if (is_mult) {
+        tcg_rt = cpu_reg(s, rt);
+        if (is_zero) {
+            if (s->ata) {
+                gen_helper_stzgm_tags(tcg_ctx, tcg_ctx->cpu_env, addr,
+                                      tcg_rt);
+            }
+            clean_addr = clean_data_tbi(s, addr);
+            gen_helper_dc_zva(tcg_ctx, tcg_ctx->cpu_env, clean_addr);
+        } else if (s->ata) {
+            if (is_load) {
+                gen_helper_ldgm(tcg_ctx, tcg_rt, tcg_ctx->cpu_env, addr);
+            } else {
+                gen_helper_stgm(tcg_ctx, tcg_ctx->cpu_env, addr, tcg_rt);
+            }
+        } else {
+            TCGv_i32 tcg_desc;
+            int tag_transfer_size = 4 << 6;
+            int desc = 0;
+
+            FIELD_DP32(desc, MTEDESC, MIDX, get_mem_index(s), desc);
+            FIELD_DP32(desc, MTEDESC, WRITE, !is_load, desc);
+            FIELD_DP32(desc, MTEDESC, SIZEM1, tag_transfer_size - 1, desc);
+            clean_addr = clean_data_tbi(s, addr);
+            tcg_gen_andi_i64(tcg_ctx, clean_addr, clean_addr,
+                             -tag_transfer_size);
+            tcg_desc = tcg_const_i32(tcg_ctx, desc);
+            gen_helper_mte_probe_data(tcg_ctx, tcg_ctx->cpu_env, clean_addr,
+                                      tcg_desc);
+            tcg_temp_free_i32(tcg_ctx, tcg_desc);
+            if (is_load) {
+                tcg_gen_movi_i64(tcg_ctx, tcg_rt, 0);
+            }
+        }
+        return;
+    } else if (is_load) {
+        tcg_gen_andi_i64(tcg_ctx, addr, addr, -TAG_GRANULE);
+        tcg_rt = cpu_reg(s, rt);
+        if (s->ata) {
+            gen_helper_ldg(tcg_ctx, tcg_rt, tcg_ctx->cpu_env, addr, tcg_rt);
+        } else {
+            TCGv_i32 tcg_desc;
+            int desc = 0;
+
+            clean_addr = clean_data_tbi(s, addr);
+            FIELD_DP32(desc, MTEDESC, MIDX, get_mem_index(s), desc);
+            FIELD_DP32(desc, MTEDESC, SIZEM1, 1 - 1, desc);
+            tcg_desc = tcg_const_i32(tcg_ctx, desc);
+            gen_helper_mte_probe_data(tcg_ctx, tcg_ctx->cpu_env, clean_addr,
+                                      tcg_desc);
+            tcg_temp_free_i32(tcg_ctx, tcg_desc);
+            gen_address_with_allocation_tag0(tcg_ctx, tcg_rt, tcg_rt);
+        }
+    } else {
+        tcg_rt = cpu_reg_sp(s, rt);
+        if (s->ata) {
+            if (is_pair) {
+                gen_helper_st2g(tcg_ctx, tcg_ctx->cpu_env, addr, tcg_rt);
+            } else {
+                gen_helper_stg(tcg_ctx, tcg_ctx->cpu_env, addr, tcg_rt);
+            }
+        } else if (is_pair) {
+            gen_helper_st2g_stub(tcg_ctx, tcg_ctx->cpu_env, addr);
+        } else {
+            gen_helper_stg_stub(tcg_ctx, tcg_ctx->cpu_env, addr);
+        }
+    }
+
+    if (is_zero) {
+        TCGv_i64 tcg_zero = tcg_const_i64(tcg_ctx, 0);
+        int mem_index = get_mem_index(s);
+        int i, n = (1 + is_pair) << LOG2_TAG_GRANULE;
+
+        clean_addr = clean_data_tbi(s, addr);
+        gen_address_with_allocation_tag0(tcg_ctx, clean_addr, clean_addr);
+        tcg_gen_qemu_st_i64(tcg_ctx, tcg_zero, clean_addr, mem_index,
+                            MO_Q | MO_ALIGN_16);
+        for (i = 8; i < n; i += 8) {
+            tcg_gen_addi_i64(tcg_ctx, clean_addr, clean_addr, 8);
+            tcg_gen_qemu_st_i64(tcg_ctx, tcg_zero, clean_addr, mem_index,
+                                MO_Q);
+        }
+        tcg_temp_free_i64(tcg_ctx, tcg_zero);
+    }
+
+    if (index != 0) {
+        if (index < 0) {
+            tcg_gen_addi_i64(tcg_ctx, addr, addr, offset);
+        }
+        tcg_gen_mov_i64(tcg_ctx, cpu_reg_sp(s, rn), addr);
+    }
+}
+
 /* Loads and stores */
 static void disas_ldst(DisasContext *s, uint32_t insn)
 {
@@ -3872,9 +4333,12 @@ static void disas_ldst(DisasContext *s, uint32_t insn)
     case 0x0d: /* AdvSIMD load/store single structure */
         disas_ldst_single_struct(s, insn);
         break;
-    case 0x19: /* LDAPR/STLR (unscaled immediate) */
-        if (extract32(insn, 10, 2) != 0 ||
-            extract32(insn, 21, 1) != 0) {
+    case 0x19:
+        if (extract32(insn, 21, 1) != 0) {
+            disas_ldst_tag(s, insn);
+            break;
+        }
+        if (extract32(insn, 10, 2) != 0) {
             unallocated_encoding(s);
             break;
         }
@@ -3978,6 +4442,55 @@ static void disas_add_sub_imm(DisasContext *s, uint32_t insn)
     }
 
     tcg_temp_free_i64(tcg_ctx, tcg_result);
+}
+
+/*
+ * Add/subtract (immediate, with tags)
+ *
+ *  31 30 29 28         23 22 21     16 14      10 9   5 4   0
+ * +--+--+--+-------------+--+---------+--+-------+-----+-----+
+ * |sf|op| S| 1 0 0 0 1 1 |o2|  uimm6  |o3| uimm4 |  Rn | Rd  |
+ * +--+--+--+-------------+--+---------+--+-------+-----+-----+
+ *
+ *    op: 0 -> add, 1 -> sub
+ */
+static void disas_add_sub_imm_with_tags(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int rd = extract32(insn, 0, 5);
+    int rn = extract32(insn, 5, 5);
+    int uimm4 = extract32(insn, 10, 4);
+    int uimm6 = extract32(insn, 16, 6);
+    bool sub_op = extract32(insn, 30, 1);
+    TCGv_i64 tcg_rn;
+    TCGv_i64 tcg_rd;
+    int imm;
+
+    if ((insn & 0xa040c000u) != 0x80000000u ||
+        !dc_isar_feature(aa64_mte_insn_reg, s)) {
+        unallocated_encoding(s);
+        return;
+    }
+
+    imm = uimm6 << LOG2_TAG_GRANULE;
+    if (sub_op) {
+        imm = -imm;
+    }
+
+    tcg_rn = cpu_reg_sp(s, rn);
+    tcg_rd = cpu_reg_sp(s, rd);
+    if (s->ata) {
+        TCGv_i32 tcg_imm = tcg_const_i32(tcg_ctx, imm);
+        TCGv_i32 tcg_tag = tcg_const_i32(tcg_ctx, uimm4);
+
+        gen_helper_addsubg(tcg_ctx, tcg_rd, tcg_ctx->cpu_env, tcg_rn,
+                           tcg_imm, tcg_tag);
+        tcg_temp_free_i32(tcg_ctx, tcg_tag);
+        tcg_temp_free_i32(tcg_ctx, tcg_imm);
+    } else {
+        tcg_gen_addi_i64(tcg_ctx, tcg_rd, tcg_rn, imm);
+        gen_address_with_allocation_tag0(tcg_ctx, tcg_rd, tcg_rd);
+    }
 }
 
 /* The input should be a value in the bottom e bits (with higher
@@ -4343,8 +4856,11 @@ static void disas_data_proc_imm(DisasContext *s, uint32_t insn)
     case 0x20: case 0x21: /* PC-rel. addressing */
         disas_pc_rel_adr(s, insn);
         break;
-    case 0x22: case 0x23: /* Add/subtract (immediate) */
+    case 0x22: /* Add/subtract (immediate) */
         disas_add_sub_imm(s, insn);
+        break;
+    case 0x23: /* Add/subtract (immediate, with tags) */
+        disas_add_sub_imm_with_tags(s, insn);
         break;
     case 0x24: /* Logical (immediate) */
         disas_logic_imm(s, insn);
@@ -5460,24 +5976,70 @@ static void handle_crc32(DisasContext *s,
 static void disas_data_proc_2src(DisasContext *s, uint32_t insn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    unsigned int sf, rm, opcode, rn, rd;
+    unsigned int sf, rm, opcode, rn, rd, setflag;
     sf = extract32(insn, 31, 1);
+    setflag = extract32(insn, 29, 1);
     rm = extract32(insn, 16, 5);
     opcode = extract32(insn, 10, 6);
     rn = extract32(insn, 5, 5);
     rd = extract32(insn, 0, 5);
 
-    if (extract32(insn, 29, 1)) {
+    if (setflag && opcode != 0) {
         unallocated_encoding(s);
         return;
     }
 
     switch (opcode) {
+    case 0: /* SUBP(S) */
+        if (sf == 0 || !dc_isar_feature(aa64_mte_insn_reg, s)) {
+            goto do_unallocated;
+        } else {
+            TCGv_i64 tcg_n, tcg_m, tcg_d;
+
+            tcg_n = read_cpu_reg_sp(s, rn, true);
+            tcg_m = read_cpu_reg_sp(s, rm, true);
+            tcg_gen_sextract_i64(tcg_ctx, tcg_n, tcg_n, 0, 56);
+            tcg_gen_sextract_i64(tcg_ctx, tcg_m, tcg_m, 0, 56);
+            tcg_d = cpu_reg(s, rd);
+
+            if (setflag) {
+                gen_sub_CC(tcg_ctx, true, tcg_d, tcg_n, tcg_m);
+            } else {
+                tcg_gen_sub_i64(tcg_ctx, tcg_d, tcg_n, tcg_m);
+            }
+        }
+        break;
     case 2: /* UDIV */
         handle_div(s, false, sf, rm, rn, rd);
         break;
     case 3: /* SDIV */
         handle_div(s, true, sf, rm, rn, rd);
+        break;
+    case 4: /* IRG */
+        if (sf == 0 || !dc_isar_feature(aa64_mte_insn_reg, s)) {
+            goto do_unallocated;
+        }
+        if (s->ata) {
+            gen_helper_irg(tcg_ctx, cpu_reg_sp(s, rd), tcg_ctx->cpu_env,
+                           cpu_reg_sp(s, rn), cpu_reg(s, rm));
+        } else {
+            gen_address_with_allocation_tag0(tcg_ctx, cpu_reg_sp(s, rd),
+                                             cpu_reg_sp(s, rn));
+        }
+        break;
+    case 5: /* GMI */
+        if (sf == 0 || !dc_isar_feature(aa64_mte_insn_reg, s)) {
+            goto do_unallocated;
+        } else {
+            TCGv_i64 one = tcg_const_i64(tcg_ctx, 1);
+            TCGv_i64 t = tcg_temp_new_i64(tcg_ctx);
+
+            tcg_gen_extract_i64(tcg_ctx, t, cpu_reg_sp(s, rn), 56, 4);
+            tcg_gen_shl_i64(tcg_ctx, t, one, t);
+            tcg_gen_or_i64(tcg_ctx, cpu_reg(s, rd), cpu_reg(s, rm), t);
+            tcg_temp_free_i64(tcg_ctx, t);
+            tcg_temp_free_i64(tcg_ctx, one);
+        }
         break;
     case 8: /* LSLV */
         handle_shift_reg(s, A64_SHIFT_TYPE_LSL, sf, rm, rn, rd);
@@ -5939,6 +6501,9 @@ static void handle_fp_1src_single(DisasContext *s, int opcode, int rd, int rn)
     case 0x3: /* FSQRT */
         gen_helper_vfp_sqrts(tcg_ctx, tcg_res, tcg_op, tcg_ctx->cpu_env);
         goto done;
+    case 0x6: /* BFCVT */
+        gen_fpst = gen_helper_bfcvt;
+        break;
     case 0x8: /* FRINTN */
     case 0x9: /* FRINTP */
     case 0xa: /* FRINTM */
@@ -6182,6 +6747,17 @@ static void disas_fp_1src(DisasContext *s, uint32_t insn)
         handle_fp_fcvt(s, opcode, rd, rn, dtype, type);
         break;
     }
+
+    case 0x6:
+        if (type != 1 || !dc_isar_feature(aa64_bf16, s)) {
+            unallocated_encoding(s);
+            return;
+        }
+        if (!fp_access_check(s)) {
+            return;
+        }
+        handle_fp_1src_single(s, opcode, rd, rn);
+        break;
 
     case 0x10: /* FRINT{32,64}{X,Z} */
     case 0x11: /* FRINT{32,64}{X,Z} */
@@ -10083,6 +10659,14 @@ static void handle_2misc_narrow(DisasContext *s, bool scalar,
                 tcg_temp_free_i32(tcg_ctx, ahp);
             }
             break;
+        case 0x36: /* BFCVTN, BFCVTN2 */
+            {
+                TCGv_ptr fpst = get_fpstatus_ptr(tcg_ctx, false);
+
+                gen_helper_bfcvt_pair(tcg_ctx, tcg_res[pass], tcg_op, fpst);
+                tcg_temp_free_ptr(tcg_ctx, fpst);
+            }
+            break;
         case 0x56:  /* FCVTXN, FCVTXN2 */
             /* 64 bit to 32 bit float conversion
              * with von Neumann rounding (round to odd)
@@ -12022,6 +12606,22 @@ static void disas_simd_three_reg_same_extra(DisasContext *s, uint32_t insn)
         }
         feature = dc_isar_feature(aa64_dp, s);
         break;
+    case 0x03: /* USDOT */
+        if (size != MO_32) {
+            unallocated_encoding(s);
+            return;
+        }
+        feature = dc_isar_feature(aa64_i8mm, s);
+        break;
+    case 0x04: /* SMMLA */
+    case 0x14: /* UMMLA */
+    case 0x05: /* USMMLA */
+        if (!is_q || size != MO_32) {
+            unallocated_encoding(s);
+            return;
+        }
+        feature = dc_isar_feature(aa64_i8mm, s);
+        break;
     case 0x18: /* FCMLA, #0 */
     case 0x19: /* FCMLA, #90 */
     case 0x1a: /* FCMLA, #180 */
@@ -12035,6 +12635,24 @@ static void disas_simd_three_reg_same_extra(DisasContext *s, uint32_t insn)
             return;
         }
         feature = dc_isar_feature(aa64_fcma, s);
+        break;
+    case 0x1d: /* BFMMLA */
+        if (!is_q || size != MO_16) {
+            unallocated_encoding(s);
+            return;
+        }
+        feature = dc_isar_feature(aa64_bf16, s);
+        break;
+    case 0x1f:
+        switch (size) {
+        case 1: /* BFDOT */
+        case 3: /* BFMLAL{B,T} */
+            feature = dc_isar_feature(aa64_bf16, s);
+            break;
+        default:
+            unallocated_encoding(s);
+            return;
+        }
         break;
     default:
         unallocated_encoding(s);
@@ -12076,8 +12694,44 @@ static void disas_simd_three_reg_same_extra(DisasContext *s, uint32_t insn)
         return;
 
     case 0x2: /* SDOT / UDOT */
-        gen_gvec_op3_ool(s, is_q, rd, rn, rm, 0,
+        gen_gvec_op4_ool(s, is_q, rd, rn, rm, rd, 0,
                          u ? gen_helper_gvec_udot_b : gen_helper_gvec_sdot_b);
+        return;
+
+    case 0x3: /* USDOT */
+        gen_gvec_op4_ool(s, is_q, rd, rn, rm, rd, 0,
+                         gen_helper_gvec_usdot_b);
+        return;
+
+    case 0x4: /* SMMLA, UMMLA */
+        gen_gvec_op4_ool(s, true, rd, rn, rm, rd, 0,
+                         u ? gen_helper_gvec_ummla_b
+                         : gen_helper_gvec_smmla_b);
+        return;
+
+    case 0x5: /* USMMLA */
+        gen_gvec_op4_ool(s, true, rd, rn, rm, rd, 0,
+                         gen_helper_gvec_usmmla_b);
+        return;
+
+    case 0xd: /* BFMMLA */
+        gen_gvec_op4_ool(s, is_q, rd, rn, rm, rd, 0,
+                         gen_helper_gvec_bfmmla);
+        return;
+
+    case 0xf:
+        switch (size) {
+        case 1: /* BFDOT */
+            gen_gvec_op4_ool(s, is_q, rd, rn, rm, rd, 0,
+                             gen_helper_gvec_bfdot);
+            break;
+        case 3: /* BFMLAL{B,T} */
+            gen_gvec_op4_fpst(s, true, rd, rn, rm, rd, false, is_q,
+                              gen_helper_gvec_bfmlal);
+            break;
+        default:
+            g_assert_not_reached();
+        }
         return;
 
     case 0x8: /* FCMLA, #0 */
@@ -12578,6 +13232,16 @@ static void disas_simd_two_reg_misc(DisasContext *s, uint32_t insn)
             /* handle_2misc_narrow does a 2*size -> size operation, but these
              * instructions encode the source size rather than dest size.
              */
+            if (!fp_access_check(s)) {
+                return;
+            }
+            handle_2misc_narrow(s, false, opcode, 0, is_q, size - 1, rn, rd);
+            return;
+        case 0x36: /* BFCVTN, BFCVTN2 */
+            if (size != 2 || !dc_isar_feature(aa64_bf16, s)) {
+                unallocated_encoding(s);
+                return;
+            }
             if (!fp_access_check(s)) {
                 return;
             }
@@ -13278,6 +13942,35 @@ static void disas_simd_indexed(DisasContext *s, uint32_t insn)
             return;
         }
         break;
+    case 0x0f:
+        switch (size) {
+        case 0: /* SUDOT */
+        case 2: /* USDOT */
+            if (is_scalar || !dc_isar_feature(aa64_i8mm, s)) {
+                unallocated_encoding(s);
+                return;
+            }
+            size = MO_32;
+            break;
+        case 1: /* BFDOT */
+            if (is_scalar || !dc_isar_feature(aa64_bf16, s)) {
+                unallocated_encoding(s);
+                return;
+            }
+            size = MO_32;
+            break;
+        case 3: /* BFMLAL{B,T} */
+            if (is_scalar || !dc_isar_feature(aa64_bf16, s)) {
+                unallocated_encoding(s);
+                return;
+            }
+            size = MO_16;
+            break;
+        default:
+            unallocated_encoding(s);
+            return;
+        }
+        break;
     case 0x11: /* FCMLA #0 */
     case 0x13: /* FCMLA #90 */
     case 0x15: /* FCMLA #180 */
@@ -13388,10 +14081,31 @@ static void disas_simd_indexed(DisasContext *s, uint32_t insn)
     switch (16 * u + opcode) {
     case 0x0e: /* SDOT */
     case 0x1e: /* UDOT */
-        gen_gvec_op3_ool(s, is_q, rd, rn, rm, index,
+        gen_gvec_op4_ool(s, is_q, rd, rn, rm, rd, index,
                          u ? gen_helper_gvec_udot_idx_b
                          : gen_helper_gvec_sdot_idx_b);
         return;
+    case 0x0f:
+        switch (extract32(insn, 22, 2)) {
+        case 0: /* SUDOT */
+            gen_gvec_op4_ool(s, is_q, rd, rn, rm, rd, index,
+                             gen_helper_gvec_sudot_idx_b);
+            return;
+        case 1: /* BFDOT */
+            gen_gvec_op4_ool(s, is_q, rd, rn, rm, rd, index,
+                             gen_helper_gvec_bfdot_idx);
+            return;
+        case 2: /* USDOT */
+            gen_gvec_op4_ool(s, is_q, rd, rn, rm, rd, index,
+                             gen_helper_gvec_usdot_idx_b);
+            return;
+        case 3: /* BFMLAL{B,T} */
+            gen_gvec_op4_fpst(s, true, rd, rn, rm, rd, false,
+                              (index << 1) | is_q,
+                              gen_helper_gvec_bfmlal_idx);
+            return;
+        }
+        g_assert_not_reached();
     case 0x11: /* FCMLA #0 */
     case 0x13: /* FCMLA #90 */
     case 0x15: /* FCMLA #180 */
@@ -14422,6 +15136,55 @@ static void disas_data_proc_simd_fp(DisasContext *s, uint32_t insn)
     }
 }
 
+typedef struct SMEFa64Pattern {
+    uint32_t mask;
+    uint32_t value;
+} SMEFa64Pattern;
+
+static bool sme_fa64_match_any(uint32_t insn, const SMEFa64Pattern *patterns,
+                               size_t count)
+{
+    size_t i;
+
+    for (i = 0; i < count; i++) {
+        if ((insn & patterns[i].mask) == patterns[i].value) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static void disas_sme_fa64(DisasContext *s, uint32_t insn)
+{
+    static const SMEFa64Pattern ok[] = {
+        { 0xbffffc00, 0x0e012c00 },
+        { 0xbffffc00, 0x0e022c00 },
+        { 0xfffffc00, 0x4e042c00 },
+        { 0xfffffc00, 0x0e013c00 },
+        { 0xfffffc00, 0x0e023c00 },
+        { 0xfffffc00, 0x0e043c00 },
+        { 0xfffffc00, 0x4e083c00 },
+        { 0xff20dc00, 0x5e20dc00 },
+        { 0xff60dc00, 0x5e401c00 },
+        { 0xdfbfdc00, 0x5ea1d800 },
+        { 0xdfffdc00, 0x5ef9d800 },
+    };
+    static const SMEFa64Pattern fail[] = {
+        { 0x9e000000, 0x0e000000 },
+        { 0xde000000, 0x5e000000 },
+        { 0xbe000000, 0x0c000000 },
+        { 0xff000000, 0xce000000 },
+        { 0xfffffc00, 0x1e7e0000 },
+    };
+
+    if (sme_fa64_match_any(insn, ok, sizeof(ok) / sizeof(ok[0]))) {
+        return;
+    }
+    if (sme_fa64_match_any(insn, fail, sizeof(fail) / sizeof(fail[0]))) {
+        s->is_nonstreaming = true;
+    }
+}
+
 /**
  * is_guarded_page:
  * @env: The cpu environment
@@ -14526,6 +15289,10 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
     }
 
     s->fp_access_checked = false;
+    s->is_nonstreaming = false;
+    if (s->sme_trap_nonstreaming) {
+        disas_sme_fa64(s, insn);
+    }
 
     if (dc_isar_feature(aa64_bti, s)) {
         if (s->base.num_insns == 1) {
@@ -14566,7 +15333,12 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
     }
 
     switch (extract32(insn, 25, 4)) {
-    case 0x0: case 0x1: case 0x3: /* UNALLOCATED */
+    case 0x0:
+        if ((insn & (1U << 31)) && disas_sme(s, insn)) {
+            break;
+        }
+        /* fall through */
+    case 0x1: case 0x3: /* UNALLOCATED */
         unallocated_encoding(s);
         break;
     case 0x2:
@@ -14619,6 +15391,7 @@ static void aarch64_tr_init_disas_context(DisasContextBase *dcbase,
     CPUARMState *env = cpu->env_ptr;
     ARMCPU *arm_cpu = env_archcpu(env);
     uint32_t tb_flags = dc->base.tb->flags;
+    uint32_t tb_flags2 = dc->base.tb->cs_base;
     int bound, core_mmu_idx;
 
     // unicorn handle
@@ -14641,12 +15414,22 @@ static void aarch64_tr_init_disas_context(DisasContextBase *dcbase,
     dc->mmu_idx = core_to_aa64_mmu_idx(core_mmu_idx);
     dc->tbii = FIELD_EX32(tb_flags, TBFLAG_A64, TBII);
     dc->tbid = FIELD_EX32(tb_flags, TBFLAG_A64, TBID);
+    dc->tcma = FIELD_EX32(tb_flags, TBFLAG_A64, TCMA);
     dc->current_el = arm_mmu_idx_to_el(dc->mmu_idx);
     dc->user = (dc->current_el == 0);
     dc->fp_excp_el = FIELD_EX32(tb_flags, TBFLAG_ANY, FPEXC_EL);
     dc->sve_excp_el = FIELD_EX32(tb_flags, TBFLAG_A64, SVEEXC_EL);
+    dc->sme_excp_el = FIELD_EX32(tb_flags2, TBFLAG_A64_2, SMEEXC_EL);
     dc->sve_len = (FIELD_EX32(tb_flags, TBFLAG_A64, ZCR_LEN) + 1) * 16;
+    dc->svl = (FIELD_EX32(tb_flags2, TBFLAG_A64_2, SVL) + 1) * 16;
+    dc->pstate_sm = FIELD_EX32(tb_flags2, TBFLAG_A64_2, PSTATE_SM);
+    dc->pstate_za = FIELD_EX32(tb_flags2, TBFLAG_A64_2, PSTATE_ZA);
+    dc->sme_trap_nonstreaming =
+        FIELD_EX32(tb_flags2, TBFLAG_A64_2, SME_TRAP_NONSTREAMING);
     dc->pauth_active = FIELD_EX32(tb_flags, TBFLAG_A64, PAUTH_ACTIVE);
+    dc->ata = FIELD_EX32(tb_flags, TBFLAG_A64, ATA);
+    dc->mte_active[0] = FIELD_EX32(tb_flags, TBFLAG_A64, MTE_ACTIVE);
+    dc->mte_active[1] = FIELD_EX32(tb_flags, TBFLAG_A64, MTE0_ACTIVE);
     dc->bt = FIELD_EX32(tb_flags, TBFLAG_A64, BT);
     dc->btype = FIELD_EX32(tb_flags, TBFLAG_A64, BTYPE);
     dc->unpriv = FIELD_EX32(tb_flags, TBFLAG_A64, UNPRIV);

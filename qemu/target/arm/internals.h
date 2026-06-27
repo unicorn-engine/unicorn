@@ -26,7 +26,48 @@
 #define TARGET_ARM_INTERNALS_H
 
 #include "hw/registerfields.h"
+#include "tcg/tcg-gvec-desc.h"
 struct uc_struct;
+
+#define GMID_EL1_BS 6
+
+/* Bits within a descriptor passed to the helper_mte_check function. */
+FIELD(MTEDESC, MIDX,  0, 4)
+FIELD(MTEDESC, TBI,   4, 2)
+FIELD(MTEDESC, TCMA,  6, 2)
+FIELD(MTEDESC, WRITE, 8, 1)
+FIELD(MTEDESC, SIZEM1, 9, SIMD_DATA_BITS - 9)
+
+static inline bool tbi_check(uint32_t desc, int bit55)
+{
+    return (desc >> (R_MTEDESC_TBI_SHIFT + bit55)) & 1;
+}
+
+static inline bool tcma_check(uint32_t desc, int bit55, int ptr_tag)
+{
+    bool match = ((ptr_tag + bit55) & 0xf) == 0;
+    bool tcma = (desc >> (R_MTEDESC_TCMA_SHIFT + bit55)) & 1;
+
+    return tcma && match;
+}
+
+uint64_t mte_check(CPUARMState *env, uint32_t desc, uint64_t ptr,
+                   uintptr_t ra);
+bool mte_probe(CPUARMState *env, uint32_t desc, uint64_t ptr);
+
+static inline uint64_t useronly_clean_ptr(uint64_t ptr)
+{
+    return ptr;
+}
+
+/* Values for M-profile PSR.ECI for MVE insns */
+enum MVEECIState {
+    ECI_NONE = 0,     /* No completed beats */
+    ECI_A0 = 1,       /* Completed: A0 */
+    ECI_A0A1 = 2,     /* Completed: A0, A1 */
+    ECI_A0A1A2 = 4,   /* Completed: A0, A1, A2 */
+    ECI_A0A1A2B0 = 5, /* Completed: A0, A1, A2, B0 */
+};
 
 /* register banks for CPU modes */
 #define BANK_USRSYS 0
@@ -281,6 +322,7 @@ enum arm_exception_class {
     EC_AA64_SMC               = 0x17,
     EC_SYSTEMREGISTERTRAP     = 0x18,
     EC_SVEACCESSTRAP          = 0x19,
+    EC_SMETRAP                = 0x1d,
     EC_INSNABORT              = 0x20,
     EC_INSNABORT_SAME_EL      = 0x21,
     EC_PCALIGNMENT            = 0x22,
@@ -300,6 +342,13 @@ enum arm_exception_class {
     EC_VECTORCATCH            = 0x3a,
     EC_AA64_BKPT              = 0x3c,
 };
+
+typedef enum {
+    SME_ET_AccessTrap,
+    SME_ET_Streaming,
+    SME_ET_NotStreaming,
+    SME_ET_InactiveZA,
+} SMEExceptionType;
 
 #define ARM_EL_EC_SHIFT 26
 #define ARM_EL_IL_SHIFT 25
@@ -436,6 +485,12 @@ static inline uint32_t syn_simd_access_trap(int cv, int cond, bool is_16bit)
 static inline uint32_t syn_sve_access_trap(void)
 {
     return EC_SVEACCESSTRAP << ARM_EL_EC_SHIFT;
+}
+
+static inline uint32_t syn_smetrap(SMEExceptionType etype, bool is_16bit)
+{
+    return (EC_SMETRAP << ARM_EL_EC_SHIFT)
+        | (is_16bit ? 0 : ARM_EL_IL) | etype;
 }
 
 static inline uint32_t syn_pactrap(void)
@@ -1210,6 +1265,12 @@ bool pmsav8_mpu_lookup(CPUARMState *env, uint32_t address,
                        hwaddr *phys_ptr, MemTxAttrs *txattrs,
                        int *prot, bool *is_subpage,
                        ARMMMUFaultInfo *fi, uint32_t *mregion);
+
+/* Effective value of MDCR_EL2. */
+static inline uint64_t arm_mdcr_el2_eff(CPUARMState *env)
+{
+    return arm_is_el2_enabled(env) ? env->cp15.mdcr_el2 : 0;
+}
 
 /* Cacheability and shareability attributes for a memory access */
 typedef struct ARMCacheAttrs {

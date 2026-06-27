@@ -20,7 +20,10 @@
 #ifndef RISCV_CPU_H
 #define RISCV_CPU_H
 
+#define TARGET_INSN_START_EXTRA_WORDS 1
+
 #include "hw/core/cpu.h"
+#include "hw/registerfields.h"
 #include "exec/cpu-defs.h"
 #include "fpu/softfloat-types.h"
 
@@ -57,6 +60,7 @@ typedef struct TCGContext TCGContext;
 #define RVA RV('A')
 #define RVF RV('F')
 #define RVD RV('D')
+#define RVV RV('V')
 #define RVC RV('C')
 #define RVS RV('S')
 #define RVU RV('U')
@@ -79,9 +83,25 @@ enum {
 #define TRANSLATE_PMP_FAIL 2
 #define TRANSLATE_FAIL 1
 #define TRANSLATE_SUCCESS 0
+#define TRANSLATE_G_STAGE_FAIL 3
 #define MMU_USER_IDX 3
 
 #define MAX_RISCV_PMPS (16)
+#define RV_VLEN_MAX 1024
+
+FIELD(VTYPE, VLMUL, 0, 3)
+FIELD(VTYPE, VSEW, 3, 3)
+FIELD(VTYPE, VTA, 6, 1)
+FIELD(VTYPE, VMA, 7, 1)
+FIELD(VTYPE, VEDIV, 8, 2)
+#define R_VTYPE_RESERVED_SHIFT 10
+
+FIELD(VDATA, VM, 0, 1)
+FIELD(VDATA, LMUL, 1, 3)
+FIELD(VDATA, VTA, 4, 1)
+FIELD(VDATA, VTA_ALL_1S, 5, 1)
+FIELD(VDATA, VMA, 6, 1)
+FIELD(VDATA, NF, 7, 4)
 
 typedef struct CPURISCVState CPURISCVState;
 
@@ -90,6 +110,13 @@ typedef struct CPURISCVState CPURISCVState;
 struct CPURISCVState {
     target_ulong gpr[32];
     uint64_t fpr[32]; /* assume both F and D extensions */
+    QEMU_ALIGN(16, uint64_t vreg[32 * RV_VLEN_MAX / 64]);
+    target_ulong vxrm;
+    target_ulong vxsat;
+    target_ulong vl;
+    target_ulong vstart;
+    target_ulong vtype;
+    bool vill;
     target_ulong pc;
     target_ulong load_res;
     target_ulong load_val;
@@ -97,7 +124,10 @@ struct CPURISCVState {
     target_ulong frm;
 
     target_ulong badaddr;
+    target_ulong bins;
     target_ulong guest_phys_fault_addr;
+    bool two_stage_lookup;
+    bool two_stage_indirect_lookup;
 
     target_ulong priv_ver;
     target_ulong misa;
@@ -186,6 +216,8 @@ struct CPURISCVState {
     uint64_t mfromhost;
     uint64_t mtohost;
     uint64_t timecmp;
+    uint64_t stimecmp;
+    uint64_t vstimecmp;
 
     /* physical memory protection */
     pmp_table_t pmp_state;
@@ -230,7 +262,7 @@ typedef struct RISCVCPU {
     CPUState parent_obj;
     /*< public >*/
     CPUNegativeOffsetState neg;
-    CPURISCVState env;
+    QEMU_ALIGN(16, CPURISCVState env);
 
     /* Configuration Settings */
     struct {
@@ -245,9 +277,36 @@ typedef struct RISCVCPU {
         bool ext_s;
         bool ext_u;
         bool ext_h;
+        bool ext_v;
         bool ext_counters;
         bool ext_ifencei;
         bool ext_icsr;
+        bool ext_zihintpause;
+        bool ext_zba;
+        bool ext_zbb;
+        bool ext_zbc;
+        bool ext_zbkb;
+        bool ext_zbkc;
+        bool ext_zbkx;
+        bool ext_zbs;
+        bool ext_zfh;
+        bool ext_zfhmin;
+        bool ext_zknd;
+        bool ext_zkne;
+        bool ext_zknh;
+        bool ext_zkr;
+        bool ext_zksed;
+        bool ext_zksh;
+        bool ext_svinval;
+        bool ext_xventanacondops;
+        bool ext_sstc;
+        bool ext_zmmul;
+        bool ext_zve32f;
+        bool ext_zve64f;
+        bool rvv_ta_all_1s;
+        bool rvv_ma_all_1s;
+        uint16_t vlen;
+        uint16_t elen;
 
         char *priv_spec;
         char *user_spec;
@@ -272,6 +331,14 @@ static inline bool riscv_feature(CPURISCVState *env, int feature)
     return env->features & (1ULL << feature);
 }
 
+static inline uint32_t vext_get_vlmax(RISCVCPU *cpu, target_ulong vtype)
+{
+    uint8_t sew = FIELD_EX64(vtype, VTYPE, VSEW);
+    int8_t lmul = sextract32(FIELD_EX64(vtype, VTYPE, VLMUL), 0, 3);
+
+    return cpu->cfg.vlen >> (sew + 3 - lmul);
+}
+
 #include "cpu_user.h"
 #include "cpu_bits.h"
 
@@ -285,6 +352,7 @@ int riscv_cpu_gdb_read_register(CPUState *cpu, GByteArray *buf, int reg);
 int riscv_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
 bool riscv_cpu_exec_interrupt(CPUState *cs, int interrupt_request);
 bool riscv_cpu_fp_enabled(CPURISCVState *env);
+bool riscv_cpu_vector_enabled(CPURISCVState *env);
 bool riscv_cpu_virt_enabled(CPURISCVState *env);
 void riscv_cpu_set_virt_enabled(CPURISCVState *env, bool enable);
 bool riscv_cpu_force_hs_excep_enabled(CPURISCVState *env);
@@ -320,18 +388,53 @@ void QEMU_NORETURN riscv_raise_exception(CPURISCVState *env,
 target_ulong riscv_cpu_get_fflags(CPURISCVState *env);
 void riscv_cpu_set_fflags(CPURISCVState *env, target_ulong);
 
-#define TB_FLAGS_MMU_MASK   3
+#define TB_FLAGS_PRIV_MMU_MASK          3
+#define TB_FLAGS_PRIV_HYP_ACCESS_MASK   (1 << 2)
+#define TB_FLAGS_MMU_MASK               7
 #define TB_FLAGS_MSTATUS_FS MSTATUS_FS
+#define TB_FLAGS_MSTATUS_VS MSTATUS_VS
+
+FIELD(TB_FLAGS, LMUL, 3, 3)
+FIELD(TB_FLAGS, SEW, 6, 3)
+FIELD(TB_FLAGS, VILL, 12, 1)
+FIELD(TB_FLAGS, HLSX, 15, 1)
+FIELD(TB_FLAGS, VTA, 24, 1)
+FIELD(TB_FLAGS, VMA, 25, 1)
 
 static inline void cpu_get_tb_cpu_state(CPURISCVState *env, target_ulong *pc,
                                         target_ulong *cs_base, uint32_t *flags)
 {
+    uint32_t tb_flags;
+    uint32_t vtype;
+
     *pc = env->pc;
     *cs_base = 0;
-    *flags = cpu_mmu_index(env, 0);
+    tb_flags = cpu_mmu_index(env, 0);
     if (riscv_cpu_fp_enabled(env)) {
-        *flags |= env->mstatus & MSTATUS_FS;
+        tb_flags |= env->mstatus & MSTATUS_FS;
     }
+    if (riscv_cpu_vector_enabled(env)) {
+        tb_flags |= env->mstatus & MSTATUS_VS;
+        vtype = env->vtype;
+        FIELD_DP32(tb_flags, TB_FLAGS, LMUL,
+                   FIELD_EX64(vtype, VTYPE, VLMUL), tb_flags);
+        FIELD_DP32(tb_flags, TB_FLAGS, SEW,
+                   FIELD_EX64(vtype, VTYPE, VSEW), tb_flags);
+        FIELD_DP32(tb_flags, TB_FLAGS, VILL, env->vill, tb_flags);
+        FIELD_DP32(tb_flags, TB_FLAGS, VTA,
+                   FIELD_EX64(vtype, VTYPE, VTA), tb_flags);
+        FIELD_DP32(tb_flags, TB_FLAGS, VMA,
+                   FIELD_EX64(vtype, VTYPE, VMA), tb_flags);
+    }
+    if (riscv_has_ext(env, RVH)) {
+        bool hlsx = env->priv == PRV_M ||
+                    (env->priv == PRV_S && !riscv_cpu_virt_enabled(env)) ||
+                    (env->priv == PRV_U && !riscv_cpu_virt_enabled(env) &&
+                     get_field(env->hstatus, HSTATUS_HU));
+
+        FIELD_DP32(tb_flags, TB_FLAGS, HLSX, hlsx, tb_flags);
+    }
+    *flags = tb_flags;
 }
 
 int riscv_csrrw(CPURISCVState *env, int csrno, target_ulong *ret_value,

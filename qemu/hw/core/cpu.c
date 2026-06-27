@@ -71,6 +71,62 @@ static bool cpu_common_exec_interrupt(CPUState *cpu, int int_req)
     return false;
 }
 
+static void cpu_legacy_debug_excp_handler(CPUState *cpu)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    cc->debug_excp_handler(cpu);
+}
+
+static void cpu_legacy_exec_enter(CPUState *cpu)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    cc->cpu_exec_enter(cpu);
+}
+
+static void cpu_legacy_exec_exit(CPUState *cpu)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    cc->cpu_exec_exit(cpu);
+}
+
+static bool cpu_legacy_exec_interrupt(CPUState *cpu, int interrupt_request)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    return cc->cpu_exec_interrupt(cpu, interrupt_request);
+}
+
+static bool cpu_legacy_tlb_fill(CPUState *cpu, vaddr address, int size,
+                                MMUAccessType access_type, int mmu_idx,
+                                bool probe, uintptr_t retaddr)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    return cc->tlb_fill(cpu, address, size, access_type, mmu_idx, probe,
+                        retaddr);
+}
+
+static void cpu_legacy_unaligned_access(CPUState *cpu, vaddr addr,
+                                        MMUAccessType access_type,
+                                        int mmu_idx, uintptr_t retaddr)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    cc->do_unaligned_access(cpu, addr, access_type, mmu_idx, retaddr);
+}
+
+static const struct TCGCPUOps cpu_legacy_tcg_ops = {
+    .cpu_exec_enter = cpu_legacy_exec_enter,
+    .cpu_exec_exit = cpu_legacy_exec_exit,
+    .debug_excp_handler = cpu_legacy_debug_excp_handler,
+    .cpu_exec_interrupt = cpu_legacy_exec_interrupt,
+    .tlb_fill = cpu_legacy_tlb_fill,
+    .do_unaligned_access = cpu_legacy_unaligned_access,
+};
+
 void cpu_reset(CPUState *cpu)
 {
     CPUClass *klass = CPU_GET_CLASS(cpu);
@@ -118,6 +174,7 @@ void cpu_class_init(struct uc_struct *uc, CPUClass *k)
     k->cpu_exec_enter = cpu_common_noop;
     k->cpu_exec_exit = cpu_common_noop;
     k->cpu_exec_interrupt = cpu_common_exec_interrupt;
+    k->tcg_ops = &cpu_legacy_tcg_ops;
     /* instead of dc->reset. */
     k->reset = cpu_common_reset;
 

@@ -205,6 +205,32 @@ EXTRACT_HELPER(IMM8, 11, 8);
 EXTRACT_HELPER(DCMX, 16, 7);
 EXTRACT_HELPER_SPLIT_3(DCMX_XV, 5, 16, 0, 1, 2, 5, 1, 6, 6);
 
+#define GER_MSK_XMSK_SHIFT 0
+#define GER_MSK_YMSK_SHIFT 4
+#define GER_MSK_PMSK_SHIFT 8
+
+static inline uint8_t ger_mask_xmsk(uint32_t mask)
+{
+    return extract32(mask, GER_MSK_XMSK_SHIFT, 4);
+}
+
+static inline uint8_t ger_mask_ymsk(uint32_t mask)
+{
+    return extract32(mask, GER_MSK_YMSK_SHIFT, 4);
+}
+
+static inline uint8_t ger_mask_pmsk(uint32_t mask)
+{
+    return extract32(mask, GER_MSK_PMSK_SHIFT, 8);
+}
+
+static inline int ger_pack_masks(int pmsk, int ymsk, int xmsk)
+{
+    return ((xmsk & 0x0f) << GER_MSK_XMSK_SHIFT) |
+           ((ymsk & 0x0f) << GER_MSK_YMSK_SHIFT) |
+           ((pmsk & 0xff) << GER_MSK_PMSK_SHIFT);
+}
+
 void helper_compute_fprf_float16(CPUPPCState *env, float16 arg);
 void helper_compute_fprf_float32(CPUPPCState *env, float32 arg);
 void helper_compute_fprf_float128(CPUPPCState *env, float128 arg);

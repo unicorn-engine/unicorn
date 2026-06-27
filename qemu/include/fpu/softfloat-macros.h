@@ -8,7 +8,6 @@
  * so some portions are provided under:
  *  the SoftFloat-2a license
  *  the BSD license
- *  GPL-v2-or-later
  *
  * Any future contributions to this file after December 1st 2014 will be
  * taken to be licensed under the Softfloat-2a license unless specifically
@@ -75,14 +74,47 @@ this code that are retained.
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Portions of this work are licensed under the terms of the GNU GPL,
- * version 2 or later. See the COPYING file in the top-level directory.
- */
-
 #ifndef FPU_SOFTFLOAT_MACROS_H
 #define FPU_SOFTFLOAT_MACROS_H
 
 #include "fpu/softfloat-types.h"
+#include "qemu/host-utils.h"
+
+/**
+ * shl_double: double-word merging left shift
+ * @l: left or most-significant word
+ * @r: right or least-significant word
+ * @c: shift count
+ *
+ * Shift @l left by @c bits, shifting in bits from @r.
+ */
+static inline uint64_t shl_double(uint64_t l, uint64_t r, int c)
+{
+#if defined(__x86_64__) && !defined(_MSC_VER)
+    asm("shld %b2, %1, %0" : "+r"(l) : "r"(r), "ci"(c));
+    return l;
+#else
+    return c ? (l << c) | (r >> (64 - c)) : l;
+#endif
+}
+
+/**
+ * shr_double: double-word merging right shift
+ * @l: left or most-significant word
+ * @r: right or least-significant word
+ * @c: shift count
+ *
+ * Shift @r right by @c bits, shifting in bits from @l.
+ */
+static inline uint64_t shr_double(uint64_t l, uint64_t r, int c)
+{
+#if defined(__x86_64__) && !defined(_MSC_VER)
+    asm("shrd %b2, %1, %0" : "+r"(r) : "r"(l), "ci"(c));
+    return r;
+#else
+    return c ? (r >> c) | (l << (64 - c)) : r;
+#endif
+}
 
 /*----------------------------------------------------------------------------
 | Shifts `a' right by the number of bits given in `count'.  If any nonzero
@@ -403,16 +435,12 @@ static inline void
 | are stored at the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static inline void
- add128(
-     uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1, uint64_t *z0Ptr, uint64_t *z1Ptr )
+static inline void add128(uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1,
+                          uint64_t *z0Ptr, uint64_t *z1Ptr)
 {
-    uint64_t z1;
-
-    z1 = a1 + b1;
-    *z1Ptr = z1;
-    *z0Ptr = a0 + b0 + ( z1 < a1 );
-
+    bool c = 0;
+    *z1Ptr = uadd64_carry(a1, b1, &c);
+    *z0Ptr = uadd64_carry(a0, b0, &c);
 }
 
 /*----------------------------------------------------------------------------
@@ -423,34 +451,14 @@ static inline void
 | `z1Ptr', and `z2Ptr'.
 *----------------------------------------------------------------------------*/
 
-static inline void
- add192(
-     uint64_t a0,
-     uint64_t a1,
-     uint64_t a2,
-     uint64_t b0,
-     uint64_t b1,
-     uint64_t b2,
-     uint64_t *z0Ptr,
-     uint64_t *z1Ptr,
-     uint64_t *z2Ptr
- )
+static inline void add192(uint64_t a0, uint64_t a1, uint64_t a2,
+                          uint64_t b0, uint64_t b1, uint64_t b2,
+                          uint64_t *z0Ptr, uint64_t *z1Ptr, uint64_t *z2Ptr)
 {
-    uint64_t z0, z1, z2;
-    int8_t carry0, carry1;
-
-    z2 = a2 + b2;
-    carry1 = ( z2 < a2 );
-    z1 = a1 + b1;
-    carry0 = ( z1 < a1 );
-    z0 = a0 + b0;
-    z1 += carry1;
-    z0 += ( z1 < carry1 );
-    z0 += carry0;
-    *z2Ptr = z2;
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+    bool c = 0;
+    *z2Ptr = uadd64_carry(a2, b2, &c);
+    *z1Ptr = uadd64_carry(a1, b1, &c);
+    *z0Ptr = uadd64_carry(a0, b0, &c);
 }
 
 /*----------------------------------------------------------------------------
@@ -461,14 +469,12 @@ static inline void
 | `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static inline void
- sub128(
-     uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1, uint64_t *z0Ptr, uint64_t *z1Ptr )
+static inline void sub128(uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1,
+                          uint64_t *z0Ptr, uint64_t *z1Ptr)
 {
-
-    *z1Ptr = a1 - b1;
-    *z0Ptr = a0 - b0 - ( a1 < b1 );
-
+    bool c = 0;
+    *z1Ptr = usub64_borrow(a1, b1, &c);
+    *z0Ptr = usub64_borrow(a0, b0, &c);
 }
 
 /*----------------------------------------------------------------------------
@@ -479,34 +485,14 @@ static inline void
 | pointed to by `z0Ptr', `z1Ptr', and `z2Ptr'.
 *----------------------------------------------------------------------------*/
 
-static inline void
- sub192(
-     uint64_t a0,
-     uint64_t a1,
-     uint64_t a2,
-     uint64_t b0,
-     uint64_t b1,
-     uint64_t b2,
-     uint64_t *z0Ptr,
-     uint64_t *z1Ptr,
-     uint64_t *z2Ptr
- )
+static inline void sub192(uint64_t a0, uint64_t a1, uint64_t a2,
+                          uint64_t b0, uint64_t b1, uint64_t b2,
+                          uint64_t *z0Ptr, uint64_t *z1Ptr, uint64_t *z2Ptr)
 {
-    uint64_t z0, z1, z2;
-    int8_t borrow0, borrow1;
-
-    z2 = a2 - b2;
-    borrow1 = ( a2 < b2 );
-    z1 = a1 - b1;
-    borrow0 = ( a1 < b1 );
-    z0 = a0 - b0;
-    z0 -= ( z1 < borrow1 );
-    z1 -= borrow1;
-    z0 -= borrow0;
-    *z2Ptr = z2;
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+    bool c = 0;
+    *z2Ptr = usub64_borrow(a2, b2, &c);
+    *z1Ptr = usub64_borrow(a1, b1, &c);
+    *z0Ptr = usub64_borrow(a0, b0, &c);
 }
 
 /*----------------------------------------------------------------------------
@@ -515,27 +501,10 @@ static inline void
 | `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static inline void mul64To128( uint64_t a, uint64_t b, uint64_t *z0Ptr, uint64_t *z1Ptr )
+static inline void
+mul64To128(uint64_t a, uint64_t b, uint64_t *z0Ptr, uint64_t *z1Ptr)
 {
-    uint32_t aHigh, aLow, bHigh, bLow;
-    uint64_t z0, zMiddleA, zMiddleB, z1;
-
-    aLow = a;
-    aHigh = a>>32;
-    bLow = b;
-    bHigh = b>>32;
-    z1 = ( (uint64_t) aLow ) * bLow;
-    zMiddleA = ( (uint64_t) aLow ) * bHigh;
-    zMiddleB = ( (uint64_t) aHigh ) * bLow;
-    z0 = ( (uint64_t) aHigh ) * bHigh;
-    zMiddleA += zMiddleB;
-    z0 += ( ( (uint64_t) ( zMiddleA < zMiddleB ) )<<32 ) + ( zMiddleA>>32 );
-    zMiddleA <<= 32;
-    z1 += zMiddleA;
-    z0 += ( z1 < zMiddleA );
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+    mulu64(z1Ptr, z0Ptr, a, b);
 }
 
 /*----------------------------------------------------------------------------
@@ -546,24 +515,14 @@ static inline void mul64To128( uint64_t a, uint64_t b, uint64_t *z0Ptr, uint64_t
 *----------------------------------------------------------------------------*/
 
 static inline void
- mul128By64To192(
-     uint64_t a0,
-     uint64_t a1,
-     uint64_t b,
-     uint64_t *z0Ptr,
-     uint64_t *z1Ptr,
-     uint64_t *z2Ptr
- )
+mul128By64To192(uint64_t a0, uint64_t a1, uint64_t b,
+                uint64_t *z0Ptr, uint64_t *z1Ptr, uint64_t *z2Ptr)
 {
-    uint64_t z0, z1, z2, more1;
+    uint64_t z0, z1, m1;
 
-    mul64To128( a1, b, &z1, &z2 );
-    mul64To128( a0, b, &z0, &more1 );
-    add128( z0, more1, 0, z1, &z0, &z1 );
-    *z2Ptr = z2;
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+    mul64To128(a1, b, &m1, z2Ptr);
+    mul64To128(a0, b, &z0, &z1);
+    add128(z0, z1, 0, m1, z0Ptr, z1Ptr);
 }
 
 /*----------------------------------------------------------------------------
@@ -573,34 +532,21 @@ static inline void
 | the locations pointed to by `z0Ptr', `z1Ptr', `z2Ptr', and `z3Ptr'.
 *----------------------------------------------------------------------------*/
 
-static inline void
- mul128To256(
-     uint64_t a0,
-     uint64_t a1,
-     uint64_t b0,
-     uint64_t b1,
-     uint64_t *z0Ptr,
-     uint64_t *z1Ptr,
-     uint64_t *z2Ptr,
-     uint64_t *z3Ptr
- )
+static inline void mul128To256(uint64_t a0, uint64_t a1,
+                               uint64_t b0, uint64_t b1,
+                               uint64_t *z0Ptr, uint64_t *z1Ptr,
+                               uint64_t *z2Ptr, uint64_t *z3Ptr)
 {
-    uint64_t z0, z1, z2, z3;
-    uint64_t more1, more2;
+    uint64_t z0, z1, z2;
+    uint64_t m0, m1, m2, n1, n2;
 
-    mul64To128( a1, b1, &z2, &z3 );
-    mul64To128( a1, b0, &z1, &more2 );
-    add128( z1, more2, 0, z2, &z1, &z2 );
-    mul64To128( a0, b0, &z0, &more1 );
-    add128( z0, more1, 0, z1, &z0, &z1 );
-    mul64To128( a0, b1, &more1, &more2 );
-    add128( more1, more2, 0, z2, &more1, &z2 );
-    add128( z0, z1, 0, more1, &z0, &z1 );
-    *z3Ptr = z3;
-    *z2Ptr = z2;
-    *z1Ptr = z1;
-    *z0Ptr = z0;
+    mul64To128(a1, b0, &m1, &m2);
+    mul64To128(a0, b1, &n1, &n2);
+    mul64To128(a1, b1, &z2, z3Ptr);
+    mul64To128(a0, b0, &z0, &z1);
 
+    add192( 0, m1, m2,  0, n1, n2, &m0, &m1, &m2);
+    add192(m0, m1, m2, z0, z1, z2, z0Ptr, z1Ptr, z2Ptr);
 }
 
 /*----------------------------------------------------------------------------
@@ -632,83 +578,6 @@ static inline uint64_t estimateDiv128To64(uint64_t a0, uint64_t a1, uint64_t b)
     z |= ( b0<<32 <= rem0 ) ? 0xFFFFFFFF : rem0 / b0;
     return z;
 
-}
-
-/* From the GNU Multi Precision Library - longlong.h __udiv_qrnnd
- * (https://gmplib.org/repo/gmp/file/tip/longlong.h)
- *
- * Licensed under the GPLv2/LGPLv3
- */
-static inline uint64_t udiv_qrnnd(uint64_t *r, uint64_t n1,
-                                  uint64_t n0, uint64_t d)
-{
-#if defined(__x86_64__) && !defined(_MSC_VER)
-    uint64_t q;
-    asm ("divq %4" : "=a"(q), "=d"(*r) : "0"(n0), "1"(n1), "rm"(d));
-    return q;
-#elif defined(__s390x__) && !defined(__clang__)
-    /* Need to use a TImode type to get an even register pair for DLGR.  */
-    unsigned __int128 n = (unsigned __int128)n1 << 64 | n0;
-    asm("dlgr %0, %1" : "+r"(n) : "r"(d));
-    *r = n >> 64;
-    return n;
-#elif defined(_ARCH_PPC64) && defined(_ARCH_PWR7)
-    /* From Power ISA 2.06, programming note for divdeu.  */
-    uint64_t q1, q2, Q, r1, r2, R;
-    asm("divdeu %0,%2,%4; divdu %1,%3,%4"
-        : "=&r"(q1), "=r"(q2)
-        : "r"(n1), "r"(n0), "r"(d));
-    r1 = -(q1 * d);         /* low part of (n1<<64) - (q1 * d) */
-    r2 = n0 - (q2 * d);
-    Q = q1 + q2;
-    R = r1 + r2;
-    if (R >= d || R < r2) { /* overflow implies R > d */
-        Q += 1;
-        R -= d;
-    }
-    *r = R;
-    return Q;
-#else
-    uint64_t d0, d1, q0, q1, r1, r0, m;
-
-    d0 = (uint32_t)d;
-    d1 = d >> 32;
-
-    r1 = n1 % d1;
-    q1 = n1 / d1;
-    m = q1 * d0;
-    r1 = (r1 << 32) | (n0 >> 32);
-    if (r1 < m) {
-        q1 -= 1;
-        r1 += d;
-        if (r1 >= d) {
-            if (r1 < m) {
-                q1 -= 1;
-                r1 += d;
-            }
-        }
-    }
-    r1 -= m;
-
-    r0 = r1 % d1;
-    q0 = r1 / d1;
-    m = q0 * d0;
-    r0 = (r0 << 32) | (uint32_t)n0;
-    if (r0 < m) {
-        q0 -= 1;
-        r0 += d;
-        if (r0 >= d) {
-            if (r0 < m) {
-                q0 -= 1;
-                r0 += d;
-            }
-        }
-    }
-    r0 -= m;
-
-    *r = r0;
-    return (q1 << 32) | q0;
-#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -756,11 +625,9 @@ static inline uint32_t estimateSqrt32(int aExp, uint32_t a)
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-static inline flag eq128( uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1 )
+static inline bool eq128(uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1)
 {
-
-    return ( a0 == b0 ) && ( a1 == b1 );
-
+    return a0 == b0 && a1 == b1;
 }
 
 /*----------------------------------------------------------------------------
@@ -769,11 +636,9 @@ static inline flag eq128( uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1 )
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-static inline flag le128( uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1 )
+static inline bool le128(uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1)
 {
-
-    return ( a0 < b0 ) || ( ( a0 == b0 ) && ( a1 <= b1 ) );
-
+    return a0 < b0 || (a0 == b0 && a1 <= b1);
 }
 
 /*----------------------------------------------------------------------------
@@ -782,11 +647,9 @@ static inline flag le128( uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1 )
 | returns 0.
 *----------------------------------------------------------------------------*/
 
-static inline flag lt128( uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1 )
+static inline bool lt128(uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1)
 {
-
-    return ( a0 < b0 ) || ( ( a0 == b0 ) && ( a1 < b1 ) );
-
+    return a0 < b0 || (a0 == b0 && a1 < b1);
 }
 
 /*----------------------------------------------------------------------------
@@ -795,11 +658,43 @@ static inline flag lt128( uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1 )
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-static inline flag ne128( uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1 )
+static inline bool ne128(uint64_t a0, uint64_t a1, uint64_t b0, uint64_t b1)
 {
+    return a0 != b0 || a1 != b1;
+}
 
-    return ( a0 != b0 ) || ( a1 != b1 );
+/*
+ * Similarly, comparisons of 192-bit values.
+ */
 
+static inline bool eq192(uint64_t a0, uint64_t a1, uint64_t a2,
+                         uint64_t b0, uint64_t b1, uint64_t b2)
+{
+    return ((a0 ^ b0) | (a1 ^ b1) | (a2 ^ b2)) == 0;
+}
+
+static inline bool le192(uint64_t a0, uint64_t a1, uint64_t a2,
+                         uint64_t b0, uint64_t b1, uint64_t b2)
+{
+    if (a0 != b0) {
+        return a0 < b0;
+    }
+    if (a1 != b1) {
+        return a1 < b1;
+    }
+    return a2 <= b2;
+}
+
+static inline bool lt192(uint64_t a0, uint64_t a1, uint64_t a2,
+                         uint64_t b0, uint64_t b1, uint64_t b2)
+{
+    if (a0 != b0) {
+        return a0 < b0;
+    }
+    if (a1 != b1) {
+        return a1 < b1;
+    }
+    return a2 < b2;
 }
 
 #endif

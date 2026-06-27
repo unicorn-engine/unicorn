@@ -45,6 +45,11 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
     db->tb = tb;
     db->pc_first = tb->pc;
     db->pc_next = db->pc_first;
+#ifdef TARGET_PAGE_BITS_VARY
+    db->target_page_mask = uc->init_target_page->mask;
+#else
+    db->target_page_mask = (target_ulong)-1 << TARGET_PAGE_BITS;
+#endif
     db->is_jmp = DISAS_NEXT;
     db->num_insns = 0;
     db->max_insns = max_insns;
@@ -59,13 +64,16 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
     /* Unicorn: early check to see if the address of this block is
      * the "run until" address. */
     if (uc_addr_is_exit(uc, tb->pc)) {
-        // This should catch that instruction is at the end
-        // and generate appropriate halting code.
+        TCGv_ptr puc = tcg_const_ptr(tcg_ctx, uc);
+
         gen_tb_start(tcg_ctx, db->tb);
         ops->tb_start(db, cpu);
         db->num_insns++;
         ops->insn_start(db, cpu);
-        ops->translate_insn(db, cpu);
+        gen_helper_emu_stop(tcg_ctx, puc);
+        tcg_temp_free_ptr(tcg_ctx, puc);
+        check_exit_request(tcg_ctx);
+        db->is_jmp = DISAS_NORETURN;
         goto _end_loop;
     }
 

@@ -322,6 +322,8 @@ void tcg_gen_gvec_dup8i(TCGContext *tcg_ctx, uint32_t dofs, uint32_t s, uint32_t
 void tcg_gen_gvec_dup16i(TCGContext *tcg_ctx, uint32_t dofs, uint32_t s, uint32_t m, uint16_t x);
 void tcg_gen_gvec_dup32i(TCGContext *tcg_ctx, uint32_t dofs, uint32_t s, uint32_t m, uint32_t x);
 void tcg_gen_gvec_dup64i(TCGContext *tcg_ctx, uint32_t dofs, uint32_t s, uint32_t m, uint64_t x);
+void tcg_gen_gvec_dup_imm(TCGContext *tcg_ctx, unsigned vece, uint32_t dofs,
+                          uint32_t s, uint32_t m, uint64_t x);
 
 void tcg_gen_gvec_shli(TCGContext *tcg_ctx, unsigned vece, uint32_t dofs, uint32_t aofs,
                        int64_t shift, uint32_t oprsz, uint32_t maxsz);

@@ -1080,9 +1080,9 @@ int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 
         rk = key->rd_key;
 
-        if (bits==128)
+        if (bits == 128)
                 key->rounds = 10;
-        else if (bits==192)
+        else if (bits == 192)
                 key->rounds = 12;
         else
                 key->rounds = 14;
@@ -1182,7 +1182,7 @@ int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
         rk = key->rd_key;
 
         /* invert the order of the round keys: */
-        for (i = 0, j = 4*(key->rounds); i < j; i += 4, j -= 4) {
+        for (i = 0, j = 4 * (key->rounds); i < j; i += 4, j -= 4) {
                 temp = rk[i    ]; rk[i    ] = rk[j    ]; rk[j    ] = temp;
                 temp = rk[i + 1]; rk[i + 1] = rk[j + 1]; rk[j + 1] = temp;
                 temp = rk[i + 2]; rk[i + 2] = rk[j + 2]; rk[j + 2] = temp;
@@ -1599,54 +1599,3 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
 }
 
 #endif /* AES_ASM */
-
-void AES_cbc_encrypt(const unsigned char *in, unsigned char *out,
-                     const unsigned long length, const AES_KEY *key,
-                     unsigned char *ivec, const int enc)
-{
-
-        unsigned long n;
-        unsigned long len = length;
-        unsigned char tmp[AES_BLOCK_SIZE];
-
-        assert(in && out && key && ivec);
-
-        if (enc) {
-                while (len >= AES_BLOCK_SIZE) {
-                        for(n=0; n < AES_BLOCK_SIZE; ++n)
-                                tmp[n] = in[n] ^ ivec[n];
-                        AES_encrypt(tmp, out, key);
-                        memcpy(ivec, out, AES_BLOCK_SIZE);
-                        len -= AES_BLOCK_SIZE;
-                        in += AES_BLOCK_SIZE;
-                        out += AES_BLOCK_SIZE;
-                }
-                if (len) {
-                        for(n=0; n < len; ++n)
-                                tmp[n] = in[n] ^ ivec[n];
-                        for(n=len; n < AES_BLOCK_SIZE; ++n)
-                                tmp[n] = ivec[n];
-                        AES_encrypt(tmp, tmp, key);
-                        memcpy(out, tmp, AES_BLOCK_SIZE);
-                        memcpy(ivec, tmp, AES_BLOCK_SIZE);
-                }
-        } else {
-                while (len >= AES_BLOCK_SIZE) {
-                        memcpy(tmp, in, AES_BLOCK_SIZE);
-                        AES_decrypt(in, out, key);
-                        for(n=0; n < AES_BLOCK_SIZE; ++n)
-                                out[n] ^= ivec[n];
-                        memcpy(ivec, tmp, AES_BLOCK_SIZE);
-                        len -= AES_BLOCK_SIZE;
-                        in += AES_BLOCK_SIZE;
-                        out += AES_BLOCK_SIZE;
-                }
-                if (len) {
-                        memcpy(tmp, in, AES_BLOCK_SIZE);
-                        AES_decrypt(tmp, tmp, key);
-                        for(n=0; n < len; ++n)
-                                out[n] = tmp[n] ^ ivec[n];
-                        memcpy(ivec, tmp, AES_BLOCK_SIZE);
-                }
-        }
-}

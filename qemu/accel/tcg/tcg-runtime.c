@@ -160,6 +160,19 @@ void *HELPER(lookup_tb_ptr)(CPUArchState *env)
     return tb->tc.ptr;
 }
 
+void *HELPER(memset)(void *ptr, int val, void *size)
+{
+    return memset(ptr, val, (uintptr_t)size);
+}
+
+void HELPER(emu_stop)(void *p)
+{
+    uc_engine *uc = p;
+
+    uc->stop_request = true;
+    break_translation_loop(uc);
+}
+
 void HELPER(exit_atomic)(CPUArchState *env)
 {
     cpu_loop_exit_atomic(env_cpu(env), GETPC());

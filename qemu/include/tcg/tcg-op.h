@@ -978,7 +978,7 @@ static inline void tcg_gen_qemu_ld32s(TCGContext *tcg_ctx, TCGv ret, TCGv addr, 
 
 static inline void tcg_gen_qemu_ld64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv addr, int mem_index)
 {
-    tcg_gen_qemu_ld_i64(tcg_ctx, ret, addr, mem_index, MO_TEQ);
+    tcg_gen_qemu_ld_i64(tcg_ctx, ret, addr, mem_index, MO_TEUQ);
 }
 
 static inline void tcg_gen_qemu_st8(TCGContext *tcg_ctx, TCGv arg, TCGv addr, int mem_index)
@@ -998,7 +998,7 @@ static inline void tcg_gen_qemu_st32(TCGContext *tcg_ctx, TCGv arg, TCGv addr, i
 
 static inline void tcg_gen_qemu_st64(TCGContext *tcg_ctx, TCGv_i64 arg, TCGv addr, int mem_index)
 {
-    tcg_gen_qemu_st_i64(tcg_ctx, arg, addr, mem_index, MO_TEQ);
+    tcg_gen_qemu_st_i64(tcg_ctx, arg, addr, mem_index, MO_TEUQ);
 }
 
 void tcg_gen_atomic_cmpxchg_i32(TCGContext *tcg_ctx, TCGv_i32, TCGv, TCGv_i32, TCGv_i32,

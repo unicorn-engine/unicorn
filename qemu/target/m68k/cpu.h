@@ -145,7 +145,7 @@ typedef struct CPUM68KState {
     int end_reset_fields;
 
     /* Fields from here on are preserved across CPU reset. */
-    uint32_t features;
+    uint64_t features;
 
     // translate opcode
     void* opcode_table[65536];
@@ -465,6 +465,7 @@ void do_m68k_semihosting(CPUM68KState *env, int nr);
 
 enum m68k_features {
     M68K_FEATURE_M68000,
+    M68K_FEATURE_M68010,
     M68K_FEATURE_M68020,
     M68K_FEATURE_M68030,
     M68K_FEATURE_M68040,
@@ -478,6 +479,7 @@ enum m68k_features {
     M68K_FEATURE_CF_EMAC,
     M68K_FEATURE_CF_EMAC_B, /* Revision B EMAC (dual accumulate).  */
     M68K_FEATURE_USP, /* User Stack Pointer.  (ISA A+, B or C).  */
+    M68K_FEATURE_MSP, /* Master Stack Pointer.  (68020+).  */
     M68K_FEATURE_EXT_FULL, /* 68020+ full extension word.  */
     M68K_FEATURE_WORD_INDEX, /* word sized address index registers.  */
     M68K_FEATURE_SCALED_INDEX, /* scaled address index registers.  */
@@ -491,11 +493,15 @@ enum m68k_features {
     M68K_FEATURE_RTD,
     M68K_FEATURE_CHK2,
     M68K_FEATURE_MOVEP,
+    M68K_FEATURE_MOVEC,
+    M68K_FEATURE_UNALIGNED_DATA, /* Unaligned data accesses.  */
+    M68K_FEATURE_TRAPCC,
+    M68K_FEATURE_MOVEFROMSR_PRIV,
 };
 
 static inline int m68k_feature(CPUM68KState *env, int feature)
 {
-    return (env->features & (1u << feature)) != 0;
+    return (env->features & (1ull << feature)) != 0;
 }
 
 void m68k_cpu_list(void);

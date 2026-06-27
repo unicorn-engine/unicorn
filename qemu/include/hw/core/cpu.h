@@ -49,6 +49,37 @@ typedef struct CPUWatchpoint CPUWatchpoint;
 
 struct TranslationBlock;
 
+struct TCGCPUOps {
+    void (*initialize)(void);
+    void (*synchronize_from_tb)(CPUState *cpu,
+                                const struct TranslationBlock *tb);
+    void (*restore_state_to_opc)(CPUState *cpu,
+                                 const struct TranslationBlock *tb,
+                                 const uint64_t *data);
+    void (*cpu_exec_enter)(CPUState *cpu);
+    void (*cpu_exec_exit)(CPUState *cpu);
+    void (*debug_excp_handler)(CPUState *cpu);
+    void (*do_interrupt)(CPUState *cpu);
+    bool (*cpu_exec_interrupt)(CPUState *cpu, int interrupt_request);
+    bool (*tlb_fill)(CPUState *cpu, vaddr address, int size,
+                     MMUAccessType access_type, int mmu_idx,
+                     bool probe, uintptr_t retaddr);
+    void (*do_transaction_failed)(CPUState *cpu, hwaddr physaddr,
+                                  vaddr addr, unsigned size,
+                                  MMUAccessType access_type, int mmu_idx,
+                                  MemTxAttrs attrs,
+                                  MemTxResult response,
+                                  uintptr_t retaddr);
+    void (*do_unaligned_access)(CPUState *cpu, vaddr addr,
+                                MMUAccessType access_type, int mmu_idx,
+                                uintptr_t retaddr);
+    vaddr (*adjust_watchpoint_address)(CPUState *cpu, vaddr addr, int len);
+    bool (*debug_check_watchpoint)(CPUState *cpu, CPUWatchpoint *wp);
+    bool (*debug_check_breakpoint)(CPUState *cpu);
+    bool (*io_recompile_replay_branch)(CPUState *cpu,
+                                       const struct TranslationBlock *tb);
+};
+
 /**
  * CPUClass:
  * @class_by_name: Callback to map -cpu command line model name to an
@@ -131,6 +162,7 @@ typedef struct CPUClass {
     void (*cpu_exec_exit)(CPUState *cpu);
     bool (*cpu_exec_interrupt)(CPUState *cpu, int interrupt_request);
 
+    const struct TCGCPUOps *tcg_ops;
     vaddr (*adjust_watchpoint_address)(CPUState *cpu, vaddr addr, int len);
     void (*tcg_initialize)(struct uc_struct *uc);
 } CPUClass;

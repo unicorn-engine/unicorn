@@ -434,6 +434,7 @@ static void s390_cpu_model_class_init(struct uc_struct *uc, CPUClass *oc, void *
 
     /* model that can change between QEMU versions */
     xcc->cpu_def = (const S390CPUDef *) data;
+    xcc->is_static = false;
     // xcc->is_migration_safe = true;
     // xcc->desc = xcc->cpu_def->desc;
 }

@@ -31,6 +31,9 @@ on:
 permissions:
   packages: write
 
+env:
+  CTEST_PARALLEL_LEVEL: 40
+
 jobs:
   Windows:
     runs-on: ${{ matrix.config.os }}
@@ -93,7 +96,7 @@ jobs:
             -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
           cmake --build . --config ${{ matrix.config.build_type }}
           cmake --install . --strip --config ${{ matrix.config.build_type }}
-          ctest -VV -C ${{ matrix.config.build_type }}
+          ctest --parallel ${{ env.CTEST_PARALLEL_LEVEL }} -VV -C ${{ matrix.config.build_type }}
           mv Release instdir
 
       - name: '🛠️ Win MSVC 32 setup'
@@ -121,7 +124,7 @@ jobs:
             -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
           cmake --build . --config ${{ matrix.config.build_type }}
           cmake --install . --strip --config ${{ matrix.config.build_type }}
-          ctest -VV -C ${{ matrix.config.build_type }}
+          ctest --parallel ${{ env.CTEST_PARALLEL_LEVEL }} -VV -C ${{ matrix.config.build_type }}
           mv Release instdir
 
       - name: '📦 Pack artifact'
@@ -177,7 +180,7 @@ jobs:
             -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
           cmake --build . --config ${{ matrix.config.build_type }}
           cmake --install . --strip
-          ctest -VV -C ${{ matrix.config.build_type }}
+          ctest --parallel ${{ env.CTEST_PARALLEL_LEVEL }} -VV -C ${{ matrix.config.build_type }}
 
       - name: '📦 Pack artifact'
         if: always()
@@ -270,7 +273,7 @@ jobs:
             -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
           cmake --build . --config ${{ matrix.config.build_type }}
           cmake --install . --strip
-          ctest -VV -C ${{ matrix.config.build_type }}
+          ctest --parallel ${{ env.CTEST_PARALLEL_LEVEL }} -VV -C ${{ matrix.config.build_type }}
 
       - name: '🚧 Linux aarch64 build'
         if: contains(matrix.config.arch, 'aarch64')
@@ -288,7 +291,7 @@ jobs:
             -DCMAKE_INSTALL_PREFIX:PATH=instdir
           cmake --build . --config ${{ matrix.config.build_type }}
           cmake --install . --strip
-          ctest -VV -C ${{ matrix.config.build_type }}
+          ctest --parallel ${{ env.CTEST_PARALLEL_LEVEL }} -VV -C ${{ matrix.config.build_type }}
 
       - name: '🚧 Linux ppc64le build'
         if: contains(matrix.config.arch, 'ppc64le')
@@ -314,7 +317,7 @@ jobs:
               -DCMAKE_INSTALL_PREFIX:PATH=/instdir
             cmake --build . --config ${{ matrix.config.build_type }}
             cmake --install . --strip
-            ctest -VV -C ${{ matrix.config.build_type }}
+            ctest --parallel ${{ env.CTEST_PARALLEL_LEVEL }} -VV -C ${{ matrix.config.build_type }}
 
       - name: '📦 Pack artifact'
         if: always()

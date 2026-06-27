@@ -23,6 +23,29 @@
         return false;                       \
 } while (0)
 
+#define RISCV_NANBOX32_MASK UINT64_C(0xffffffff00000000)
+
+static void gen_nanbox_s(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv_i64 value)
+{
+    tcg_gen_ori_i64(tcg_ctx, ret, value, RISCV_NANBOX32_MASK);
+}
+
+static void gen_check_nanbox_s(TCGContext *tcg_ctx, TCGv_i64 ret,
+                               TCGv_i64 value)
+{
+    TCGv_i64 boxed = tcg_temp_new_i64(tcg_ctx);
+    TCGv_i64 mask = tcg_const_i64(tcg_ctx, RISCV_NANBOX32_MASK);
+    TCGv_i64 qnan = tcg_const_i64(tcg_ctx, 0x7fc00000u);
+
+    tcg_gen_andi_i64(tcg_ctx, boxed, value, RISCV_NANBOX32_MASK);
+    tcg_gen_movcond_i64(tcg_ctx, TCG_COND_EQ, ret, boxed, mask, value, qnan);
+    tcg_gen_andi_i64(tcg_ctx, ret, ret, UINT32_MAX);
+
+    tcg_temp_free_i64(tcg_ctx, qnan);
+    tcg_temp_free_i64(tcg_ctx, mask);
+    tcg_temp_free_i64(tcg_ctx, boxed);
+}
+
 static bool trans_flw(DisasContext *ctx, arg_flw *a)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -174,13 +197,20 @@ static bool trans_fsgnj_s(DisasContext *ctx, arg_fsgnj_s *a)
     REQUIRE_FPU;
     REQUIRE_EXT(ctx, RVF);
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv_i64 frs1 = tcg_temp_new_i64(tcg_ctx);
+    TCGv_i64 frs2 = tcg_temp_new_i64(tcg_ctx);
+    TCGv_i64 sign = tcg_temp_new_i64(tcg_ctx);
 
-    if (a->rs1 == a->rs2) { /* FMOV */
-        tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], tcg_ctx->cpu_fpr[a->rs1]);
-    } else { /* FSGNJ */
-        tcg_gen_deposit_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], tcg_ctx->cpu_fpr[a->rs2], tcg_ctx->cpu_fpr[a->rs1],
-                            0, 31);
-    }
+    gen_check_nanbox_s(tcg_ctx, frs1, tcg_ctx->cpu_fpr[a->rs1]);
+    gen_check_nanbox_s(tcg_ctx, frs2, tcg_ctx->cpu_fpr[a->rs2]);
+    tcg_gen_andi_i64(tcg_ctx, sign, frs2, INT32_MIN);
+    tcg_gen_andi_i64(tcg_ctx, frs1, frs1, ~INT32_MIN);
+    tcg_gen_or_i64(tcg_ctx, frs1, frs1, sign);
+    gen_nanbox_s(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], frs1);
+
+    tcg_temp_free_i64(tcg_ctx, sign);
+    tcg_temp_free_i64(tcg_ctx, frs2);
+    tcg_temp_free_i64(tcg_ctx, frs1);
     mark_fs_dirty(ctx);
     return true;
 }
@@ -190,15 +220,21 @@ static bool trans_fsgnjn_s(DisasContext *ctx, arg_fsgnjn_s *a)
     REQUIRE_FPU;
     REQUIRE_EXT(ctx, RVF);
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv_i64 frs1 = tcg_temp_new_i64(tcg_ctx);
+    TCGv_i64 frs2 = tcg_temp_new_i64(tcg_ctx);
+    TCGv_i64 sign = tcg_temp_new_i64(tcg_ctx);
 
-    if (a->rs1 == a->rs2) { /* FNEG */
-        tcg_gen_xori_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], tcg_ctx->cpu_fpr[a->rs1], INT32_MIN);
-    } else {
-        TCGv_i64 t0 = tcg_temp_new_i64(tcg_ctx);
-        tcg_gen_not_i64(tcg_ctx, t0, tcg_ctx->cpu_fpr[a->rs2]);
-        tcg_gen_deposit_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], t0, tcg_ctx->cpu_fpr[a->rs1], 0, 31);
-        tcg_temp_free_i64(tcg_ctx, t0);
-    }
+    gen_check_nanbox_s(tcg_ctx, frs1, tcg_ctx->cpu_fpr[a->rs1]);
+    gen_check_nanbox_s(tcg_ctx, frs2, tcg_ctx->cpu_fpr[a->rs2]);
+    tcg_gen_andi_i64(tcg_ctx, sign, frs2, INT32_MIN);
+    tcg_gen_xori_i64(tcg_ctx, sign, sign, INT32_MIN);
+    tcg_gen_andi_i64(tcg_ctx, frs1, frs1, ~INT32_MIN);
+    tcg_gen_or_i64(tcg_ctx, frs1, frs1, sign);
+    gen_nanbox_s(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], frs1);
+
+    tcg_temp_free_i64(tcg_ctx, sign);
+    tcg_temp_free_i64(tcg_ctx, frs2);
+    tcg_temp_free_i64(tcg_ctx, frs1);
     mark_fs_dirty(ctx);
     return true;
 }
@@ -208,15 +244,21 @@ static bool trans_fsgnjx_s(DisasContext *ctx, arg_fsgnjx_s *a)
     REQUIRE_FPU;
     REQUIRE_EXT(ctx, RVF);
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv_i64 frs1 = tcg_temp_new_i64(tcg_ctx);
+    TCGv_i64 frs2 = tcg_temp_new_i64(tcg_ctx);
+    TCGv_i64 sign = tcg_temp_new_i64(tcg_ctx);
 
-    if (a->rs1 == a->rs2) { /* FABS */
-        tcg_gen_andi_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], tcg_ctx->cpu_fpr[a->rs1], ~INT32_MIN);
-    } else {
-        TCGv_i64 t0 = tcg_temp_new_i64(tcg_ctx);
-        tcg_gen_andi_i64(tcg_ctx, t0, tcg_ctx->cpu_fpr[a->rs2], INT32_MIN);
-        tcg_gen_xor_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], tcg_ctx->cpu_fpr[a->rs1], t0);
-        tcg_temp_free_i64(tcg_ctx, t0);
-    }
+    gen_check_nanbox_s(tcg_ctx, frs1, tcg_ctx->cpu_fpr[a->rs1]);
+    gen_check_nanbox_s(tcg_ctx, frs2, tcg_ctx->cpu_fpr[a->rs2]);
+    tcg_gen_xor_i64(tcg_ctx, sign, frs1, frs2);
+    tcg_gen_andi_i64(tcg_ctx, sign, sign, INT32_MIN);
+    tcg_gen_andi_i64(tcg_ctx, frs1, frs1, ~INT32_MIN);
+    tcg_gen_or_i64(tcg_ctx, frs1, frs1, sign);
+    gen_nanbox_s(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], frs1);
+
+    tcg_temp_free_i64(tcg_ctx, sign);
+    tcg_temp_free_i64(tcg_ctx, frs2);
+    tcg_temp_free_i64(tcg_ctx, frs1);
     mark_fs_dirty(ctx);
     return true;
 }
@@ -398,10 +440,11 @@ static bool trans_fmv_w_x(DisasContext *ctx, arg_fmv_w_x *a)
     gen_get_gpr(tcg_ctx, t0, a->rs1);
 
 #if defined(TARGET_RISCV64)
-    tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], t0);
+    tcg_gen_ext32u_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], t0);
 #else
     tcg_gen_extu_i32_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], t0);
 #endif
+    gen_nanbox_s(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], tcg_ctx->cpu_fpr[a->rd]);
 
     mark_fs_dirty(ctx);
     tcg_temp_free(tcg_ctx, t0);

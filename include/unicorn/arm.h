@@ -50,6 +50,7 @@ typedef enum uc_cpu_arm {
     UC_CPU_ARM_PXA270B1,
     UC_CPU_ARM_PXA270C0,
     UC_CPU_ARM_PXA270C5,
+    UC_CPU_ARM_CORTEX_M55,
     UC_CPU_ARM_MAX,
 
     UC_CPU_ARM_ENDING
@@ -222,6 +223,7 @@ typedef enum uc_arm_reg {
 	// A pseudo-register for fetching the exception syndrome
 	// from the CPU state. This is not a real register.
     UC_ARM_REG_ESR,
+    UC_ARM_REG_VPR,
     UC_ARM_REG_ENDING, // <-- mark the end of the list or registers
 
     //> alias registers

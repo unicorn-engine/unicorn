@@ -36,6 +36,15 @@ static inline float128 float128_snan_to_qnan(float128 x)
 #define float32_snan_to_qnan(x) ((x) | 0x00400000)
 #define float16_snan_to_qnan(x) ((x) | 0x0200)
 
+static inline float32 bfp32_neg(float32 x)
+{
+    if (likely(!float32_is_any_nan(x))) {
+        x = float32_chs(x);
+    }
+
+    return x;
+}
+
 static inline bool fp_exceptions_enabled(CPUPPCState *env)
 {
     return (env->msr & ((1U << MSR_FE0) | (1U << MSR_FE1))) != 0;
@@ -706,6 +715,18 @@ static void float_invalid_op_mul(CPUPPCState *env, bool set_fprc,
         /* Multiplication of zero by infinity */
         float_invalid_op_vximz(env, set_fprc, retaddr);
     } else if (classes & is_snan) {
+        float_invalid_op_vxsnan(env, retaddr);
+    }
+}
+
+static void float_invalid_op_madd(CPUPPCState *env, int flags,
+                                  bool set_fpcc, uintptr_t retaddr)
+{
+    if (flags & float_flag_invalid_imz) {
+        float_invalid_op_vximz(env, set_fpcc, retaddr);
+    } else if (flags & float_flag_invalid_isi) {
+        float_invalid_op_vxisi(env, set_fpcc, retaddr);
+    } else if (flags & float_flag_invalid_snan) {
         float_invalid_op_vxsnan(env, retaddr);
     }
 }
@@ -2354,6 +2375,40 @@ VSX_MADD(xvmsubsp, 4, float32, VsrW(i), MSUB_FLGS, 0, 0)
 VSX_MADD(xvnmaddsp, 4, float32, VsrW(i), NMADD_FLGS, 0, 0)
 VSX_MADD(xvnmsubsp, 4, float32, VsrW(i), NMSUB_FLGS, 0, 0)
 
+#define VSX_MADDQ(op, maddflgs, ro)                                            \
+void helper_##op(CPUPPCState *env, ppc_vsr_t *xt, ppc_vsr_t *s1, ppc_vsr_t *s2,\
+                 ppc_vsr_t *s3)                                                \
+{                                                                              \
+    ppc_vsr_t t = *xt;                                                         \
+    float_status tstat;                                                        \
+                                                                               \
+    helper_reset_fpstatus(env);                                                \
+    tstat = env->fp_status;                                                    \
+    set_float_exception_flags(0, &tstat);                                      \
+    if (ro) {                                                                  \
+        tstat.float_rounding_mode = float_round_to_odd;                        \
+    }                                                                          \
+    t.f128 = float128_muladd(s1->f128, s3->f128, s2->f128, maddflgs, &tstat);  \
+    env->fp_status.float_exception_flags |= tstat.float_exception_flags;       \
+                                                                               \
+    if (unlikely(tstat.float_exception_flags & float_flag_invalid)) {          \
+        float_invalid_op_madd(env, tstat.float_exception_flags, false, GETPC());\
+    }                                                                          \
+                                                                               \
+    helper_compute_fprf_float128(env, t.f128);                                 \
+    *xt = t;                                                                   \
+    do_float_check_status(env, GETPC());                                       \
+}
+
+VSX_MADDQ(XSMADDQP, MADD_FLGS, 0)
+VSX_MADDQ(XSMADDQPO, MADD_FLGS, 1)
+VSX_MADDQ(XSMSUBQP, MSUB_FLGS, 0)
+VSX_MADDQ(XSMSUBQPO, MSUB_FLGS, 1)
+VSX_MADDQ(XSNMADDQP, NMADD_FLGS, 0)
+VSX_MADDQ(XSNMADDQPO, NMADD_FLGS, 1)
+VSX_MADDQ(XSNMSUBQP, NMSUB_FLGS, 0)
+VSX_MADDQ(XSNMSUBQPO, NMSUB_FLGS, 0)
+
 /*
  * VSX_SCALAR_CMP_DP - VSX scalar floating point compare double precision
  *   op    - instruction mnemonic
@@ -2404,6 +2459,44 @@ VSX_SCALAR_CMP_DP(xscmpeqdp, eq, 1, 0)
 VSX_SCALAR_CMP_DP(xscmpgedp, le, 1, 1)
 VSX_SCALAR_CMP_DP(xscmpgtdp, lt, 1, 1)
 VSX_SCALAR_CMP_DP(xscmpnedp, eq, 0, 0)
+
+#define VSX_SCALAR_CMP_QP_VECTOR(op, cmp, svxvc)                              \
+void helper_##op(CPUPPCState *env, ppc_vsr_t *xt,                             \
+                 ppc_vsr_t *xa, ppc_vsr_t *xb)                                \
+{                                                                             \
+    ppc_vsr_t t = { 0 };                                                      \
+    bool r;                                                                   \
+    int flags;                                                                \
+    bool vxvc = false;                                                        \
+                                                                              \
+    helper_reset_fpstatus(env);                                               \
+                                                                              \
+    if (svxvc) {                                                              \
+        r = float128_##cmp(xb->f128, xa->f128, &env->fp_status);              \
+    } else {                                                                  \
+        r = float128_##cmp##_quiet(xb->f128, xa->f128, &env->fp_status);      \
+    }                                                                         \
+                                                                              \
+    flags = get_float_exception_flags(&env->fp_status);                       \
+    if (unlikely(flags & float_flag_invalid)) {                               \
+        vxvc = svxvc;                                                         \
+        if (flags & float_flag_invalid_snan) {                                \
+            float_invalid_op_vxsnan(env, GETPC());                            \
+            vxvc &= !(env->fpscr & FP_VE);                                    \
+        }                                                                     \
+        if (vxvc) {                                                           \
+            float_invalid_op_vxvc(env, 0, GETPC());                           \
+        }                                                                     \
+    }                                                                         \
+                                                                              \
+    memset(&t.f128, r ? 0xff : 0, sizeof(t.f128));                            \
+    *xt = t;                                                                  \
+    do_float_check_status(env, GETPC());                                      \
+}
+
+VSX_SCALAR_CMP_QP_VECTOR(XSCMPEQQP, eq, 0)
+VSX_SCALAR_CMP_QP_VECTOR(XSCMPGEQP, le, 1)
+VSX_SCALAR_CMP_QP_VECTOR(XSCMPGTQP, lt, 1)
 
 void helper_xscmpexpdp(CPUPPCState *env, uint32_t opcode,
                        ppc_vsr_t *xa, ppc_vsr_t *xb)
@@ -2628,6 +2721,37 @@ void helper_##name(CPUPPCState *env, uint32_t opcode,                         \
 VSX_MAX_MINC(xsmaxcdp, 1);
 VSX_MAX_MINC(xsmincdp, 0);
 
+#define VSX_MAX_MINC_QP(name, max)                                            \
+void helper_##name(CPUPPCState *env,                                          \
+                   ppc_vsr_t *xt, ppc_vsr_t *xa, ppc_vsr_t *xb)               \
+{                                                                             \
+    ppc_vsr_t t = { 0 };                                                      \
+    bool first;                                                               \
+                                                                              \
+    helper_reset_fpstatus(env);                                               \
+                                                                              \
+    if (max) {                                                                \
+        first = float128_le_quiet(xb->f128, xa->f128, &env->fp_status);       \
+    } else {                                                                  \
+        first = float128_lt_quiet(xa->f128, xb->f128, &env->fp_status);       \
+    }                                                                         \
+                                                                              \
+    if (first) {                                                              \
+        t.f128 = xa->f128;                                                    \
+    } else {                                                                  \
+        t.f128 = xb->f128;                                                    \
+        if (env->fp_status.float_exception_flags & float_flag_invalid_snan) { \
+            float_invalid_op_vxsnan(env, GETPC());                            \
+        }                                                                     \
+    }                                                                         \
+                                                                              \
+    *xt = t;                                                                  \
+    do_float_check_status(env, GETPC());                                      \
+}
+
+VSX_MAX_MINC_QP(XSMAXCQP, true)
+VSX_MAX_MINC_QP(XSMINCQP, false)
+
 #define VSX_MAX_MINJ(name, max)                                               \
 void helper_##name(CPUPPCState *env, uint32_t opcode,                         \
                    ppc_vsr_t *xt, ppc_vsr_t *xa, ppc_vsr_t *xb)               \
@@ -2850,6 +2974,39 @@ VSX_CVT_FP_TO_FP_HP(xscvhpdp, 1, float16, float64, VsrH(3), VsrD(0), 1)
 VSX_CVT_FP_TO_FP_HP(xvcvsphp, 4, float32, float16, VsrW(i), VsrH(2 * i  + 1), 0)
 VSX_CVT_FP_TO_FP_HP(xvcvhpsp, 4, float16, float32, VsrH(2 * i + 1), VsrW(i), 0)
 
+void helper_XVCVSPBF16(CPUPPCState *env, ppc_vsr_t *xt, ppc_vsr_t *xb)
+{
+    ppc_vsr_t t = { 0 };
+    int i, status;
+
+    helper_reset_fpstatus(env);
+
+    for (i = 0; i < 4; i++) {
+        t.VsrH(2 * i + 1) = float32_to_bfloat16(xb->VsrW(i),
+                                                &env->fp_status);
+    }
+
+    status = get_float_exception_flags(&env->fp_status);
+    if (unlikely(status & float_flag_invalid_snan)) {
+        float_invalid_op_vxsnan(env, GETPC());
+    }
+
+    *xt = t;
+    do_float_check_status(env, GETPC());
+}
+
+void helper_XVCVBF16SPN(ppc_vsr_t *xt, ppc_vsr_t *xb)
+{
+    ppc_vsr_t t = { 0 };
+    int i;
+
+    for (i = 0; i < 4; i++) {
+        t.VsrW(i) = xb->VsrW(i) << 16;
+    }
+
+    *xt = t;
+}
+
 /*
  * xscvqpdp isn't using VSX_CVT_FP_TO_FP() because xscvqpdpo will be
  * added to this later.
@@ -3009,6 +3166,28 @@ VSX_CVT_FP_TO_INT_VECTOR(xscvqpswz, float128, int32, f128, VsrD(0),          \
 VSX_CVT_FP_TO_INT_VECTOR(xscvqpudz, float128, uint64, f128, VsrD(0), 0x0ULL)
 VSX_CVT_FP_TO_INT_VECTOR(xscvqpuwz, float128, uint32, f128, VsrD(0), 0x0ULL)
 
+#define VSX_CVT_FP_TO_INT128(op, tp, rnan)                                    \
+void helper_##op(CPUPPCState *env, ppc_vsr_t *xt, ppc_vsr_t *xb)              \
+{                                                                             \
+    ppc_vsr_t t;                                                              \
+    int flags;                                                                \
+                                                                              \
+    helper_reset_fpstatus(env);                                               \
+    t.s128 = float128_to_##tp##_round_to_zero(xb->f128, &env->fp_status);     \
+    flags = get_float_exception_flags(&env->fp_status);                       \
+    if (unlikely(flags & float_flag_invalid)) {                               \
+        float_invalid_cvt(env, 0, GETPC(), float128_classify(xb->f128));      \
+        t.VsrD(0) = rnan;                                                     \
+        t.VsrD(1) = -(t.VsrD(0) & 1);                                         \
+    }                                                                         \
+                                                                              \
+    *xt = t;                                                                  \
+    do_float_check_status(env, GETPC());                                      \
+}
+
+VSX_CVT_FP_TO_INT128(XSCVQPUQZ, uint128, 0)
+VSX_CVT_FP_TO_INT128(XSCVQPSQZ, int128, 0x8000000000000000ULL)
+
 /*
  * VSX_CVT_INT_TO_FP - VSX integer to floating point conversion
  *   op    - instruction mnemonic
@@ -3076,6 +3255,18 @@ void helper_##op(CPUPPCState *env, uint32_t opcode,                     \
 
 VSX_CVT_INT_TO_FP_VECTOR(xscvsdqp, int64, float128, VsrD(0), f128)
 VSX_CVT_INT_TO_FP_VECTOR(xscvudqp, uint64, float128, VsrD(0), f128)
+
+#define VSX_CVT_INT128_TO_FP(op, tp)                            \
+void helper_##op(CPUPPCState *env, ppc_vsr_t *xt, ppc_vsr_t *xb)\
+{                                                               \
+    helper_reset_fpstatus(env);                                 \
+    xt->f128 = tp##_to_float128(xb->s128, &env->fp_status);     \
+    helper_compute_fprf_float128(env, xt->f128);                \
+    do_float_check_status(env, GETPC());                        \
+}
+
+VSX_CVT_INT128_TO_FP(XSCVUQQP, uint128)
+VSX_CVT_INT128_TO_FP(XSCVSQQP, int128)
 
 /*
  * For "use current rounding mode", define a value that will not be
@@ -3458,4 +3649,327 @@ void helper_xssubqp(CPUPPCState *env, uint32_t opcode,
     helper_compute_fprf_float128(env, t.f128);
     *xt = t;
     do_float_check_status(env, GETPC());
+}
+
+static inline void vsxger_excp(CPUPPCState *env, uintptr_t retaddr)
+{
+    target_ulong enable = env->fpscr & (FP_ENABLES | FP_FI | FP_FR);
+    int status;
+
+    env->fpscr &= ~(FP_ENABLES | FP_FI | FP_FR);
+    status = get_float_exception_flags(&env->fp_status);
+    if (unlikely(status & float_flag_invalid)) {
+        if (status & float_flag_invalid_snan) {
+            float_invalid_op_vxsnan(env, retaddr);
+        }
+        if (status & float_flag_invalid_imz) {
+            float_invalid_op_vximz(env, false, retaddr);
+        }
+        if (status & float_flag_invalid_isi) {
+            float_invalid_op_vxisi(env, false, retaddr);
+        }
+    }
+    env->fpscr |= enable;
+    do_float_check_status(env, retaddr);
+}
+
+typedef float64 extract_f16(float16, float_status *);
+
+static float64 extract_hf16(float16 in, float_status *fp_status)
+{
+    return float16_to_float64(in, true, fp_status);
+}
+
+static float64 extract_bf16(bfloat16 in, float_status *fp_status)
+{
+    return bfloat16_to_float64(in, fp_status);
+}
+
+static void vsxger16(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                     ppc_acc_t *at, uint32_t mask, bool acc, bool neg_mul,
+                     bool neg_acc, extract_f16 extract)
+{
+    float_status *excp_ptr = &env->fp_status;
+    uint8_t pmsk = ger_mask_pmsk(mask);
+    uint8_t xmsk = ger_mask_xmsk(mask);
+    uint8_t ymsk = ger_mask_ymsk(mask);
+    float32 r;
+    float32 aux_acc;
+    float64 psum;
+    float64 va;
+    float64 vb;
+    float64 vc;
+    float64 vd;
+    int i;
+    int j;
+    int xmsk_bit;
+    int ymsk_bit;
+
+    helper_reset_fpstatus(env);
+    for (i = 0, xmsk_bit = 1 << 3; i < 4; i++, xmsk_bit >>= 1) {
+        for (j = 0, ymsk_bit = 1 << 3; j < 4; j++, ymsk_bit >>= 1) {
+            if ((xmsk_bit & xmsk) && (ymsk_bit & ymsk)) {
+                va = !(pmsk & 2) ? float64_zero :
+                     extract(a->VsrHF(2 * i), excp_ptr);
+                vb = !(pmsk & 2) ? float64_zero :
+                     extract(b->VsrHF(2 * j), excp_ptr);
+                vc = !(pmsk & 1) ? float64_zero :
+                     extract(a->VsrHF(2 * i + 1), excp_ptr);
+                vd = !(pmsk & 1) ? float64_zero :
+                     extract(b->VsrHF(2 * j + 1), excp_ptr);
+                psum = float64_mul(va, vb, excp_ptr);
+                psum = float64r32_muladd(vc, vd, psum, 0, excp_ptr);
+                r = float64_to_float32(psum, excp_ptr);
+                if (acc) {
+                    aux_acc = at[i].VsrSF(j);
+                    if (neg_mul) {
+                        r = bfp32_neg(r);
+                    }
+                    if (neg_acc) {
+                        aux_acc = bfp32_neg(aux_acc);
+                    }
+                    r = float32_add(r, aux_acc, excp_ptr);
+                }
+                at[i].VsrSF(j) = r;
+            } else {
+                at[i].VsrSF(j) = float32_zero;
+            }
+        }
+    }
+    vsxger_excp(env, GETPC());
+}
+
+typedef void vsxger_zero(ppc_vsr_t *at, int, int);
+typedef void vsxger_muladd_f(ppc_vsr_t *, ppc_vsr_t *, ppc_vsr_t *, int, int,
+                             int, float_status *);
+
+static void vsxger_muladd32(ppc_vsr_t *at, ppc_vsr_t *a, ppc_vsr_t *b, int i,
+                            int j, int flags, float_status *s)
+{
+    at[i].VsrSF(j) = float32_muladd(a->VsrSF(i), b->VsrSF(j),
+                                    at[i].VsrSF(j), flags, s);
+}
+
+static void vsxger_mul32(ppc_vsr_t *at, ppc_vsr_t *a, ppc_vsr_t *b, int i,
+                         int j, int flags, float_status *s)
+{
+    at[i].VsrSF(j) = float32_mul(a->VsrSF(i), b->VsrSF(j), s);
+}
+
+static void vsxger_zero32(ppc_vsr_t *at, int i, int j)
+{
+    at[i].VsrSF(j) = float32_zero;
+}
+
+static void vsxger_muladd64(ppc_vsr_t *at, ppc_vsr_t *a, ppc_vsr_t *b, int i,
+                            int j, int flags, float_status *s)
+{
+    if (j >= 2) {
+        j -= 2;
+        at[i].VsrDF(j) = float64_muladd(a[i / 2].VsrDF(i % 2),
+                                        b->VsrDF(j), at[i].VsrDF(j),
+                                        flags, s);
+    }
+}
+
+static void vsxger_mul64(ppc_vsr_t *at, ppc_vsr_t *a, ppc_vsr_t *b, int i,
+                         int j, int flags, float_status *s)
+{
+    if (j >= 2) {
+        j -= 2;
+        at[i].VsrDF(j) = float64_mul(a[i / 2].VsrDF(i % 2),
+                                     b->VsrDF(j), s);
+    }
+}
+
+static void vsxger_zero64(ppc_vsr_t *at, int i, int j)
+{
+    if (j >= 2) {
+        j -= 2;
+        at[i].VsrDF(j) = float64_zero;
+    }
+}
+
+static void vsxger(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                   ppc_acc_t *at, uint32_t mask, bool acc, bool neg_mul,
+                   bool neg_acc, vsxger_muladd_f mul,
+                   vsxger_muladd_f muladd, vsxger_zero zero)
+{
+    float_status *excp_ptr = &env->fp_status;
+    uint8_t xmsk = mask & 0x0f;
+    uint8_t ymsk = (mask >> 4) & 0x0f;
+    int op_flags;
+    int i;
+    int j;
+    int xmsk_bit;
+    int ymsk_bit;
+
+    op_flags = (neg_acc ^ neg_mul) ? float_muladd_negate_c : 0;
+    op_flags |= neg_mul ? float_muladd_negate_result : 0;
+
+    helper_reset_fpstatus(env);
+    for (i = 0, xmsk_bit = 1 << 3; i < 4; i++, xmsk_bit >>= 1) {
+        for (j = 0, ymsk_bit = 1 << 3; j < 4; j++, ymsk_bit >>= 1) {
+            if ((xmsk_bit & xmsk) && (ymsk_bit & ymsk)) {
+                if (acc) {
+                    muladd(at, a, b, i, j, op_flags, excp_ptr);
+                } else {
+                    mul(at, a, b, i, j, op_flags, excp_ptr);
+                }
+            } else {
+                zero(at, i, j);
+            }
+        }
+    }
+    vsxger_excp(env, GETPC());
+}
+
+QEMU_FLATTEN
+void helper_XVBF16GER2(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    vsxger16(env, a, b, at, mask, false, false, false, extract_bf16);
+}
+
+QEMU_FLATTEN
+void helper_XVBF16GER2PP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                         ppc_acc_t *at, uint32_t mask)
+{
+    vsxger16(env, a, b, at, mask, true, false, false, extract_bf16);
+}
+
+QEMU_FLATTEN
+void helper_XVBF16GER2PN(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                         ppc_acc_t *at, uint32_t mask)
+{
+    vsxger16(env, a, b, at, mask, true, false, true, extract_bf16);
+}
+
+QEMU_FLATTEN
+void helper_XVBF16GER2NP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                         ppc_acc_t *at, uint32_t mask)
+{
+    vsxger16(env, a, b, at, mask, true, true, false, extract_bf16);
+}
+
+QEMU_FLATTEN
+void helper_XVBF16GER2NN(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                         ppc_acc_t *at, uint32_t mask)
+{
+    vsxger16(env, a, b, at, mask, true, true, true, extract_bf16);
+}
+
+QEMU_FLATTEN
+void helper_XVF16GER2(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                     ppc_acc_t *at, uint32_t mask)
+{
+    vsxger16(env, a, b, at, mask, false, false, false, extract_hf16);
+}
+
+QEMU_FLATTEN
+void helper_XVF16GER2PP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                        ppc_acc_t *at, uint32_t mask)
+{
+    vsxger16(env, a, b, at, mask, true, false, false, extract_hf16);
+}
+
+QEMU_FLATTEN
+void helper_XVF16GER2PN(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                        ppc_acc_t *at, uint32_t mask)
+{
+    vsxger16(env, a, b, at, mask, true, false, true, extract_hf16);
+}
+
+QEMU_FLATTEN
+void helper_XVF16GER2NP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                        ppc_acc_t *at, uint32_t mask)
+{
+    vsxger16(env, a, b, at, mask, true, true, false, extract_hf16);
+}
+
+QEMU_FLATTEN
+void helper_XVF16GER2NN(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                        ppc_acc_t *at, uint32_t mask)
+{
+    vsxger16(env, a, b, at, mask, true, true, true, extract_hf16);
+}
+
+QEMU_FLATTEN
+void helper_XVF32GER(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                     ppc_acc_t *at, uint32_t mask)
+{
+    vsxger(env, a, b, at, mask, false, false, false, vsxger_mul32,
+           vsxger_muladd32, vsxger_zero32);
+}
+
+QEMU_FLATTEN
+void helper_XVF32GERPP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    vsxger(env, a, b, at, mask, true, false, false, vsxger_mul32,
+           vsxger_muladd32, vsxger_zero32);
+}
+
+QEMU_FLATTEN
+void helper_XVF32GERPN(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    vsxger(env, a, b, at, mask, true, false, true, vsxger_mul32,
+           vsxger_muladd32, vsxger_zero32);
+}
+
+QEMU_FLATTEN
+void helper_XVF32GERNP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    vsxger(env, a, b, at, mask, true, true, false, vsxger_mul32,
+           vsxger_muladd32, vsxger_zero32);
+}
+
+QEMU_FLATTEN
+void helper_XVF32GERNN(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    vsxger(env, a, b, at, mask, true, true, true, vsxger_mul32,
+           vsxger_muladd32, vsxger_zero32);
+}
+
+QEMU_FLATTEN
+void helper_XVF64GER(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                     ppc_acc_t *at, uint32_t mask)
+{
+    vsxger(env, a, b, at, mask, false, false, false, vsxger_mul64,
+           vsxger_muladd64, vsxger_zero64);
+}
+
+QEMU_FLATTEN
+void helper_XVF64GERPP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    vsxger(env, a, b, at, mask, true, false, false, vsxger_mul64,
+           vsxger_muladd64, vsxger_zero64);
+}
+
+QEMU_FLATTEN
+void helper_XVF64GERPN(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    vsxger(env, a, b, at, mask, true, false, true, vsxger_mul64,
+           vsxger_muladd64, vsxger_zero64);
+}
+
+QEMU_FLATTEN
+void helper_XVF64GERNP(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    vsxger(env, a, b, at, mask, true, true, false, vsxger_mul64,
+           vsxger_muladd64, vsxger_zero64);
+}
+
+QEMU_FLATTEN
+void helper_XVF64GERNN(CPUPPCState *env, ppc_vsr_t *a, ppc_vsr_t *b,
+                       ppc_acc_t *at, uint32_t mask)
+{
+    vsxger(env, a, b, at, mask, true, true, true, vsxger_mul64,
+           vsxger_muladd64, vsxger_zero64);
 }

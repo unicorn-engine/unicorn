@@ -54,6 +54,24 @@ uint32_t cpu_mips_get_random(CPUMIPSState *env)
     return idx;
 }
 
+uint32_t cpu_mips_get_count(CPUMIPSState *env)
+{
+    return env->CP0_Count;
+}
+
+void cpu_mips_store_count(CPUMIPSState *env, uint32_t count)
+{
+    env->CP0_Count = count;
+}
+
+void cpu_mips_store_compare(CPUMIPSState *env, uint32_t value)
+{
+    env->CP0_Compare = value;
+    if (env->insn_flags & ISA_MIPS32R2) {
+        env->CP0_Cause &= ~(1 << CP0Ca_TI);
+    }
+}
+
 #if 0
 /* MIPS R4K timer */
 static void cpu_mips_timer_update(CPUMIPSState *env)

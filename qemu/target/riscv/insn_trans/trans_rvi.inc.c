@@ -501,6 +501,20 @@ static bool trans_sraw(DisasContext *ctx, arg_sraw *a)
 }
 #endif
 
+static bool trans_pause(DisasContext *ctx, arg_pause *a)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+
+    if (!ctx->ext_zihintpause) {
+        return false;
+    }
+
+    tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->pc_succ_insn);
+    exit_tb(ctx);
+    ctx->base.is_jmp = DISAS_NORETURN;
+    return true;
+}
+
 static bool trans_fence(DisasContext *ctx, arg_fence *a)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;

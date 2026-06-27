@@ -9,6 +9,8 @@
 #include "unicorn.h"
 #include "internal.h"
 
+#include <string.h>
+
 #ifdef TARGET_MIPS64
 typedef uint64_t mipsreg_t;
 #else
@@ -19,12 +21,13 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc);
 
 static void mips_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC =
-        address & ~(uint64_t)1ULL;
-    if (address & 1) {
-        ((CPUMIPSState *)uc->cpu->env_ptr)->hflags |= MIPS_HFLAG_M16;
+    CPUMIPSState *env = (CPUMIPSState *)uc->cpu->env_ptr;
+
+    env->active_tc.PC = address & ~(uint64_t)1ULL;
+    if ((address & 1) || (uc->mode & UC_MODE_MICRO)) {
+        env->hflags |= MIPS_HFLAG_M16;
     } else {
-        ((CPUMIPSState *)uc->cpu->env_ptr)->hflags &= ~(MIPS_HFLAG_M16);
+        env->hflags &= ~(MIPS_HFLAG_M16);
     }
 }
 
@@ -76,6 +79,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
     if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31) {
         CHECK_REG_TYPE(mipsreg_t);
         *(mipsreg_t *)value = env->active_tc.gpr[regid - UC_MIPS_REG_0];
+    } else if (regid >= UC_MIPS_REG_W0 && regid <= UC_MIPS_REG_W31) {
+        CHECK_REG_TYPE(uint64_t[2]);
+        memcpy(value, &env->active_fpu.fpr[regid - UC_MIPS_REG_W0].wr,
+               sizeof(uint64_t[2]));
     } else {
         switch (regid) {
         default:
@@ -164,6 +171,10 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
     if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31) {
         CHECK_REG_TYPE(mipsreg_t);
         env->active_tc.gpr[regid - UC_MIPS_REG_0] = *(mipsreg_t *)value;
+    } else if (regid >= UC_MIPS_REG_W0 && regid <= UC_MIPS_REG_W31) {
+        CHECK_REG_TYPE(uint64_t[2]);
+        memcpy(&env->active_fpu.fpr[regid - UC_MIPS_REG_W0].wr, value,
+               sizeof(uint64_t[2]));
     } else {
         switch (regid) {
         default:
@@ -178,8 +189,8 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             break;
         case UC_MIPS_REG_PC:
             CHECK_REG_TYPE(mipsreg_t);
-            env->active_tc.PC = *(mipsreg_t *)value & ~1ULL;
-            if ((*(uint32_t *)value & 1)) {
+            env->active_tc.PC = *(mipsreg_t *)value & ~(mipsreg_t)1;
+            if ((*(mipsreg_t *)value & 1) || (mode & UC_MODE_MICRO)) {
                 env->hflags |= MIPS_HFLAG_M16;
             } else {
                 env->hflags &= ~(MIPS_HFLAG_M16);

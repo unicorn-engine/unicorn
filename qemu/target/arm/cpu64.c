@@ -193,6 +193,7 @@ static void aarch64_max_initfn(struct uc_struct *uc, CPUState *obj)
 
     uint64_t t;
     uint32_t u;
+    int i;
     ARMCPU *cpu = ARM_CPU(obj);
 
     aarch64_a57_initfn(uc, obj);
@@ -244,17 +245,62 @@ static void aarch64_max_initfn(struct uc_struct *uc, CPUState *obj)
     FIELD_DP64(t, ID_AA64ISAR1, SPECRES, 1, t);
     FIELD_DP64(t, ID_AA64ISAR1, FRINTTS, 1, t);
     FIELD_DP64(t, ID_AA64ISAR1, LRCPC, 2, t); /* ARMv8.4-RCPC */
+    FIELD_DP64(t, ID_AA64ISAR1, BF16, 1, t);
+    FIELD_DP64(t, ID_AA64ISAR1, DGH, 1, t);
+    FIELD_DP64(t, ID_AA64ISAR1, I8MM, 1, t);
     cpu->isar.id_aa64isar1 = t;
 
     t = cpu->isar.id_aa64pfr0;
     FIELD_DP64(t, ID_AA64PFR0, SVE, 1, t);
     FIELD_DP64(t, ID_AA64PFR0, FP, 1, t);
     FIELD_DP64(t, ID_AA64PFR0, ADVSIMD, 1, t);
+    FIELD_DP64(t, ID_AA64PFR0, CSV2, 2, t);
+    FIELD_DP64(t, ID_AA64PFR0, CSV3, 1, t);
     cpu->isar.id_aa64pfr0 = t;
+    cpu->sve_max_vq = ARM_MAX_VQ;
+    for (i = 0; i < ARM_MAX_VQ; i++) {
+        set_bit(i, cpu->sve_vq_map);
+        set_bit(i, cpu->sve_vq_init);
+    }
+
+    t = cpu->isar.id_aa64zfr0;
+    FIELD_DP64(t, ID_AA64ZFR0, SVEVER, 1, t);
+    FIELD_DP64(t, ID_AA64ZFR0, AES, 2, t);
+    FIELD_DP64(t, ID_AA64ZFR0, BITPERM, 1, t);
+    FIELD_DP64(t, ID_AA64ZFR0, BFLOAT16, 1, t);
+    FIELD_DP64(t, ID_AA64ZFR0, SHA3, 1, t);
+    FIELD_DP64(t, ID_AA64ZFR0, SM4, 1, t);
+    FIELD_DP64(t, ID_AA64ZFR0, I8MM, 1, t);
+    FIELD_DP64(t, ID_AA64ZFR0, F32MM, 1, t);
+    FIELD_DP64(t, ID_AA64ZFR0, F64MM, 1, t);
+    cpu->isar.id_aa64zfr0 = t;
 
     t = cpu->isar.id_aa64pfr1;
     FIELD_DP64(t, ID_AA64PFR1, BT, 1, t);
+    FIELD_DP64(t, ID_AA64PFR1, MTE, 2, t);
+    FIELD_DP64(t, ID_AA64PFR1, SME, 1, t);
+    FIELD_DP64(t, ID_AA64PFR1, CSV2_FRAC, 0, t);
     cpu->isar.id_aa64pfr1 = t;
+
+    t = cpu->isar.id_aa64smfr0;
+    FIELD_DP64(t, ID_AA64SMFR0, F32F32, 1, t);
+    FIELD_DP64(t, ID_AA64SMFR0, B16F32, 1, t);
+    FIELD_DP64(t, ID_AA64SMFR0, F16F32, 1, t);
+    FIELD_DP64(t, ID_AA64SMFR0, I8I32, 0xf, t);
+    FIELD_DP64(t, ID_AA64SMFR0, F64F64, 1, t);
+    FIELD_DP64(t, ID_AA64SMFR0, I16I64, 0xf, t);
+    FIELD_DP64(t, ID_AA64SMFR0, SMEVER, 1, t);
+    FIELD_DP64(t, ID_AA64SMFR0, FA64, 1, t);
+    cpu->isar.id_aa64smfr0 = t;
+    cpu->sme_default_vq = 2;
+    for (i = 0; i < ARM_MAX_VQ; i++) {
+        uint32_t vq = i + 1;
+
+        if ((vq & (vq - 1)) == 0) {
+            set_bit(i, cpu->sme_vq_map);
+            set_bit(i, cpu->sme_vq_init);
+        }
+    }
 
     t = cpu->isar.id_aa64mmfr1;
     FIELD_DP64(t, ID_AA64MMFR1, HPDS, 1, t); /* HPD */
@@ -298,11 +344,11 @@ static void aarch64_max_initfn(struct uc_struct *uc, CPUState *obj)
     cpu->isar.id_mmfr4 = u;
 
     u = cpu->isar.id_aa64dfr0;
-    FIELD_DP64(u, ID_AA64DFR0, PMUVER, 5, u); /* v8.4-PMU */
+    FIELD_DP64(u, ID_AA64DFR0, PMUVER, 6, u); /* PMUv3p5 */
     cpu->isar.id_aa64dfr0 = u;
 
     u = cpu->isar.id_dfr0;
-    FIELD_DP32(u, ID_DFR0, PERFMON, 5, u); /* v8.4-PMU */
+    FIELD_DP32(u, ID_DFR0, PERFMON, 6, u); /* PMUv3p5 */
     cpu->isar.id_dfr0 = u;
 }
 

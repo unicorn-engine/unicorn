@@ -224,7 +224,9 @@ static void m68k_interrupt_all(CPUM68KState *env, int is_hw)
     cpu_m68k_set_sr(env, sr);
     sp = env->aregs[7];
 
-    sp &= ~1;
+    if (!m68k_feature(env, M68K_FEATURE_UNALIGNED_DATA)) {
+        sp &= ~1;
+    }
     if (cs->exception_index == EXCP_ACCESS) {
         if (env->mmu.fault) {
             cpu_abort(cs, "DOUBLE MMU FAULT\n");
@@ -280,10 +282,11 @@ static void m68k_interrupt_all(CPUM68KState *env, int is_hw)
         env->mmu.fault = false;
     } else if (cs->exception_index == EXCP_ADDRESS) {
         do_stack_frame(env, &sp, 2, oldsr, 0, retaddr);
+    } else if (cs->exception_index == EXCP_TRAPCC) {
+        do_stack_frame(env, &sp, 2, oldsr, env->mmu.ar, retaddr);
     } else if (cs->exception_index == EXCP_ILLEGAL ||
                cs->exception_index == EXCP_DIV0 ||
                cs->exception_index == EXCP_CHK ||
-               cs->exception_index == EXCP_TRAPCC ||
                cs->exception_index == EXCP_TRACE) {
         /* FIXME: addr is not only env->pc */
         do_stack_frame(env, &sp, 2, oldsr, env->pc, retaddr);
@@ -294,7 +297,10 @@ static void m68k_interrupt_all(CPUM68KState *env, int is_hw)
         oldsr = sr;
         env->aregs[7] = sp;
         cpu_m68k_set_sr(env, sr &= ~SR_M);
-        sp = env->aregs[7] & ~1;
+        sp = env->aregs[7];
+        if (!m68k_feature(env, M68K_FEATURE_UNALIGNED_DATA)) {
+            sp &= ~1;
+        }
         do_stack_frame(env, &sp, 1, oldsr, 0, retaddr);
     } else {
         do_stack_frame(env, &sp, 0, oldsr, 0, retaddr);

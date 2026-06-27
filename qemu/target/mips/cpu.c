@@ -31,7 +31,7 @@ static void mips_cpu_set_pc(CPUState *cs, vaddr value)
     CPUMIPSState *env = &cpu->env;
 
     env->active_tc.PC = value & ~(target_ulong)1;
-    if (value & 1) {
+    if ((value & 1) || (cs->uc->mode & UC_MODE_MICRO)) {
         env->hflags |= MIPS_HFLAG_M16;
     } else {
         env->hflags &= ~(MIPS_HFLAG_M16);
@@ -157,7 +157,7 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc)
     CPUClass *cc;
     CPUMIPSState *env;
 
-    cpu = qemu_memalign(8, sizeof(*cpu));
+    cpu = qemu_memalign(16, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
@@ -172,7 +172,13 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc)
     }
 #else
     if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = UC_CPU_MIPS32_74KF; // 74kf
+        if (uc->mode & UC_MODE_MIPS32R6) {
+            uc->cpu_model = UC_CPU_MIPS32_MIPS32R6_GENERIC;
+        } else if (uc->mode & UC_MODE_MICRO) {
+            uc->cpu_model = UC_CPU_MIPS32_M14K;
+        } else {
+            uc->cpu_model = UC_CPU_MIPS32_74KF; // 74kf
+        }
     } else if (uc->cpu_model >= mips_defs_number) {
         free(cpu);
         return NULL;
@@ -207,6 +213,9 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc)
     }
 
     mips_cpu_realizefn(cs);
+    if (uc->mode & UC_MODE_MICRO) {
+        env->hflags |= MIPS_HFLAG_M16;
+    }
 
     // init address space
     cpu_address_space_init(cs, 0, cs->memory);

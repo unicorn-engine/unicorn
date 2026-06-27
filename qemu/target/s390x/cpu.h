@@ -52,7 +52,7 @@ struct CPUS390XState {
      * The floating point registers are part of the vector registers.
      * vregs[0][0] -> vregs[15][0] are 16 floating point registers
      */
-    uint64_t vregs[32][2] QEMU_ALIGNED(16);  /* vector registers */
+    QEMU_ALIGN(16, uint64_t vregs[32][2]);   /* vector registers */
     uint32_t aregs[16];    /* access registers */
     uint64_t gscb[4];      /* guarded storage control */
     uint64_t etoken;       /* etoken */
@@ -157,7 +157,7 @@ struct S390CPU {
     /*< public >*/
 
     CPUNegativeOffsetState neg;
-    CPUS390XState env;
+    QEMU_ALIGN(16, CPUS390XState env);
     S390CPUModel *model;
     /* needed for live migration */
     // void *irqstate;

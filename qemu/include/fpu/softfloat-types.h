@@ -80,14 +80,6 @@ this code that are retained.
 #ifndef SOFTFLOAT_TYPES_H
 #define SOFTFLOAT_TYPES_H
 
-#include <stdint.h>
-
-/* This 'flag' type must be able to hold at least 0 and 1. It should
- * probably be replaced with 'bool' but the uses would need to be audited
- * to check that they weren't accidentally relying on it being a larger type.
- */
-typedef uint8_t flag;
-
 /*
  * Software IEC/IEEE floating-point types.
  */
@@ -111,7 +103,7 @@ typedef struct {
 #define make_floatx80(exp, mant) ((floatx80) { mant, exp })
 #define make_floatx80_init(exp, mant) { .low = mant, .high = exp }
 typedef struct {
-#ifdef HOST_WORDS_BIGENDIAN
+#if HOST_BIG_ENDIAN
     uint64_t high, low;
 #else
     uint64_t low, high;
@@ -121,42 +113,63 @@ typedef struct {
 #define make_float128_init(high_, low_) { .high = high_, .low = low_ }
 
 /*
+ * Software neural-network floating-point types.
+ */
+typedef uint16_t bfloat16;
+typedef bool flag;
+
+/*
  * Software IEC/IEEE floating-point underflow tininess-detection mode.
  */
 
-enum {
-    float_tininess_after_rounding  = 0,
-    float_tininess_before_rounding = 1
-};
+#define float_tininess_after_rounding  false
+#define float_tininess_before_rounding true
 
 /*
  *Software IEC/IEEE floating-point rounding mode.
  */
 
-enum {
+typedef enum __attribute__((__packed__)) {
     float_round_nearest_even = 0,
     float_round_down         = 1,
     float_round_up           = 2,
     float_round_to_zero      = 3,
     float_round_ties_away    = 4,
-    /* Not an IEEE rounding mode: round to the closest odd mantissa value */
+    /* Not an IEEE rounding mode: round to closest odd, overflow to max */
     float_round_to_odd       = 5,
-};
+    /* Not an IEEE rounding mode: round to closest odd, overflow to inf */
+    float_round_to_odd_inf   = 6,
+} FloatRoundMode;
 
 /*
  * Software IEC/IEEE floating-point exception flags.
  */
 
 enum {
-    float_flag_invalid   =  1,
-    float_flag_divbyzero =  4,
-    float_flag_overflow  =  8,
-    float_flag_underflow = 16,
-    float_flag_inexact   = 32,
-    float_flag_input_denormal = 64,
-    float_flag_output_denormal = 128
+    float_flag_invalid         = 0x0001,
+    float_flag_divbyzero       = 0x0002,
+    float_flag_overflow        = 0x0004,
+    float_flag_underflow       = 0x0008,
+    float_flag_inexact         = 0x0010,
+    float_flag_input_denormal  = 0x0020,
+    float_flag_output_denormal = 0x0040,
+    float_flag_invalid_isi     = 0x0080,  /* inf - inf */
+    float_flag_invalid_imz     = 0x0100,  /* inf * 0 */
+    float_flag_invalid_idi     = 0x0200,  /* inf / inf */
+    float_flag_invalid_zdz     = 0x0400,  /* 0 / 0 */
+    float_flag_invalid_sqrt    = 0x0800,  /* sqrt(-x) */
+    float_flag_invalid_cvti    = 0x1000,  /* non-nan to integer */
+    float_flag_invalid_snan    = 0x2000,  /* any operand was snan */
 };
 
+/*
+ * Rounding precision for floatx80.
+ */
+typedef enum __attribute__((__packed__)) {
+    floatx80_precision_x,
+    floatx80_precision_d,
+    floatx80_precision_s,
+} FloatX80RoundPrec;
 
 /*
  * Floating Point Status. Individual architectures may maintain
@@ -166,17 +179,27 @@ enum {
  */
 
 typedef struct float_status {
-    signed char float_detect_tininess;
-    signed char float_rounding_mode;
-    uint8_t     float_exception_flags;
-    signed char floatx80_rounding_precision;
+    uint16_t float_exception_flags;
+    FloatRoundMode float_rounding_mode;
+    FloatX80RoundPrec floatx80_rounding_precision;
+    bool tininess_before_rounding;
     /* should denormalised results go to zero and set the inexact flag? */
-    flag flush_to_zero;
+    bool flush_to_zero;
     /* should denormalised inputs go to zero and set the input_denormal flag? */
-    flag flush_inputs_to_zero;
-    flag default_nan_mode;
-    /* not always used -- see snan_bit_is_one() in softfloat-specialize.h */
-    flag snan_bit_is_one;
+    bool flush_inputs_to_zero;
+    bool default_nan_mode;
+    /*
+     * The flags below are not used on all specializations and may
+     * constant fold away (see snan_bit_is_one()/no_signalling_nans() in
+     * softfloat-specialize.inc.c)
+     */
+    bool snan_bit_is_one;
+    bool use_first_nan;
+    bool no_signaling_nans;
+    /* should overflowed results subtract re_bias to its exponent? */
+    bool rebias_overflow;
+    /* should underflowed results add re_bias to its exponent? */
+    bool rebias_underflow;
 } float_status;
 
 #endif /* SOFTFLOAT_TYPES_H */

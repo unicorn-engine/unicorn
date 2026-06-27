@@ -166,6 +166,8 @@ typedef enum X86Seg {
 #define HF_IOBPT_SHIFT      24 /* an io breakpoint enabled */
 #define HF_MPX_EN_SHIFT     25 /* MPX Enabled (CR4+XCR0+BNDCFGx) */
 #define HF_MPX_IU_SHIFT     26 /* BND registers in-use */
+#define HF_UMIP_SHIFT       27 /* CR4.UMIP */
+#define HF_AVX_EN_SHIFT     28 /* AVX Enabled (CR4+XCR0) */
 
 #define HF_CPL_MASK          (3 << HF_CPL_SHIFT)
 #define HF_INHIBIT_IRQ_MASK  (1 << HF_INHIBIT_IRQ_SHIFT)
@@ -191,6 +193,8 @@ typedef enum X86Seg {
 #define HF_IOBPT_MASK        (1 << HF_IOBPT_SHIFT)
 #define HF_MPX_EN_MASK       (1 << HF_MPX_EN_SHIFT)
 #define HF_MPX_IU_MASK       (1 << HF_MPX_IU_SHIFT)
+#define HF_UMIP_MASK         (1 << HF_UMIP_SHIFT)
+#define HF_AVX_EN_MASK       (1 << HF_AVX_EN_SHIFT)
 
 /* hflags2 */
 
@@ -237,6 +241,7 @@ typedef enum X86Seg {
 #define CR4_OSFXSR_SHIFT 9
 #define CR4_OSFXSR_MASK (1U << CR4_OSFXSR_SHIFT)
 #define CR4_OSXMMEXCPT_MASK  (1U << 10)
+#define CR4_UMIP_MASK   (1U << 11)
 #define CR4_LA57_MASK   (1U << 12)
 #define CR4_VMXE_MASK   (1U << 13)
 #define CR4_SMXE_MASK   (1U << 14)
@@ -246,6 +251,17 @@ typedef enum X86Seg {
 #define CR4_SMEP_MASK   (1U << 20)
 #define CR4_SMAP_MASK   (1U << 21)
 #define CR4_PKE_MASK   (1U << 22)
+#define CR4_PKS_MASK   (1U << 24)
+
+#define CR4_RESERVED_MASK \
+    (~(target_ulong)(CR4_VME_MASK | CR4_PVI_MASK | CR4_TSD_MASK | \
+                     CR4_DE_MASK | CR4_PSE_MASK | CR4_PAE_MASK | \
+                     CR4_MCE_MASK | CR4_PGE_MASK | CR4_PCE_MASK | \
+                     CR4_OSFXSR_MASK | CR4_OSXMMEXCPT_MASK | \
+                     CR4_UMIP_MASK | CR4_LA57_MASK | \
+                     CR4_FSGSBASE_MASK | CR4_PCIDE_MASK | \
+                     CR4_OSXSAVE_MASK | CR4_SMEP_MASK | CR4_SMAP_MASK | \
+                     CR4_PKE_MASK | CR4_PKS_MASK))
 
 #define DR6_BD          (1 << 13)
 #define DR6_BS          (1 << 14)
@@ -354,6 +370,12 @@ typedef enum X86Seg {
 
 #define MSR_IA32_TSX_CTRL		0x122
 #define MSR_IA32_TSCDEADLINE            0x6e0
+#define MSR_IA32_PKRS                   0x6e1
+#define MSR_ARCH_LBR_CTL                0x000014ce
+#define MSR_ARCH_LBR_DEPTH              0x000014cf
+#define MSR_ARCH_LBR_FROM_0             0x00001500
+#define MSR_ARCH_LBR_TO_0               0x00001600
+#define MSR_ARCH_LBR_INFO_0             0x00001200
 
 #define FEATURE_CONTROL_LOCKED                    (1<<0)
 #define FEATURE_CONTROL_VMXON_ENABLED_OUTSIDE_SMX (1<<2)
@@ -455,6 +477,9 @@ typedef enum X86Seg {
 
 #define MSR_VM_HSAVE_PA                 0xc0010117
 
+#define MSR_IA32_XFD                    0x000001c4
+#define MSR_IA32_XFD_ERR                0x000001c5
+
 #define MSR_IA32_BNDCFGS                0x00000d90
 #define MSR_IA32_XSS                    0x00000da0
 #define MSR_IA32_UMWAIT_CONTROL         0xe1
@@ -487,6 +512,9 @@ typedef enum X86Seg {
 #define XSTATE_ZMM_Hi256_BIT            6
 #define XSTATE_Hi16_ZMM_BIT             7
 #define XSTATE_PKRU_BIT                 9
+#define XSTATE_ARCH_LBR_BIT             15
+#define XSTATE_XTILE_CFG_BIT            17
+#define XSTATE_XTILE_DATA_BIT           18
 
 #define XSTATE_FP_MASK                  (1ULL << XSTATE_FP_BIT)
 #define XSTATE_SSE_MASK                 (1ULL << XSTATE_SSE_BIT)
@@ -497,6 +525,26 @@ typedef enum X86Seg {
 #define XSTATE_ZMM_Hi256_MASK           (1ULL << XSTATE_ZMM_Hi256_BIT)
 #define XSTATE_Hi16_ZMM_MASK            (1ULL << XSTATE_Hi16_ZMM_BIT)
 #define XSTATE_PKRU_MASK                (1ULL << XSTATE_PKRU_BIT)
+#define XSTATE_ARCH_LBR_MASK            (1ULL << XSTATE_ARCH_LBR_BIT)
+#define XSTATE_XTILE_CFG_MASK           (1ULL << XSTATE_XTILE_CFG_BIT)
+#define XSTATE_XTILE_DATA_MASK          (1ULL << XSTATE_XTILE_DATA_BIT)
+
+#define XSTATE_DYNAMIC_MASK             (XSTATE_XTILE_DATA_MASK)
+
+#define ESA_FEATURE_ALIGN64_BIT         1
+#define ESA_FEATURE_XFD_BIT             2
+
+#define ESA_FEATURE_ALIGN64_MASK        (1U << ESA_FEATURE_ALIGN64_BIT)
+#define ESA_FEATURE_XFD_MASK            (1U << ESA_FEATURE_XFD_BIT)
+
+#define CPUID_XSTATE_XCR0_MASK  (XSTATE_FP_MASK | XSTATE_SSE_MASK | \
+                                 XSTATE_YMM_MASK | XSTATE_BNDREGS_MASK | \
+                                 XSTATE_BNDCSR_MASK | XSTATE_OPMASK_MASK | \
+                                 XSTATE_ZMM_Hi256_MASK | \
+                                 XSTATE_Hi16_ZMM_MASK | XSTATE_PKRU_MASK | \
+                                 XSTATE_XTILE_CFG_MASK | XSTATE_XTILE_DATA_MASK)
+
+#define CPUID_XSTATE_XSS_MASK   (XSTATE_ARCH_LBR_MASK)
 
 /* CPUID feature words */
 typedef enum FeatureWord {
@@ -521,8 +569,10 @@ typedef enum FeatureWord {
     FEAT_SVM,           /* CPUID[8000_000A].EDX */
     FEAT_XSAVE,         /* CPUID[EAX=0xd,ECX=1].EAX */
     FEAT_6_EAX,         /* CPUID[6].EAX */
-    FEAT_XSAVE_COMP_LO, /* CPUID[EAX=0xd,ECX=0].EAX */
-    FEAT_XSAVE_COMP_HI, /* CPUID[EAX=0xd,ECX=0].EDX */
+    FEAT_XSAVE_XCR0_LO, /* CPUID[EAX=0xd,ECX=0].EAX */
+    FEAT_XSAVE_XCR0_HI, /* CPUID[EAX=0xd,ECX=0].EDX */
+    FEAT_XSAVE_XSS_LO,  /* CPUID[EAX=0xd,ECX=1].ECX */
+    FEAT_XSAVE_XSS_HI,  /* CPUID[EAX=0xd,ECX=1].EDX */
     FEAT_ARCH_CAPABILITIES,
     FEAT_CORE_CAPABILITY,
     FEAT_VMX_PROCBASED_CTLS,
@@ -675,6 +725,8 @@ typedef uint64_t FeatureWordArray[FEATURE_WORDS];
 #define CPUID_SVM_DECODEASSIST (1U << 7)
 #define CPUID_SVM_PAUSEFILTER  (1U << 10)
 #define CPUID_SVM_PFTHRESHOLD  (1U << 12)
+#define CPUID_SVM_VGIF         (1U << 16)
+#define CPUID_SVM_SVME_ADDR_CHK (1U << 28)
 
 /* Support RDFSBASE/RDGSBASE/WRFSBASE/WRGSBASE */
 #define CPUID_7_0_EBX_FSGSBASE          (1U << 0)
@@ -763,11 +815,27 @@ typedef uint64_t FeatureWordArray[FEATURE_WORDS];
 #define CPUID_7_0_ECX_MOVDIRI           (1U << 27)
 /* Move 64 Bytes as Direct Store Instruction */
 #define CPUID_7_0_ECX_MOVDIR64B         (1U << 28)
+/* Protection Keys for Supervisor-mode Pages */
+#define CPUID_7_0_ECX_PKS               (1U << 31)
 
 /* AVX512 Neural Network Instructions */
 #define CPUID_7_0_EDX_AVX512_4VNNIW     (1U << 2)
 /* AVX512 Multiply Accumulation Single Precision */
 #define CPUID_7_0_EDX_AVX512_4FMAPS     (1U << 3)
+/* Fast Short REP MOV */
+#define CPUID_7_0_EDX_FSRM              (1U << 4)
+/* AVX512 VP2INTERSECT instructions */
+#define CPUID_7_0_EDX_AVX512_VP2INTERSECT (1U << 8)
+/* SERIALIZE instruction */
+#define CPUID_7_0_EDX_SERIALIZE         (1U << 14)
+/* TSX suspend load address tracking instruction */
+#define CPUID_7_0_EDX_TSX_LDTRK         (1U << 16)
+/* Architectural Last Branch Records */
+#define CPUID_7_0_EDX_ARCH_LBR          (1U << 19)
+/* AVX512 FP16 instruction */
+#define CPUID_7_0_EDX_AVX512_FP16       (1U << 23)
+/* AMX tile state */
+#define CPUID_7_0_EDX_AMX_TILE          (1U << 24)
 /* Speculation Control */
 #define CPUID_7_0_EDX_SPEC_CTRL         (1U << 26)
 /* Single Thread Indirect Branch Predictors */
@@ -797,6 +865,7 @@ typedef uint64_t FeatureWordArray[FEATURE_WORDS];
 #define CPUID_XSAVE_XSAVEC     (1U << 1)
 #define CPUID_XSAVE_XGETBV1    (1U << 2)
 #define CPUID_XSAVE_XSAVES     (1U << 3)
+#define CPUID_D_1_EAX_XFD      (1U << 4)
 
 #define CPUID_6_EAX_ARAT       (1U << 2)
 
@@ -1081,6 +1150,11 @@ typedef enum {
     CC_OP_BMILGL,
     CC_OP_BMILGQ,
 
+    CC_OP_BLSIB, /* Z,S via CC_DST, C = SRC!=0; O=0; P,A undefined */
+    CC_OP_BLSIW,
+    CC_OP_BLSIL,
+    CC_OP_BLSIQ,
+
     CC_OP_ADCX, /* CC_DST = C, CC_SRC = rest.  */
     CC_OP_ADOX, /* CC_DST = O, CC_SRC = rest.  */
     CC_OP_ADCOX, /* CC_DST = C, CC_SRC2 = O, CC_SRC = rest.  */
@@ -1104,26 +1178,18 @@ typedef struct SegmentCache {
         uint16_t _w_##n[(bits)/16]; \
         uint32_t _l_##n[(bits)/32]; \
         uint64_t _q_##n[(bits)/64]; \
+        float16  _h_##n[(bits)/16]; \
         float32  _s_##n[(bits)/32]; \
         float64  _d_##n[(bits)/64]; \
     }
 
-typedef union {
-    uint8_t _b[16];
-    uint16_t _w[8];
-    uint32_t _l[4];
-    uint64_t _q[2];
-    float32 _s[4];
-    float64 _d[2];
+typedef union XMMReg {
+    uint64_t _q_XMMReg[128 / 64];
 } XMMReg;
 
-typedef union {
-    uint8_t _b[32];
-    uint16_t _w[16];
-    uint32_t _l[8];
-    uint64_t _q[4];
-    float32 _s[8];
-    float64 _d[4];
+typedef union YMMReg {
+    uint64_t _q_YMMReg[256 / 64];
+    XMMReg _x_YMMReg[256 / 128];
 } YMMReg;
 
 #if 0
@@ -1137,7 +1203,17 @@ typedef union {
 } ZMMReg;
 #endif
 
-typedef MMREG_UNION(ZMMReg, 512) ZMMReg;
+typedef union ZMMReg {
+    uint8_t _b_ZMMReg[512 / 8];
+    uint16_t _w_ZMMReg[512 / 16];
+    uint32_t _l_ZMMReg[512 / 32];
+    uint64_t _q_ZMMReg[512 / 64];
+    float16 _h_ZMMReg[512 / 16];
+    float32 _s_ZMMReg[512 / 32];
+    float64 _d_ZMMReg[512 / 64];
+    XMMReg _x_ZMMReg[512 / 128];
+    YMMReg _y_ZMMReg[512 / 256];
+} ZMMReg;
 typedef MMREG_UNION(MMXReg, 64)  MMXReg;
 
 typedef struct BNDReg {
@@ -1158,9 +1234,17 @@ typedef struct BNDCSReg {
 #define ZMM_B(n) _b_ZMMReg[63 - (n)]
 #define ZMM_W(n) _w_ZMMReg[31 - (n)]
 #define ZMM_L(n) _l_ZMMReg[15 - (n)]
+#define ZMM_H(n) _h_ZMMReg[31 - (n)]
 #define ZMM_S(n) _s_ZMMReg[15 - (n)]
 #define ZMM_Q(n) _q_ZMMReg[7 - (n)]
 #define ZMM_D(n) _d_ZMMReg[7 - (n)]
+#define ZMM_X(n) _x_ZMMReg[3 - (n)]
+#define ZMM_Y(n) _y_ZMMReg[1 - (n)]
+
+#define XMM_Q(n) _q_XMMReg[1 - (n)]
+
+#define YMM_Q(n) _q_YMMReg[3 - (n)]
+#define YMM_X(n) _x_YMMReg[1 - (n)]
 
 #define MMX_B(n) _b_MMXReg[7 - (n)]
 #define MMX_W(n) _w_MMXReg[3 - (n)]
@@ -1170,9 +1254,17 @@ typedef struct BNDCSReg {
 #define ZMM_B(n) _b_ZMMReg[n]
 #define ZMM_W(n) _w_ZMMReg[n]
 #define ZMM_L(n) _l_ZMMReg[n]
+#define ZMM_H(n) _h_ZMMReg[n]
 #define ZMM_S(n) _s_ZMMReg[n]
 #define ZMM_Q(n) _q_ZMMReg[n]
 #define ZMM_D(n) _d_ZMMReg[n]
+#define ZMM_X(n) _x_ZMMReg[n]
+#define ZMM_Y(n) _y_ZMMReg[n]
+
+#define XMM_Q(n) _q_XMMReg[n]
+
+#define YMM_Q(n) _q_YMMReg[n]
+#define YMM_X(n) _x_YMMReg[n]
 
 #define MMX_B(n) _b_MMXReg[n]
 #define MMX_W(n) _w_MMXReg[n]
@@ -1273,6 +1365,34 @@ typedef struct XSavePKRU {
     uint32_t padding;
 } XSavePKRU;
 
+/* Ext. save area 17: AMX XTILECFG state */
+typedef struct XSaveXTILECFG {
+    uint8_t xtilecfg[64];
+} XSaveXTILECFG;
+
+/* Ext. save area 18: AMX XTILEDATA state */
+typedef struct XSaveXTILEDATA {
+    uint8_t xtiledata[8][1024];
+} XSaveXTILEDATA;
+
+typedef struct LBREntry {
+    uint64_t from;
+    uint64_t to;
+    uint64_t info;
+} LBREntry;
+
+#define ARCH_LBR_NR_ENTRIES 32
+
+/* Ext. save area 15: supervisor mode Arch LBR state */
+typedef struct XSavesArchLBR {
+    uint64_t lbr_ctl;
+    uint64_t lbr_depth;
+    uint64_t ler_from;
+    uint64_t ler_to;
+    uint64_t ler_info;
+    LBREntry lbr_records[ARCH_LBR_NR_ENTRIES];
+} XSavesArchLBR;
+
 typedef struct X86XSaveArea {
     X86LegacyXSaveArea legacy;
     X86XSaveHeader header;
@@ -1307,6 +1427,19 @@ QEMU_BUILD_BUG_ON(offsetof(X86XSaveArea, hi16_zmm_state) != 0x680);
 QEMU_BUILD_BUG_ON(sizeof(XSaveHi16_ZMM) != 0x400);
 QEMU_BUILD_BUG_ON(offsetof(X86XSaveArea, pkru_state) != 0xA80);
 QEMU_BUILD_BUG_ON(sizeof(XSavePKRU) != 0x8);
+QEMU_BUILD_BUG_ON(sizeof(XSaveXTILECFG) != 0x40);
+QEMU_BUILD_BUG_ON(sizeof(XSaveXTILEDATA) != 0x2000);
+QEMU_BUILD_BUG_ON(sizeof(XSavesArchLBR) != 0x328);
+
+typedef struct ExtSaveArea {
+    uint32_t feature, bits;
+    uint32_t offset, size;
+    uint32_t ecx;
+} ExtSaveArea;
+
+#define XSAVE_STATE_AREA_COUNT (XSTATE_XTILE_DATA_BIT + 1)
+
+extern ExtSaveArea x86_ext_save_areas[XSAVE_STATE_AREA_COUNT];
 
 typedef enum TPRAccess {
     TPR_ACCESS_READ,
@@ -1428,8 +1561,8 @@ typedef struct CPUX86State {
     float_status mmx_status; /* for 3DNow! float ops */
     float_status sse_status;
     uint32_t mxcsr;
-    ZMMReg xmm_regs[CPU_NB_REGS == 8 ? 8 : 32];
-    ZMMReg xmm_t0;
+    QEMU_ALIGN(16, ZMMReg xmm_regs[CPU_NB_REGS == 8 ? 8 : 32]);
+    QEMU_ALIGN(16, ZMMReg xmm_t0);
     MMXReg mmx_t0;
 
     /*
@@ -1441,6 +1574,8 @@ typedef struct CPUX86State {
     uint64_t opmask_regs[NB_OPMASK_REGS];
     YMMReg zmmh_regs[CPU_NB_REGS];          /* currently not in use */
     ZMMReg hi16_zmm_regs[CPU_NB_REGS];      /* currently not in use */
+    uint8_t xtilecfg[64];
+    uint8_t xtiledata[8192];
 
     /* sysenter registers */
     uint32_t sysenter_cs;
@@ -1481,6 +1616,7 @@ typedef struct CPUX86State {
     uint64_t msr_smi_count;
 
     uint32_t pkru;
+    uint32_t pkrs;
     uint32_t tsx_ctrl;
 
     uint64_t spec_ctrl;
@@ -1495,6 +1631,13 @@ typedef struct CPUX86State {
     uint64_t async_pf_en_msr;
     uint64_t pv_eoi_en_msr;
     uint64_t poll_control_msr;
+
+    uint64_t msr_xfd;
+    uint64_t msr_xfd_err;
+
+    uint64_t msr_lbr_ctl;
+    uint64_t msr_lbr_depth;
+    LBREntry lbr_records[ARCH_LBR_NR_ENTRIES];
 
     /* exception/interrupt handling */
     int error_code;
@@ -1740,6 +1883,7 @@ void x86_register_ferr_irq(qemu_irq irq);
 void cpu_set_ignne(CPUX86State *env);
 
 /* mpx_helper.c */
+void cpu_sync_avx_hflag(CPUX86State *env);
 void cpu_sync_bndcs_hflags(CPUX86State *env);
 
 /* this function must always be used to load data in the segment
@@ -2068,6 +2212,7 @@ static inline bool cpu_vmx_maybe_enabled(CPUX86State *env)
 /* fpu_helper.c */
 void update_fp_status(CPUX86State *env);
 void update_mxcsr_status(CPUX86State *env);
+void update_mxcsr_from_sse_status(CPUX86State *env);
 
 static inline void cpu_set_mxcsr(CPUX86State *env, uint32_t mxcsr)
 {
@@ -2128,9 +2273,41 @@ const char *get_register_name_32(unsigned int reg);
 /* cpu.c */
 bool cpu_is_bsp(X86CPU *cpu);
 
-void x86_cpu_xrstor_all_areas(X86CPU *cpu, const X86XSaveArea *buf);
-void x86_cpu_xsave_all_areas(X86CPU *cpu, X86XSaveArea *buf);
+void x86_cpu_xrstor_all_areas(X86CPU *cpu, const void *buf, uint32_t buflen);
+void x86_cpu_xsave_all_areas(X86CPU *cpu, void *buf, uint32_t buflen);
+uint32_t xsave_area_size(uint64_t mask, bool compacted);
 void x86_update_hflags(CPUX86State* env);
+
+static inline uint64_t cr4_reserved_bits(CPUX86State *env)
+{
+    uint64_t reserved_bits = CR4_RESERVED_MASK;
+
+    if (!env->features[FEAT_XSAVE]) {
+        reserved_bits |= CR4_OSXSAVE_MASK;
+    }
+    if (!(env->features[FEAT_7_0_EBX] & CPUID_7_0_EBX_SMEP)) {
+        reserved_bits |= CR4_SMEP_MASK;
+    }
+    if (!(env->features[FEAT_7_0_EBX] & CPUID_7_0_EBX_SMAP)) {
+        reserved_bits |= CR4_SMAP_MASK;
+    }
+    if (!(env->features[FEAT_7_0_EBX] & CPUID_7_0_EBX_FSGSBASE)) {
+        reserved_bits |= CR4_FSGSBASE_MASK;
+    }
+    if (!(env->features[FEAT_7_0_ECX] & CPUID_7_0_ECX_PKU)) {
+        reserved_bits |= CR4_PKE_MASK;
+    }
+    if (!(env->features[FEAT_7_0_ECX] & CPUID_7_0_ECX_LA57)) {
+        reserved_bits |= CR4_LA57_MASK;
+    }
+    if (!(env->features[FEAT_7_0_ECX] & CPUID_7_0_ECX_UMIP)) {
+        reserved_bits |= CR4_UMIP_MASK;
+    }
+    if (!(env->features[FEAT_7_0_ECX] & CPUID_7_0_ECX_PKS)) {
+        reserved_bits |= CR4_PKS_MASK;
+    }
+    return reserved_bits;
+}
 
 int uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel);
 X86CPU *cpu_x86_init(struct uc_struct *uc);

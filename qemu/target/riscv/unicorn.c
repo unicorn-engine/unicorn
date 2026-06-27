@@ -9,6 +9,7 @@
 #include "cpu_bits.h"
 #include <unicorn/riscv.h>
 #include "unicorn.h"
+#include <string.h>
 
 static int csrno_map[] = {
     CSR_USTATUS,       CSR_UIE,           CSR_UTVEC,         CSR_USCRATCH,
@@ -136,6 +137,112 @@ static uc_err reg_write_priv(CPURISCVState *env, target_ulong value)
     return UC_ERR_OK;
 }
 
+static uc_err riscv_read_target_ulong(target_ulong val, void *value,
+                                      size_t *size)
+{
+#ifdef TARGET_RISCV64
+    if (unlikely(*size < sizeof(uint64_t))) {
+        return UC_ERR_OVERFLOW;
+    }
+    *size = sizeof(uint64_t);
+    *(uint64_t *)value = val;
+#else
+    if (unlikely(*size < sizeof(uint32_t))) {
+        return UC_ERR_OVERFLOW;
+    }
+    *size = sizeof(uint32_t);
+    *(uint32_t *)value = val;
+#endif
+
+    return UC_ERR_OK;
+}
+
+static uc_err riscv_get_target_ulong(const void *value, size_t *size,
+                                     target_ulong *val)
+{
+#ifdef TARGET_RISCV64
+    if (unlikely(*size < sizeof(uint64_t))) {
+        return UC_ERR_OVERFLOW;
+    }
+    *size = sizeof(uint64_t);
+    *val = *(const uint64_t *)value;
+#else
+    if (unlikely(*size < sizeof(uint32_t))) {
+        return UC_ERR_OVERFLOW;
+    }
+    *size = sizeof(uint32_t);
+    *val = *(const uint32_t *)value;
+#endif
+
+    return UC_ERR_OK;
+}
+
+static target_ulong riscv_get_vtype(CPURISCVState *env)
+{
+    target_ulong vill = env->vill ?
+        ((target_ulong)1 << (TARGET_LONG_BITS - 1)) : 0;
+
+    return vill | env->vtype;
+}
+
+static void riscv_mark_vector_dirty(CPURISCVState *env)
+{
+    env->mstatus |= MSTATUS_VS | MSTATUS_SD;
+}
+
+static size_t riscv_vlenb(CPURISCVState *env)
+{
+    return env_archcpu(env)->cfg.vlen >> 3;
+}
+
+static uint8_t *riscv_vreg_ptr(CPURISCVState *env, unsigned int regid)
+{
+    return (uint8_t *)env->vreg +
+           (regid - UC_RISCV_REG_V0) * riscv_vlenb(env);
+}
+
+static void riscv_write_vl(CPURISCVState *env, target_ulong value)
+{
+    target_ulong vlmax = 0;
+
+    if (!env->vill) {
+        vlmax = vext_get_vlmax(env_archcpu(env), env->vtype);
+    }
+    env->vl = value <= vlmax ? value : vlmax;
+    riscv_mark_vector_dirty(env);
+}
+
+static void riscv_write_vtype(CPURISCVState *env, target_ulong value)
+{
+    RISCVCPU *cpu = env_archcpu(env);
+    uint64_t lmul = FIELD_EX64(value, VTYPE, VLMUL);
+    uint16_t sew = 8 << FIELD_EX64(value, VTYPE, VSEW);
+    uint8_t ediv = FIELD_EX64(value, VTYPE, VEDIV);
+    bool vill = (value >> (TARGET_LONG_BITS - 1)) & 1;
+    target_ulong reserved;
+
+    reserved = value & MAKE_64BIT_MASK(R_VTYPE_RESERVED_SHIFT,
+                                       TARGET_LONG_BITS - 1 -
+                                       R_VTYPE_RESERVED_SHIFT);
+    if (lmul & 4) {
+        if (lmul == 4 || cpu->cfg.elen >> (8 - lmul) < sew) {
+            vill = true;
+        }
+    }
+
+    if (sew > cpu->cfg.elen || vill || ediv != 0 || reserved != 0) {
+        env->vill = true;
+        env->vtype = 0;
+        env->vl = 0;
+        env->vstart = 0;
+    } else {
+        env->vill = false;
+        env->vtype = value;
+        riscv_write_vl(env, env->vl);
+    }
+    riscv_mark_vector_dirty(env);
+}
+
 DEFAULT_VISIBILITY
 uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
                 size_t *size)
@@ -167,6 +274,11 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         CHECK_REG_TYPE(uint32_t);
         *(uint32_t *)value = (uint32_t)val;
 #endif
+    } else if (regid >= UC_RISCV_REG_V0 &&
+               regid <= UC_RISCV_REG_V31) {
+        CHECK_REG_TYPE(uc_riscv_vreg);
+        memset(value, 0, sizeof(uc_riscv_vreg));
+        memcpy(value, riscv_vreg_ptr(env, regid), riscv_vlenb(env));
     } else {
         switch (regid) {
         default:
@@ -193,6 +305,30 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = priv_value;
 #endif
+            break;
+        case UC_RISCV_REG_VSTART:
+            ret = riscv_read_target_ulong(env->vstart, value, size);
+            break;
+        case UC_RISCV_REG_VXSAT:
+            ret = riscv_read_target_ulong(env->vxsat, value, size);
+            break;
+        case UC_RISCV_REG_VXRM:
+            ret = riscv_read_target_ulong(env->vxrm, value, size);
+            break;
+        case UC_RISCV_REG_VCSR:
+            ret = riscv_read_target_ulong(
+                (env->vxrm << VCSR_VXRM_SHIFT) |
+                (env->vxsat << VCSR_VXSAT_SHIFT), value, size);
+            break;
+        case UC_RISCV_REG_VL:
+            ret = riscv_read_target_ulong(env->vl, value, size);
+            break;
+        case UC_RISCV_REG_VTYPE:
+            ret = riscv_read_target_ulong(riscv_get_vtype(env), value, size);
+            break;
+        case UC_RISCV_REG_VLENB:
+            ret = riscv_read_target_ulong(env_archcpu(env)->cfg.vlen >> 3,
+                                          value, size);
             break;
         }
     }
@@ -231,6 +367,11 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         CHECK_REG_TYPE(uint32_t);
         riscv_csrrw(env, csrno, &val, *(uint32_t *)value, -1);
 #endif
+    } else if (regid >= UC_RISCV_REG_V0 &&
+               regid <= UC_RISCV_REG_V31) {
+        CHECK_REG_TYPE(uc_riscv_vreg);
+        memcpy(riscv_vreg_ptr(env, regid), value, riscv_vlenb(env));
+        riscv_mark_vector_dirty(env);
     } else {
         switch (regid) {
         default:
@@ -256,6 +397,62 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             val = *(uint32_t *)value;
 #endif
             ret = reg_write_priv(env, (target_ulong)val);
+            break;
+        case UC_RISCV_REG_VSTART:;
+            target_ulong vstart;
+            ret = riscv_get_target_ulong(value, size, &vstart);
+            if (ret == UC_ERR_OK) {
+                RISCVCPU *cpu = env_archcpu(env);
+                env->vstart = vstart & (cpu->cfg.vlen - 1);
+                riscv_mark_vector_dirty(env);
+            }
+            break;
+        case UC_RISCV_REG_VXSAT:;
+            target_ulong vxsat;
+            ret = riscv_get_target_ulong(value, size, &vxsat);
+            if (ret == UC_ERR_OK) {
+                env->vxsat = vxsat & (VCSR_VXSAT >> VCSR_VXSAT_SHIFT);
+                riscv_mark_vector_dirty(env);
+            }
+            break;
+        case UC_RISCV_REG_VXRM:;
+            target_ulong vxrm;
+            ret = riscv_get_target_ulong(value, size, &vxrm);
+            if (ret == UC_ERR_OK) {
+                env->vxrm = vxrm & (VCSR_VXRM >> VCSR_VXRM_SHIFT);
+                riscv_mark_vector_dirty(env);
+            }
+            break;
+        case UC_RISCV_REG_VCSR:;
+            target_ulong vcsr;
+            ret = riscv_get_target_ulong(value, size, &vcsr);
+            if (ret == UC_ERR_OK) {
+                env->vxrm = (vcsr & VCSR_VXRM) >> VCSR_VXRM_SHIFT;
+                env->vxsat = (vcsr & VCSR_VXSAT) >> VCSR_VXSAT_SHIFT;
+                riscv_mark_vector_dirty(env);
+            }
+            break;
+        case UC_RISCV_REG_VL:;
+            target_ulong vl;
+            ret = riscv_get_target_ulong(value, size, &vl);
+            if (ret == UC_ERR_OK) {
+                riscv_write_vl(env, vl);
+            }
+            break;
+        case UC_RISCV_REG_VTYPE:;
+            target_ulong vtype;
+            ret = riscv_get_target_ulong(value, size, &vtype);
+            if (ret == UC_ERR_OK) {
+                riscv_write_vtype(env, vtype);
+            }
+            break;
+        case UC_RISCV_REG_VLENB:;
+            target_ulong ignored;
+            ret = riscv_get_target_ulong(value, size, &ignored);
+            if (ret == UC_ERR_OK) {
+                return UC_ERR_ARG;
+            }
+            return ret;
         }
     }
 

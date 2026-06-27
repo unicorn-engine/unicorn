@@ -32,58 +32,29 @@
 
 #if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 
-// Returns the S3_6_c15_c1_5 register's value
-// Taken from
-// https://stackoverflow.com/questions/70019553/lldb-how-to-read-the-permissions-of-a-memory-region-for-a-thread
-// https://blog.svenpeter.dev/posts/m1_sprr_gxf/
-// On Github Action (Virtualized environment), this shall always returns 0
-static inline uint64_t read_sprr_perm(void)
+QEMU_UNUSED_FUNC static inline uint8_t thread_mask()
 {
-    uint64_t v;
-    __asm__ __volatile__("isb sy\n"
-                         "mrs %0, S3_6_c15_c1_5\n"
-                         : "=r"(v)::"memory");
-    return v;
-}
-
-QEMU_UNUSED_FUNC static inline uint8_t thread_mask() 
-{
-    if (!pthread_jit_write_protect_supported_np()) {
-        return 0;
-    }
-    uint64_t v = read_sprr_perm();
-
-    if (v == 0) {
-        return 0;
-    } else {
-        return (v >> 20) & 3;
-    }
+    return 0;
 }
 
 QEMU_UNUSED_FUNC static inline bool thread_writeable()
 {
-    return thread_mask() == 3;
+    return false;
 }
 
 QEMU_UNUSED_FUNC static inline bool thread_executable()
 {
-    return thread_mask() == 1;
+    return true;
 }
 
-static inline void assert_executable(bool executable) {
-    if (!pthread_jit_write_protect_supported_np()) {
-        return;
-    }
-    uint64_t v = read_sprr_perm();
-
-    if (!v) {
-        assert(executable == thread_executable());
-    }
+static inline void assert_executable(bool executable)
+{
+    (void)executable;
 }
 
 #else
 
-QEMU_UNUSED_FUNC static inline uint8_t thread_mask() 
+QEMU_UNUSED_FUNC static inline uint8_t thread_mask()
 {
     return 0;
 }
@@ -98,7 +69,8 @@ QEMU_UNUSED_FUNC static inline bool thread_executable()
     return false;
 }
 
-static inline void assert_executable(bool executable) {
+static inline void assert_executable(bool executable)
+{
 }
 
 #endif
@@ -109,7 +81,9 @@ static inline void assert_executable(bool executable) {
 /* write protect enable = write disable */
 static inline void jit_write_protect(int enabled)
 {
-    return pthread_jit_write_protect_np(enabled);
+    if (pthread_jit_write_protect_supported_np()) {
+        pthread_jit_write_protect_np(enabled);
+    }
 }
 
 #define JIT_CALLBACK_GUARD(x)                       \

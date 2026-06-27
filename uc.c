@@ -35,6 +35,8 @@ static void clear_deleted_hooks(uc_engine *uc);
 static uc_err uc_snapshot(uc_engine *uc);
 static uc_err uc_restore_latest_snapshot(uc_engine *uc);
 
+#define UC_MTE_TAG_STORAGE_GRANULE 32
+
 #if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) &&                 \
     (defined(__arm__) || defined(__aarch64__))
 static void save_jit_state(uc_engine *uc)
@@ -389,6 +391,12 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         case UC_ARCH_MIPS:
             if ((mode & ~UC_MODE_MIPS_MASK) ||
                 !(mode & (UC_MODE_MIPS32 | UC_MODE_MIPS64))) {
+                free(uc);
+                return UC_ERR_MODE;
+            }
+            if (((mode & UC_MODE_MICRO) && !(mode & UC_MODE_MIPS32)) ||
+                ((mode & UC_MODE_MIPS3) && !(mode & UC_MODE_MIPS64)) ||
+                ((mode & UC_MODE_MIPS32R6) && !(mode & UC_MODE_MIPS32))) {
                 free(uc);
                 return UC_ERR_MODE;
             }
@@ -1475,6 +1483,68 @@ static uint8_t *copy_region(struct uc_struct *uc, MemoryRegion *mr)
     return block;
 }
 
+static bool copy_mte_tags(RAMBlock *block, uint8_t **tags,
+                          ram_addr_t *tag_size)
+{
+    *tags = NULL;
+    *tag_size = 0;
+    if (block->mte_tags == NULL || block->mte_tags_size == 0) {
+        return true;
+    }
+
+    *tags = g_malloc0(block->mte_tags_size);
+    if (*tags == NULL) {
+        return false;
+    }
+
+    memcpy(*tags, block->mte_tags, block->mte_tags_size);
+    *tag_size = block->mte_tags_size;
+    return true;
+}
+
+static bool restore_mte_tags(struct uc_struct *uc, uint64_t address,
+                             uint64_t size, uint64_t source_offset,
+                             const uint8_t *tags, ram_addr_t tag_size)
+{
+    MemoryRegion *mr;
+    RAMBlock *block;
+    ram_addr_t source_tag_offset;
+    ram_addr_t copy_size;
+
+    if (tags == NULL || size == 0) {
+        return true;
+    }
+
+    source_tag_offset = source_offset / UC_MTE_TAG_STORAGE_GRANULE;
+    if (source_tag_offset >= tag_size) {
+        return true;
+    }
+
+    mr = uc->memory_mapping(uc, address);
+    if (mr == NULL || !mr->ram || mr->ram_block == NULL) {
+        return false;
+    }
+
+    block = mr->ram_block;
+    if (block->mte_tags == NULL) {
+        block->mte_tags_size =
+            (block->max_length + UC_MTE_TAG_STORAGE_GRANULE - 1) /
+            UC_MTE_TAG_STORAGE_GRANULE;
+        block->mte_tags = g_malloc0(block->mte_tags_size);
+        if (block->mte_tags == NULL) {
+            block->mte_tags_size = 0;
+            return false;
+        }
+    }
+
+    copy_size = (size + UC_MTE_TAG_STORAGE_GRANULE - 1) /
+                UC_MTE_TAG_STORAGE_GRANULE;
+    copy_size = MIN(copy_size, tag_size - source_tag_offset);
+    copy_size = MIN(copy_size, block->mte_tags_size);
+    memcpy(block->mte_tags, tags + source_tag_offset, copy_size);
+    return true;
+}
+
 /*
     This function is similar to split_region, but for MMIO memory.
 
@@ -1578,6 +1648,8 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr,
     uint64_t l_size, m_size, r_size;
     RAMBlock *block = NULL;
     bool prealloc = false;
+    uint8_t *tag_backup = NULL;
+    ram_addr_t tag_backup_size = 0;
 
     chunk_end = address + size;
 
@@ -1616,6 +1688,9 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr,
         if (backup == NULL) {
             return false;
         }
+    }
+    if (!copy_mte_tags(block, &tag_backup, &tag_backup_size)) {
+        goto error;
     }
 
     // save the essential information required for the split before mr gets
@@ -1667,6 +1742,10 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr,
                 goto error;
             }
         }
+        if (!restore_mte_tags(uc, begin, l_size, 0, tag_backup,
+                              tag_backup_size)) {
+            goto error;
+        }
     }
 
     if (m_size > 0 && !do_delete) {
@@ -1683,6 +1762,10 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr,
                 UC_ERR_OK) {
                 goto error;
             }
+        }
+        if (!restore_mte_tags(uc, address, m_size, l_size, tag_backup,
+                              tag_backup_size)) {
+            goto error;
         }
     }
 
@@ -1701,14 +1784,20 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr,
                 goto error;
             }
         }
+        if (!restore_mte_tags(uc, chunk_end, r_size, l_size + m_size,
+                              tag_backup, tag_backup_size)) {
+            goto error;
+        }
     }
 
+    g_free(tag_backup);
     if (!prealloc) {
         free(backup);
     }
     return true;
 
 error:
+    g_free(tag_backup);
     if (!prealloc) {
         free(backup);
     }
@@ -2878,6 +2967,11 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 }
             } else if (uc->arch == UC_ARCH_M68K) {
                 if (model >= UC_CPU_M68K_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+            } else if (uc->arch == UC_ARCH_TRICORE) {
+                if (model >= UC_CPU_TRICORE_ENDING) {
                     err = UC_ERR_ARG;
                     break;
                 }

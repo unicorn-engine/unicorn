@@ -37,7 +37,7 @@ static bool m68k_cpu_has_work(CPUState *cs)
 
 static void m68k_set_feature(CPUM68KState *env, int feature)
 {
-    env->features |= (1u << feature);
+    env->features |= (1ull << feature);
 }
 
 static void m68k_cpu_reset(CPUState *dev)
@@ -71,6 +71,7 @@ static void m5206_cpu_initfn(CPUState *obj)
     CPUM68KState *env = &cpu->env;
 
     m68k_set_feature(env, M68K_FEATURE_CF_ISA_A);
+    m68k_set_feature(env, M68K_FEATURE_MOVEFROMSR_PRIV);
 }
 
 static void m68000_cpu_initfn(CPUState *obj)
@@ -84,12 +85,27 @@ static void m68000_cpu_initfn(CPUState *obj)
     m68k_set_feature(env, M68K_FEATURE_MOVEP);
 }
 
+static void m68010_cpu_initfn(CPUState *obj)
+{
+    M68kCPU *cpu = M68K_CPU(obj);
+    CPUM68KState *env = &cpu->env;
+
+    m68000_cpu_initfn(obj);
+    m68k_set_feature(env, M68K_FEATURE_M68010);
+    m68k_set_feature(env, M68K_FEATURE_BKPT);
+    m68k_set_feature(env, M68K_FEATURE_RTD);
+    m68k_set_feature(env, M68K_FEATURE_MOVEC);
+    m68k_set_feature(env, M68K_FEATURE_MOVEFROMSR_PRIV);
+}
+
 /* common features for 68020, 68030 and 68040 */
 static void m680x0_cpu_common(CPUM68KState *env)
 {
     m68k_set_feature(env, M68K_FEATURE_M68000);
     m68k_set_feature(env, M68K_FEATURE_USP);
+    m68k_set_feature(env, M68K_FEATURE_MSP);
     m68k_set_feature(env, M68K_FEATURE_WORD_INDEX);
+    m68k_set_feature(env, M68K_FEATURE_UNALIGNED_DATA);
     m68k_set_feature(env, M68K_FEATURE_QUAD_MULDIV);
     m68k_set_feature(env, M68K_FEATURE_BRAL);
     m68k_set_feature(env, M68K_FEATURE_BCCL);
@@ -103,6 +119,9 @@ static void m680x0_cpu_common(CPUM68KState *env)
     m68k_set_feature(env, M68K_FEATURE_RTD);
     m68k_set_feature(env, M68K_FEATURE_CHK2);
     m68k_set_feature(env, M68K_FEATURE_MOVEP);
+    m68k_set_feature(env, M68K_FEATURE_MOVEC);
+    m68k_set_feature(env, M68K_FEATURE_TRAPCC);
+    m68k_set_feature(env, M68K_FEATURE_MOVEFROMSR_PRIV);
 }
 
 static void m68020_cpu_initfn(CPUState *obj)
@@ -139,7 +158,9 @@ static void m68060_cpu_initfn(CPUState *obj)
 
     m68k_set_feature(env, M68K_FEATURE_M68000);
     m68k_set_feature(env, M68K_FEATURE_USP);
+    m68k_set_feature(env, M68K_FEATURE_MSP);
     m68k_set_feature(env, M68K_FEATURE_WORD_INDEX);
+    m68k_set_feature(env, M68K_FEATURE_UNALIGNED_DATA);
     m68k_set_feature(env, M68K_FEATURE_BRAL);
     m68k_set_feature(env, M68K_FEATURE_BCCL);
     m68k_set_feature(env, M68K_FEATURE_BITFIELD);
@@ -152,6 +173,9 @@ static void m68060_cpu_initfn(CPUState *obj)
     m68k_set_feature(env, M68K_FEATURE_RTD);
     m68k_set_feature(env, M68K_FEATURE_CHK2);
     m68k_set_feature(env, M68K_FEATURE_M68060);
+    m68k_set_feature(env, M68K_FEATURE_MOVEC);
+    m68k_set_feature(env, M68K_FEATURE_TRAPCC);
+    m68k_set_feature(env, M68K_FEATURE_MOVEFROMSR_PRIV);
 }
 
 static void m5208_cpu_initfn(CPUState *obj)
@@ -164,6 +188,7 @@ static void m5208_cpu_initfn(CPUState *obj)
     m68k_set_feature(env, M68K_FEATURE_BRAL);
     m68k_set_feature(env, M68K_FEATURE_CF_EMAC);
     m68k_set_feature(env, M68K_FEATURE_USP);
+    m68k_set_feature(env, M68K_FEATURE_MOVEFROMSR_PRIV);
 }
 
 static void cfv4e_cpu_initfn(CPUState *obj)
@@ -177,6 +202,7 @@ static void cfv4e_cpu_initfn(CPUState *obj)
     m68k_set_feature(env, M68K_FEATURE_CF_FPU);
     m68k_set_feature(env, M68K_FEATURE_CF_EMAC);
     m68k_set_feature(env, M68K_FEATURE_USP);
+    m68k_set_feature(env, M68K_FEATURE_MOVEFROMSR_PRIV);
 }
 
 static void any_cpu_initfn(CPUState *obj)
@@ -198,6 +224,8 @@ static void any_cpu_initfn(CPUState *obj)
     m68k_set_feature(env, M68K_FEATURE_USP);
     m68k_set_feature(env, M68K_FEATURE_EXT_FULL);
     m68k_set_feature(env, M68K_FEATURE_WORD_INDEX);
+    m68k_set_feature(env, M68K_FEATURE_MOVEC);
+    m68k_set_feature(env, M68K_FEATURE_TRAPCC);
 }
 
 static void m68k_cpu_realizefn(CPUState *dev)
@@ -248,15 +276,16 @@ struct M68kCPUInfo {
 };
 
 static struct M68kCPUInfo m68k_cpus_type_infos[] = {
+    { "m5206", m5206_cpu_initfn },
     { "m68000", m68000_cpu_initfn },
     { "m68020", m68020_cpu_initfn },
     { "m68030", m68030_cpu_initfn },
     { "m68040", m68040_cpu_initfn },
     { "m68060", m68060_cpu_initfn },
-    { "m5206", m5206_cpu_initfn },
     { "m5208", m5208_cpu_initfn },
     { "cfv4e", cfv4e_cpu_initfn },
     { "any", any_cpu_initfn },
+    { "m68010", m68010_cpu_initfn },
 };
 
 M68kCPU *cpu_m68k_init(struct uc_struct *uc)

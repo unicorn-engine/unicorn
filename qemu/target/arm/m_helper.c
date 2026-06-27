@@ -957,6 +957,7 @@ static void v7m_update_fpccr(CPUARMState *env, uint32_t frameptr,
 void HELPER(v7m_vlstm)(CPUARMState *env, uint32_t fptr)
 {
     /* fptr is the value of Rn, the frame pointer we store the FP regs to */
+    ARMCPU *cpu = env_archcpu(env);
     bool s = env->v7m.fpccr[M_REG_S] & R_V7M_FPCCR_S_MASK;
     bool lspact = env->v7m.fpccr[s] & R_V7M_FPCCR_LSPACT_MASK;
     uintptr_t ra = GETPC();
@@ -1005,9 +1006,12 @@ void HELPER(v7m_vlstm)(CPUARMState *env, uint32_t fptr)
             cpu_stl_data_ra(env, faddr + 4, shi, ra);
         }
         cpu_stl_data_ra(env, fptr + 0x40, vfp_get_fpscr(env), ra);
+        if (cpu_isar_feature(aa32_mve, cpu)) {
+            cpu_stl_data_ra(env, fptr + 0x44, env->v7m.vpr, ra);
+        }
 
         /*
-         * If TS is 0 then s0 to s15 and FPSCR are UNKNOWN; we choose to
+         * If TS is 0 then s0 to s15, FPSCR and VPR are UNKNOWN; we choose to
          * leave them unchanged, matching our choice in v7m_preserve_fp_state.
          */
         if (ts) {
@@ -1015,6 +1019,9 @@ void HELPER(v7m_vlstm)(CPUARMState *env, uint32_t fptr)
                 *aa32_vfp_dreg(env, i / 2) = 0;
             }
             vfp_set_fpscr(env, 0);
+            if (cpu_isar_feature(aa32_mve, cpu)) {
+                env->v7m.vpr = 0;
+            }
         }
     } else {
         v7m_update_fpccr(env, fptr, false);
@@ -1025,6 +1032,7 @@ void HELPER(v7m_vlstm)(CPUARMState *env, uint32_t fptr)
 
 void HELPER(v7m_vlldm)(CPUARMState *env, uint32_t fptr)
 {
+    ARMCPU *cpu = env_archcpu(env);
     uintptr_t ra = GETPC();
 
     /* fptr is the value of Rn, the frame pointer we load the FP regs from */
@@ -1057,7 +1065,7 @@ void HELPER(v7m_vlldm)(CPUARMState *env, uint32_t fptr)
             uint32_t faddr = fptr + 4 * i;
 
             if (i >= 16) {
-                faddr += 8; /* skip the slot for the FPSCR */
+                faddr += 8; /* skip the slot for the FPSCR and VPR */
             }
 
             slo = cpu_ldl_data_ra(env, faddr, ra);
@@ -1068,6 +1076,9 @@ void HELPER(v7m_vlldm)(CPUARMState *env, uint32_t fptr)
         }
         fpscr = cpu_ldl_data_ra(env, fptr + 0x40, ra);
         vfp_set_fpscr(env, fpscr);
+        if (cpu_isar_feature(aa32_mve, cpu)) {
+            env->v7m.vpr = cpu_ldl_data_ra(env, fptr + 0x44, ra);
+        }
     }
 
     env->v7m.control[M_REG_S] |= R_V7M_CONTROL_FPCA_MASK;

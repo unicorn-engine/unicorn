@@ -22,6 +22,7 @@
 #include "cpu.h"
 #include "exec/exec-all.h"
 #include "tcg/tcg-op.h"
+#include "instmap.h"
 
 int riscv_cpu_mmu_index(CPURISCVState *env, bool ifetch)
 {
@@ -104,10 +105,23 @@ bool riscv_cpu_fp_enabled(CPURISCVState *env)
     return false;
 }
 
+bool riscv_cpu_vector_enabled(CPURISCVState *env)
+{
+    if (env->mstatus & MSTATUS_VS) {
+        if (riscv_cpu_virt_enabled(env) && !(env->mstatus_hs & MSTATUS_VS)) {
+            return false;
+        }
+        return true;
+    }
+
+    return false;
+}
+
 void riscv_cpu_swap_hypervisor_regs(CPURISCVState *env)
 {
     target_ulong mstatus_mask = MSTATUS_MXR | MSTATUS_SUM | MSTATUS_FS |
-                                MSTATUS_SPP | MSTATUS_SPIE | MSTATUS_SIE;
+                                MSTATUS_VS | MSTATUS_SPP | MSTATUS_SPIE |
+                                MSTATUS_SIE;
     bool current_virt = riscv_cpu_virt_enabled(env);
 
     g_assert(riscv_has_ext(env, RVH));
@@ -271,6 +285,24 @@ void riscv_cpu_set_mode(CPURISCVState *env, target_ulong newpriv)
     env->load_res = -1;
 }
 
+static bool riscv_cpu_mmu_two_stage_lookup(CPURISCVState *env, int mmu_idx,
+                                           MMUAccessType access_type)
+{
+    int mode = mmu_idx & TB_FLAGS_PRIV_MMU_MASK;
+
+    if (!riscv_has_ext(env, RVH)) {
+        return false;
+    }
+
+    if (riscv_cpu_virt_enabled(env) ||
+        (mmu_idx & TB_FLAGS_PRIV_HYP_ACCESS_MASK)) {
+        return true;
+    }
+
+    return mode == PRV_M && access_type != MMU_INST_FETCH &&
+           get_field(env->mstatus, MSTATUS_MPRV) && MSTATUS_MPV_ISSET(env);
+}
+
 /* get_physical_address - get the physical address for this virtual address
  *
  * Do a page table walk to obtain the physical address corresponding to a
@@ -282,6 +314,7 @@ void riscv_cpu_set_mode(CPURISCVState *env, target_ulong newpriv)
  * @physical: This will be set to the calculated physical address
  * @prot: The returned protection attributes
  * @addr: The virtual address to be translated
+ * @fault_pte_addr: Optional shifted PTE address for indirect G-stage faults
  * @access_type: The type of MMU access
  * @mmu_idx: Indicates current privilege level
  * @first_stage: Are we in first stage translation?
@@ -290,6 +323,7 @@ void riscv_cpu_set_mode(CPURISCVState *env, target_ulong newpriv)
  */
 static int get_physical_address(CPURISCVState *env, hwaddr *physical,
                                 int *prot, target_ulong addr,
+                                target_ulong *fault_pte_addr,
                                 int access_type, int mmu_idx,
                                 bool first_stage, bool two_stage)
 {
@@ -298,7 +332,7 @@ static int get_physical_address(CPURISCVState *env, hwaddr *physical,
      * (riscv_cpu_do_interrupt) is correct */
     MemTxResult res;
     MemTxAttrs attrs = MEMTXATTRS_UNSPECIFIED;
-    int mode = mmu_idx;
+    int mode = mmu_idx & TB_FLAGS_PRIV_MMU_MASK;
     bool use_background = false;
     hwaddr base;
     int levels = 0, ptidxbits = 0, ptesize = 0, vm, sum, mxr, widened;
@@ -311,7 +345,13 @@ static int get_physical_address(CPURISCVState *env, hwaddr *physical,
      * was called. Background registers will be used if the guest has
      * forced a two stage translation to be on (in HS or M mode).
      */
-    if (mode == PRV_M && access_type != MMU_INST_FETCH) {
+    if (!riscv_cpu_virt_enabled(env) && two_stage) {
+        use_background = true;
+    }
+
+    if (mmu_idx & TB_FLAGS_PRIV_HYP_ACCESS_MASK) {
+        mode = get_field(env->hstatus, HSTATUS_SPVP);
+    } else if (mode == PRV_M && access_type != MMU_INST_FETCH) {
         if (get_field(env->mstatus, MSTATUS_MPRV)) {
             mode = get_field(env->mstatus, MSTATUS_MPP);
 
@@ -319,14 +359,6 @@ static int get_physical_address(CPURISCVState *env, hwaddr *physical,
                 MSTATUS_MPV_ISSET(env)) {
                 use_background = true;
             }
-        }
-    }
-
-    if (mode == PRV_S && access_type != MMU_INST_FETCH &&
-        riscv_has_ext(env, RVH) && !riscv_cpu_virt_enabled(env)) {
-        if (get_field(env->hstatus, HSTATUS_SPRV)) {
-            mode = get_field(env->mstatus, SSTATUS_SPP);
-            use_background = true;
         }
     }
 
@@ -365,7 +397,7 @@ static int get_physical_address(CPURISCVState *env, hwaddr *physical,
             vm = get_field(env->hgatp, HGATP_MODE);
             widened = 2;
         }
-        sum = get_field(env->mstatus, MSTATUS_SUM);
+        sum = get_field(env->mstatus, MSTATUS_SUM) || use_background;
         switch (vm) {
         case VM_1_10_SV32:
           levels = 2; ptidxbits = 10; ptesize = 4; break;
@@ -438,11 +470,21 @@ restart:
         hwaddr pte_addr;
 
         if (two_stage && first_stage) {
+            int vbase_prot;
+            int vbase_ret;
             hwaddr vbase;
 
             /* Do the second stage translation on the base PTE address. */
-            get_physical_address(env, &vbase, prot, base, access_type,
-                                 mmu_idx, false, true);
+            vbase_ret = get_physical_address(env, &vbase, &vbase_prot, base,
+                                             NULL, MMU_DATA_LOAD, mmu_idx,
+                                             false, true);
+
+            if (vbase_ret != TRANSLATE_SUCCESS) {
+                if (fault_pte_addr) {
+                    *fault_pte_addr = (base + idx * ptesize) >> 2;
+                }
+                return TRANSLATE_G_STAGE_FAIL;
+            }
 
             pte_addr = vbase + idx * ptesize;
         } else {
@@ -592,7 +634,8 @@ restart:
 
 static void raise_mmu_exception(CPURISCVState *env, target_ulong address,
                                 MMUAccessType access_type, bool pmp_violation,
-                                bool first_stage)
+                                bool first_stage, bool two_stage,
+                                bool two_stage_indirect)
 {
     CPUState *cs = env_cpu(env);
     int page_fault_exceptions;
@@ -608,7 +651,7 @@ static void raise_mmu_exception(CPURISCVState *env, target_ulong address,
     }
     switch (access_type) {
     case MMU_INST_FETCH:
-        if (riscv_cpu_virt_enabled(env) && !first_stage) {
+        if (two_stage && !first_stage) {
             cs->exception_index = RISCV_EXCP_INST_GUEST_PAGE_FAULT;
         } else {
             cs->exception_index = page_fault_exceptions ?
@@ -616,7 +659,7 @@ static void raise_mmu_exception(CPURISCVState *env, target_ulong address,
         }
         break;
     case MMU_DATA_LOAD:
-        if (riscv_cpu_virt_enabled(env) && !first_stage) {
+        if (two_stage && !first_stage) {
             cs->exception_index = RISCV_EXCP_LOAD_GUEST_ACCESS_FAULT;
         } else {
             cs->exception_index = page_fault_exceptions ?
@@ -624,7 +667,7 @@ static void raise_mmu_exception(CPURISCVState *env, target_ulong address,
         }
         break;
     case MMU_DATA_STORE:
-        if (riscv_cpu_virt_enabled(env) && !first_stage) {
+        if (two_stage && !first_stage) {
             cs->exception_index = RISCV_EXCP_STORE_GUEST_AMO_ACCESS_FAULT;
         } else {
             cs->exception_index = page_fault_exceptions ?
@@ -635,6 +678,8 @@ static void raise_mmu_exception(CPURISCVState *env, target_ulong address,
         g_assert_not_reached();
     }
     env->badaddr = address;
+    env->two_stage_lookup = two_stage;
+    env->two_stage_indirect_lookup = two_stage_indirect;
 }
 
 hwaddr riscv_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
@@ -645,13 +690,13 @@ hwaddr riscv_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
     int prot;
     int mmu_idx = cpu_mmu_index(&cpu->env, false);
 
-    if (get_physical_address(env, &phys_addr, &prot, addr, 0, mmu_idx,
+    if (get_physical_address(env, &phys_addr, &prot, addr, NULL, 0, mmu_idx,
                              true, riscv_cpu_virt_enabled(env))) {
         return -1;
     }
 
     if (riscv_cpu_virt_enabled(env)) {
-        if (get_physical_address(env, &phys_addr, &prot, phys_addr,
+        if (get_physical_address(env, &phys_addr, &prot, phys_addr, NULL,
                                  0, mmu_idx, false, true)) {
             return -1;
         }
@@ -671,11 +716,16 @@ void riscv_cpu_do_transaction_failed(CPUState *cs, hwaddr physaddr,
 
     if (access_type == MMU_DATA_STORE) {
         cs->exception_index = RISCV_EXCP_STORE_AMO_ACCESS_FAULT;
-    } else {
+    } else if (access_type == MMU_DATA_LOAD) {
         cs->exception_index = RISCV_EXCP_LOAD_ACCESS_FAULT;
+    } else {
+        cs->exception_index = RISCV_EXCP_INST_ACCESS_FAULT;
     }
 
     env->badaddr = addr;
+    env->two_stage_lookup =
+        riscv_cpu_mmu_two_stage_lookup(env, mmu_idx, access_type);
+    env->two_stage_indirect_lookup = false;
     riscv_raise_exception(&cpu->env, cs->exception_index, retaddr);
 }
 
@@ -699,6 +749,9 @@ void riscv_cpu_do_unaligned_access(CPUState *cs, vaddr addr,
         g_assert_not_reached();
     }
     env->badaddr = addr;
+    env->two_stage_lookup =
+        riscv_cpu_mmu_two_stage_lookup(env, mmu_idx, access_type);
+    env->two_stage_indirect_lookup = false;
     riscv_raise_exception(env, cs->exception_index, retaddr);
 }
 
@@ -710,13 +763,15 @@ bool riscv_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
     CPURISCVState *env = &cpu->env;
     vaddr im_address;
     hwaddr pa = 0;
-    int prot;
+    int prot = 0;
+    int prot2 = 0;
     bool pmp_violation = false;
-    bool m_mode_two_stage = false;
-    bool hs_mode_two_stage = false;
     bool first_stage_error = true;
+    bool two_stage_lookup = false;
+    bool two_stage_indirect_error = false;
     int ret = TRANSLATE_FAIL;
-    int mode = mmu_idx;
+    int mode = mmu_idx & TB_FLAGS_PRIV_MMU_MASK;
+    bool hyp_access = (mmu_idx & TB_FLAGS_PRIV_HYP_ACCESS_MASK) != 0;
 
     env->guest_phys_fault_addr = 0;
 
@@ -728,45 +783,48 @@ bool riscv_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
      * set and we want to access a virtulisation address.
      */
     if (riscv_has_ext(env, RVH)) {
-        m_mode_two_stage = env->priv == PRV_M &&
-                           access_type != MMU_INST_FETCH &&
-                           get_field(env->mstatus, MSTATUS_MPRV) &&
-                           MSTATUS_MPV_ISSET(env);
-
-        hs_mode_two_stage = env->priv == PRV_S &&
-                            !riscv_cpu_virt_enabled(env) &&
-                            access_type != MMU_INST_FETCH &&
-                            get_field(env->hstatus, HSTATUS_SPRV) &&
-                            get_field(env->hstatus, HSTATUS_SPV);
+        two_stage_lookup = riscv_cpu_mmu_two_stage_lookup(env, mmu_idx,
+                                                          access_type);
     }
 
-    if (mode == PRV_M && access_type != MMU_INST_FETCH) {
+    if (hyp_access) {
+        mode = get_field(env->hstatus, HSTATUS_SPVP);
+    } else if (mode == PRV_M && access_type != MMU_INST_FETCH) {
         if (get_field(env->mstatus, MSTATUS_MPRV)) {
             mode = get_field(env->mstatus, MSTATUS_MPP);
         }
     }
 
-    if (riscv_cpu_virt_enabled(env) || m_mode_two_stage || hs_mode_two_stage) {
+    if (two_stage_lookup) {
         /* Two stage lookup */
-        ret = get_physical_address(env, &pa, &prot, address, access_type,
+        ret = get_physical_address(env, &pa, &prot, address,
+                                   &env->guest_phys_fault_addr, access_type,
                                    mmu_idx, true, true);
+
+        if (ret == TRANSLATE_G_STAGE_FAIL) {
+            first_stage_error = false;
+            two_stage_indirect_error = true;
+            access_type = MMU_DATA_LOAD;
+        }
 
         qemu_log_mask(CPU_LOG_MMU,
                       "%s 1st-stage address=%" VADDR_PRIx " ret %d physical "
                       TARGET_FMT_plx " prot %d\n",
                       __func__, address, ret, pa, prot);
 
-        if (ret != TRANSLATE_FAIL) {
+        if (ret == TRANSLATE_SUCCESS) {
             /* Second stage lookup */
             im_address = pa;
 
-            ret = get_physical_address(env, &pa, &prot, im_address,
+            ret = get_physical_address(env, &pa, &prot2, im_address, NULL,
                                        access_type, mmu_idx, false, true);
 
             qemu_log_mask(CPU_LOG_MMU,
                     "%s 2nd-stage address=%" VADDR_PRIx " ret %d physical "
                     TARGET_FMT_plx " prot %d\n",
-                    __func__, im_address, ret, pa, prot);
+                    __func__, im_address, ret, pa, prot2);
+
+            prot &= prot2;
 
             if (riscv_feature(env, RISCV_FEATURE_PMP) &&
                 (ret == TRANSLATE_SUCCESS) &&
@@ -787,8 +845,8 @@ bool riscv_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
         }
     } else {
         /* Single stage lookup */
-        ret = get_physical_address(env, &pa, &prot, address, access_type,
-                                   mmu_idx, true, false);
+        ret = get_physical_address(env, &pa, &prot, address, NULL,
+                                   access_type, mmu_idx, true, false);
 
         qemu_log_mask(CPU_LOG_MMU,
                       "%s address=%" VADDR_PRIx " ret %d physical "
@@ -812,11 +870,206 @@ bool riscv_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
     } else if (probe) {
         return false;
     } else {
-        raise_mmu_exception(env, address, access_type, pmp_violation, first_stage_error);
+        raise_mmu_exception(env, address, access_type, pmp_violation,
+                            first_stage_error, two_stage_lookup,
+                            two_stage_indirect_error);
         riscv_raise_exception(env, cs->exception_index, retaddr);
     }
 
     return true;
+}
+
+static target_ulong riscv_transformed_insn(CPURISCVState *env,
+                                           target_ulong insn,
+                                           target_ulong taddr)
+{
+    target_ulong xinsn = 0;
+    target_ulong access_rs1 = 0;
+    target_ulong access_imm = 0;
+    target_ulong access_size = 0;
+
+    if ((insn & 0x3) != 0x3) {
+        switch (GET_C_OP(insn)) {
+        case OPC_RISC_C_OP_QUAD0:
+            switch (GET_C_FUNC(insn)) {
+            case OPC_RISC_C_FUNC_FLD_LQ:
+                if (TARGET_LONG_BITS != 128) {
+                    xinsn = OPC_RISC_FLD;
+                    xinsn = SET_RD(xinsn, GET_C_RS2S(insn));
+                    access_rs1 = GET_C_RS1S(insn);
+                    access_imm = GET_C_LD_IMM(insn);
+                    access_size = 8;
+                }
+                break;
+            case OPC_RISC_C_FUNC_LW:
+                xinsn = OPC_RISC_LW;
+                xinsn = SET_RD(xinsn, GET_C_RS2S(insn));
+                access_rs1 = GET_C_RS1S(insn);
+                access_imm = GET_C_LW_IMM(insn);
+                access_size = 4;
+                break;
+            case OPC_RISC_C_FUNC_FLW_LD:
+                if (TARGET_LONG_BITS == 32) {
+                    xinsn = OPC_RISC_FLW;
+                    xinsn = SET_RD(xinsn, GET_C_RS2S(insn));
+                    access_rs1 = GET_C_RS1S(insn);
+                    access_imm = GET_C_LW_IMM(insn);
+                    access_size = 4;
+                } else {
+                    xinsn = OPC_RISC_LD;
+                    xinsn = SET_RD(xinsn, GET_C_RS2S(insn));
+                    access_rs1 = GET_C_RS1S(insn);
+                    access_imm = GET_C_LD_IMM(insn);
+                    access_size = 8;
+                }
+                break;
+            case OPC_RISC_C_FUNC_FSD_SQ:
+                if (TARGET_LONG_BITS != 128) {
+                    xinsn = OPC_RISC_FSD;
+                    xinsn = SET_RS2(xinsn, GET_C_RS2S(insn));
+                    access_rs1 = GET_C_RS1S(insn);
+                    access_imm = GET_C_SD_IMM(insn);
+                    access_size = 8;
+                }
+                break;
+            case OPC_RISC_C_FUNC_SW:
+                xinsn = OPC_RISC_SW;
+                xinsn = SET_RS2(xinsn, GET_C_RS2S(insn));
+                access_rs1 = GET_C_RS1S(insn);
+                access_imm = GET_C_SW_IMM(insn);
+                access_size = 4;
+                break;
+            case OPC_RISC_C_FUNC_FSW_SD:
+                if (TARGET_LONG_BITS == 32) {
+                    xinsn = OPC_RISC_FSW;
+                    xinsn = SET_RS2(xinsn, GET_C_RS2S(insn));
+                    access_rs1 = GET_C_RS1S(insn);
+                    access_imm = GET_C_SW_IMM(insn);
+                    access_size = 4;
+                } else {
+                    xinsn = OPC_RISC_SD;
+                    xinsn = SET_RS2(xinsn, GET_C_RS2S(insn));
+                    access_rs1 = GET_C_RS1S(insn);
+                    access_imm = GET_C_SD_IMM(insn);
+                    access_size = 8;
+                }
+                break;
+            default:
+                break;
+            }
+            break;
+        case OPC_RISC_C_OP_QUAD2:
+            switch (GET_C_FUNC(insn)) {
+            case OPC_RISC_C_FUNC_FLDSP_LQSP:
+                if (TARGET_LONG_BITS != 128) {
+                    xinsn = OPC_RISC_FLD;
+                    xinsn = SET_RD(xinsn, GET_C_RD(insn));
+                    access_rs1 = 2;
+                    access_imm = GET_C_LDSP_IMM(insn);
+                    access_size = 8;
+                }
+                break;
+            case OPC_RISC_C_FUNC_LWSP:
+                xinsn = OPC_RISC_LW;
+                xinsn = SET_RD(xinsn, GET_C_RD(insn));
+                access_rs1 = 2;
+                access_imm = GET_C_LWSP_IMM(insn);
+                access_size = 4;
+                break;
+            case OPC_RISC_C_FUNC_FLWSP_LDSP:
+                if (TARGET_LONG_BITS == 32) {
+                    xinsn = OPC_RISC_FLW;
+                    xinsn = SET_RD(xinsn, GET_C_RD(insn));
+                    access_rs1 = 2;
+                    access_imm = GET_C_LWSP_IMM(insn);
+                    access_size = 4;
+                } else {
+                    xinsn = OPC_RISC_LD;
+                    xinsn = SET_RD(xinsn, GET_C_RD(insn));
+                    access_rs1 = 2;
+                    access_imm = GET_C_LDSP_IMM(insn);
+                    access_size = 8;
+                }
+                break;
+            case OPC_RISC_C_FUNC_FSDSP_SQSP:
+                if (TARGET_LONG_BITS != 128) {
+                    xinsn = OPC_RISC_FSD;
+                    xinsn = SET_RS2(xinsn, GET_C_RS2(insn));
+                    access_rs1 = 2;
+                    access_imm = GET_C_SDSP_IMM(insn);
+                    access_size = 8;
+                }
+                break;
+            case OPC_RISC_C_FUNC_SWSP:
+                xinsn = OPC_RISC_SW;
+                xinsn = SET_RS2(xinsn, GET_C_RS2(insn));
+                access_rs1 = 2;
+                access_imm = GET_C_SWSP_IMM(insn);
+                access_size = 4;
+                break;
+            case OPC_RISC_C_FUNC_FSWSP_SDSP:
+                if (TARGET_LONG_BITS == 32) {
+                    xinsn = OPC_RISC_FSW;
+                    xinsn = SET_RS2(xinsn, GET_C_RS2(insn));
+                    access_rs1 = 2;
+                    access_imm = GET_C_SWSP_IMM(insn);
+                    access_size = 4;
+                } else {
+                    xinsn = OPC_RISC_SD;
+                    xinsn = SET_RS2(xinsn, GET_C_RS2(insn));
+                    access_rs1 = 2;
+                    access_imm = GET_C_SDSP_IMM(insn);
+                    access_size = 8;
+                }
+                break;
+            default:
+                break;
+            }
+            break;
+        default:
+            break;
+        }
+        xinsn &= ~((target_ulong)0x2);
+    } else {
+        switch (MASK_OP_MAJOR(insn)) {
+        case OPC_RISC_ATOMIC:
+            xinsn = insn;
+            access_rs1 = GET_RS1(insn);
+            access_size = 1 << GET_FUNCT3(insn);
+            break;
+        case OPC_RISC_LOAD:
+        case OPC_RISC_FP_LOAD:
+            xinsn = SET_I_IMM(insn, 0);
+            access_rs1 = GET_RS1(insn);
+            access_imm = GET_IMM(insn);
+            access_size = 1 << GET_FUNCT3(insn);
+            break;
+        case OPC_RISC_STORE:
+        case OPC_RISC_FP_STORE:
+            xinsn = SET_S_IMM(insn, 0);
+            access_rs1 = GET_RS1(insn);
+            access_imm = GET_STORE_IMM(insn);
+            access_size = 1 << GET_FUNCT3(insn);
+            break;
+        case OPC_RISC_SYSTEM:
+            if (MASK_OP_SYSTEM(insn) == OPC_RISC_HLVHSV) {
+                xinsn = insn;
+                access_rs1 = GET_RS1(insn);
+                access_size = 1 << ((GET_FUNCT7(insn) >> 1) & 0x3);
+                access_size = 1 << access_size;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (access_size) {
+        xinsn = SET_RS1(xinsn, (taddr - (env->gpr[access_rs1] +
+                                         access_imm)) & (access_size - 1));
+    }
+
+    return xinsn;
 }
 
 /*
@@ -830,6 +1083,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
     RISCVCPU *cpu = RISCV_CPU(cs);
     CPURISCVState *env = &cpu->env;
     bool force_hs_execp = riscv_cpu_force_hs_excep_enabled(env);
+    bool write_gva = false;
     target_ulong s;
 
     /* cs->exception is 32-bits wide unlike mcause which is XLEN-bits wide
@@ -839,27 +1093,46 @@ void riscv_cpu_do_interrupt(CPUState *cs)
     target_ulong cause = cs->exception_index & RISCV_EXCP_INT_MASK;
     target_ulong deleg = async ? env->mideleg : env->medeleg;
     target_ulong tval = 0;
+    target_ulong tinst = 0;
     target_ulong htval = 0;
     target_ulong mtval2 = 0;
 
     if (!async) {
         /* set tval to badaddr for traps with address information */
         switch (cause) {
-        case RISCV_EXCP_INST_GUEST_PAGE_FAULT:
         case RISCV_EXCP_LOAD_GUEST_ACCESS_FAULT:
         case RISCV_EXCP_STORE_GUEST_AMO_ACCESS_FAULT:
             force_hs_execp = true;
             /* fallthrough */
-        case RISCV_EXCP_INST_ADDR_MIS:
-        case RISCV_EXCP_INST_ACCESS_FAULT:
         case RISCV_EXCP_LOAD_ADDR_MIS:
         case RISCV_EXCP_STORE_AMO_ADDR_MIS:
         case RISCV_EXCP_LOAD_ACCESS_FAULT:
         case RISCV_EXCP_STORE_AMO_ACCESS_FAULT:
-        case RISCV_EXCP_INST_PAGE_FAULT:
         case RISCV_EXCP_LOAD_PAGE_FAULT:
         case RISCV_EXCP_STORE_PAGE_FAULT:
+            write_gva = env->two_stage_lookup;
             tval = env->badaddr;
+            if (env->two_stage_indirect_lookup) {
+                tinst = TARGET_LONG_BITS == 32 ? 0x00002000 : 0x00003000;
+            } else {
+                tinst = riscv_transformed_insn(env, env->bins, tval);
+            }
+            break;
+        case RISCV_EXCP_INST_GUEST_PAGE_FAULT:
+            force_hs_execp = true;
+            /* fallthrough */
+        case RISCV_EXCP_INST_ADDR_MIS:
+        case RISCV_EXCP_INST_ACCESS_FAULT:
+        case RISCV_EXCP_INST_PAGE_FAULT:
+            write_gva = env->two_stage_lookup;
+            tval = env->badaddr;
+            if (env->two_stage_indirect_lookup) {
+                tinst = TARGET_LONG_BITS == 32 ? 0x00002000 : 0x00003000;
+            }
+            break;
+        case RISCV_EXCP_ILLEGAL_INST:
+        case RISCV_EXCP_VIRT_INSTRUCTION_FAULT:
+            tval = env->bins;
             break;
         default:
             break;
@@ -893,16 +1166,16 @@ void riscv_cpu_do_interrupt(CPUState *cs)
                  * no if hypervisor has delegated one of hs mode's interrupt
                  */
                 if (cause == IRQ_VS_TIMER || cause == IRQ_VS_SOFT ||
-                    cause == IRQ_VS_EXT)
+                    cause == IRQ_VS_EXT) {
                     cause = cause - 1;
+                }
+                write_gva = false;
                 /* Trap to VS mode */
             } else if (riscv_cpu_virt_enabled(env)) {
                 /* Trap into HS mode, from virt */
                 riscv_cpu_swap_hypervisor_regs(env);
-                env->hstatus = set_field(env->hstatus, HSTATUS_SP2V,
-                                         get_field(env->hstatus, HSTATUS_SPV));
-                env->hstatus = set_field(env->hstatus, HSTATUS_SP2P,
-                                         get_field(env->mstatus, SSTATUS_SPP));
+                env->hstatus = set_field(env->hstatus, HSTATUS_SPVP,
+                                         env->priv);
                 env->hstatus = set_field(env->hstatus, HSTATUS_SPV,
                                          riscv_cpu_virt_enabled(env));
 
@@ -912,15 +1185,11 @@ void riscv_cpu_do_interrupt(CPUState *cs)
                 riscv_cpu_set_force_hs_excep(env, 0);
             } else {
                 /* Trap into HS mode */
-                env->hstatus = set_field(env->hstatus, HSTATUS_SP2V,
-                                         get_field(env->hstatus, HSTATUS_SPV));
-                env->hstatus = set_field(env->hstatus, HSTATUS_SP2P,
-                                         get_field(env->mstatus, SSTATUS_SPP));
-                env->hstatus = set_field(env->hstatus, HSTATUS_SPV,
-                                         riscv_cpu_virt_enabled(env));
+                env->hstatus = set_field(env->hstatus, HSTATUS_SPV, false);
 
                 htval = env->guest_phys_fault_addr;
             }
+            env->hstatus = set_field(env->hstatus, HSTATUS_GVA, write_gva);
         }
 
         s = env->mstatus;
@@ -933,6 +1202,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         env->sepc = env->pc;
         env->sbadaddr = tval;
         env->htval = htval;
+        env->htinst = tinst;
         env->pc = (env->stvec >> 2 << 2) +
             ((async && (env->stvec & 3) == 1) ? cause * 4 : 0);
         riscv_cpu_set_mode(env, PRV_S);
@@ -945,13 +1215,11 @@ void riscv_cpu_do_interrupt(CPUState *cs)
 #ifdef TARGET_RISCV32
             env->mstatush = set_field(env->mstatush, MSTATUS_MPV,
                                        riscv_cpu_virt_enabled(env));
-            env->mstatush = set_field(env->mstatush, MSTATUS_MTL,
-                                       riscv_cpu_force_hs_excep_enabled(env));
+            env->mstatush = set_field(env->mstatush, MSTATUS_GVA, write_gva);
 #else
             env->mstatus = set_field(env->mstatus, MSTATUS_MPV,
                                       riscv_cpu_virt_enabled(env));
-            env->mstatus = set_field(env->mstatus, MSTATUS_MTL,
-                                      riscv_cpu_force_hs_excep_enabled(env));
+            env->mstatus = set_field(env->mstatus, MSTATUS_GVA, write_gva);
 #endif
 
             mtval2 = env->guest_phys_fault_addr;
@@ -971,6 +1239,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         env->mepc = env->pc;
         env->mbadaddr = tval;
         env->mtval2 = mtval2;
+        env->mtinst = tinst;
         env->pc = (env->mtvec >> 2 << 2) +
             ((async && (env->mtvec & 3) == 1) ? cause * 4 : 0);
         riscv_cpu_set_mode(env, PRV_M);
@@ -982,5 +1251,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
      * RISC-V ISA Specification.
      */
 
+    env->two_stage_lookup = false;
+    env->two_stage_indirect_lookup = false;
     cs->exception_index = EXCP_NONE; /* mark handled to qemu */
 }

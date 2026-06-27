@@ -15,7 +15,8 @@ public interface M68kConst {
     public static final int UC_CPU_M68K_M5208 = 6;
     public static final int UC_CPU_M68K_CFV4E = 7;
     public static final int UC_CPU_M68K_ANY = 8;
-    public static final int UC_CPU_M68K_ENDING = 9;
+    public static final int UC_CPU_M68K_M68010 = 9;
+    public static final int UC_CPU_M68K_ENDING = 10;
 
     // M68K registers
 

@@ -93,6 +93,7 @@ DEF_HELPER_1(wrmsr, void, env)
 DEF_HELPER_2(check_iob, void, env, i32)
 DEF_HELPER_2(check_iow, void, env, i32)
 DEF_HELPER_2(check_iol, void, env, i32)
+DEF_HELPER_FLAGS_3(check_io, TCG_CALL_NO_WG, void, env, i32, i32)
 DEF_HELPER_3(outb, void, env, i32, i32)
 DEF_HELPER_2(inb, tl, env, i32)
 DEF_HELPER_3(outw, void, env, i32, i32)
@@ -102,6 +103,7 @@ DEF_HELPER_2(inl, tl, env, i32)
 DEF_HELPER_FLAGS_4(bpt_io, TCG_CALL_NO_WG, void, env, i32, i32, tl)
 
 DEF_HELPER_3(svm_check_intercept_param, void, env, i32, i64)
+DEF_HELPER_2(svm_check_intercept, void, env, i32)
 DEF_HELPER_4(svm_check_io, void, env, i32, i32, i32)
 DEF_HELPER_3(vmrun, void, env, int, int)
 DEF_HELPER_1(vmmcall, void, env)
@@ -111,6 +113,7 @@ DEF_HELPER_1(stgi, void, env)
 DEF_HELPER_1(clgi, void, env)
 DEF_HELPER_1(skinit, void, env)
 DEF_HELPER_2(invlpga, void, env, int)
+DEF_HELPER_FLAGS_2(flush_page, TCG_CALL_NO_RWG, void, env, tl)
 
 /* x86 FPU */
 
@@ -210,6 +213,7 @@ DEF_HELPER_FLAGS_2(pext, TCG_CALL_NO_RWG_SE, tl, tl, tl)
 /* MMX/SSE */
 
 DEF_HELPER_2(ldmxcsr, void, env, i32)
+DEF_HELPER_1(update_mxcsr, void, env)
 DEF_HELPER_1(enter_mmx, void, env)
 DEF_HELPER_1(emms, void, env)
 DEF_HELPER_3(movq, void, env, ptr, ptr)
@@ -217,6 +221,8 @@ DEF_HELPER_3(movq, void, env, ptr, ptr)
 #define SHIFT 0
 #include "ops_sse_header.h"
 #define SHIFT 1
+#include "ops_sse_header.h"
+#define SHIFT 2
 #include "ops_sse_header.h"
 
 DEF_HELPER_3(rclb, tl, env, tl, tl)

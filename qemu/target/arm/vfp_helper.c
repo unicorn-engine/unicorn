@@ -89,6 +89,8 @@ static uint32_t vfp_get_fpscr_from_host(CPUARMState *env)
     /* FZ16 does not generate an input denormal exception.  */
     i |= (get_float_exception_flags(&env->vfp.fp_status_f16)
           & ~float_flag_input_denormal);
+    i |= (get_float_exception_flags(&env->vfp.standard_fp_status_f16)
+          & ~float_flag_input_denormal);
     return vfp_exceptbits_from_host(i);
 }
 
@@ -120,7 +122,10 @@ static void vfp_set_fpscr_to_host(CPUARMState *env, uint32_t val)
     if (changed & FPCR_FZ16) {
         bool ftz_enabled = val & FPCR_FZ16;
         set_flush_to_zero(ftz_enabled, &env->vfp.fp_status_f16);
+        set_flush_to_zero(ftz_enabled, &env->vfp.standard_fp_status_f16);
         set_flush_inputs_to_zero(ftz_enabled, &env->vfp.fp_status_f16);
+        set_flush_inputs_to_zero(ftz_enabled,
+                                 &env->vfp.standard_fp_status_f16);
     }
     if (changed & FPCR_FZ) {
         bool ftz_enabled = val & FPCR_FZ;
@@ -142,6 +147,7 @@ static void vfp_set_fpscr_to_host(CPUARMState *env, uint32_t val)
     set_float_exception_flags(i, &env->vfp.fp_status);
     set_float_exception_flags(0, &env->vfp.fp_status_f16);
     set_float_exception_flags(0, &env->vfp.standard_fp_status);
+    set_float_exception_flags(0, &env->vfp.standard_fp_status_f16);
 }
 
 uint32_t HELPER(vfp_get_fpscr)(CPUARMState *env)
@@ -151,6 +157,7 @@ uint32_t HELPER(vfp_get_fpscr)(CPUARMState *env)
     fpscr = env->vfp.xregs[ARM_VFP_FPSCR]
             | (env->vfp.vec_len << 16)
             | (env->vfp.vec_stride << 20);
+    fpscr |= env->v7m.ltpsize << 16;
 
     fpscr |= vfp_get_fpscr_from_host(env);
 
@@ -167,20 +174,31 @@ uint32_t vfp_get_fpscr(CPUARMState *env)
 
 void HELPER(vfp_set_fpscr)(CPUARMState *env, uint32_t val)
 {
+    ARMCPU *cpu = env_archcpu(env);
+
     /* When ARMv8.2-FP16 is not supported, FZ16 is RES0.  */
-    if (!cpu_isar_feature(any_fp16, env_archcpu(env))) {
+    if (!cpu_isar_feature(any_fp16, cpu)) {
         val &= ~FPCR_FZ16;
     }
 
-    if (arm_feature(env, ARM_FEATURE_M)) {
-        /*
-         * M profile FPSCR is RES0 for the QC, STRIDE, FZ16, LEN bits
-         * and also for the trapped-exception-handling bits IxE.
-         */
-        val &= 0xf7c0009f;
+    vfp_set_fpscr_to_host(env, val);
+
+    if (!arm_feature(env, ARM_FEATURE_M)) {
+        env->vfp.vec_len = (val >> 16) & 7;
+        env->vfp.vec_stride = (val >> 20) & 3;
+    } else if (cpu_isar_feature(aa32_mve, cpu)) {
+        env->v7m.ltpsize = extract32(val, FPCR_LTPSIZE_SHIFT,
+                                     FPCR_LTPSIZE_LENGTH);
     }
 
-    vfp_set_fpscr_to_host(env, val);
+    if (arm_feature(env, ARM_FEATURE_NEON) ||
+        (arm_feature(env, ARM_FEATURE_M) &&
+         cpu_isar_feature(aa32_mve, cpu))) {
+        env->vfp.qc[0] = val & FPCR_QC;
+        env->vfp.qc[1] = 0;
+        env->vfp.qc[2] = 0;
+        env->vfp.qc[3] = 0;
+    }
 
     /*
      * We don't implement trapped exception handling, so the
@@ -191,17 +209,6 @@ void HELPER(vfp_set_fpscr)(CPUARMState *env, uint32_t val)
      * in between, then we clear all of the low 16 bits.
      */
     env->vfp.xregs[ARM_VFP_FPSCR] = val & 0xf7c80000;
-    env->vfp.vec_len = (val >> 16) & 7;
-    env->vfp.vec_stride = (val >> 20) & 3;
-
-    /*
-     * The bit we set within fpscr_q is arbitrary; the register as a
-     * whole being zero/non-zero is what counts.
-     */
-    env->vfp.qc[0] = val & FPCR_QC;
-    env->vfp.qc[1] = 0;
-    env->vfp.qc[2] = 0;
-    env->vfp.qc[3] = 0;
 }
 
 void vfp_set_fpscr(CPUARMState *env, uint32_t val)
@@ -421,6 +428,24 @@ uint32_t HELPER(vfp_ultoh)(uint32_t x, uint32_t shift, void *fpst)
 #endif
 }
 
+uint32_t HELPER(vfp_shtoh)(uint32_t x, uint32_t shift, void *fpst)
+{
+#ifdef _MSC_VER
+    return int16_to_float16_scalbn((int16_t)x, 0 - shift, fpst);
+#else
+    return int16_to_float16_scalbn((int16_t)x, -shift, fpst);
+#endif
+}
+
+uint32_t HELPER(vfp_uhtoh)(uint32_t x, uint32_t shift, void *fpst)
+{
+#ifdef _MSC_VER
+    return uint16_to_float16_scalbn((uint16_t)x, 0 - shift, fpst);
+#else
+    return uint16_to_float16_scalbn((uint16_t)x, -shift, fpst);
+#endif
+}
+
 uint32_t HELPER(vfp_sqtoh)(uint64_t x, uint32_t shift, void *fpst)
 {
 #ifdef _MSC_VER
@@ -457,6 +482,26 @@ uint32_t HELPER(vfp_touhh)(uint32_t x, uint32_t shift, void *fpst)
     }
     return float16_to_uint16_scalbn(x, get_float_rounding_mode(fpst),
                                     shift, fpst);
+}
+
+uint32_t HELPER(vfp_toshh_round_to_zero)(uint32_t x, uint32_t shift,
+                                         void *fpst)
+{
+    if (unlikely(float16_is_any_nan(x))) {
+        float_raise(float_flag_invalid, fpst);
+        return 0;
+    }
+    return float16_to_int16_scalbn(x, float_round_to_zero, shift, fpst);
+}
+
+uint32_t HELPER(vfp_touhh_round_to_zero)(uint32_t x, uint32_t shift,
+                                         void *fpst)
+{
+    if (unlikely(float16_is_any_nan(x))) {
+        float_raise(float_flag_invalid, fpst);
+        return 0;
+    }
+    return float16_to_uint16_scalbn(x, float_round_to_zero, shift, fpst);
 }
 
 uint32_t HELPER(vfp_toslh)(uint32_t x, uint32_t shift, void *fpst)
@@ -580,6 +625,19 @@ uint32_t HELPER(vfp_fcvt_f64_to_f16)(float64 a, void *fpstp, uint32_t ahp_mode)
     float16 r = float64_to_float16(a, !ahp_mode, fpst);
     set_flush_to_zero(save, fpst);
     return r;
+}
+
+uint32_t HELPER(bfcvt)(float32 x, void *status)
+{
+    return float32_to_bfloat16(x, status);
+}
+
+uint32_t HELPER(bfcvt_pair)(uint64_t pair, void *status)
+{
+    bfloat16 lo = float32_to_bfloat16(extract64(pair, 0, 32), status);
+    bfloat16 hi = float32_to_bfloat16(extract64(pair, 32, 32), status);
+
+    return deposit32(lo, 16, 16, hi);
 }
 
 #define float32_two make_float32(0x40000000)
@@ -1072,6 +1130,11 @@ float64 VFP_HELPER(muladd, d)(float64 a, float64 b, float64 c, void *fpstp)
 }
 
 /* ARMv8 round to integral */
+uint32_t HELPER(rinth_exact)(uint32_t x, void *fp_status)
+{
+    return float16_round_to_int(x, fp_status);
+}
+
 float32 HELPER(rints_exact)(float32 x, void *fp_status)
 {
     return float32_round_to_int(x, fp_status);
@@ -1080,6 +1143,22 @@ float32 HELPER(rints_exact)(float32 x, void *fp_status)
 float64 HELPER(rintd_exact)(float64 x, void *fp_status)
 {
     return float64_round_to_int(x, fp_status);
+}
+
+uint32_t HELPER(rinth)(uint32_t x, void *fp_status)
+{
+    int old_flags = get_float_exception_flags(fp_status), new_flags;
+    float16 ret;
+
+    ret = float16_round_to_int(x, fp_status);
+
+    if (!(old_flags & float_flag_inexact)) {
+        new_flags = get_float_exception_flags(fp_status);
+        set_float_exception_flags(new_flags & ~float_flag_inexact,
+                                  fp_status);
+    }
+
+    return ret;
 }
 
 float32 HELPER(rints)(float32 x, void *fp_status)

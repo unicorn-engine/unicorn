@@ -27,6 +27,8 @@ struct RAMBlock {
     ram_addr_t used_length;
     ram_addr_t max_length;
     uint32_t flags;
+    uint8_t *mte_tags;
+    ram_addr_t mte_tags_size;
     /* RCU-enabled, writes protected by the ramlist lock */
     QLIST_ENTRY(RAMBlock) next;
     size_t page_size;

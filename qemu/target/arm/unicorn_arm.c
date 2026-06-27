@@ -297,6 +297,18 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = env->vfp.xregs[ARM_VFP_FPSID];
             break;
+        case UC_ARM_REG_MVFR0:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->vfp.xregs[ARM_VFP_MVFR0];
+            break;
+        case UC_ARM_REG_MVFR1:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->vfp.xregs[ARM_VFP_MVFR1];
+            break;
+        case UC_ARM_REG_MVFR2:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->vfp.xregs[ARM_VFP_MVFR2];
+            break;
         case UC_ARM_REG_IPSR:
             CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = v7m_mrs_xpsr(env, 5);
@@ -348,6 +360,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         case UC_ARM_REG_CONTROL:
             CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = helper_v7m_mrs(env, 20);
+            break;
+        case UC_ARM_REG_VPR:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->v7m.vpr;
             break;
         case UC_ARM_REG_CP_REG:
             CHECK_REG_TYPE(uc_arm_cp_reg);
@@ -465,6 +481,18 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             CHECK_REG_TYPE(int32_t);
             env->vfp.xregs[ARM_VFP_FPSID] = *(int32_t *)value;
             break;
+        case UC_ARM_REG_MVFR0:
+            CHECK_REG_TYPE(uint32_t);
+            env->vfp.xregs[ARM_VFP_MVFR0] = *(uint32_t *)value;
+            break;
+        case UC_ARM_REG_MVFR1:
+            CHECK_REG_TYPE(uint32_t);
+            env->vfp.xregs[ARM_VFP_MVFR1] = *(uint32_t *)value;
+            break;
+        case UC_ARM_REG_MVFR2:
+            CHECK_REG_TYPE(uint32_t);
+            env->vfp.xregs[ARM_VFP_MVFR2] = *(uint32_t *)value;
+            break;
         case UC_ARM_REG_IPSR:
             CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1000, 5, *(uint32_t *)value);
@@ -480,6 +508,10 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_ARM_REG_CONTROL:
             CHECK_REG_TYPE(uint32_t);
             helper_v7m_msr(env, 20, *(uint32_t *)value);
+            break;
+        case UC_ARM_REG_VPR:
+            CHECK_REG_TYPE(uint32_t);
+            env->v7m.vpr = *(uint32_t *)value;
             break;
         case UC_ARM_REG_EPSR:
             CHECK_REG_TYPE(uint32_t);

@@ -20,6 +20,7 @@
 #include "qemu/osdep.h"
 #include "qemu/ctype.h"
 #include "qemu/log.h"
+#include "qemu/timer.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
 #include "fpu/softfloat-helpers.h"
@@ -67,10 +68,15 @@ static void set_resetvec(CPURISCVState *env, int resetvec)
     env->resetvec = resetvec;
 }
 
+static uint64_t riscv_default_rdtime(void)
+{
+    return cpu_get_host_ticks();
+}
+
 static void riscv_any_cpu_init(CPUState *obj)
 {
     CPURISCVState *env = &RISCV_CPU(obj)->env;
-    set_misa(env, RVXLEN | RVI | RVM | RVA | RVF | RVD | RVC | RVU);
+    set_misa(env, RVXLEN | RVI | RVM | RVA | RVF | RVD | RVV | RVC | RVU);
     set_priv_version(env, PRIV_VERSION_1_11_0);
     set_resetvec(env, DEFAULT_RSTVEC);
 }
@@ -88,7 +94,8 @@ static void riscv_base32_cpu_init(CPUState *obj)
 static void rv32gcsu_priv1_10_0_cpu_init(CPUState *obj)
 {
     CPURISCVState *env = &RISCV_CPU(obj)->env;
-    set_misa(env, RV32 | RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
+    set_misa(env, RV32 | RVI | RVM | RVA | RVF | RVD | RVV | RVC | RVS |
+             RVU);
     set_priv_version(env, PRIV_VERSION_1_10_0);
     set_resetvec(env, DEFAULT_RSTVEC);
     set_feature(env, RISCV_FEATURE_MMU);
@@ -118,7 +125,8 @@ static void riscv_base64_cpu_init(CPUState *obj)
 static void rv64gcsu_priv1_10_0_cpu_init(CPUState *obj)
 {
     CPURISCVState *env = &RISCV_CPU(obj)->env;
-    set_misa(env, RV64 | RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
+    set_misa(env, RV64 | RVI | RVM | RVA | RVF | RVD | RVV | RVC | RVS |
+             RVU);
     set_priv_version(env, PRIV_VERSION_1_10_0);
     set_resetvec(env, DEFAULT_RSTVEC);
     set_feature(env, RISCV_FEATURE_MMU);
@@ -165,6 +173,7 @@ void restore_state_to_opc(CPURISCVState *env, TranslationBlock *tb,
                           target_ulong *data)
 {
     env->pc = data[0];
+    env->bins = data[1];
 }
 
 static void riscv_cpu_reset(CPUState *dev)
@@ -180,6 +189,15 @@ static void riscv_cpu_reset(CPUState *dev)
     env->mstatus &= ~(MSTATUS_MIE | MSTATUS_MPRV);
     env->mcause = 0;
     env->pc = env->resetvec;
+    env->bins = 0;
+    env->two_stage_lookup = false;
+    env->two_stage_indirect_lookup = false;
+    env->vxrm = 0;
+    env->vxsat = 0;
+    env->vl = 0;
+    env->vstart = 0;
+    env->vtype = 0;
+    env->vill = false;
 
     cs->exception_index = EXCP_NONE;
     env->load_res = -1;
@@ -274,6 +292,9 @@ static void riscv_cpu_realize(struct uc_struct *uc, CPUState *dev)
         if (cpu->cfg.ext_h) {
             target_misa |= RVH;
         }
+        if (cpu->cfg.ext_v) {
+            target_misa |= RVV;
+        }
 
         set_misa(env, RVXLEN | target_misa);
     }
@@ -334,8 +355,9 @@ RISCVCPU *cpu_riscv_init(struct uc_struct *uc)
     RISCVCPU *cpu;
     CPUState *cs;
     CPUClass *cc;
+    CPURISCVState *env;
 
-    cpu = qemu_memalign(8, sizeof(*cpu));
+    cpu = qemu_memalign(16, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
@@ -380,10 +402,37 @@ RISCVCPU *cpu_riscv_init(struct uc_struct *uc)
     cpu->cfg.ext_c = true;
     cpu->cfg.ext_s = true;
     cpu->cfg.ext_u = true;
-    cpu->cfg.ext_h = false;
+    cpu->cfg.ext_h = true;
+    cpu->cfg.ext_v = true;
     cpu->cfg.ext_counters = true;
     cpu->cfg.ext_ifencei = true;
     cpu->cfg.ext_icsr = true;
+    cpu->cfg.ext_zihintpause = true;
+    cpu->cfg.ext_zba = true;
+    cpu->cfg.ext_zbb = true;
+    cpu->cfg.ext_zbc = true;
+    cpu->cfg.ext_zbkb = true;
+    cpu->cfg.ext_zbkc = false;
+    cpu->cfg.ext_zbkx = true;
+    cpu->cfg.ext_zbs = true;
+    cpu->cfg.ext_zfh = true;
+    cpu->cfg.ext_zfhmin = true;
+    cpu->cfg.ext_zknd = true;
+    cpu->cfg.ext_zkne = true;
+    cpu->cfg.ext_zknh = true;
+    cpu->cfg.ext_zkr = true;
+    cpu->cfg.ext_zksed = true;
+    cpu->cfg.ext_zksh = true;
+    cpu->cfg.ext_svinval = true;
+    cpu->cfg.ext_xventanacondops = true;
+    cpu->cfg.ext_sstc = true;
+    cpu->cfg.ext_zmmul = true;
+    cpu->cfg.ext_zve32f = true;
+    cpu->cfg.ext_zve64f = true;
+    cpu->cfg.rvv_ta_all_1s = true;
+    cpu->cfg.rvv_ma_all_1s = true;
+    cpu->cfg.vlen = 128;
+    cpu->cfg.elen = 64;
     cpu->cfg.priv_spec = "v1.11.0";
     cpu->cfg.mmu = true;
     cpu->cfg.pmp = true;
@@ -396,6 +445,27 @@ RISCVCPU *cpu_riscv_init(struct uc_struct *uc)
 
     /* init specific CPU model */
     cpu_models[uc->cpu_model].initfn(cs);
+    env = &cpu->env;
+    if (env->misa != 0) {
+        cpu->cfg.ext_s = riscv_has_ext(env, RVS);
+        cpu->cfg.ext_h = riscv_has_ext(env, RVH);
+        if (!cpu->cfg.ext_s) {
+            cpu->cfg.ext_svinval = false;
+            cpu->cfg.ext_sstc = false;
+        }
+        cpu->cfg.ext_f = riscv_has_ext(env, RVF);
+        cpu->cfg.ext_d = riscv_has_ext(env, RVD);
+        if (!cpu->cfg.ext_f) {
+            cpu->cfg.ext_zfh = false;
+            cpu->cfg.ext_zfhmin = false;
+        }
+        if (!riscv_has_ext(env, RVV)) {
+            cpu->cfg.ext_v = false;
+            cpu->cfg.ext_zve32f = false;
+            cpu->cfg.ext_zve64f = false;
+        }
+    }
+    riscv_cpu_set_rdtime_fn(env, riscv_default_rdtime);
 
     /* realize CPU */
     riscv_cpu_realize(uc, cs);
