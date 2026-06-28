@@ -2656,6 +2656,23 @@ static void test_x86_group_1a(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_group_5_modrm_reg_7(void)
+{
+    uc_engine *uc;
+    char code[] = {
+        0xff, (7 << 3), 0x01, 0x02, 0x03, 0x04
+    };
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code));
+
+    uint64_t rax = code_start + code_len + 0x100;
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+    uc_assert_err(UC_ERR_INSN_INVALID,
+            uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_close(uc));
+}
+
 static void test_x86_lock_bt_mem(void)
 {
     uc_engine *uc;
@@ -2731,6 +2748,7 @@ static void test_x86_lock_btc_reg(void)
 
     OK(uc_close(uc));
 }
+
 
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
@@ -2810,6 +2828,7 @@ TEST_LIST = {
     {"test_x86_aaa_flags", test_x86_aaa_flags},
     {"test_x86_aas_flags", test_x86_aas_flags},
     {"test_x86_group_1a", test_x86_group_1a},
+    {"test_x86_group_5_modrm_reg_7", test_x86_group_5_modrm_reg_7},
     {"test_x86_lock_bt_mem", test_x86_lock_bt_mem},
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
