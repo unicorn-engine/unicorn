@@ -6009,15 +6009,12 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         ot = mo_b_d(b, dflag);
         modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
-        reg = ((modrm >> 3) & 7) | rex_r;
+        reg = (modrm >> 3) & 7;
+        if (reg != 0)
+            goto illegal_op;
         if (mod != 3) {
-            if (reg != 0)
-                goto illegal_op;
             s->rip_offset = insn_const_size(ot);
             gen_lea_modrm(env, s, modrm);
-        } else {
-            if (reg != 0 && reg != 7)
-                goto illegal_op;
         }
         val = insn_get(env, s, ot);
         tcg_gen_movi_tl(tcg_ctx, s->T0, val);
