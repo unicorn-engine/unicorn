@@ -5881,8 +5881,14 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         tcg_gen_movi_tl(tcg_ctx, s->T0, val);
         gen_push_v(s, s->T0);
         break;
-    case 0x8f: /* pop Ev */
+    case 0x8f: /* GRP1a */
         modrm = x86_ldub_code(env, s);
+        /* Group 1a is decoded as pop Ev only if modrm.reg == 0.
+         * Other values are either reserved on Intel CPUs,
+         * or refer to XOP opcode maps on AMD CPUs
+         */
+        if ((modrm >> 3) & 7)
+            goto unknown_op;
         mod = (modrm >> 6) & 3;
         ot = gen_pop_T0(s);
         if (mod == 3) {
