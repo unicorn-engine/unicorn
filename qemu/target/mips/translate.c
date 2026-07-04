@@ -31438,3 +31438,9 @@ void restore_state_to_opc(CPUMIPSState *env, TranslationBlock *tb,
         break;
     }
 }
+
+void restore_pc_to_opc(CPUMIPSState *env, TranslationBlock *tb,
+                      target_ulong *data)
+{
+    env->active_tc.PC = data[0];
+}

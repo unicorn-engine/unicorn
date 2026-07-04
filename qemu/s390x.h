@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_s390x
 #define helper_gvec_bitsel helper_gvec_bitsel_s390x
 #define cpu_restore_state cpu_restore_state_s390x
+#define cpu_restore_pc_only cpu_restore_pc_only_s390x
 #define page_collection_lock page_collection_lock_s390x
 #define page_collection_unlock page_collection_unlock_s390x
 #define free_code_gen_buffer free_code_gen_buffer_s390x

@@ -47,7 +47,7 @@ void cpu_outb(struct uc_struct *uc, uint32_t addr, uint8_t val, uintptr_t retadd
             continue;
         if (hook->insn == UC_X86_INS_OUT) {
             if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                cpu_restore_state(uc->cpu, retaddr, false);
+                cpu_restore_pc_only(uc->cpu, retaddr, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD(((uc_cb_insn_out_t)hook->callback)(uc, addr, 1, val, hook->user_data));
@@ -73,7 +73,7 @@ void cpu_outw(struct uc_struct *uc, uint32_t addr, uint16_t val, uintptr_t retad
             continue;
         if (hook->insn == UC_X86_INS_OUT) {
             if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                cpu_restore_state(uc->cpu, retaddr, false);
+                cpu_restore_pc_only(uc->cpu, retaddr, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD(((uc_cb_insn_out_t)hook->callback)(uc, addr, 2, val, hook->user_data));
@@ -99,7 +99,7 @@ void cpu_outl(struct uc_struct *uc, uint32_t addr, uint32_t val, uintptr_t retad
             continue;
         if (hook->insn == UC_X86_INS_OUT) {
             if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                cpu_restore_state(uc->cpu, retaddr, false);
+                cpu_restore_pc_only(uc->cpu, retaddr, false);
                 synced = true;
             }
             JIT_CALLBACK_GUARD(((uc_cb_insn_out_t)hook->callback)(uc, addr, 4, val, hook->user_data));
@@ -124,7 +124,7 @@ uint8_t cpu_inb(struct uc_struct *uc, uint32_t addr, uintptr_t retaddr)
             continue;
         if (hook->insn == UC_X86_INS_IN) {
             if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                cpu_restore_state(uc->cpu, retaddr, false);
+                cpu_restore_pc_only(uc->cpu, retaddr, false);
                 synced = true;
             }
             uint8_t ret;
@@ -154,7 +154,7 @@ uint16_t cpu_inw(struct uc_struct *uc, uint32_t addr, uintptr_t retaddr)
             continue;
         if (hook->insn == UC_X86_INS_IN) {
             if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                cpu_restore_state(uc->cpu, retaddr, false);
+                cpu_restore_pc_only(uc->cpu, retaddr, false);
                 synced = true;
             }
             uint16_t ret;
@@ -186,7 +186,7 @@ uint32_t cpu_inl(struct uc_struct *uc, uint32_t addr, uintptr_t retaddr)
             continue;
         if (hook->insn == UC_X86_INS_IN) {
             if (!synced && !uc->skip_sync_pc_on_exit && retaddr) {
-                cpu_restore_state(uc->cpu, retaddr, false);
+                cpu_restore_pc_only(uc->cpu, retaddr, false);
                 synced = true;
             }
             uint32_t ret;

@@ -6460,3 +6460,9 @@ void restore_state_to_opc(CPUM68KState *env, TranslationBlock *tb,
         env->cc_op = cc_op;
     }
 }
+
+void restore_pc_to_opc(CPUM68KState *env, TranslationBlock *tb,
+                      target_ulong *data)
+{
+    env->pc = data[0];
+}

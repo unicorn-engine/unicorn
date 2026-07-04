@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_ppc
 #define helper_gvec_bitsel helper_gvec_bitsel_ppc
 #define cpu_restore_state cpu_restore_state_ppc
+#define cpu_restore_pc_only cpu_restore_pc_only_ppc
 #define page_collection_lock page_collection_lock_ppc
 #define page_collection_unlock page_collection_unlock_ppc
 #define free_code_gen_buffer free_code_gen_buffer_ppc
@@ -1680,6 +1681,7 @@
 #define cpu_ppc_init cpu_ppc_init_ppc
 #define gen_intermediate_code gen_intermediate_code_ppc
 #define restore_state_to_opc restore_state_to_opc_ppc
+#define restore_pc_to_opc restore_pc_to_opc_ppc
 #define ppc_set_irq ppc_set_irq_ppc
 #define ppc6xx_irq_init ppc6xx_irq_init_ppc
 #define ppc40x_core_reset ppc40x_core_reset_ppc

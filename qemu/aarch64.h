@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_aarch64
 #define helper_gvec_bitsel helper_gvec_bitsel_aarch64
 #define cpu_restore_state cpu_restore_state_aarch64
+#define cpu_restore_pc_only cpu_restore_pc_only_aarch64
 #define page_collection_lock page_collection_lock_aarch64
 #define page_collection_unlock page_collection_unlock_aarch64
 #define free_code_gen_buffer free_code_gen_buffer_aarch64
@@ -2770,6 +2771,7 @@
 #define gen_sshl_i64 gen_sshl_i64_aarch64
 #define gen_intermediate_code gen_intermediate_code_aarch64
 #define restore_state_to_opc restore_state_to_opc_aarch64
+#define restore_pc_to_opc restore_pc_to_opc_aarch64
 #define disas_sve disas_sve_aarch64
 #define helper_neon_qrdmlah_s16 helper_neon_qrdmlah_s16_aarch64
 #define helper_gvec_qrdmlah_s16 helper_gvec_qrdmlah_s16_aarch64

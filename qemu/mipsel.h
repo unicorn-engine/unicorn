@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_mipsel
 #define helper_gvec_bitsel helper_gvec_bitsel_mipsel
 #define cpu_restore_state cpu_restore_state_mipsel
+#define cpu_restore_pc_only cpu_restore_pc_only_mipsel
 #define page_collection_lock page_collection_lock_mipsel
 #define page_collection_unlock page_collection_unlock_mipsel
 #define free_code_gen_buffer free_code_gen_buffer_mipsel
@@ -2401,6 +2402,7 @@
 #define cpu_mips_realize_env cpu_mips_realize_env_mipsel
 #define cpu_state_reset cpu_state_reset_mipsel
 #define restore_state_to_opc restore_state_to_opc_mipsel
+#define restore_pc_to_opc restore_pc_to_opc_mipsel
 #define ieee_rm ieee_rm_mipsel
 #define mips_defs mips_defs_mipsel
 #define mips_defs_number mips_defs_number_mipsel

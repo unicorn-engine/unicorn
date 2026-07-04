@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_sparc64
 #define helper_gvec_bitsel helper_gvec_bitsel_sparc64
 #define cpu_restore_state cpu_restore_state_sparc64
+#define cpu_restore_pc_only cpu_restore_pc_only_sparc64
 #define page_collection_lock page_collection_lock_sparc64
 #define page_collection_unlock page_collection_unlock_sparc64
 #define free_code_gen_buffer free_code_gen_buffer_sparc64
@@ -1402,6 +1403,7 @@
 #define gen_intermediate_code gen_intermediate_code_sparc64
 #define sparc_tcg_init sparc_tcg_init_sparc64
 #define restore_state_to_opc restore_state_to_opc_sparc64
+#define restore_pc_to_opc restore_pc_to_opc_sparc64
 #define cpu_set_cwp cpu_set_cwp_sparc64
 #define cpu_get_psr cpu_get_psr_sparc64
 #define cpu_put_psr_raw cpu_put_psr_raw_sparc64

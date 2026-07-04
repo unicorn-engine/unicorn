@@ -16,6 +16,10 @@ typedef struct _WFI_HOOK_INSN_RESULT {
     bool called;
 } WFI_HOOK_INSN_RESULT;
 
+typedef struct _MMIO_MAP_WRITE_PC_SYNC_RESULT {
+    uint32_t pc_val;
+} MMIO_MAP_WRITE_PC_SYNC_RESULT;
+
 static void test_arm_nop(void)
 {
     uc_engine *uc;
@@ -1052,8 +1056,8 @@ static void test_arm_hook_insn_wfi(void)
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_A15);
-    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_arm_hook_insn_wfi_callback, &result, 1, 0,
-                   UC_ARM_INS_WFI));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_arm_hook_insn_wfi_callback, 
+                   &result, 1, 0, UC_ARM_INS_WFI));
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
     TEST_CHECK(result.called == true);
@@ -1061,6 +1065,100 @@ static void test_arm_hook_insn_wfi(void)
     OK(uc_hook_del(uc, hook));
     OK(uc_close(uc));
 }
+
+static uint64_t test_arm_mmio_map_pc_sync_read_callback(struct uc_struct *uc, uint64_t addr, 
+                                                        unsigned size, void *user_data)
+{
+    return 0;
+}
+
+static void test_arm_mmio_map_pc_sync_write_callback(struct uc_struct *uc, uint64_t addr, 
+                                                     unsigned size, uint64_t data, void *user_data)
+{
+    MMIO_MAP_WRITE_PC_SYNC_RESULT *result = (MMIO_MAP_WRITE_PC_SYNC_RESULT *)user_data;
+    uc_reg_read(uc, UC_ARM_REG_PC, &result->pc_val);
+}
+
+static void test_arm_mmio_map_pc_sync(void)
+{
+    uc_engine *uc;
+    char code[] = "\xce\xf2\x00\x01\xcd\xf6\xad\x62\x0a\x60\x00\xbf";
+    /*
+     * 00001000     0  cef20001   movt    r1, #0xe000
+     * 00001004     0  cdf6ad62   movt    r2, #0xdead
+     * 00001008     0  0a60       str     r2, [r1]
+     * 0000100a     0  00bf       nop
+     */
+
+    MMIO_MAP_WRITE_PC_SYNC_RESULT result = {0xFFFFFFFF};
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
+    OK(uc_mmio_map(uc, 0xe0000000, 0x1000, 
+                   test_arm_mmio_map_pc_sync_read_callback, NULL, 
+                   test_arm_mmio_map_pc_sync_write_callback, &result));
+    
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
+    /* 
+     * The PC value should be at the str inst, because that is when the MMIO_MAP
+     * write callback is called. If the PC has not been synced yet,
+     * our PC value would be 0x1000.
+     */
+    TEST_CHECK(result.pc_val == 0x1008);
+
+    OK(uc_close(uc));
+};
+
+static bool test_arm_hook_condexec_corruption_cb(uc_engine *uc, int type,
+                                                 uint64_t address, int size,
+                                                 int64_t value, void *user_data)
+{
+    return 0;
+}
+
+static void test_arm_hook_condexec_corruption(void)
+{
+    /*
+     * Test to ensure that ARM condexec bits are not
+     * corrupted on a hook, and that only PC is synced.
+     */
+    uc_engine *uc;
+    uc_hook hook;
+    uint32_t reg;
+    char code_main[] = "\x00\xf0\x7e\xf8\x00\xbf\x96\x21";
+    /*
+     * 00010000  00f07ef8   bl      0x1100
+     * 00010004  00bf       nop
+     * 00010006  9621       movs    r1, #0x96
+     */
+    char code_itte_fn[] = "\x9a\xbf\x00\xbf\x00\x48\x00\xbf\x70\x47";
+    /*
+     * 00010100  9abf       itte    ls
+     * 00010102  00bf       nop
+     * 00010104  0048       ldr     r0, [pc] @ trigger the mem hook!
+     * 00010106  00bf       nop
+     * 00010108  7047       bx      lr
+     */
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code_main, 
+                    sizeof(code_main) - 1, UC_CPU_ARM_CORTEX_A15);
+    OK(uc_mem_write(uc, 0x1100, code_itte_fn, sizeof(code_itte_fn) - 1));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ, 
+                   test_arm_hook_condexec_corruption_cb, NULL, 1, 0));
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code_main) - 1,
+                    0, 0));
+    
+    /* 
+        Ensure the MOVS instruction executed. If condexec has been
+        corrupted, this MOVS instruction becomes conditional and
+        will not execute.
+    */
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &reg));
+    TEST_CHECK(reg == 0x96);
+
+    OK(uc_close(uc));
+};
 
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
@@ -1094,4 +1192,6 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_v7_lpae", test_arm_v7_lpae},
              {"test_arm_svc_hvc_syndrome", test_arm_svc_hvc_syndrome},
              {"test_arm_hook_insn_wfi", test_arm_hook_insn_wfi},
+             {"test_arm_mmio_map_pc_sync", test_arm_mmio_map_pc_sync},
+             {"test_arm_hook_condexec_corruption", test_arm_hook_condexec_corruption},
              {NULL, NULL}};

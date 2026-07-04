@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_x86_64
 #define helper_gvec_bitsel helper_gvec_bitsel_x86_64
 #define cpu_restore_state cpu_restore_state_x86_64
+#define cpu_restore_pc_only cpu_restore_pc_only_x86_64
 #define page_collection_lock page_collection_lock_x86_64
 #define page_collection_unlock page_collection_unlock_x86_64
 #define free_code_gen_buffer free_code_gen_buffer_x86_64
@@ -1891,6 +1892,7 @@
 #define tcg_x86_init tcg_x86_init_x86_64
 #define gen_intermediate_code gen_intermediate_code_x86_64
 #define restore_state_to_opc restore_state_to_opc_x86_64
+#define restore_pc_to_opc restore_pc_to_opc_x86_64
 #define x86_cpu_xsave_all_areas x86_cpu_xsave_all_areas_x86_64
 #define x86_cpu_xrstor_all_areas x86_cpu_xrstor_all_areas_x86_64
 #define cpu_get_fp80 cpu_get_fp80_x86_64

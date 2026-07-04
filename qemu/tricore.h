@@ -1257,6 +1257,7 @@
 #define helper_gvec_umax64 helper_gvec_umax64_tricore
 #define helper_gvec_bitsel helper_gvec_bitsel_tricore
 #define cpu_restore_state cpu_restore_state_tricore
+#define cpu_restore_pc_only cpu_restore_pc_only_tricore
 #define page_collection_lock page_collection_lock_tricore
 #define page_collection_unlock page_collection_unlock_tricore
 #define free_code_gen_buffer free_code_gen_buffer_tricore
@@ -1303,5 +1304,6 @@
 #define helper_pack helper_pack_tricore
 #define gen_intermediate_code gen_intermediate_code_tricore
 #define restore_state_to_opc restore_state_to_opc_tricore
+#define restore_pc_to_opc restore_pc_to_opc_tricore
 #define helper_uc_tricore_exit helper_uc_tricore_exit_tricore
 #endif

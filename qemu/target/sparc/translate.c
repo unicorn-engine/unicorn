@@ -6178,3 +6178,9 @@ void restore_state_to_opc(CPUSPARCState *env, TranslationBlock *tb,
         env->npc = npc;
     }
 }
+
+void restore_pc_to_opc(CPUSPARCState *env, TranslationBlock *tb,
+                      target_ulong *data)
+{
+    env->pc = data[0];
+}
