@@ -371,6 +371,11 @@ enum {
     OPC_OCT_CINS32 = 0x33 | OPC_SPECIAL2,
     OPC_OCT_EXTS   = 0x3A | OPC_SPECIAL2,
     OPC_OCT_EXTS32 = 0x3B | OPC_SPECIAL2,
+    OPC_OCT_SAA    = 0x18 | OPC_SPECIAL2,
+    OPC_OCT_SAAD   = 0x19 | OPC_SPECIAL2,
+    OPC_OCT_BADDU  = 0x28 | OPC_SPECIAL2,
+    OPC_OCT_POP    = 0x2C | OPC_SPECIAL2,
+    OPC_OCT_DPOP   = 0x2D | OPC_SPECIAL2,
     /* Special */
     OPC_SDBBP    = 0x3F | OPC_SPECIAL2,
 };
@@ -27246,6 +27251,75 @@ static void gen_octeon_dmul(DisasContext *ctx, int rd, int rs, int rt)
     tcg_temp_free(tcg_ctx, t1);
 }
 
+/* SAA:  mem32[GPR[base]] += GPR[rt]<31:0>
+   SAAD: mem64[GPR[base]] += GPR[rt]<63:0>
+   Octeon store-atomic-add.  Address is naturally aligned; unicorn is
+   single-threaded per emulation, so a plain load/add/store suffices. */
+static void gen_octeon_saa(DisasContext *ctx, int base, int rt,
+                           bool is_doubleword)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv addr = tcg_temp_new(tcg_ctx);
+    TCGv val = tcg_temp_new(tcg_ctx);
+    TCGv t1 = tcg_temp_new(tcg_ctx);
+    int mem_idx = ctx->mem_idx;
+
+    gen_base_offset_addr(ctx, addr, base, 0);
+    gen_load_gpr(tcg_ctx, t1, rt);
+    if (is_doubleword) {
+        tcg_gen_qemu_ld_tl(tcg_ctx, val, addr, mem_idx, MO_TEQ);
+        tcg_gen_add_tl(tcg_ctx, val, val, t1);
+        tcg_gen_qemu_st_tl(tcg_ctx, val, addr, mem_idx, MO_TEQ);
+    } else {
+        tcg_gen_qemu_ld_tl(tcg_ctx, val, addr, mem_idx, MO_TESL);
+        tcg_gen_add_tl(tcg_ctx, val, val, t1);
+        tcg_gen_qemu_st_tl(tcg_ctx, val, addr, mem_idx, MO_TEUL);
+    }
+    tcg_temp_free(tcg_ctx, addr);
+    tcg_temp_free(tcg_ctx, val);
+    tcg_temp_free(tcg_ctx, t1);
+}
+
+/* POP:  rd = popcount(rs<31:0>)
+   DPOP: rd = popcount(rs<63:0>)
+   Octeon count-ones.  Result is small, so it zero-extends into rd. */
+static void gen_octeon_pop(DisasContext *ctx, int rd, int rs,
+                           bool is_doubleword)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0;
+
+    if (rd == 0) {
+        return;
+    }
+    t0 = tcg_temp_new(tcg_ctx);
+    gen_load_gpr(tcg_ctx, t0, rs);
+    if (!is_doubleword) {
+        tcg_gen_ext32u_tl(tcg_ctx, t0, t0);
+    }
+    tcg_gen_ctpop_tl(tcg_ctx, tcg_ctx->cpu_gpr[rd], t0);
+    tcg_temp_free(tcg_ctx, t0);
+}
+
+/* BADDU: rd = (rs + rt) & 0xff  (unsigned byte add, zero-extended). */
+static void gen_octeon_baddu(DisasContext *ctx, int rd, int rs, int rt)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0, t1;
+
+    if (rd == 0) {
+        return;
+    }
+    t0 = tcg_temp_new(tcg_ctx);
+    t1 = tcg_temp_new(tcg_ctx);
+    gen_load_gpr(tcg_ctx, t0, rs);
+    gen_load_gpr(tcg_ctx, t1, rt);
+    tcg_gen_add_tl(tcg_ctx, t0, t0, t1);
+    tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_gpr[rd], t0, 0xff);
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
+}
+
 /* CINS:   rt = (rs & ((1<<(lenm1+1))-1)) << p
    CINS32: rt = (rs & ((1<<(lenm1+1))-1)) << (p + 32) */
 static void gen_octeon_cins(DisasContext *ctx, int rt, int rs,
@@ -27419,6 +27493,28 @@ static void decode_opc_special2_legacy(CPUMIPSState *env, DisasContext *ctx)
                         (ctx->opcode >> 6) & 0x1f,
                         (ctx->opcode >> 11) & 0x1f,
                         op1 == OPC_OCT_EXTS32);
+        break;
+    case OPC_OCT_SAA:
+        check_insn(ctx, INSN_OCTEON);
+        gen_octeon_saa(ctx, rs, rt, false);
+        break;
+    case OPC_OCT_SAAD:
+        check_insn(ctx, INSN_OCTEON);
+        check_mips_64(ctx);
+        gen_octeon_saa(ctx, rs, rt, true);
+        break;
+    case OPC_OCT_BADDU:
+        check_insn(ctx, INSN_OCTEON);
+        gen_octeon_baddu(ctx, rd, rs, rt);
+        break;
+    case OPC_OCT_POP:
+        check_insn(ctx, INSN_OCTEON);
+        gen_octeon_pop(ctx, rd, rs, false);
+        break;
+    case OPC_OCT_DPOP:
+        check_insn(ctx, INSN_OCTEON);
+        check_mips_64(ctx);
+        gen_octeon_pop(ctx, rd, rs, true);
         break;
 #endif
     default:            /* Invalid */

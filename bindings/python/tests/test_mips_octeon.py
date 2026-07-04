@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # Correctness tests for Cavium Octeon (cnMIPS) instruction support on
 # UC_CPU_MIPS64_OCTEON_PLUS: BBIT0/BBIT1/BBIT032/BBIT132, CINS/CINS32,
-# EXTS/EXTS32, DMUL, SEQ/SNE, SEQI/SNEI.  Each test encodes a single
-# instruction (terminated by `jr $ra`), runs it, and compares the result
-# against the CN50XX HRM spec.
+# EXTS/EXTS32, DMUL, SEQ/SNE, SEQI/SNEI, SAA/SAAD, BADDU, POP/DPOP.  Each
+# test encodes a single instruction (terminated by `jr $ra`), runs it, and
+# compares the result against the CN50XX HRM spec.
 
 import struct
 import sys
@@ -12,6 +12,7 @@ from unicorn import *
 from unicorn.mips_const import *
 
 CODE_ADDR = 0x10000
+DATA_ADDR = CODE_ADDR + 0x800  # scratch, naturally aligned, in mapped page
 RA_SENTINEL = 0xdeadbeef
 U64_MASK = (1 << 64) - 1
 
@@ -20,12 +21,14 @@ def be32(words):
     return b"".join(struct.pack(">I", w) for w in words)
 
 
-def run(words, init_regs=None):
+def run(words, init_regs=None, mem_writes=None):
     mu = Uc(UC_ARCH_MIPS, UC_MODE_64 | UC_MODE_BIG_ENDIAN)
     mu.ctl_set_cpu_model(UC_CPU_MIPS64_OCTEON_PLUS)
     mu.ctl_set_tlb_mode(UC_TLB_VIRTUAL)
     mu.mem_map(CODE_ADDR, 0x1000)
     mu.mem_write(CODE_ADDR, be32(words))
+    for addr, data in (mem_writes or {}).items():
+        mu.mem_write(addr, data)
     mu.reg_write(UC_MIPS_REG_RA, RA_SENTINEL)
     for reg, val in (init_regs or {}).items():
         mu.reg_write(reg, val & U64_MASK)
@@ -203,9 +206,68 @@ def t_bbit():
     check("BBIT132 bit-clear not-taken", 1, mu.reg_read(reg(V0)))
 
 
+# ---- SAA / SAAD: store-atomic-add to memory ----
+
+def t_saa():
+    # saa a1, (a0): mem32[a0] += a1<31:0>
+    code = [special2(A0, A1, 0, 0, 0x18), JR_RA, NOP]
+    mu = run(code, {reg(A0): DATA_ADDR, reg(A1): 0x11111111},
+             {DATA_ADDR: struct.pack(">I", 0x22222222)})
+    got = struct.unpack(">I", mu.mem_read(DATA_ADDR, 4))[0]
+    check("SAA add word", 0x33333333, got)
+    # 32-bit wrap: 0xFFFFFFFF + 1 -> 0, and only the word is touched
+    mu = run(code, {reg(A0): DATA_ADDR, reg(A1): 1},
+             {DATA_ADDR: struct.pack(">II", 0xFFFFFFFF, 0xAABBCCDD)})
+    lo, hi = struct.unpack(">II", mu.mem_read(DATA_ADDR, 8))
+    check("SAA word wrap", 0, lo)
+    check("SAA leaves next word", 0xAABBCCDD, hi)
+
+
+def t_saad():
+    # saad a1, (a0): mem64[a0] += a1<63:0>
+    code = [special2(A0, A1, 0, 0, 0x19), JR_RA, NOP]
+    mu = run(code, {reg(A0): DATA_ADDR, reg(A1): 0x1111111122222222},
+             {DATA_ADDR: struct.pack(">Q", 0x2222222233333333)})
+    got = struct.unpack(">Q", mu.mem_read(DATA_ADDR, 8))[0]
+    check("SAAD add dword", 0x3333333355555555, got)
+
+
+# ---- BADDU: rd = (rs + rt) & 0xff ----
+
+def t_baddu():
+    code = [special2(A0, A1, V0, 0, 0x28), JR_RA, NOP]
+    mu = run(code, {reg(A0): 0x40, reg(A1): 0x05})
+    check("BADDU 0x40+5", 0x45, mu.reg_read(reg(V0)))
+    # carry out of byte is discarded: 0x1FF + 2 = 0x201 -> 0x01
+    mu = run(code, {reg(A0): 0x1FF, reg(A1): 0x02})
+    check("BADDU byte truncation", 0x01, mu.reg_read(reg(V0)))
+
+
+# ---- POP / DPOP: population count ----
+
+def t_pop():
+    # pop v0, a0 -> popcount(a0<31:0>)
+    code = [special2(A0, 0, V0, 0, 0x2C), JR_RA, NOP]
+    mu = run(code, {reg(A0): 0xF0F0F0F0})
+    check("POP low32", 16, mu.reg_read(reg(V0)))
+    # upper 32 bits are ignored
+    mu = run(code, {reg(A0): 0xFFFFFFFF00000001})
+    check("POP ignores upper32", 1, mu.reg_read(reg(V0)))
+
+
+def t_dpop():
+    # dpop v0, a0 -> popcount(a0<63:0>)
+    code = [special2(A0, 0, V0, 0, 0x2D), JR_RA, NOP]
+    mu = run(code, {reg(A0): 0xFFFFFFFF00000001})
+    check("DPOP all64", 33, mu.reg_read(reg(V0)))
+    mu = run(code, {reg(A0): 0})
+    check("DPOP zero", 0, mu.reg_read(reg(V0)))
+
+
 if __name__ == '__main__':
     for fn in (t_seq, t_sne, t_seqi, t_snei, t_dmul,
-               t_cins, t_cins32, t_exts, t_exts32, t_bbit):
+               t_cins, t_cins32, t_exts, t_exts32, t_bbit,
+               t_saa, t_saad, t_baddu, t_pop, t_dpop):
         fn()
     if FAILED:
         print("FAILURES: %s" % ", ".join(FAILED))
