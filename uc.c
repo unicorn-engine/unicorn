@@ -1232,6 +1232,14 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     // If UC_CTL_UC_USE_EXITS is set, then the @until param won't have any
     // effect. This is designed for the backward compatibility.
     if (!uc->use_exits) {
+        uint64_t prev = uc->exits[uc->nested_level - 1];
+        // The exit address changed: drop the stale TB at the old exit (so it
+        // is re-translated as a normal instruction) and at the new one (so it
+        // becomes a halting block) -- see uc_exit_invalidate().
+        if (prev != until) {
+            uc_exit_invalidate(uc, prev);
+            uc_exit_invalidate(uc, until);
+        }
         uc->exits[uc->nested_level - 1] = until;
     }
 
@@ -2651,6 +2659,14 @@ static inline gboolean uc_read_exit_iter(gpointer key, gpointer val,
     return false;
 }
 
+static inline gboolean uc_exit_invalidate_tree_iter(gpointer key, gpointer val,
+                                                    gpointer data)
+{
+    uc_exit_invalidate((uc_engine *)data, *(uint64_t *)key);
+
+    return false;
+}
+
 UNICORN_EXPORT
 uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
 {
@@ -2785,6 +2801,10 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
             uint64_t *exits = va_arg(args, uint64_t *);
             size_t cnt = va_arg(args, size_t);
 
+            // Drop cached TBs at the exits being removed; uc_add_exit() below
+            // does the same for the ones being added.
+            g_tree_foreach(uc->ctl_exits, uc_exit_invalidate_tree_iter,
+                           (void *)uc);
             g_tree_remove_all(uc->ctl_exits);
 
             for (size_t i = 0; i < cnt; i++) {

@@ -454,12 +454,27 @@ struct uc_context {
     char data[0];         // context
 };
 
+// Whether @addr is an exit address is baked into a TB at translation time, but
+// the TB cache is keyed by address only. So whenever an address is added to or
+// removed from the exit set, drop any cached TB whose translation depended on
+// the old state, forcing re-translation. We invalidate [addr - 1, addr + 1):
+// that covers both the block starting at addr (halt block, see translator.c)
+// and the block that halts on reaching it (ends at addr, see the target
+// translators' uc_addr_is_exit() check).
+static inline void uc_exit_invalidate(uc_engine *uc, uint64_t addr)
+{
+    if (addr != 0 && uc->uc_invalidate_tb) {
+        uc->uc_invalidate_tb(uc, addr - 1, 2);
+    }
+}
+
 // We have to support 32bit system so we can't hold uint64_t on void*
 static inline void uc_add_exit(uc_engine *uc, uint64_t addr)
 {
     uint64_t *new_exit = g_malloc(sizeof(uint64_t));
     *new_exit = addr;
     g_tree_insert(uc->ctl_exits, (gpointer)new_exit, (gpointer)1);
+    uc_exit_invalidate(uc, addr);
 }
 
 // This function has to exist since we would like to accept uint32_t or
