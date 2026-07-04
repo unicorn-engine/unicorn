@@ -48,9 +48,11 @@ Note, other generators like `Ninja` and `Visual Studio 16 2019` would also work.
 
 ```bash
 mkdir build; cd build
-cmake .. -G "Visual Studio 16 2019" -A "win32" -DCMAKE_BUILD_TYPE=Release
-msbuild unicorn.sln -p:Plaform=Win32 -p:Configuration=Release
+cmake .. -G "Visual Studio 18 2026" -A "x64" -DCMAKE_BUILD_TYPE=Release
+msbuild unicorn.slnx -p:Plaform=x64 -p:Configuration=Release
 ```
+
+You may need to run your shell as administrator if you see [error with insufficient permissions to create symlink](https://github.com/unicorn-engine/unicorn/issues/2135#issuecomment-2759429480). 
 
 ## Cross build with NDK
 
