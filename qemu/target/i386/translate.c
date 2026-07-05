@@ -7489,6 +7489,9 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         op = (modrm >> 3) & 7;
         mod = (modrm >> 6) & 3;
         rm = (modrm & 7) | REX_B(s);
+        /* LOCK BT and register-only forms of LOCK BTS/BTR/BTC are illegal */
+        if ((s->prefix & PREFIX_LOCK) && (mod == 3 || op == 4))
+            goto illegal_op;
         if (mod != 3) {
             s->rip_offset = 1;
             gen_lea_modrm(env, s, modrm);
@@ -7522,6 +7525,9 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         reg = ((modrm >> 3) & 7) | rex_r;
         mod = (modrm >> 6) & 3;
         rm = (modrm & 7) | REX_B(s);
+        /* LOCK BT and register-only forms of LOCK BTS/BTR/BTC are illegal */
+        if ((s->prefix & PREFIX_LOCK) && (mod == 3 || op == 0))
+            goto illegal_op;
         gen_op_mov_v_reg(s, MO_32, s->T1, reg);
         if (mod != 3) {
             AddressParts a = gen_lea_modrm_0(env, s, modrm);
@@ -7543,11 +7549,6 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         tcg_gen_shl_tl(tcg_ctx, s->tmp0, s->tmp0, s->T1);
         if (s->prefix & PREFIX_LOCK) {
             switch (op) {
-            case 0: /* bt */
-                /* Needs no atomic ops; we surpressed the normal
-                   memory load for LOCK above so do it now.  */
-                gen_op_ld_v(s, ot, s->T0, s->A0);
-                break;
             case 1: /* bts */
                 tcg_gen_atomic_fetch_or_tl(tcg_ctx, s->T0, s->A0, s->tmp0,
                                            s->mem_index, ot | MO_LE);
