@@ -4,7 +4,7 @@ To download/update the Unicorn Go bindings, run:
 
 A very basic usage example follows
 
-_(Does not handle most errors for brevity. Please see sample.go for a more hygenic example):_
+_(Does not handle most errors for brevity. Please see sample.go for a more hygienic example):_
 
     package main
 

@@ -1,6 +1,6 @@
 This HOWTO introduces how to build Unicorn2 natively on Linux/Mac/Windows or cross-build to Windows from Linux host.
 
-Note: By default, CMake will build both the shared and static libraries while only static libraries are built if unicorn is used as a Cmake subdirectory. In most cases, you don't need to care about which kind of library to build. ONLY use `BUILD_SHARED_LIBS=no`if you know what you are doing.
+Note: By default, CMake will build both the shared and static libraries while only static libraries are built if Unicorn is used as a CMake subdirectory. In most cases, you don't need to care about which kind of library to build. ONLY use `BUILD_SHARED_LIBS=no` if you know what you are doing.
 
 ## Native build on Linux/macOS
 
@@ -49,7 +49,7 @@ Note, other generators like `Ninja` and `Visual Studio 16 2019` would also work.
 ```bash
 mkdir build; cd build
 cmake .. -G "Visual Studio 16 2019" -A "win32" -DCMAKE_BUILD_TYPE=Release
-msbuild unicorn.sln -p:Plaform=Win32 -p:Configuration=Release
+msbuild unicorn.sln -p:Platform=Win32 -p:Configuration=Release
 ```
 
 ## Cross build with NDK
