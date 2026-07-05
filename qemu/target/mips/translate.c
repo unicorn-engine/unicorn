@@ -13102,6 +13102,14 @@ static void gen_rdhwr(DisasContext *ctx, int rt, int rd, int sel)
             generate_exception_end(ctx, EXCP_RI);
         }
         break;
+#if defined(TARGET_MIPS64)
+    case 31:
+        /* Octeon hardware register 31: CvmCount free-running cycle counter. */
+        check_insn(ctx, INSN_OCTEON);
+        gen_helper_rdhwr_cvmcount(tcg_ctx, t0, tcg_ctx->cpu_env);
+        gen_store_gpr(tcg_ctx, t0, rt);
+        break;
+#endif
     default:            /* Invalid */
         MIPS_INVAL("rdhwr");
         generate_exception_end(ctx, EXCP_RI);

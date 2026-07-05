@@ -264,10 +264,29 @@ def t_dpop():
     check("DPOP zero", 0, mu.reg_read(reg(V0)))
 
 
+# ---- rdhwr $31: Octeon CvmCount free-running cycle counter ----
+
+def rdhwr(rt, rd):
+    # SPECIAL3 (0x1F) | rt | rd | funct 0x3B
+    return (0x1F << 26) | (rt << 16) | (rd << 11) | 0x3B
+
+
+def t_rdhwr_cvmcount():
+    # rdhwr v0,$31 ; rdhwr v1,$31 : hardware register 31 is a monotonically
+    # advancing cycle counter (no fault, and each read is strictly greater).
+    code = [rdhwr(V0, 31), rdhwr(A1, 31), JR_RA, NOP]
+    mu = run(code)
+    first = mu.reg_read(reg(V0))
+    second = mu.reg_read(reg(A1))
+    check("CvmCount first read nonzero", True, first > 0)
+    check("CvmCount advances", True, second > first)
+
+
 if __name__ == '__main__':
     for fn in (t_seq, t_sne, t_seqi, t_snei, t_dmul,
                t_cins, t_cins32, t_exts, t_exts32, t_bbit,
-               t_saa, t_saad, t_baddu, t_pop, t_dpop):
+               t_saa, t_saad, t_baddu, t_pop, t_dpop,
+               t_rdhwr_cvmcount):
         fn()
     if FAILED:
         print("FAILURES: %s" % ", ".join(FAILED))
