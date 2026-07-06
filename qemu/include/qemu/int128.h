@@ -146,7 +146,18 @@ static inline Int128 bswap128(Int128 a)
 #else /* !CONFIG_INT128 */
 
 typedef struct Int128 Int128;
-#if !(defined(_MSC_VER) && defined(__clang__))
+/*
+ * In the !CONFIG_INT128 fallback, QEMU aliases the reserved builtin name
+ * __int128_t to the struct so fallback code can name it. That is only valid on
+ * compilers that do NOT provide __int128_t as a builtin: emitting it where the
+ * builtin exists is a "typedef redefinition with different types" error. The
+ * builtin is present iff __SIZEOF_INT128__ is defined (GCC/Clang), so gate on
+ * that. This subsumes the earlier clang-cl-only guard (#2251) and fixes the
+ * redefinition seen with regular Clang (e.g. Apple clang on arm64) whenever the
+ * build reaches this fallback. Regression test: tests/regress/int128_redefinition.c
+ * (keep the guard below in sync with it).
+ */
+#if !defined(__SIZEOF_INT128__)
 typedef Int128 __int128_t;
 #endif
 

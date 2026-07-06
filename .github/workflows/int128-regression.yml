@@ -1,0 +1,41 @@
+name: int128 fallback regression
+
+# Guards the !CONFIG_INT128 fallback in qemu/include/qemu/int128.h against the
+# __int128_t redefinition that broke real Clang builds (e.g. Apple clang on
+# arm64, and the Rust unicorn-engine-sys crate). The existing C-library CI builds
+# on macos-14 (arm64) but via cmake with CONFIG_INT128 defined, so it uses the
+# native path and never compiles the fallback; the Rust-crate CI does not run on
+# Apple Silicon. This job compiles the fallback construct directly on every
+# platform whose compiler exposes the __int128_t builtin — including arm64
+# Apple clang, where the pre-fix guard fails.
+
+on:
+  push:
+    paths:
+      - 'qemu/include/qemu/int128.h'
+      - 'tests/regress/int128_redefinition.c'
+      - '.github/workflows/int128-regression.yml'
+  pull_request:
+    paths:
+      - 'qemu/include/qemu/int128.h'
+      - 'tests/regress/int128_redefinition.c'
+      - '.github/workflows/int128-regression.yml'
+  workflow_dispatch:
+
+jobs:
+  compile:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, name: 'linux-x86_64' }
+          - { os: macos-13,      name: 'macos-x86_64 (Intel clang)' }
+          - { os: macos-14,      name: 'macos-arm64 (Apple clang)' }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile + run int128 fallback regression
+        run: |
+          cc -Wall -Wextra -Werror -o int128_regress tests/regress/int128_redefinition.c
+          ./int128_regress
