@@ -621,6 +621,66 @@ static void test_mem_addr_size_wraparound(void)
     OK(uc_close(uc));
 }
 
+/* SMC test: verifies that a store which overwrites code on
+ * the same page invalidates any cached TBs translated from that
+ * page, so subsequent execution sees the new instructions.
+ */
+static void test_smc(void)
+{
+    uc_engine *uc;
+    uint64_t r_rax;
+    uint64_t r_rsp;
+
+    char code[] = (                    // 00: do_inc_dec:
+        "\x48\xff\xc0"                 // 00:    inc %rax
+        "\xc3"                         // 03:    ret
+        "\xe8\xf7\xff\xff\xff"         // 04: call do_inc_dec
+        "\xc6\x05\xf2\xff\xff\xff\xc8" // 09: movb $0xc8, -0xe(%rip)
+        "\xe8\xeb\xff\xff\xff"         // 16: call do_inc_dec
+    );
+
+    r_rax = 0x1234;
+    r_rsp = 0x5000;
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map  (uc, 0x0,    0x1000, UC_PROT_ALL));                // text
+    OK(uc_mem_map  (uc, 0x4000, 0x1000, UC_PROT_READ|UC_PROT_WRITE)); // stack
+    OK(uc_mem_write(uc, 0x0,    code,   sizeof(code)-1));
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &r_rax));
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &r_rsp));
+    OK(uc_emu_start(uc, 0x4, sizeof(code)-1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax));
+    OK(uc_mem_read(uc, 0x0, code, sizeof(code)-1));
+    TEST_CHECK(r_rax == 0x1234);
+    TEST_CHECK((code[2] & 0xFF) == 0xC8);
+
+    OK(uc_close(uc));
+}
+
+/*
+ * Ensures that a code section initially as RW, if marked later as RX
+ * still works as expected
+ */
+static void test_tlbdirty_exec(void)
+{
+    uc_engine *uc;
+    uint32_t eax;
+
+    char code[] = ("\x40"); // inc eax
+    eax = 41;
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_reg_write  (uc, UC_X86_REG_EAX, &eax));
+    OK(uc_mem_map    (uc, 0x0, 0x1000, UC_PROT_READ|UC_PROT_WRITE));
+    OK(uc_mem_write  (uc, 0x0, code,   sizeof(code)-1));
+    OK(uc_mem_protect(uc, 0x0, 0x1000, UC_PROT_READ|UC_PROT_EXEC));
+    OK(uc_emu_start  (uc, 0x0, sizeof(code)-1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == 42);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -641,4 +701,6 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_virtual_to_physical", test_virtual_to_physical},
              {"test_virtual_write", test_virtual_write},
              {"test_mem_addr_size_wraparound", test_mem_addr_size_wraparound},
+             {"test_smc", test_smc},
+             {"test_tlbdirty_exec", test_tlbdirty_exec},
              {NULL, NULL}};

@@ -870,11 +870,16 @@ void tlb_set_page_with_attrs(CPUState *cpu, target_ulong vaddr,
         /*
          * Computing is_clean is expensive; avoid all that unless
          * the page is actually writable.
+         *
+         * The usage of TLB_NOTDIRTY only matters for pages that
+         * could contain TBs, so set TLB_NOTDIRTY only for executable
+         * memory sections.
          */
         if (prot & PAGE_WRITE) {
             if (section->readonly) {
                 write_address |= TLB_DISCARD_WRITE;
-            } else if (cpu_physical_memory_is_clean(iotlb)) {
+            } else if ((section->mr->perms & UC_PROT_EXEC) &&
+                       cpu_physical_memory_is_clean(iotlb)) {
                 write_address |= TLB_NOTDIRTY;
             }
         }
