@@ -2618,6 +2618,44 @@ static void test_x86_aas_flags(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_group_1a(void)
+{
+    uc_engine *uc;
+
+    char code[] = {
+        // pop rax (ModRM.reg == 0)
+        0x8f, 0xc0,
+        // reserved group 1a opcode (ModRM.reg == 7)
+        0x8f, 0xc0 | (7 << 3)
+    };
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code));
+
+    OK(uc_mem_map(uc, code_start + code_len, 0x1000, UC_PROT_ALL));
+
+    uint8_t stack_data[] = {0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef};
+
+    uint64_t rsp = code_start + code_len + 0x800;
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &rsp));
+    OK(uc_mem_write(uc, rsp, stack_data, sizeof(stack_data)));
+
+    uc_assert_err(UC_ERR_INSN_INVALID,
+            uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    uint64_t rip = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &rip));
+    TEST_CHECK(rip == code_start + 2);
+
+    OK(uc_reg_read(uc, UC_X86_REG_RSP, &rsp));
+    TEST_CHECK(rsp == code_start + code_len + 0x800 + 8);
+
+    uint64_t rax = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+    TEST_CHECK(rax == 0xefcdab9078563412);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2695,4 +2733,5 @@ TEST_LIST = {
     {"test_x86_mem_hooks_pc_guarantee", test_x86_mem_hooks_pc_guarantee},
     {"test_x86_aaa_flags", test_x86_aaa_flags},
     {"test_x86_aas_flags", test_x86_aas_flags},
+    {"test_x86_group_1a", test_x86_group_1a},
     {NULL, NULL}};
