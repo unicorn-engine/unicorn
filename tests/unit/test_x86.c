@@ -2656,6 +2656,82 @@ static void test_x86_group_1a(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_lock_bt_mem(void)
+{
+    uc_engine *uc;
+
+    // lock bt [rax], eax
+    char code[] = "\xf0\x0f\xa3\x00";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+
+    OK(uc_mem_map(uc, code_start + code_len, 0x1000, UC_PROT_ALL));
+    uc_assert_err(UC_ERR_INSN_INVALID, uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_lock_bt_reg(void)
+{
+    uc_engine *uc;
+
+    // lock bt eax, eax
+    char code[] = "\xf0\x0f\xa3\xc0";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+
+    OK(uc_mem_map(uc, code_start + code_len, 0x1000, UC_PROT_ALL));
+    uc_assert_err(UC_ERR_INSN_INVALID, uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_lock_btc_mem(void)
+{
+    uc_engine *uc;
+
+    // lock btc [rax], ebx
+    char code[] = "\xf0\x0f\xbb\x18";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+
+    OK(uc_mem_map(uc, code_start + code_len, 0x1000, UC_PROT_ALL));
+
+    char data[1] = "\x80";
+    OK(uc_mem_write(uc, code_start + code_len + 0x800, data, sizeof(data)));
+
+    uint64_t rax = code_start + code_len;
+    uint64_t rbx = 8*0x800+7;
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_write(uc, UC_X86_REG_RBX, &rbx));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    uint64_t rflags = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RFLAGS, &rflags));
+    TEST_CHECK((rflags & 1) != 0); // RFLAGS.CF must be set
+
+    OK(uc_mem_read(uc, code_start + code_len + 0x800, data, sizeof(data)));
+    TEST_CHECK(data[0] == 0);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_lock_btc_reg(void)
+{
+    uc_engine *uc;
+
+    // lock btc eax, eax
+    char code[] = "\xf0\x0f\xbb\xc0";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+
+    OK(uc_mem_map(uc, code_start + code_len, 0x1000, UC_PROT_ALL));
+    uc_assert_err(UC_ERR_INSN_INVALID, uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2734,4 +2810,8 @@ TEST_LIST = {
     {"test_x86_aaa_flags", test_x86_aaa_flags},
     {"test_x86_aas_flags", test_x86_aas_flags},
     {"test_x86_group_1a", test_x86_group_1a},
+    {"test_x86_lock_bt_mem", test_x86_lock_bt_mem},
+    {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
+    {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
+    {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
     {NULL, NULL}};
