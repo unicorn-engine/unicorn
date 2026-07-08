@@ -319,21 +319,29 @@ target_ulong helper_##name(CPUMIPSState *env, target_ulong arg, int mem_idx)  \
      * cpu_mips_translate_address() walks the MIPS segments and would raise a \
      * spurious EXCP_AdEL for addresses outside useg (e.g. a MIPS64 address    \
      * above the 2GB limit), even though the load below goes through the      \
-     * soft-TLB and succeeds. So in virtual-TLB mode skip the segment walk    \
-     * and recover the hook-mapped physical address from the soft-TLB, which  \
-     * is what CP0_LLAddr is architecturally meant to hold.                   \
+     * soft-TLB and succeeds. So in virtual-TLB mode do not walk the segments:\
+     * perform the load first - it goes through the soft-TLB and raises the   \
+     * proper MMU fault if the hook genuinely declines the page (rather than  \
+     * the failure being silently treated as an identity mapping) - and then  \
+     * recover the hook-mapped physical address from the now-populated        \
+     * soft-TLB, which is what CP0_LLAddr is architecturally meant to hold.   \
      */                                                                       \
     if (CPU_GET_CLASS(env_cpu(env))->tlb_fill !=                              \
         CPU_GET_CLASS(env_cpu(env))->tlb_fill_cpu) {                          \
         target_ulong paddr;                                                   \
+        env->lladdr = arg;                                                    \
+        env->llval =                                                          \
+            do_cast cpu_##insn##_mmuidx_ra(env, arg, mem_idx, GETPC());       \
+        /* The load above filled (and permission-checked) the page, so this   \
+         * lookup hits; the else is only a defensive fallback. */             \
         if (tlb_vaddr_to_paddr(env, arg, MMU_DATA_LOAD, mem_idx, &paddr)) {   \
             env->CP0_LLAddr = paddr;                                          \
         } else {                                                              \
             env->CP0_LLAddr = arg;                                            \
         }                                                                     \
-    } else {                                                                  \
-        env->CP0_LLAddr = do_translate_address(env, arg, 0, GETPC());         \
+        return env->llval;                                                    \
     }                                                                         \
+    env->CP0_LLAddr = do_translate_address(env, arg, 0, GETPC());             \
     env->lladdr = arg;                                                        \
     env->llval = do_cast cpu_##insn##_mmuidx_ra(env, arg, mem_idx, GETPC());  \
     return env->llval;                                                        \
