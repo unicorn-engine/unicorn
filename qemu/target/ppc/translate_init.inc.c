@@ -10123,6 +10123,7 @@ static void ppc_cpu_reset(CPUState *dev)
     }
 #endif
 
+    env->msr |= MSR_HVB; // alter_hv only does anything if MSR_HVB is already set
     hreg_store_msr(env, msr, 1);
 
     env->nip = env->hreset_vector | env->excp_prefix;
