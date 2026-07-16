@@ -110,3 +110,31 @@ In all cases you can either map the page in with the `uc_mem_protect*` function 
 *Why might you use it?*
 
 You might change the protection level of the region to allow the memory to be accessed, or you might return non-0 to abort execution.
+
+## UC_HOOK_TLB_FILL
+
+*What is it?*
+
+This hook is called when the `UC_CTL_TLB_TYPE` is set to `UC_TLB_VIRTUAL` and the translation lookaside buffer (TLB) does not contain a mapping of the virtual address (page aligned).
+
+The hook is called with the starting address of the page and which access type is required. The result is expected to be written in the `uc_tlb_entry *` parameter.
+
+If the result doesn't contain the required access rights or the hook returns false the emulation is stopped and one of `UC_ERR_MMU_READ`, `UC_ERR_MMU_WRITE`, `UC_ERR_MMU_WRITE` is set as the return code of the emulation.
+The faulting address can by read with `uc_ctl_get_invalid_addr()`.
+
+This hook is also used by the `uc_vmem*` functions.
+
+*Why might you use it?*
+
+When you need complex mappings and don't want to use the MMU definition of the CPU.
+
+You can add a mapping to the same (emulated) physical page on different addresses in the virtual address space (even with different access permissions).
+This allows to implement for example mmap().
+
+Also it's possible to use this to emulate multiple processes with different mapping without the need to `uc_mem_unmap` on process switching.
+To change the user data there is `uc_hook_set_user_data` available.
+
+*Why might you not use it?*
+
+This hook is not intended to be used as an page fault hook i.e. to implement copy on write.
+To do this return false on this hook and handle the fault outside of the emulation.
