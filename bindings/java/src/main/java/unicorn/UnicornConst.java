@@ -76,6 +76,9 @@ public interface UnicornConst {
     public static final int UC_ERR_RESOURCE = 20;
     public static final int UC_ERR_EXCEPTION = 21;
     public static final int UC_ERR_OVERFLOW = 22;
+    public static final int UC_ERR_MMU_READ = 23;
+    public static final int UC_ERR_MMU_WRITE = 24;
+    public static final int UC_ERR_MMU_FETCH = 25;
 
     public static final int UC_PROT_NONE = 0;
     public static final int UC_PROT_READ = 1;
@@ -152,6 +155,8 @@ public interface UnicornConst {
     public static final int UC_CTL_PAUTH_SIGN = 15;
     public static final int UC_CTL_PAUTH_STRIP = 16;
     public static final int UC_CTL_PAUTH_AUTH = 17;
+    public static final int UC_CTL_INVALID_ADDR = 18;
+    public static final int UC_CTL_UC_PREALLOC = 19;
     public static final int UC_CTL_CONTEXT_CPU = 1;
     public static final int UC_CTL_CONTEXT_MEMORY = 2;
 
