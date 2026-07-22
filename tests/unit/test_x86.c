@@ -2618,6 +2618,70 @@ static void test_x86_aas_flags(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_lahf_with_rex(void)
+{
+    uc_engine *uc;
+
+    char code[] = {
+        // lahf
+        0x40, 0x9f
+    };
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code));
+
+    uint64_t rax = 0x1122334455667788;
+    uint64_t rsp = 0;
+    uint64_t rflags = 0x246;
+
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &rsp));
+    OK(uc_reg_write(uc, UC_X86_REG_RFLAGS, &rflags));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_read(uc, UC_X86_REG_RSP, &rsp));
+    OK(uc_reg_read(uc, UC_X86_REG_RFLAGS, &rflags));
+
+    TEST_CHECK(rax == 0x1122334455664688);
+    TEST_CHECK(rsp == 0);
+    TEST_CHECK(rflags == 0x246);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_sahf_with_rex(void)
+{
+    uc_engine *uc;
+
+    char code[] = {
+        // sahf
+        0x40, 0x9e
+    };
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code));
+
+    uint64_t rax = 0xff << 8;
+    uint64_t rsp = 0;
+    uint64_t rflags = 2;
+
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &rsp));
+    OK(uc_reg_write(uc, UC_X86_REG_RFLAGS, &rflags));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_read(uc, UC_X86_REG_RSP, &rsp));
+    OK(uc_reg_read(uc, UC_X86_REG_RFLAGS, &rflags));
+
+    TEST_CHECK(rax == 0xff << 8);
+    TEST_CHECK(rsp == 0);
+    TEST_CHECK(rflags == 0xd7);
+
+    OK(uc_close(uc));
+}
+
 static void test_x86_group_1a(void)
 {
     uc_engine *uc;
@@ -2809,6 +2873,8 @@ TEST_LIST = {
     {"test_x86_mem_hooks_pc_guarantee", test_x86_mem_hooks_pc_guarantee},
     {"test_x86_aaa_flags", test_x86_aaa_flags},
     {"test_x86_aas_flags", test_x86_aas_flags},
+    {"test_x86_lahf_with_rex", test_x86_lahf_with_rex},
+    {"test_x86_sahf_with_rex", test_x86_sahf_with_rex},
     {"test_x86_group_1a", test_x86_group_1a},
     {"test_x86_lock_bt_mem", test_x86_lock_bt_mem},
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
