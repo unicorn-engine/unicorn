@@ -881,9 +881,9 @@ static void gen_compute_eflags(DisasContext *s)
         }
     }
 
-    gen_update_cc_op(s);
     gen_helper_cc_compute_all(tcg_ctx, tcg_ctx->cpu_cc_src, dst, src1, src2, tcg_ctx->cpu_cc_op);
     set_cc_op(s, CC_OP_EFLAGS);
+    gen_update_cc_op(s);
 
     if (dead) {
         tcg_temp_free(tcg_ctx, zero);

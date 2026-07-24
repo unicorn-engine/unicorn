@@ -2618,6 +2618,76 @@ static void test_x86_aas_flags(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_rflags_after_exec(void *code, size_t code_size,
+                                       uc_err emu_expected_error,
+                                       uint64_t expected_rflags,
+                                       uint64_t read_only_page_base)
+{
+    uc_engine *uc;
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, code_size);
+
+    if (read_only_page_base != 0) {
+        OK(uc_mem_map(uc, read_only_page_base, 0x1000, UC_PROT_READ));
+        OK(uc_reg_write(uc, UC_X86_REG_RBX, &read_only_page_base));
+    }
+
+    uc_assert_err(emu_expected_error,
+        uc_emu_start(uc, code_start, code_start + code_size, 0, 0));
+
+    uint64_t rflags = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RFLAGS, &rflags));
+
+    TEST_CHECK(rflags == expected_rflags);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_rot_rflags_after_fault(void)
+{
+    uint8_t rcl_code[] = {
+        // add eax, eax
+        0x01, 0xc0,
+        // rcl byte [rbx], byte 0
+        0xc0, 0x13, 0x00
+    };
+
+    test_x86_rflags_after_exec(rcl_code, sizeof(rcl_code),
+            UC_ERR_READ_UNMAPPED, 0x46, 0);
+
+    test_x86_rflags_after_exec(rcl_code, sizeof(rcl_code),
+            UC_ERR_WRITE_PROT, 0x46, code_start + code_len);
+
+    uint8_t rcr_code[] = {
+        // add eax, eax
+        0x01, 0xc0,
+        // rcr byte [rbx], byte 0
+        0xc0, 0x1b, 0x00
+    };
+
+    test_x86_rflags_after_exec(rcr_code, sizeof(rcr_code),
+            UC_ERR_READ_UNMAPPED, 0x46, 0);
+
+    test_x86_rflags_after_exec(rcr_code, sizeof(rcr_code),
+            UC_ERR_WRITE_PROT, 0x46, code_start + code_len);
+}
+
+static void test_x86_setcc_rflags_after_fault(void)
+{
+    uint8_t setcc_code[] = {
+        // add eax, eax
+        0x01, 0xc0,
+        // setcc byte [rbx]
+        // second byte is to be modified
+        0x0f, 0x90, 0x03
+    };
+
+    for (uint8_t cc_byte = 0x90; cc_byte <= 0x9f; cc_byte++) {
+        setcc_code[3] = cc_byte;
+        test_x86_rflags_after_exec(setcc_code, sizeof(setcc_code),
+                UC_ERR_WRITE_UNMAPPED, 0x46, 0);
+    }
+}
+
 static void test_x86_group_1a(void)
 {
     uc_engine *uc;
@@ -2809,6 +2879,8 @@ TEST_LIST = {
     {"test_x86_mem_hooks_pc_guarantee", test_x86_mem_hooks_pc_guarantee},
     {"test_x86_aaa_flags", test_x86_aaa_flags},
     {"test_x86_aas_flags", test_x86_aas_flags},
+    {"test_x86_rot_rflags_after_fault", test_x86_rot_rflags_after_fault},
+    {"test_x86_setcc_rflags_after_fault", test_x86_setcc_rflags_after_fault},
     {"test_x86_group_1a", test_x86_group_1a},
     {"test_x86_lock_bt_mem", test_x86_lock_bt_mem},
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
