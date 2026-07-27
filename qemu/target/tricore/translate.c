@@ -4169,7 +4169,7 @@ static void decode_sro_opc(DisasContext *ctx, int op1)
         gen_offset_ld(ctx, tcg_ctx->cpu_gpr_d[15], tcg_ctx->cpu_gpr_a[r2], address, MO_UB);
         break;
     case OPC1_16_SRO_LD_H:
-        gen_offset_ld(ctx, tcg_ctx->cpu_gpr_d[15], tcg_ctx->cpu_gpr_a[r2], address, MO_LESW);
+        gen_offset_ld(ctx, tcg_ctx->cpu_gpr_d[15], tcg_ctx->cpu_gpr_a[r2], address * 2, MO_LESW);
         break;
     case OPC1_16_SRO_LD_W:
         gen_offset_ld(ctx, tcg_ctx->cpu_gpr_d[15], tcg_ctx->cpu_gpr_a[r2], address * 4, MO_LESL);
