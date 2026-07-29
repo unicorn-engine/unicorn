@@ -677,10 +677,13 @@ static size_t uc_arm_context_size(struct uc_struct *uc)
     ARM_ENV_CHECK(env->pmsav7.drbar)
     ARM_ENV_CHECK(env->pmsav7.drsr)
     ARM_ENV_CHECK(env->pmsav7.dracr)
+    ret += sizeof(env->pmsav7.rnr);
     ARM_ENV_CHECK(env->pmsav8.rbar[M_REG_NS])
     ARM_ENV_CHECK(env->pmsav8.rbar[M_REG_S])
     ARM_ENV_CHECK(env->pmsav8.rlar[M_REG_NS])
     ARM_ENV_CHECK(env->pmsav8.rlar[M_REG_S])
+    ret += sizeof(env->pmsav8.mair0);
+    ret += sizeof(env->pmsav8.mair1);
 
     // /* v8M SAU */
     // struct {
@@ -692,6 +695,8 @@ static size_t uc_arm_context_size(struct uc_struct *uc)
     nr = cpu->sau_sregion;
     ARM_ENV_CHECK(env->sau.rbar)
     ARM_ENV_CHECK(env->sau.rlar)
+    ret += sizeof(env->sau.rnr);
+    ret += sizeof(env->sau.ctrl);
 #undef ARM_ENV_CHECK
     // These fields are never used:
     // void *nvic;
@@ -727,14 +732,20 @@ static uc_err uc_arm_context_save(struct uc_struct *uc, uc_context *context)
     ARM_ENV_SAVE(env->pmsav7.drbar)
     ARM_ENV_SAVE(env->pmsav7.drsr)
     ARM_ENV_SAVE(env->pmsav7.dracr)
+    memcpy(p, &env->pmsav7.rnr, sizeof(env->pmsav7.rnr));
+    p += sizeof(env->pmsav7.rnr);
     ARM_ENV_SAVE(env->pmsav8.rbar[M_REG_NS])
     ARM_ENV_SAVE(env->pmsav8.rbar[M_REG_S])
     ARM_ENV_SAVE(env->pmsav8.rlar[M_REG_NS])
     ARM_ENV_SAVE(env->pmsav8.rlar[M_REG_S])
+    memcpy(p, &env->pmsav8.mair0, sizeof(env->pmsav8.mair0) + sizeof(env->pmsav8.mair1));
+    p += sizeof(env->pmsav8.mair0) + sizeof(env->pmsav8.mair1);
 
     nr = cpu->sau_sregion;
     ARM_ENV_SAVE(env->sau.rbar)
     ARM_ENV_SAVE(env->sau.rlar)
+    memcpy(p, &env->sau.rnr, sizeof(env->sau.rnr) + sizeof(env->sau.ctrl));
+    p += sizeof(env->sau.rnr) + sizeof(env->sau.ctrl);
 
 #undef ARM_ENV_SAVE
     return UC_ERR_OK;
@@ -767,14 +778,20 @@ static uc_err uc_arm_context_restore(struct uc_struct *uc, uc_context *context)
     ARM_ENV_RESTORE(env->pmsav7.drbar)
     ARM_ENV_RESTORE(env->pmsav7.drsr)
     ARM_ENV_RESTORE(env->pmsav7.dracr)
+    memcpy(&env->pmsav7.rnr, p, sizeof(env->pmsav7.rnr));
+    p += sizeof(env->pmsav7.rnr);
     ARM_ENV_RESTORE(env->pmsav8.rbar[M_REG_NS])
     ARM_ENV_RESTORE(env->pmsav8.rbar[M_REG_S])
     ARM_ENV_RESTORE(env->pmsav8.rlar[M_REG_NS])
     ARM_ENV_RESTORE(env->pmsav8.rlar[M_REG_S])
+    memcpy(&env->pmsav8.mair0, p, sizeof(env->pmsav8.mair0) + sizeof(env->pmsav8.mair1));
+    p += sizeof(env->pmsav8.mair0) + sizeof(env->pmsav8.mair1);
 
     nr = cpu->sau_sregion;
     ARM_ENV_RESTORE(env->sau.rbar)
     ARM_ENV_RESTORE(env->sau.rlar)
+    memcpy(&env->sau.rnr, p, sizeof(env->sau.rnr) + sizeof(env->sau.ctrl));
+    p += sizeof(env->sau.rnr) + sizeof(env->sau.ctrl);
 
 #undef ARM_ENV_RESTORE
     return UC_ERR_OK;
