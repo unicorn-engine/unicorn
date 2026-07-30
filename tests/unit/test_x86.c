@@ -1879,6 +1879,116 @@ static void test_x86_clear_empty_tb(void)
     OK(uc_close(uc));
 }
 
+typedef struct TbLoopStop_t {
+    unsigned int block_count;
+    unsigned int stop_at;
+} TbLoopStop;
+
+static void test_x86_tb_loop_stop_cb(uc_engine *uc, uint64_t address,
+                                     uint32_t size, void *user_data)
+{
+    TbLoopStop *stop = user_data;
+
+    stop->block_count++;
+    if (stop->block_count == stop->stop_at) {
+        OK(uc_emu_stop(uc));
+    }
+}
+
+static void test_x86_self_linked_tb_guest_smc(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char loop[] = "\xeb\xfe";
+    char smc[] = "\xc6\x05\x00\x10\x00\x00\x40"
+                 "\xc6\x05\x01\x10\x00\x00\x90";
+    TbLoopStop stop = {0, 2};
+    uint32_t eax = 0x1234;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, loop, sizeof(loop) - 1);
+    OK(uc_mem_write(uc, code_start + 0x1000, smc, sizeof(smc) - 1));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_BLOCK, test_x86_tb_loop_stop_cb,
+                   &stop, code_start, code_start));
+
+    OK(uc_emu_start(uc, code_start, -1, 0, 0));
+    TEST_CHECK(stop.block_count == 2);
+
+    OK(uc_emu_start(uc, code_start + 0x1000,
+                    code_start + 0x1000 + sizeof(smc) - 1, 0, 0));
+    stop.stop_at = 4;
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &eax));
+    OK(uc_emu_start(uc, code_start, code_start + 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == 0x1235);
+    TEST_CHECK(stop.block_count == 3);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_two_page_tb_invalidation(void)
+{
+    const uint64_t tb_start = 0x1ffe;
+    uc_engine *uc;
+    char code[] = "\xb8\x11\x11\x11\x11";
+    char second_page_byte = '\x22';
+    char first_page_byte = '\x33';
+    uint32_t eax;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x2000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, tb_start, code, sizeof(code) - 1));
+
+    OK(uc_emu_start(uc, tb_start, tb_start + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == 0x11111111);
+
+    OK(uc_mem_write(uc, tb_start + 2, &second_page_byte, 1));
+    OK(uc_emu_start(uc, tb_start, tb_start + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == 0x11112211);
+
+    OK(uc_mem_write(uc, tb_start + 1, &first_page_byte, 1));
+    OK(uc_emu_start(uc, tb_start, tb_start + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == 0x11112233);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_tb_cache_engine_isolation(void)
+{
+    uc_engine *uc1;
+    uc_engine *uc2;
+    char code1[] = "\xb8\x11\x11\x11\x11";
+    char code2[] = "\xb8\x22\x22\x22\x22";
+    char replacement[] = "\xb8\x33\x33\x33\x33";
+    uint32_t eax;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc1));
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc2));
+    OK(uc_mem_map(uc1, code_start, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc2, code_start, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc1, code_start, code1, sizeof(code1) - 1));
+    OK(uc_mem_write(uc2, code_start, code2, sizeof(code2) - 1));
+
+    OK(uc_emu_start(uc1, code_start, code_start + sizeof(code1) - 1, 0, 0));
+    OK(uc_emu_start(uc2, code_start, code_start + sizeof(code2) - 1, 0, 0));
+
+    OK(uc_ctl_flush_tb(uc1));
+    OK(uc_mem_write(uc1, code_start, replacement, sizeof(replacement) - 1));
+    OK(uc_emu_start(uc1, code_start,
+                    code_start + sizeof(replacement) - 1, 0, 0));
+    OK(uc_reg_read(uc1, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == 0x33333333);
+
+    OK(uc_emu_start(uc2, code_start, code_start + sizeof(code2) - 1, 0, 0));
+    OK(uc_reg_read(uc2, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == 0x22222222);
+
+    OK(uc_close(uc1));
+    OK(uc_close(uc2));
+}
+
 typedef struct _HOOK_TCG_OP_RESULT {
     uint64_t address;
     uint64_t arg1;
@@ -3811,6 +3921,11 @@ TEST_LIST = {
     {"test_x86_qemu72_msr_state", test_x86_qemu72_msr_state},
     {"test_x86_clear_tb_cache", test_x86_clear_tb_cache},
     {"test_x86_clear_empty_tb", test_x86_clear_empty_tb},
+    {"test_x86_self_linked_tb_guest_smc", test_x86_self_linked_tb_guest_smc},
+    {"test_x86_two_page_tb_invalidation",
+     test_x86_two_page_tb_invalidation},
+    {"test_x86_tb_cache_engine_isolation",
+     test_x86_tb_cache_engine_isolation},
     {"test_x86_hook_tcg_op", test_x86_hook_tcg_op},
     {"test_x86_cmpxchg", test_x86_cmpxchg},
     {"test_x86_cmpxchg32_accumulator", test_x86_cmpxchg32_accumulator},

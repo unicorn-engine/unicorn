@@ -25,6 +25,16 @@
 # define TARGET_PAGE_BITS_VARY
 # define TARGET_PAGE_BITS_MIN  10
 
+/*
+ * Cache the original page-table attributes required after translation.
+ * For stage 2, pte_attrs contains descriptor bits [5:2]; otherwise it
+ * uses the MAIR_EL1 byte format.
+ */
+# define TARGET_PAGE_ENTRY_EXTRA \
+    uint8_t pte_attrs;            \
+    uint8_t shareability;         \
+    bool guarded;
+
 #define NB_MMU_MODES 12
 
 #endif

@@ -167,7 +167,15 @@ bool arm_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                         &phys_addr, &attrs, &prot, &page_size, &fi,
                         &cacheattrs);
     if (likely(!ret)) {
-        attrs.target_tlb_bit1 = cacheattrs.attrs == 0xf0;
+        CPUTLBEntryFull full = {
+            .phys_addr = phys_addr,
+            .attrs = attrs,
+            .prot = prot,
+            .lg_page_size = ctz64(page_size),
+            .pte_attrs = cacheattrs.attrs,
+            .shareability = cacheattrs.shareability,
+            .guarded = cacheattrs.guarded,
+        };
 
         /*
          * Map a single [sub]page. Regions smaller than our declared
@@ -175,11 +183,10 @@ bool arm_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
          * pass in the exact addresses.
          */
         if (page_size >= TARGET_PAGE_SIZE) {
-            phys_addr &= TARGET_PAGE_MASK;
+            full.phys_addr &= TARGET_PAGE_MASK;
             address &= TARGET_PAGE_MASK;
         }
-        tlb_set_page_with_attrs(cs, address, phys_addr, attrs,
-                                prot, mmu_idx, page_size);
+        tlb_set_page_full(cs, mmu_idx, address, &full);
         return true;
     } else if (probe) {
         return false;

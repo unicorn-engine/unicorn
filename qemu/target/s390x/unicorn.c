@@ -35,7 +35,7 @@ static void s390_release(void *ctx)
     for (i = 0; i < NB_MMU_MODES; i++) {
         desc = &(d[i]);
         fast = &(f[i]);
-        g_free(desc->iotlb);
+        g_free(desc->fulltlb);
         g_free(fast->table);
     }
 

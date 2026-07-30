@@ -10656,11 +10656,6 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
          */
         txattrs->secure = false;
     }
-    /* When in aarch64 mode, and BTI is enabled, remember GP in the IOTLB.  */
-    if (aarch64 && guarded && cpu_isar_feature(aa64_bti, cpu)) {
-        txattrs->target_tlb_bit0 = true;
-    }
-
     if (cacheattrs != NULL) {
         if (mmu_idx == ARMMMUIdx_Stage2) {
             cacheattrs->attrs = convert_stage2_attrs(env,
@@ -10673,6 +10668,8 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
             cacheattrs->attrs = extract64(mair, attrindx * 8, 8);
         }
         cacheattrs->shareability = extract32(attrs, 6, 2);
+        cacheattrs->guarded =
+            aarch64 && guarded && cpu_isar_feature(aa64_bti, cpu);
     }
 
     *phys_ptr = descaddr;
@@ -11378,6 +11375,9 @@ static ARMCacheAttrs combine_cacheattrs(ARMCacheAttrs s1, ARMCacheAttrs s2)
     uint8_t s1hi = extract32(s1.attrs, 4, 4), s2hi = extract32(s2.attrs, 4, 4);
     ARMCacheAttrs ret;
     bool tagged = false;
+
+    /* Stage 2 has no guarded-page information. Preserve the stage 1 GP. */
+    ret.guarded = s1.guarded;
 
     if (s1.attrs == 0xf0) {
         tagged = true;

@@ -139,31 +139,6 @@ static bool allocation_tag_cow(CPUARMState *env, RAMBlock *block,
     return cowed;
 }
 
-static bool allocation_tag_access_enabled(CPUARMState *env, uint64_t ptr,
-                                          MMUAccessType access_type,
-                                          int mmu_idx)
-{
-    uintptr_t index = tlb_index(env, mmu_idx, ptr);
-    CPUTLBEntry *entry = tlb_entry(env, mmu_idx, ptr);
-    target_ulong tlb_addr;
-
-    switch (access_type) {
-    case MMU_DATA_LOAD:
-        tlb_addr = entry->addr_read;
-        break;
-    case MMU_DATA_STORE:
-        tlb_addr = tlb_addr_write(entry);
-        break;
-    default:
-        g_assert_not_reached();
-    }
-
-    if (!tlb_hit(env->uc, tlb_addr, ptr)) {
-        return false;
-    }
-    return env_tlb(env)->d[mmu_idx].iotlb[index].attrs.target_tlb_bit1;
-}
-
 static void allocation_tag_raise_fault(CPUARMState *env, target_ulong addr,
                                        MMUAccessType access_type,
                                        bool mmu_fault, bool prot,
@@ -187,7 +162,8 @@ static void allocation_tag_raise_fault(CPUARMState *env, target_ulong addr,
 
 static void *allocation_tag_probe_access(CPUARMState *env, target_ulong ptr,
                                          MMUAccessType access_type, int size,
-                                         int mmu_idx, uintptr_t ra)
+                                         int mmu_idx, uintptr_t ra,
+                                         bool *tagged)
 {
     struct uc_struct *uc = env->uc;
     void *host = NULL;
@@ -196,20 +172,39 @@ static void *allocation_tag_probe_access(CPUARMState *env, target_ulong ptr,
     while (size > 0) {
         target_ulong page_left = -(ptr | TARGET_PAGE_MASK);
         int probe_size = MIN(size, (int)page_left);
-        target_ulong paddr;
+        CPUTLBEntryFull *full;
+        MemTxAttrs attrs;
+        hwaddr paddr;
+        hwaddr phys_addr;
+        uint8_t pte_attrs;
         void *page_host;
         MemoryRegion *mr;
+        int flags;
 
-        page_host = probe_access(env, ptr, probe_size, access_type, mmu_idx,
-                                 ra);
-        if (first_page) {
-            host = page_host;
-            first_page = false;
+        flags = probe_access_full(env, ptr, access_type, mmu_idx, ra == 0,
+                                  &page_host, &full, ra);
+        assert(!(flags & TLB_INVALID_MASK));
+
+        /* The full entry is transient and a callback may invalidate it. */
+        attrs = full->attrs;
+        phys_addr = full->phys_addr;
+        pte_attrs = full->pte_attrs;
+
+        if (flags & TLB_WATCHPOINT) {
+            int wp = access_type == MMU_DATA_STORE ?
+                     BP_MEM_WRITE : BP_MEM_READ;
+
+            assert(ra != 0);
+            cpu_check_watchpoint(env_cpu(env), ptr, probe_size, attrs, wp, ra);
         }
 
-        if (!tlb_vaddr_to_paddr(env, ptr, access_type, mmu_idx, &paddr)) {
-            allocation_tag_raise_fault(env, ptr, access_type, true, false,
-                                       ra);
+        paddr = phys_addr | (ptr & ~TARGET_PAGE_MASK);
+        if (first_page) {
+            host = page_host;
+            if (tagged) {
+                *tagged = pte_attrs == 0xf0;
+            }
+            first_page = false;
         }
 
         mr = uc->memory_mapping(uc, paddr);
@@ -239,7 +234,8 @@ void HELPER(dc_gva_probe)(CPUARMState *env, uint64_t ptr)
     uintptr_t ra = GETPC();
     int mmu_idx = cpu_mmu_index(env, false);
 
-    allocation_tag_probe_access(env, ptr, MMU_DATA_STORE, 1, mmu_idx, ra);
+    allocation_tag_probe_access(env, ptr, MMU_DATA_STORE, 1, mmu_idx, ra,
+                                NULL);
 }
 
 void HELPER(mte_probe_data)(CPUARMState *env, uint64_t ptr, uint32_t desc)
@@ -252,7 +248,8 @@ void HELPER(mte_probe_data)(CPUARMState *env, uint64_t ptr, uint32_t desc)
     access_type = FIELD_EX32(desc, MTEDESC, WRITE) ? MMU_DATA_STORE :
                   MMU_DATA_LOAD;
     size = FIELD_EX32(desc, MTEDESC, SIZEM1) + 1;
-    allocation_tag_probe_access(env, ptr, access_type, size, mmu_idx, ra);
+    allocation_tag_probe_access(env, ptr, access_type, size, mmu_idx, ra,
+                                NULL);
 }
 
 static uint8_t *allocation_tag_mem(CPUARMState *env, int mmu_idx,
@@ -263,14 +260,11 @@ static uint8_t *allocation_tag_mem(CPUARMState *env, int mmu_idx,
     void *host;
     RAMBlock *block;
     ram_addr_t offset;
+    bool tagged = false;
 
     host = allocation_tag_probe_access(env, clean_ptr, access_type, size,
-                                       mmu_idx, ra);
-    if (!host) {
-        return NULL;
-    }
-
-    if (!allocation_tag_access_enabled(env, clean_ptr, access_type, mmu_idx)) {
+                                       mmu_idx, ra, &tagged);
+    if (!host || !tagged) {
         return NULL;
     }
 
@@ -282,8 +276,8 @@ static uint8_t *allocation_tag_mem(CPUARMState *env, int mmu_idx,
     if (allocate && access_type == MMU_DATA_STORE &&
         allocation_tag_cow(env, block, offset, clean_ptr, size, ra)) {
         host = allocation_tag_probe_access(env, clean_ptr, access_type, size,
-                                           mmu_idx, ra);
-        if (!host) {
+                                           mmu_idx, ra, &tagged);
+        if (!host || !tagged) {
             return NULL;
         }
         block = qemu_ram_block_from_host(env->uc, host, false, &offset);
@@ -708,7 +702,7 @@ uint64_t HELPER(mte_check_zva)(CPUARMState *env, uint32_t desc, uint64_t ptr)
     FIELD_DP32(desc, MTEDESC, SIZEM1, dcz_bytes - 1, desc);
     mmu_idx = FIELD_EX32(desc, MTEDESC, MIDX);
     (void)allocation_tag_probe_access(env, ptr, MMU_DATA_STORE, 1, mmu_idx,
-                                      ra);
+                                      ra, NULL);
     ret = mte_probe_int(env, desc, align_ptr, ra, &fault);
 
     if (unlikely(ret == 0)) {

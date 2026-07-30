@@ -52,7 +52,7 @@ typedef struct MemTxAttrs {
      * related to actual memory transactions at all.  However, this structure
      * is part of the tlb_fill interface, cached in the cputlb structure,
      * and has unused bits.  These fields will be read by target-specific
-     * helpers using env->iotlb[mmu_idx][tlb_index()].attrs.target_tlb_bitN.
+     * helpers using env_tlb(env)->d[mmu_idx].fulltlb[tlb_index()].attrs.
      */
     unsigned int target_tlb_bit0 : 1;
     unsigned int target_tlb_bit1 : 1;

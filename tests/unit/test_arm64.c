@@ -1518,6 +1518,13 @@ static uint64_t test_arm64_mte_page_desc(uint64_t pa, unsigned attridx)
     return (pa & 0x0000fffffffff000ull) | 0x743 | (attridx << 2);
 }
 
+static uint64_t test_arm64_mte_code_page_desc(uint64_t pa, unsigned attridx)
+{
+    uint64_t desc = test_arm64_mte_page_desc(pa, attridx);
+
+    return (desc & ~(3ULL << 6)) | (2ULL << 6);
+}
+
 static void test_arm64_mte_set_page_desc(uc_engine *uc, uint64_t va,
                                          uint64_t desc)
 {
@@ -1547,7 +1554,12 @@ static void test_arm64_mte_enable_identity_map(uc_engine *uc,
         unsigned attridx = (normal_va != UINT64_MAX &&
                             i == ((normal_va >> 12) & 0x1ff)) ? 1 : 0;
 
-        l3[i] = test_arm64_mte_page_desc(i << 12, attridx);
+        if (i >= (code_start >> 12) &&
+            i < ((code_start + code_len) >> 12)) {
+            l3[i] = test_arm64_mte_code_page_desc(i << 12, attridx);
+        } else {
+            l3[i] = test_arm64_mte_page_desc(i << 12, attridx);
+        }
     }
 
     l1[0] = l2_base | 3;
@@ -1575,7 +1587,8 @@ static void test_arm64_mte_enable_checks_with_normal_page(uc_engine *uc,
     TEST_CHECK(test_arm64_pauth_cp_reg_update(uc, SCR_EL3, 0,
                                               1ULL | (1ULL << 10) |
                                               (1ULL << 26)));
-    TEST_CHECK(test_arm64_pauth_cp_reg_update(uc, HCR_EL2, 0, 1ULL << 56));
+    TEST_CHECK(test_arm64_pauth_cp_reg_update(uc, HCR_EL2, 0,
+                                              (1ULL << 56) | (1ULL << 31)));
     TEST_CHECK(test_arm64_pauth_cp_reg_update(uc, SCTLR_EL1, 0,
                                               1ULL | (1ULL << 2) |
                                               (1ULL << 12) |
@@ -2664,6 +2677,41 @@ static void test_arm64_mte_page_attrs(void)
     OK(uc_reg_read(uc, UC_ARM64_REG_X5, &x5));
     TEST_CHECK(x5 == normal_value);
     TEST_CHECK(test_arm64_pauth_cp_reg_read(uc, TFSR_EL1) == 0);
+    OK(uc_close(uc));
+}
+
+static void test_arm64_bti_guarded_page(void)
+{
+    uc_engine *uc;
+    const char code[] =
+        "\x00\x00\x1f\xd6" /* br  x0 */
+        "\x1f\x20\x03\xd5"; /* nop */
+    const uint32_t SCTLR_EL1[5] = { 3, 0, 1, 0, 0 };
+    uint64_t target = code_start + 4;
+    uint64_t desc;
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code,
+                    sizeof(code) - 1, UC_CPU_ARM64_MAX);
+    test_arm64_mte_enable_checks_with_normal_page(uc, 0, code_start);
+    TEST_CHECK(test_arm64_pauth_cp_reg_update(uc, SCTLR_EL1, 0,
+                                              (1ULL << 35) |
+                                              (1ULL << 36)));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &target));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_close(uc));
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code,
+                    sizeof(code) - 1, UC_CPU_ARM64_MAX);
+    test_arm64_mte_enable_checks_with_normal_page(uc, 0, code_start);
+    desc = test_arm64_mte_code_page_desc(code_start, 1) | (1ULL << 50);
+    test_arm64_mte_set_page_desc(uc, code_start, desc);
+    TEST_CHECK(test_arm64_pauth_cp_reg_update(uc, SCTLR_EL1, 0,
+                                              (1ULL << 35) |
+                                              (1ULL << 36)));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &target));
+    TEST_CHECK(uc_emu_start(uc, code_start,
+                            code_start + sizeof(code) - 1, 0, 0) ==
+               UC_ERR_EXCEPTION);
     OK(uc_close(uc));
 }
 
@@ -12453,6 +12501,7 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_mte_unpriv_async_tag_check",
               test_arm64_mte_unpriv_async_tag_check},
              {"test_arm64_mte_page_attrs", test_arm64_mte_page_attrs},
+             {"test_arm64_bti_guarded_page", test_arm64_bti_guarded_page},
              {"test_arm64_mte_hcr_dct", test_arm64_mte_hcr_dct},
              {"test_arm64_mte_cross_page_fault_priority",
               test_arm64_mte_cross_page_fault_priority},
