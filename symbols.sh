@@ -65,6 +65,7 @@ cpu_exec_initfn \
 cpu_exec_realizefn \
 tb_invalidate_phys_addr \
 cpu_watchpoint_insert \
+cpu_watchpoint_remove \
 cpu_watchpoint_remove_by_ref \
 cpu_watchpoint_remove_all \
 cpu_watchpoint_address_matches \
@@ -2117,6 +2118,8 @@ raise_exception_err_ra \
 raise_exception \
 raise_exception_ra \
 x86_cpu_tlb_fill \
+handle_unaligned_access \
+x86_cpu_do_unaligned_access \
 cpu_set_ignne \
 helper_flds_FT0 \
 helper_fldl_FT0 \
@@ -2768,6 +2771,7 @@ helper_crypto_sve_sm4e \
 helper_crypto_sve_sm4ekey \
 helper_crypto_rax1 \
 helper_check_breakpoints \
+arm_debug_check_breakpoint \
 arm_debug_check_watchpoint \
 arm_debug_excp_handler \
 arm_adjust_watchpoint_address \
@@ -4184,6 +4188,7 @@ helper_crypto_sve_sm4e \
 helper_crypto_sve_sm4ekey \
 helper_crypto_rax1 \
 helper_check_breakpoints \
+arm_debug_check_breakpoint \
 arm_debug_check_watchpoint \
 arm_debug_excp_handler \
 arm_adjust_watchpoint_address \
@@ -7396,6 +7401,16 @@ riscv_get_csr_ops \
 riscv_set_csr_ops \
 riscv_csrrw \
 riscv_csrrw_debug \
+tdata_available \
+tselect_csr_read \
+tselect_csr_write \
+tdata_csr_read \
+tdata_csr_write \
+tinfo_csr_read \
+riscv_cpu_debug_excp_handler \
+riscv_cpu_debug_check_breakpoint \
+riscv_cpu_debug_check_watchpoint \
+riscv_trigger_init \
 riscv_cpu_get_fflags \
 riscv_cpu_set_fflags \
 helper_set_rounding_mode \

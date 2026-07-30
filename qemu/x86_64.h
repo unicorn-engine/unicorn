@@ -65,6 +65,7 @@
 #define cpu_exec_realizefn cpu_exec_realizefn_x86_64
 #define tb_invalidate_phys_addr tb_invalidate_phys_addr_x86_64
 #define cpu_watchpoint_insert cpu_watchpoint_insert_x86_64
+#define cpu_watchpoint_remove cpu_watchpoint_remove_x86_64
 #define cpu_watchpoint_remove_by_ref cpu_watchpoint_remove_by_ref_x86_64
 #define cpu_watchpoint_remove_all cpu_watchpoint_remove_all_x86_64
 #define cpu_watchpoint_address_matches cpu_watchpoint_address_matches_x86_64
@@ -2114,6 +2115,8 @@
 #define raise_exception raise_exception_x86_64
 #define raise_exception_ra raise_exception_ra_x86_64
 #define x86_cpu_tlb_fill x86_cpu_tlb_fill_x86_64
+#define handle_unaligned_access handle_unaligned_access_x86_64
+#define x86_cpu_do_unaligned_access x86_cpu_do_unaligned_access_x86_64
 #define cpu_set_ignne cpu_set_ignne_x86_64
 #define helper_flds_FT0 helper_flds_FT0_x86_64
 #define helper_fldl_FT0 helper_fldl_FT0_x86_64

@@ -108,6 +108,48 @@ static void test_ppc32_sc(void)
     OK(uc_close(uc));
 }
 
+typedef struct PpcIntrCapture {
+    uint32_t count;
+    uint32_t intno;
+} PpcIntrCapture;
+
+static void test_ppc_intr_capture_cb(uc_engine *uc, uint32_t intno,
+                                     void *data)
+{
+    PpcIntrCapture *capture = (PpcIntrCapture *)data;
+
+    (void)uc;
+    capture->count++;
+    capture->intno = intno;
+}
+
+static void test_ppc32_unaligned_access_sets_dar(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    PpcIntrCapture capture = { 0 };
+    char code[] = ("\x7c\x60\x20\x28" /* lwarx r3,0,r4 */
+                   "\x7c\xb3\x02\xa6" /* mfspr r5,DAR */);
+    uint32_t address = 0x8001;
+    uint32_t value = 0;
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN,
+                    code, sizeof(code) - 1);
+    OK(uc_mem_map(uc, 0x8000, 0x1000, UC_PROT_ALL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INTR, test_ppc_intr_capture_cb,
+                   &capture, 1, 0));
+    OK(uc_reg_write(uc, UC_PPC_REG_4, &address));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_PPC_REG_5, &value));
+
+    TEST_CHECK(capture.count == 1);
+    TEST_CHECK(capture.intno == 5);
+    TEST_CHECK(value == address);
+
+    OK(uc_close(uc));
+}
+
 static void test_ppc32_cr(void)
 {
     uc_engine *uc;
@@ -4912,6 +4954,8 @@ static void test_ppc64_power9_xvp_rejected(void)
 TEST_LIST = {{"test_ppc32_add", test_ppc32_add},
              {"test_ppc32_fadd", test_ppc32_fadd},
              {"test_ppc32_sc", test_ppc32_sc},
+             {"test_ppc32_unaligned_access_sets_dar",
+              test_ppc32_unaligned_access_sets_dar},
              {"test_ppc32_cr", test_ppc32_cr},
              {"test_ppc32_spr_time", test_ppc32_spr_time},
              {"test_ppc32_spr_mftb", test_ppc32_spr_mftb},

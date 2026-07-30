@@ -5182,6 +5182,7 @@ static void x86_cpu_common_class_init(struct uc_struct *uc, CPUClass *oc, void *
     cc->cpu_exec_exit = x86_cpu_exec_exit;
     cc->tcg_initialize = tcg_x86_init;
     cc->tlb_fill_cpu = x86_cpu_tlb_fill;
+    cc->do_unaligned_access = x86_cpu_do_unaligned_access;
 }
 
 X86CPU *cpu_x86_init(struct uc_struct *uc)

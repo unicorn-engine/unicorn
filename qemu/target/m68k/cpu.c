@@ -261,6 +261,7 @@ static void m68k_cpu_class_init(CPUClass *c)
     cc->set_pc = m68k_cpu_set_pc;
     cc->tlb_fill_cpu = m68k_cpu_tlb_fill;
     cc->get_phys_page_debug = m68k_cpu_get_phys_page_debug;
+    cc->do_transaction_failed = m68k_cpu_transaction_failed;
     cc->tcg_initialize = m68k_tcg_init;
 }
 

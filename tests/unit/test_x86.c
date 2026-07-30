@@ -2692,6 +2692,100 @@ static void test_x86_invalid_vex_l(void)
     OK(uc_close(uc));
 }
 
+typedef struct {
+    uint32_t count;
+    uint32_t intno;
+} X86IntrCapture;
+
+static void test_x86_intr_capture_cb(uc_engine *uc, uint32_t intno, void *data)
+{
+    X86IntrCapture *capture = (X86IntrCapture *)data;
+
+    capture->count++;
+    capture->intno = intno;
+    uc_emu_stop(uc);
+}
+
+static void test_x86_sse_aligned_access(void)
+{
+    const uint64_t data_addr = 0x200008;
+    const uint8_t code[] = {
+        0x0f, 0x11, 0x00, /* movups [rax], xmm0 */
+        0x0f, 0x29, 0x00, /* movaps [rax], xmm0 */
+    };
+    const uint8_t xmm0[16] = {
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+        0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
+    };
+    const uint8_t sentinel[16] = {
+        0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5,
+        0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0xa5,
+    };
+    uint8_t memory[16];
+    X86IntrCapture capture = { 0 };
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t rax = data_addr;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_HASWELL));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code)));
+    OK(uc_mem_map(uc, 0x200000, 0x1000, UC_PROT_ALL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INTR, test_x86_intr_capture_cb,
+                   &capture, 1, 0));
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_write(uc, UC_X86_REG_XMM0, &xmm0));
+
+    OK(uc_emu_start(uc, code_start, code_start + 3, 0, 1));
+    OK(uc_mem_read(uc, data_addr, memory, sizeof(memory)));
+    TEST_CHECK(capture.count == 0);
+    TEST_CHECK(memcmp(memory, xmm0, sizeof(memory)) == 0);
+
+    OK(uc_mem_write(uc, data_addr, sentinel, sizeof(sentinel)));
+    OK(uc_emu_start(uc, code_start + 3, code_start + sizeof(code), 0, 1));
+    OK(uc_mem_read(uc, data_addr, memory, sizeof(memory)));
+    TEST_CHECK(capture.count == 1);
+    TEST_CHECK(capture.intno == 13);
+    TEST_CHECK(memcmp(memory, sentinel, sizeof(memory)) == 0);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_data_watchpoint(void)
+{
+    const uint64_t data_addr = 0x200000;
+    const uint8_t code[] = {
+        0xc7, 0x00, 0x44, 0x33, 0x22, 0x11, /* mov dword ptr [rax], 0x11223344 */
+    };
+    const uint64_t dr7_write_len4 = 1 | (1U << 16) | (3U << 18);
+    X86IntrCapture capture = { 0 };
+    uint32_t memory = 0;
+    uint64_t dr6 = 0;
+    uint64_t rax = data_addr;
+    uc_engine *uc;
+    uc_hook hook;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, (const char *)code,
+                    sizeof(code));
+    OK(uc_mem_map(uc, data_addr, 0x1000, UC_PROT_ALL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INTR, test_x86_intr_capture_cb,
+                   &capture, 1, 0));
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_write(uc, UC_X86_REG_DR0, &rax));
+    OK(uc_reg_write(uc, UC_X86_REG_DR7, &dr7_write_len4));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+    OK(uc_mem_read(uc, data_addr, &memory, sizeof(memory)));
+    OK(uc_reg_read(uc, UC_X86_REG_DR6, &dr6));
+    TEST_CHECK(capture.count == 1);
+    TEST_CHECK(capture.intno == 1);
+    TEST_CHECK(memory == 0x11223344);
+    TEST_CHECK((dr6 & 1) != 0);
+
+    OK(uc_close(uc));
+}
+
 // AARCH64 inline the read while s390x won't split the access. Though not tested
 // on other hosts but we restrict a bit more.
 #if !defined(TARGET_READ_INLINED) && defined(BOOST_LITTLE_ENDIAN)
@@ -3951,6 +4045,8 @@ TEST_LIST = {
     {"test_x86_correct_address_in_long_jump_hook",
      test_x86_correct_address_in_long_jump_hook},
     {"test_x86_invalid_vex_l", test_x86_invalid_vex_l},
+    {"test_x86_sse_aligned_access", test_x86_sse_aligned_access},
+    {"test_x86_data_watchpoint", test_x86_data_watchpoint},
 #if !defined(TARGET_READ_INLINED) && defined(BOOST_LITTLE_ENDIAN)
     {"test_x86_unaligned_access", test_x86_unaligned_access},
     {"test_x86_64_unaligned_access", test_x86_64_unaligned_access},

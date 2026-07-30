@@ -65,6 +65,7 @@
 #define cpu_exec_realizefn cpu_exec_realizefn_arm
 #define tb_invalidate_phys_addr tb_invalidate_phys_addr_arm
 #define cpu_watchpoint_insert cpu_watchpoint_insert_arm
+#define cpu_watchpoint_remove cpu_watchpoint_remove_arm
 #define cpu_watchpoint_remove_by_ref cpu_watchpoint_remove_by_ref_arm
 #define cpu_watchpoint_remove_all cpu_watchpoint_remove_all_arm
 #define cpu_watchpoint_address_matches cpu_watchpoint_address_matches_arm
@@ -2111,6 +2112,7 @@
 #define helper_crypto_sve_sm4ekey helper_crypto_sve_sm4ekey_arm
 #define helper_crypto_rax1 helper_crypto_rax1_arm
 #define helper_check_breakpoints helper_check_breakpoints_arm
+#define arm_debug_check_breakpoint arm_debug_check_breakpoint_arm
 #define arm_debug_check_watchpoint arm_debug_check_watchpoint_arm
 #define arm_debug_excp_handler arm_debug_excp_handler_arm
 #define arm_adjust_watchpoint_address arm_adjust_watchpoint_address_arm

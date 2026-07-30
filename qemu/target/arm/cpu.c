@@ -2176,7 +2176,11 @@ void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
     cc->tcg_initialize = arm_translate_init;
     cc->tlb_fill_cpu = arm_cpu_tlb_fill;
     cc->debug_excp_handler = arm_debug_excp_handler;
+    cc->debug_check_breakpoint = arm_debug_check_breakpoint;
+    cc->debug_check_watchpoint = arm_debug_check_watchpoint;
+    cc->adjust_watchpoint_address = arm_adjust_watchpoint_address;
     cc->do_unaligned_access = arm_cpu_do_unaligned_access;
+    cc->do_transaction_failed = arm_cpu_do_transaction_failed;
 }
 
 static void arm_cpu_instance_init(CPUState *obj)

@@ -345,7 +345,11 @@ void m68k_cpu_transaction_failed(CPUState *cs, hwaddr physaddr, vaddr addr,
 
     if (m68k_feature(env, M68K_FEATURE_M68040)) {
         env->mmu.mmusr = 0;
-        env->mmu.ssw |= M68K_ATC_040;
+
+        /* Physical bus errors are not ATC faults. */
+        if (response != MEMTX_DECODE_ERROR) {
+            env->mmu.ssw |= M68K_ATC_040;
+        }
         /* FIXME: manage MMU table access error */
         env->mmu.ssw &= ~M68K_TM_040;
         if (env->sr & SR_S) { /* SUPERVISOR */

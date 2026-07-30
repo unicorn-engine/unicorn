@@ -71,11 +71,50 @@ static bool cpu_common_exec_interrupt(CPUState *cpu, int int_req)
     return false;
 }
 
+static bool cpu_common_debug_check_watchpoint(CPUState *cpu,
+                                              CPUWatchpoint *wp)
+{
+    return true;
+}
+
+static bool cpu_common_debug_check_breakpoint(CPUState *cpu)
+{
+    return true;
+}
+
+static vaddr cpu_adjust_watchpoint_address(CPUState *cpu, vaddr addr, int len)
+{
+    return addr;
+}
+
 static void cpu_legacy_debug_excp_handler(CPUState *cpu)
 {
     CPUClass *cc = CPU_GET_CLASS(cpu);
 
     cc->debug_excp_handler(cpu);
+}
+
+static bool cpu_legacy_debug_check_breakpoint(CPUState *cpu)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    return cc->debug_check_breakpoint(cpu);
+}
+
+static bool cpu_legacy_debug_check_watchpoint(CPUState *cpu,
+                                              CPUWatchpoint *wp)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    return cc->debug_check_watchpoint(cpu, wp);
+}
+
+static vaddr cpu_legacy_adjust_watchpoint_address(CPUState *cpu, vaddr addr,
+                                                  int len)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    return cc->adjust_watchpoint_address(cpu, addr, len);
 }
 
 static void cpu_legacy_exec_enter(CPUState *cpu)
@@ -118,13 +157,32 @@ static void cpu_legacy_unaligned_access(CPUState *cpu, vaddr addr,
     cc->do_unaligned_access(cpu, addr, access_type, mmu_idx, retaddr);
 }
 
+static void cpu_legacy_transaction_failed(CPUState *cpu, hwaddr physaddr,
+                                          vaddr addr, unsigned size,
+                                          MMUAccessType access_type,
+                                          int mmu_idx, MemTxAttrs attrs,
+                                          MemTxResult response,
+                                          uintptr_t retaddr)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    if (cc->do_transaction_failed) {
+        cc->do_transaction_failed(cpu, physaddr, addr, size, access_type,
+                                  mmu_idx, attrs, response, retaddr);
+    }
+}
+
 static const struct TCGCPUOps cpu_legacy_tcg_ops = {
     .cpu_exec_enter = cpu_legacy_exec_enter,
     .cpu_exec_exit = cpu_legacy_exec_exit,
     .debug_excp_handler = cpu_legacy_debug_excp_handler,
+    .debug_check_breakpoint = cpu_legacy_debug_check_breakpoint,
+    .debug_check_watchpoint = cpu_legacy_debug_check_watchpoint,
     .cpu_exec_interrupt = cpu_legacy_exec_interrupt,
     .tlb_fill = cpu_legacy_tlb_fill,
+    .do_transaction_failed = cpu_legacy_transaction_failed,
     .do_unaligned_access = cpu_legacy_unaligned_access,
+    .adjust_watchpoint_address = cpu_legacy_adjust_watchpoint_address,
 };
 
 void cpu_reset(CPUState *cpu)
@@ -146,6 +204,7 @@ static void cpu_common_reset(CPUState *dev)
     cpu->icount_extra = 0;
     cpu->can_do_io = 1;
     cpu->exception_index = -1;
+    cpu->exception_pc_restored = false;
     cpu->crash_occurred = false;
     cpu->cflags_next_tb = -1;
 
@@ -171,9 +230,12 @@ void cpu_class_init(struct uc_struct *uc, CPUClass *k)
     k->get_paging_enabled = cpu_common_get_paging_enabled;
     k->get_memory_mapping = cpu_common_get_memory_mapping;
     k->debug_excp_handler = cpu_common_noop;
+    k->debug_check_watchpoint = cpu_common_debug_check_watchpoint;
+    k->debug_check_breakpoint = cpu_common_debug_check_breakpoint;
     k->cpu_exec_enter = cpu_common_noop;
     k->cpu_exec_exit = cpu_common_noop;
     k->cpu_exec_interrupt = cpu_common_exec_interrupt;
+    k->adjust_watchpoint_address = cpu_adjust_watchpoint_address;
     k->tcg_ops = &cpu_legacy_tcg_ops;
     /* instead of dc->reset. */
     k->reset = cpu_common_reset;

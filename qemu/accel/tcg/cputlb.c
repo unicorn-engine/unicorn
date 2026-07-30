@@ -1039,6 +1039,25 @@ static void tlb_fill(CPUState *cpu, target_ulong addr, int size,
 #endif
 }
 
+static inline void cpu_transaction_failed(CPUState *cpu, hwaddr physaddr,
+                                          vaddr addr, unsigned size,
+                                          MMUAccessType access_type,
+                                          int mmu_idx, MemTxAttrs attrs,
+                                          MemTxResult response,
+                                          uintptr_t retaddr)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+    if (!cpu->ignore_memory_transaction_failures &&
+        cc->tcg_ops->do_transaction_failed) {
+        cpu->exception_pc_restored = true;
+        cc->tcg_ops->do_transaction_failed(cpu, physaddr, addr, size,
+                                           access_type, mmu_idx, attrs,
+                                           response, retaddr);
+        cpu->exception_pc_restored = false;
+    }
+}
+
 static uint64_t io_readx(CPUArchState *env, CPUTLBEntryFull *iotlbentry,
                          int mmu_idx, target_ulong addr, uintptr_t retaddr,
                          MMUAccessType access_type, MemOp op)
@@ -1062,14 +1081,12 @@ static uint64_t io_readx(CPUArchState *env, CPUTLBEntryFull *iotlbentry,
 
     r = memory_region_dispatch_read(uc, mr, mr_offset, &val, op, iotlbentry->attrs);
     if (r != MEMTX_OK) {
-#if 0
         hwaddr physaddr = mr_offset +
             section->offset_within_address_space -
             section->offset_within_region;
 
         cpu_transaction_failed(cpu, physaddr, addr, memop_size(op), access_type,
                                mmu_idx, iotlbentry->attrs, r, retaddr);
-#endif
     }
 
     return val;
@@ -1097,7 +1114,6 @@ static void io_writex(CPUArchState *env, CPUTLBEntryFull *iotlbentry,
 
     r = memory_region_dispatch_write(uc, mr, mr_offset, val, op, iotlbentry->attrs);
     if (r != MEMTX_OK) {
-#if 0
         hwaddr physaddr = mr_offset +
             section->offset_within_address_space -
             section->offset_within_region;
@@ -1105,7 +1121,6 @@ static void io_writex(CPUArchState *env, CPUTLBEntryFull *iotlbentry,
         cpu_transaction_failed(cpu, physaddr, addr, memop_size(op),
                                MMU_DATA_STORE, mmu_idx, iotlbentry->attrs, r,
                                retaddr);
-#endif
     }
 }
 

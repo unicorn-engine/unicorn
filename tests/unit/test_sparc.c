@@ -114,9 +114,62 @@ static void test_sparc64_public_registers(void)
     OK(uc_close(uc));
 }
 
+typedef struct SparcIntrCapture {
+    uint32_t count;
+    uint32_t intno;
+} SparcIntrCapture;
+
+static void test_sparc32_unaligned_cb(uc_engine *uc, uint32_t intno,
+                                      void *data)
+{
+    SparcIntrCapture *capture = (SparcIntrCapture *)data;
+    uint32_t mmu_fault_address = 0x1400;
+
+    capture->count++;
+    capture->intno = intno;
+    OK(uc_reg_write(uc, UC_SPARC_REG_G1, &mmu_fault_address));
+}
+
+static void test_sparc32_unaligned_access_sets_fault_address(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    SparcIntrCapture capture = { 0 };
+    char code[] = ("\xc1\x18\x60\x00" /* ldd [g1],f0 */
+                   "\xc4\x80\x40\x80" /* lda [g1] 4,g2 */);
+    uint32_t address = 0x8001;
+    uint32_t psr;
+    uint32_t value = 0;
+
+    OK(uc_open(UC_ARCH_SPARC, UC_MODE_SPARC32 | UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, 0x8000, 0x1000, UC_PROT_ALL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INTR, test_sparc32_unaligned_cb,
+                   &capture, 1, 0));
+    OK(uc_reg_read(uc, UC_SPARC_REG_PSR, &psr));
+    psr |= (1 << 12) | (1 << 7);
+    OK(uc_reg_write(uc, UC_SPARC_REG_PSR, &psr));
+    OK(uc_reg_write(uc, UC_SPARC_REG_G1, &address));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_SPARC_REG_G2, &value));
+
+    TEST_CHECK(capture.count == 1);
+    TEST_MSG("interrupts=%u", capture.count);
+    TEST_CHECK(capture.intno == 7);
+    TEST_MSG("intno=%u", capture.intno);
+    TEST_CHECK(value == address);
+    TEST_MSG("expected=0x%x actual=0x%x", address, value);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
         {"test_virtual_read", test_virtual_read},
         {"test_sparc32_public_registers", test_sparc32_public_registers},
         {"test_sparc64_public_registers", test_sparc64_public_registers},
+        {"test_sparc32_unaligned_access_sets_fault_address",
+         test_sparc32_unaligned_access_sets_fault_address},
         {NULL, NULL}
 };

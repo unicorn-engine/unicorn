@@ -1861,18 +1861,3 @@ void sparc_cpu_do_transaction_failed(CPUState *cs, hwaddr physaddr,
     sparc_raise_mmu_fault(cs, physaddr, is_write, is_exec,
                           is_asi, size, retaddr);
 }
-
-void QEMU_NORETURN sparc_cpu_do_unaligned_access(CPUState *cs, vaddr addr,
-                                                 MMUAccessType access_type,
-                                                 int mmu_idx,
-                                                 uintptr_t retaddr)
-{
-    SPARCCPU *cpu = SPARC_CPU(cs);
-    CPUSPARCState *env = &cpu->env;
-
-#ifdef DEBUG_UNALIGNED
-    printf("Unaligned access to 0x" TARGET_FMT_lx " from 0x" TARGET_FMT_lx
-           "\n", addr, env->pc);
-#endif
-    cpu_raise_exception_ra(env, TT_UNALIGNED, retaddr);
-}

@@ -151,6 +151,12 @@ static int write_pmpcfg(CPURISCVState *env, int csrno, target_ulong val);
 static int read_pmpaddr(CPURISCVState *env, int csrno, target_ulong *val);
 static int write_pmpaddr(CPURISCVState *env, int csrno, target_ulong val);
 static int pmp(CPURISCVState *env, int csrno);
+static int debug(CPURISCVState *env, int csrno);
+static int read_tselect(CPURISCVState *env, int csrno, target_ulong *val);
+static int write_tselect(CPURISCVState *env, int csrno, target_ulong val);
+static int read_tdata(CPURISCVState *env, int csrno, target_ulong *val);
+static int write_tdata(CPURISCVState *env, int csrno, target_ulong val);
+static int read_tinfo(CPURISCVState *env, int csrno, target_ulong *val);
 static int rmw_seed(CPURISCVState *env, int csrno, target_ulong *ret_value,
                     target_ulong new_value, target_ulong write_mask);
 
@@ -318,6 +324,13 @@ static riscv_csr_operations csr_ops[CSR_TABLE_SIZE] = {
     [CSR_PMPADDR13] = { pmp,   read_pmpaddr, write_pmpaddr  },
     [CSR_PMPADDR14] = { pmp,   read_pmpaddr, write_pmpaddr  },
     [CSR_PMPADDR15] = { pmp,   read_pmpaddr, write_pmpaddr  },
+
+    /* Debug CSRs */
+    [CSR_TSELECT] = { debug, read_tselect, write_tselect },
+    [CSR_TDATA1] =  { debug, read_tdata,   write_tdata   },
+    [CSR_TDATA2] =  { debug, read_tdata,   write_tdata   },
+    [CSR_TDATA3] =  { debug, read_tdata,   write_tdata   },
+    [CSR_TINFO] =   { debug, read_tinfo                    },
 
     /* Performance Counters */
     [CSR_HPMCOUNTER3] =    { ctr,  read_zero          },
@@ -577,6 +590,11 @@ static int hmode(CPURISCVState *env, int csrno)
 static int pmp(CPURISCVState *env, int csrno)
 {
     return -!riscv_feature(env, RISCV_FEATURE_PMP);
+}
+
+static int debug(CPURISCVState *env, int csrno)
+{
+    return -!riscv_feature(env, RISCV_FEATURE_DEBUG);
 }
 
 /* User Floating-Point CSRs */
@@ -1756,6 +1774,51 @@ static int read_mtinst(CPURISCVState *env, int csrno, target_ulong *val)
 static int write_mtinst(CPURISCVState *env, int csrno, target_ulong val)
 {
     env->mtinst = val;
+    return 0;
+}
+
+/* Debug CSRs */
+static int read_tselect(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    *val = tselect_csr_read(env);
+    return 0;
+}
+
+static int write_tselect(CPURISCVState *env, int csrno, target_ulong val)
+{
+    tselect_csr_write(env, val);
+    return 0;
+}
+
+static int read_tdata(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    /* Return 0 in tdata1 to end the trigger enumeration. */
+    if (env->trigger_cur >= RV_MAX_TRIGGERS && csrno == CSR_TDATA1) {
+        *val = 0;
+        return 0;
+    }
+
+    if (!tdata_available(env, csrno - CSR_TDATA1)) {
+        return -1;
+    }
+
+    *val = tdata_csr_read(env, csrno - CSR_TDATA1);
+    return 0;
+}
+
+static int write_tdata(CPURISCVState *env, int csrno, target_ulong val)
+{
+    if (!tdata_available(env, csrno - CSR_TDATA1)) {
+        return -1;
+    }
+
+    tdata_csr_write(env, csrno - CSR_TDATA1, val);
+    return 0;
+}
+
+static int read_tinfo(CPURISCVState *env, int csrno, target_ulong *val)
+{
+    *val = tinfo_csr_read(env);
     return 0;
 }
 

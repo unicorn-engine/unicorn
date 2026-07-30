@@ -202,6 +202,9 @@ static void riscv_cpu_reset(CPUState *dev)
     cs->exception_index = EXCP_NONE;
     env->load_res = -1;
     set_default_nan_mode(1, &env->fp_status);
+    if (riscv_feature(env, RISCV_FEATURE_DEBUG)) {
+        riscv_trigger_init(env);
+    }
 }
 
 static void riscv_cpu_realize(struct uc_struct *uc, CPUState *dev)
@@ -236,6 +239,10 @@ static void riscv_cpu_realize(struct uc_struct *uc, CPUState *dev)
 
     if (cpu->cfg.pmp) {
         set_feature(env, RISCV_FEATURE_PMP);
+    }
+
+    if (cpu->cfg.debug) {
+        set_feature(env, RISCV_FEATURE_DEBUG);
     }
 
     /* If misa isn't set (rv32 and rv64 machines) set it here */
@@ -327,6 +334,10 @@ static void riscv_cpu_class_init(struct uc_struct *uc, CPUClass *c, void *data)
     cc->set_pc = riscv_cpu_set_pc;
     cc->synchronize_from_tb = riscv_cpu_synchronize_from_tb;
     cc->do_unaligned_access = riscv_cpu_do_unaligned_access;
+    cc->do_transaction_failed = riscv_cpu_do_transaction_failed;
+    cc->debug_excp_handler = riscv_cpu_debug_excp_handler;
+    cc->debug_check_breakpoint = riscv_cpu_debug_check_breakpoint;
+    cc->debug_check_watchpoint = riscv_cpu_debug_check_watchpoint;
     cc->tcg_initialize = riscv_translate_init;
     cc->tlb_fill_cpu = riscv_cpu_tlb_fill;
 }
@@ -436,6 +447,7 @@ RISCVCPU *cpu_riscv_init(struct uc_struct *uc)
     cpu->cfg.priv_spec = "v1.11.0";
     cpu->cfg.mmu = true;
     cpu->cfg.pmp = true;
+    cpu->cfg.debug = true;
 
     /* init CPUState */
     cpu_common_initfn(uc, cs);

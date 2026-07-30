@@ -629,6 +629,7 @@ jobs:
       - name: '🚧 Setup Alpine Linux'
         uses: jirutka/setup-alpine@v1
         with:
+          branch: v3.22
           arch: ${{ matrix.config.arch }}
           packages: cmake build-base automake cmocka-dev pkgconfig ${{ matrix.compiler }} ninja linux-headers
 

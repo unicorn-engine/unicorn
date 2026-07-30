@@ -73,7 +73,8 @@ typedef struct TCGContext TCGContext;
 enum {
     RISCV_FEATURE_MMU,
     RISCV_FEATURE_PMP,
-    RISCV_FEATURE_MISA
+    RISCV_FEATURE_MISA,
+    RISCV_FEATURE_DEBUG
 };
 
 #define PRIV_VERSION_1_09_1 0x00010901
@@ -106,6 +107,7 @@ FIELD(VDATA, NF, 7, 4)
 typedef struct CPURISCVState CPURISCVState;
 
 #include "pmp.h"
+#include "debug.h"
 
 struct CPURISCVState {
     target_ulong gpr[32];
@@ -222,6 +224,14 @@ struct CPURISCVState {
     /* physical memory protection */
     pmp_table_t pmp_state;
 
+    /* trigger module */
+    target_ulong trigger_cur;
+    target_ulong tdata1[RV_MAX_TRIGGERS];
+    target_ulong tdata2[RV_MAX_TRIGGERS];
+    target_ulong tdata3[RV_MAX_TRIGGERS];
+    struct CPUBreakpoint *cpu_breakpoint[RV_MAX_TRIGGERS];
+    struct CPUWatchpoint *cpu_watchpoint[RV_MAX_TRIGGERS];
+
     /* machine specific rdtime callback */
     uint64_t (*rdtime_fn)(void);
 
@@ -312,6 +322,7 @@ typedef struct RISCVCPU {
         char *user_spec;
         bool mmu;
         bool pmp;
+        bool debug;
     } cfg;
 
     struct RISCVCPUClass cc;
@@ -341,6 +352,8 @@ static inline uint32_t vext_get_vlmax(RISCVCPU *cpu, target_ulong vtype)
 
 #include "cpu_user.h"
 #include "cpu_bits.h"
+
+#define riscv_cpu_mxl(env) ((void)(env), MXL_VAL)
 
 extern const char * const riscv_int_regnames[];
 extern const char * const riscv_fpr_regnames[];

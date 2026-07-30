@@ -294,6 +294,11 @@ void HELPER(v7m_preserve_fp_state)(CPUARMState *env)
         stacked_ok = stacked_ok &&
             v7m_stack_write(cpu, fpcar + 0x40,
                             vfp_get_fpscr(env), mmu_idx, STACK_LAZYFP);
+        if (cpu_isar_feature(aa32_mve, cpu)) {
+            stacked_ok = stacked_ok &&
+                v7m_stack_write(cpu, fpcar + 0x44,
+                                env->v7m.vpr, mmu_idx, STACK_LAZYFP);
+        }
     }
 
     /*
@@ -304,11 +309,7 @@ void HELPER(v7m_preserve_fp_state)(CPUARMState *env)
      * If it's just pending and won't be taken until the current
      * handler exits, then we do update LSPACT and the FP regs.
      */
-    // take_exception = !stacked_ok &&
-    //     armv7m_nvic_can_take_pending_exception(env->nvic);
-    /* consider armv7m_nvic_can_take_pending_exception() always return false.
-        in unicorn */
-    take_exception = false;
+    take_exception = !stacked_ok;
 
     if (take_exception) {
         raise_exception_ra(env, EXCP_LAZYFP, 0, 1, GETPC());
@@ -324,6 +325,9 @@ void HELPER(v7m_preserve_fp_state)(CPUARMState *env)
             *aa32_vfp_dreg(env, i / 2) = 0;
         }
         vfp_set_fpscr(env, 0);
+        if (cpu_isar_feature(aa32_mve, cpu)) {
+            env->v7m.vpr = 0;
+        }
     }
     /*
      * Otherwise s0 to s15 and FPSCR are UNKNOWN; we choose to leave them
@@ -887,16 +891,25 @@ bool armv7m_nvic_neg_prio_requested(void *opaque, bool secure)
     return false;
 }
 
+static bool v7m_reduced_neg_prio_requested(CPUARMState *env, bool secure)
+{
+    if (env->v7m.faultmask[secure]) {
+        return true;
+    }
+
+    return env->v7m.secure == secure &&
+        (env->v7m.exception == ARMV7M_EXCP_NMI ||
+         env->v7m.exception == ARMV7M_EXCP_HARD);
+}
+
 static void v7m_update_fpccr(CPUARMState *env, uint32_t frameptr,
                              bool apply_splim)
 {
-#if 0
     /*
      * Like the pseudocode UpdateFPCCR: save state in FPCAR and FPCCR
      * that we will need later in order to do lazy FP reg stacking.
      */
     bool is_secure = env->v7m.secure;
-    void *nvic = env->nvic;
     /*
      * Some bits are unbanked and live always in fpccr[M_REG_S]; some bits
      * are banked and we want to update the bit in the bank for the
@@ -906,52 +919,51 @@ static void v7m_update_fpccr(CPUARMState *env, uint32_t frameptr,
     uint32_t *fpccr_s = &env->v7m.fpccr[M_REG_S];
     uint32_t *fpccr_ns = &env->v7m.fpccr[M_REG_NS];
     uint32_t *fpccr = &env->v7m.fpccr[is_secure];
-    bool hfrdy, bfrdy, mmrdy, ns_ufrdy, s_ufrdy, sfrdy, monrdy;
+    bool hfrdy;
 
     env->v7m.fpcar[is_secure] = frameptr & ~0x7;
 
     if (apply_splim && arm_feature(env, ARM_FEATURE_V8)) {
         bool splimviol;
         uint32_t splim = v7m_sp_limit(env);
-        bool ign = armv7m_nvic_neg_prio_requested(nvic, is_secure) &&
+        bool ign = v7m_reduced_neg_prio_requested(env, is_secure) &&
             (env->v7m.ccr[is_secure] & R_V7M_CCR_STKOFHFNMIGN_MASK);
 
         splimviol = !ign && frameptr < splim;
-        *fpccr = FIELD_DP32(*fpccr, V7M_FPCCR, SPLIMVIOL, splimviol);
+        FIELD_DP32(*fpccr, V7M_FPCCR, SPLIMVIOL, splimviol, *fpccr);
     }
 
-    *fpccr = FIELD_DP32(*fpccr, V7M_FPCCR, LSPACT, 1);
+    FIELD_DP32(*fpccr, V7M_FPCCR, LSPACT, 1, *fpccr);
 
-    *fpccr_s = FIELD_DP32(*fpccr_s, V7M_FPCCR, S, is_secure);
+    FIELD_DP32(*fpccr_s, V7M_FPCCR, S, is_secure, *fpccr_s);
 
-    *fpccr = FIELD_DP32(*fpccr, V7M_FPCCR, USER, arm_current_el(env) == 0);
+    FIELD_DP32(*fpccr, V7M_FPCCR, USER, arm_current_el(env) == 0,
+               *fpccr);
 
-    *fpccr = FIELD_DP32(*fpccr, V7M_FPCCR, THREAD,
-                        !arm_v7m_is_handler_mode(env));
+    FIELD_DP32(*fpccr, V7M_FPCCR, THREAD,
+               !arm_v7m_is_handler_mode(env), *fpccr);
 
-    hfrdy = armv7m_nvic_get_ready_status(nvic, ARMV7M_EXCP_HARD, false);
-    *fpccr_s = FIELD_DP32(*fpccr_s, V7M_FPCCR, HFRDY, hfrdy);
+    /*
+     * The reduced Unicorn CPU model has no NVIC enable or priority state.
+     * HardFault readiness can still be derived from CPU-local mask and
+     * handler state; configurable exception ready bits remain clear.
+     */
+    hfrdy = !v7m_reduced_neg_prio_requested(env, M_REG_NS) &&
+        !v7m_reduced_neg_prio_requested(env, M_REG_S);
+    FIELD_DP32(*fpccr_s, V7M_FPCCR, HFRDY, hfrdy, *fpccr_s);
 
-    bfrdy = armv7m_nvic_get_ready_status(nvic, ARMV7M_EXCP_BUS, false);
-    *fpccr_s = FIELD_DP32(*fpccr_s, V7M_FPCCR, BFRDY, bfrdy);
+    FIELD_DP32(*fpccr_s, V7M_FPCCR, BFRDY, 0, *fpccr_s);
 
-    mmrdy = armv7m_nvic_get_ready_status(nvic, ARMV7M_EXCP_MEM, is_secure);
-    *fpccr = FIELD_DP32(*fpccr, V7M_FPCCR, MMRDY, mmrdy);
+    FIELD_DP32(*fpccr, V7M_FPCCR, MMRDY, 0, *fpccr);
 
-    ns_ufrdy = armv7m_nvic_get_ready_status(nvic, ARMV7M_EXCP_USAGE, false);
-    *fpccr_ns = FIELD_DP32(*fpccr_ns, V7M_FPCCR, UFRDY, ns_ufrdy);
+    FIELD_DP32(*fpccr_ns, V7M_FPCCR, UFRDY, 0, *fpccr_ns);
 
-    monrdy = armv7m_nvic_get_ready_status(nvic, ARMV7M_EXCP_DEBUG, false);
-    *fpccr_s = FIELD_DP32(*fpccr_s, V7M_FPCCR, MONRDY, monrdy);
+    FIELD_DP32(*fpccr_s, V7M_FPCCR, MONRDY, 0, *fpccr_s);
 
     if (arm_feature(env, ARM_FEATURE_M_SECURITY)) {
-        s_ufrdy = armv7m_nvic_get_ready_status(nvic, ARMV7M_EXCP_USAGE, true);
-        *fpccr_s = FIELD_DP32(*fpccr_s, V7M_FPCCR, UFRDY, s_ufrdy);
-
-        sfrdy = armv7m_nvic_get_ready_status(nvic, ARMV7M_EXCP_SECURE, false);
-        *fpccr_s = FIELD_DP32(*fpccr_s, V7M_FPCCR, SFRDY, sfrdy);
+        FIELD_DP32(*fpccr_s, V7M_FPCCR, UFRDY, 0, *fpccr_s);
+        FIELD_DP32(*fpccr_s, V7M_FPCCR, SFRDY, 0, *fpccr_s);
     }
-#endif
 }
 
 void HELPER(v7m_vlstm)(CPUARMState *env, uint32_t fptr)
@@ -2655,7 +2667,7 @@ ARMMMUIdx arm_v7m_mmu_idx_all(CPUARMState *env,
 ARMMMUIdx arm_v7m_mmu_idx_for_secstate_and_priv(CPUARMState *env,
                                                 bool secstate, bool priv)
 {
-    bool negpri = armv7m_nvic_neg_prio_requested(env->nvic, secstate);
+    bool negpri = v7m_reduced_neg_prio_requested(env, secstate);
 
     return arm_v7m_mmu_idx_all(env, secstate, priv, negpri);
 }

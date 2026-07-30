@@ -21,6 +21,10 @@ const uint64_t riscv_data_start = 0x8000;
 #define RISCV_CSR_PMPADDR0 0x3b0
 #define RISCV_CSR_HSTATUS 0x600
 #define RISCV_CSR_HGATP 0x680
+#define RISCV_CSR_TSELECT 0x7a0
+#define RISCV_CSR_TDATA1 0x7a1
+#define RISCV_CSR_TDATA2 0x7a2
+#define RISCV_CSR_TINFO 0x7a4
 #define RISCV_MSTATUS_MXR 0x00080000ull
 #define RISCV_PMPCFG_R 0x01
 #define RISCV_PMPCFG_X 0x04
@@ -28,6 +32,7 @@ const uint64_t riscv_data_start = 0x8000;
 #define RISCV_PMPCFG_A_NAPOT 0x18
 #define RISCV_EXCP_INST_ACCESS_FAULT 0x1
 #define RISCV_EXCP_ILLEGAL_INST 0x2
+#define RISCV_EXCP_BREAKPOINT 0x3
 #define RISCV_EXCP_LOAD_ACCESS_FAULT 0x5
 #define RISCV_EXCP_STORE_AMO_ACCESS_FAULT 0x7
 #define RISCV_EXCP_S_ECALL 0x9
@@ -49,6 +54,12 @@ const uint64_t riscv_data_start = 0x8000;
 #define RISCV_PTE_X 0x008ull
 #define RISCV_PTE_A 0x040ull
 #define RISCV_PTE_D 0x080ull
+#define RISCV64_TRIGGER_TYPE2 (2ull << 60)
+#define RISCV_TRIGGER_TYPE2_STORE (1ull << 1)
+#define RISCV_TRIGGER_TYPE2_EXEC (1ull << 2)
+#define RISCV_TRIGGER_TYPE2_U (1ull << 3)
+#define RISCV_TRIGGER_TYPE2_M (1ull << 6)
+#define RISCV_TRIGGER_TYPE2_SIZE_4 (3ull << 16)
 
 static uint32_t riscv_encode_addi(uint32_t rd, uint32_t rs1, int32_t imm)
 {
@@ -2191,6 +2202,156 @@ static void test_riscv_intr_capture_cb(uc_engine *uc, uint32_t intno,
     capture->count++;
     capture->intno = intno;
     uc_emu_stop(uc);
+}
+
+static void test_riscv64_trigger_csrs(void)
+{
+    uc_engine *uc;
+    uint32_t insns[] = {
+        riscv_encode_csr(RISCV_CSR_TSELECT, 0, 2, 5),
+        riscv_encode_csr(RISCV_CSR_TDATA1, 0, 2, 6),
+        riscv_encode_csr(RISCV_CSR_TINFO, 0, 2, 7),
+    };
+    uint8_t code[sizeof(insns)];
+    uint64_t value;
+    size_t i;
+
+    for (i = 0; i < sizeof(insns) / sizeof(insns[0]); i++) {
+        riscv_insn_to_code(&code[i * 4], insns[i]);
+    }
+
+    uc_common_setup_model(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64,
+                          (const char *)code, sizeof(code),
+                          UC_CPU_RISCV64_SIFIVE_U54);
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &value));
+    TEST_CHECK(value == 0);
+    OK(uc_reg_read(uc, UC_RISCV_REG_X6, &value));
+    TEST_CHECK(value == RISCV64_TRIGGER_TYPE2);
+    OK(uc_reg_read(uc, UC_RISCV_REG_X7, &value));
+    TEST_CHECK(value == ((1ull << 2) | (1ull << 6)));
+
+    OK(uc_close(uc));
+}
+
+static void run_riscv64_type2_store(uint64_t mode,
+                                    uc_err *error,
+                                    uint32_t *result)
+{
+    uc_engine *uc;
+    uint32_t insns[] = {
+        riscv_encode_csr(RISCV_CSR_TSELECT, 5, 1, 0),
+        riscv_encode_csr(RISCV_CSR_TDATA2, 6, 1, 0),
+        riscv_encode_csr(RISCV_CSR_TDATA1, 7, 1, 0),
+        riscv_encode_s(0, 9, 6, 2, 0x23),
+    };
+    uint8_t code[sizeof(insns)];
+    uint32_t initial = 0xaabbccdd;
+    uint64_t tselect = 0;
+    uint64_t address = riscv_data_start;
+    uint64_t control = RISCV64_TRIGGER_TYPE2 |
+                       RISCV_TRIGGER_TYPE2_STORE |
+                       RISCV_TRIGGER_TYPE2_SIZE_4 | mode;
+    uint64_t stored = 0x11223344;
+    size_t i;
+
+    for (i = 0; i < sizeof(insns) / sizeof(insns[0]); i++) {
+        riscv_insn_to_code(&code[i * 4], insns[i]);
+    }
+
+    uc_common_setup_model(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64,
+                          (const char *)code, sizeof(code),
+                          UC_CPU_RISCV64_SIFIVE_U54);
+    OK(uc_mem_map(uc, riscv_data_start, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, riscv_data_start, &initial, sizeof(initial)));
+    OK(uc_reg_write(uc, UC_RISCV_REG_X5, &tselect));
+    OK(uc_reg_write(uc, UC_RISCV_REG_X6, &address));
+    OK(uc_reg_write(uc, UC_RISCV_REG_X7, &control));
+    OK(uc_reg_write(uc, UC_RISCV_REG_X9, &stored));
+
+    OK(uc_emu_start(uc, code_start, code_start + 3 * 4, 0, 0));
+    *error = uc_emu_start(uc, code_start + 3 * 4,
+                          code_start + sizeof(code), 0, 0);
+    OK(uc_mem_read(uc, riscv_data_start, result, sizeof(*result)));
+
+    OK(uc_close(uc));
+}
+
+static void test_riscv64_type2_store_trigger(void)
+{
+    uc_err error;
+    uint32_t value = 0;
+
+    run_riscv64_type2_store(RISCV_TRIGGER_TYPE2_M, &error, &value);
+    TEST_CHECK(error == UC_ERR_EXCEPTION);
+    TEST_CHECK(value == 0xaabbccdd);
+}
+
+static void test_riscv64_type2_store_privilege_filter(void)
+{
+    uc_err error;
+    uint32_t value = 0;
+
+    run_riscv64_type2_store(RISCV_TRIGGER_TYPE2_U, &error, &value);
+    TEST_CHECK(error == UC_ERR_OK);
+    TEST_CHECK(value == 0x11223344);
+}
+
+static void run_riscv64_type2_exec(uint64_t mode,
+                                   uc_err *error,
+                                   uint64_t *result)
+{
+    uc_engine *uc;
+    uint32_t insns[] = {
+        riscv_encode_csr(RISCV_CSR_TSELECT, 5, 1, 0),
+        riscv_encode_csr(RISCV_CSR_TDATA2, 6, 1, 0),
+        riscv_encode_csr(RISCV_CSR_TDATA1, 7, 1, 0),
+        riscv_encode_addi(10, 0, 1),
+    };
+    uint8_t code[sizeof(insns)];
+    uint64_t tselect = 0;
+    uint64_t address = code_start + 3 * 4;
+    uint64_t control = RISCV64_TRIGGER_TYPE2 |
+                       RISCV_TRIGGER_TYPE2_EXEC | mode;
+    size_t i;
+
+    for (i = 0; i < sizeof(insns) / sizeof(insns[0]); i++) {
+        riscv_insn_to_code(&code[i * 4], insns[i]);
+    }
+
+    uc_common_setup_model(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64,
+                          (const char *)code, sizeof(code),
+                          UC_CPU_RISCV64_SIFIVE_U54);
+    OK(uc_reg_write(uc, UC_RISCV_REG_X5, &tselect));
+    OK(uc_reg_write(uc, UC_RISCV_REG_X6, &address));
+    OK(uc_reg_write(uc, UC_RISCV_REG_X7, &control));
+
+    OK(uc_emu_start(uc, code_start, address, 0, 0));
+    *error = uc_emu_start(uc, address, code_start + sizeof(code), 0, 0);
+    OK(uc_reg_read(uc, UC_RISCV_REG_X10, result));
+
+    OK(uc_close(uc));
+}
+
+static void test_riscv64_type2_exec_trigger(void)
+{
+    uc_err error;
+    uint64_t value = 0;
+
+    run_riscv64_type2_exec(RISCV_TRIGGER_TYPE2_M, &error, &value);
+    TEST_CHECK(error == UC_ERR_EXCEPTION);
+    TEST_CHECK(value == 0);
+}
+
+static void test_riscv64_type2_exec_privilege_filter(void)
+{
+    uc_err error;
+    uint64_t value = 0;
+
+    run_riscv64_type2_exec(RISCV_TRIGGER_TYPE2_U, &error, &value);
+    TEST_CHECK(error == UC_ERR_OK);
+    TEST_CHECK(value == 1);
 }
 
 static uint64_t riscv_pmp_napot_addr(uint64_t base, uint64_t size)
@@ -11273,6 +11434,15 @@ TEST_LIST = {
      test_riscv_correct_address_in_long_jump_hook},
     {"test_riscv_mmu", test_riscv_mmu},
     {"test_riscv_priv", test_riscv_priv},
+    {"test_riscv64_trigger_csrs", test_riscv64_trigger_csrs},
+    {"test_riscv64_type2_store_trigger",
+     test_riscv64_type2_store_trigger},
+    {"test_riscv64_type2_store_privilege_filter",
+     test_riscv64_type2_store_privilege_filter},
+    {"test_riscv64_type2_exec_trigger",
+     test_riscv64_type2_exec_trigger},
+    {"test_riscv64_type2_exec_privilege_filter",
+     test_riscv64_type2_exec_privilege_filter},
     {"test_riscv64_pmp_na4_load", test_riscv64_pmp_na4_load},
     {"test_riscv64_pmp_na4_rejects_outside",
      test_riscv64_pmp_na4_rejects_outside},

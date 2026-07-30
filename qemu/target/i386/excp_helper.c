@@ -137,6 +137,19 @@ void raise_exception_ra(CPUX86State *env, int exception_index, uintptr_t retaddr
     raise_interrupt2(env, exception_index, 0, 0, 0, retaddr);
 }
 
+G_NORETURN void handle_unaligned_access(CPUX86State *env, vaddr vaddr,
+                                        MMUAccessType access_type,
+                                        uintptr_t retaddr)
+{
+    /*
+     * Unaligned accesses are currently only triggered by SSE/AVX
+     * instructions that impose alignment requirements on memory
+     * operands. These instructions raise #GP(0) upon accessing an
+     * unaligned address.
+     */
+    raise_exception_ra(env, EXCP0D_GPF, retaddr);
+}
+
 static hwaddr get_hphys(CPUState *cs, hwaddr gphys, MMUAccessType access_type,
                         int *prot)
 {
@@ -688,4 +701,13 @@ bool x86_cpu_tlb_fill(CPUState *cs, vaddr addr, int size,
                                env->error_code, retaddr);
     }
     return true;
+}
+
+G_NORETURN void x86_cpu_do_unaligned_access(CPUState *cs, vaddr vaddr,
+                                            MMUAccessType access_type,
+                                            int mmu_idx, uintptr_t retaddr)
+{
+    X86CPU *cpu = X86_CPU(cs);
+
+    handle_unaligned_access(&cpu->env, vaddr, access_type, retaddr);
 }

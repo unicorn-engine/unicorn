@@ -640,13 +640,14 @@ static void breakpoint_invalidate(CPUState *cpu, target_ulong pc)
 int cpu_watchpoint_insert(CPUState *cpu, vaddr addr, vaddr len,
                           int flags, CPUWatchpoint **watchpoint)
 {
-#if 0
+#ifdef TARGET_PAGE_BITS_VARY
+    struct uc_struct *uc = cpu->uc;
+#endif
     CPUWatchpoint *wp;
+    vaddr in_page;
 
     /* forbid ranges which are empty or run off the end of the address space */
     if (len == 0 || (addr + len - 1) < addr) {
-        error_report("tried to set invalid watchpoint at %"
-                     VADDR_PRIx ", len=%" VADDR_PRIu, addr, len);
         return -EINVAL;
     }
     wp = g_malloc(sizeof(*wp));
@@ -662,31 +663,48 @@ int cpu_watchpoint_insert(CPUState *cpu, vaddr addr, vaddr len,
         QTAILQ_INSERT_TAIL(&cpu->watchpoints, wp, entry);
     }
 
-    tlb_flush_page(cpu, addr);
+    in_page = -(addr | TARGET_PAGE_MASK);
+    if (len <= in_page) {
+        tlb_flush_page(cpu, addr);
+    } else {
+        tlb_flush(cpu);
+    }
 
-    if (watchpoint)
+    if (watchpoint) {
         *watchpoint = wp;
-#endif
+    }
 
     return 0;
+}
+
+/* Remove a specific watchpoint.  */
+int cpu_watchpoint_remove(CPUState *cpu, vaddr addr, vaddr len, int flags)
+{
+    CPUWatchpoint *wp;
+
+    QTAILQ_FOREACH(wp, &cpu->watchpoints, entry) {
+        if (addr == wp->vaddr && len == wp->len &&
+            flags == (wp->flags & ~BP_WATCHPOINT_HIT)) {
+            cpu_watchpoint_remove_by_ref(cpu, wp);
+            return 0;
+        }
+    }
+    return -ENOENT;
 }
 
 /* Remove a specific watchpoint by reference.  */
 void cpu_watchpoint_remove_by_ref(CPUState *cpu, CPUWatchpoint *watchpoint)
 {
-#if 0
     QTAILQ_REMOVE(&cpu->watchpoints, watchpoint, entry);
 
     tlb_flush_page(cpu, watchpoint->vaddr);
 
     g_free(watchpoint);
-#endif
 }
 
 /* Remove all matching watchpoints.  */
 void cpu_watchpoint_remove_all(CPUState *cpu, int mask)
 {
-#if 0
     CPUWatchpoint *wp, *next;
 
     QTAILQ_FOREACH_SAFE(wp, &cpu->watchpoints, entry, next) {
@@ -694,24 +712,30 @@ void cpu_watchpoint_remove_all(CPUState *cpu, int mask)
             cpu_watchpoint_remove_by_ref(cpu, wp);
         }
     }
-#endif
+}
+
+/* Return true if the watchpoint and access ranges overlap.  */
+static inline bool watchpoint_address_matches(CPUWatchpoint *wp, vaddr addr,
+                                              vaddr len)
+{
+    vaddr wpend = wp->vaddr + wp->len - 1;
+    vaddr addrend = addr + len - 1;
+
+    return !(addr > wpend || wp->vaddr > addrend);
 }
 
 /* Return flags for watchpoints that match addr + prot.  */
 int cpu_watchpoint_address_matches(CPUState *cpu, vaddr addr, vaddr len)
 {
-#if 0
     CPUWatchpoint *wp;
     int ret = 0;
 
     QTAILQ_FOREACH(wp, &cpu->watchpoints, entry) {
-        if (watchpoint_address_matches(wp, addr, TARGET_PAGE_SIZE)) {
+        if (watchpoint_address_matches(wp, addr, len)) {
             ret |= wp->flags;
         }
     }
     return ret;
-#endif
-    return 0;
 }
 
 /* Add a breakpoint.  */
@@ -1298,6 +1322,54 @@ ram_addr_t qemu_ram_addr_from_host(struct uc_struct *uc, void *ptr)
 void cpu_check_watchpoint(CPUState *cpu, vaddr addr, vaddr len,
                           MemTxAttrs attrs, int flags, uintptr_t ra)
 {
+    CPUClass *cc = CPU_GET_CLASS(cpu);
+    CPUWatchpoint *wp;
+
+    if (cpu->watchpoint_hit) {
+        /* Raise the debug interrupt after the retranslated instruction. */
+        cpu_interrupt(cpu, CPU_INTERRUPT_DEBUG);
+        return;
+    }
+
+    if (cc->tcg_ops->adjust_watchpoint_address) {
+        addr = cc->tcg_ops->adjust_watchpoint_address(cpu, addr, len);
+    }
+    QTAILQ_FOREACH(wp, &cpu->watchpoints, entry) {
+        if (watchpoint_address_matches(wp, addr, len) &&
+            (wp->flags & flags)) {
+            if (flags == BP_MEM_READ) {
+                wp->flags |= BP_WATCHPOINT_HIT_READ;
+            } else {
+                wp->flags |= BP_WATCHPOINT_HIT_WRITE;
+            }
+            wp->hitaddr = MAX(addr, wp->vaddr);
+            wp->hitattrs = attrs;
+            if (!cpu->watchpoint_hit) {
+                if ((wp->flags & BP_CPU) &&
+                    cc->tcg_ops->debug_check_watchpoint &&
+                    !cc->tcg_ops->debug_check_watchpoint(cpu, wp)) {
+                    wp->flags &= ~BP_WATCHPOINT_HIT;
+                    continue;
+                }
+                cpu->watchpoint_hit = wp;
+
+                mmap_lock();
+                tb_check_watchpoint(cpu, ra);
+                if (wp->flags & BP_STOP_BEFORE_ACCESS) {
+                    cpu->exception_index = EXCP_DEBUG;
+                    mmap_unlock();
+                    cpu_loop_exit(cpu);
+                } else {
+                    /* Force execution of one instruction next time. */
+                    cpu->cflags_next_tb = 1 | curr_cflags();
+                    mmap_unlock();
+                    cpu_loop_exit_noexc(cpu);
+                }
+            }
+        } else {
+            wp->flags &= ~BP_WATCHPOINT_HIT;
+        }
+    }
 }
 
 static MemTxResult flatview_read(struct uc_struct *uc, FlatView *fv, hwaddr addr,

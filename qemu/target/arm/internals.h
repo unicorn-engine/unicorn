@@ -579,6 +579,9 @@ void hw_breakpoint_update_all(ARMCPU *cpu);
 /* Callback function for checking if a watchpoint should trigger. */
 bool arm_debug_check_watchpoint(CPUState *cs, CPUWatchpoint *wp);
 
+/* Callback function for checking if a breakpoint should trigger. */
+bool arm_debug_check_breakpoint(CPUState *cs);
+
 /* Adjust addresses (in BE32 mode) before testing against watchpoint
  * addresses.
  */

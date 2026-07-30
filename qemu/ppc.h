@@ -65,6 +65,7 @@
 #define cpu_exec_realizefn cpu_exec_realizefn_ppc
 #define tb_invalidate_phys_addr tb_invalidate_phys_addr_ppc
 #define cpu_watchpoint_insert cpu_watchpoint_insert_ppc
+#define cpu_watchpoint_remove cpu_watchpoint_remove_ppc
 #define cpu_watchpoint_remove_by_ref cpu_watchpoint_remove_by_ref_ppc
 #define cpu_watchpoint_remove_all cpu_watchpoint_remove_all_ppc
 #define cpu_watchpoint_address_matches cpu_watchpoint_address_matches_ppc

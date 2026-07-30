@@ -977,6 +977,105 @@ static void test_arm_m_profile_activate_fp_context(uc_engine *uc)
     OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &control));
 }
 
+typedef struct {
+    uint32_t count;
+    uint32_t intno;
+} ArmIntrCapture;
+
+static void test_arm_intr_capture_cb(uc_engine *uc, uint32_t intno,
+                                     void *data)
+{
+    ArmIntrCapture *capture = (ArmIntrCapture *)data;
+
+    capture->count++;
+    capture->intno = intno;
+    OK(uc_emu_stop(uc));
+}
+
+static void test_arm_m55_vlstm_lazy_preserve(void)
+{
+    const uint32_t frame_addr = code_start + 0x2000;
+    const uint32_t initial_s0 = 0x11223344;
+    const uint32_t initial_fpscr = 0xa8000010;
+    const uint32_t initial_vpr = 0x00ab1357;
+    const uint32_t replacement_vpr = 0x0055cafe;
+    ArmIntrCapture capture = { 0 };
+    uc_engine *uc;
+    uc_hook hook;
+    uint8_t code[8];
+    uint8_t frame[0x48] = { 0 };
+    uint32_t vpr;
+    uc_err err;
+
+    test_arm_emit32(code, 0, 0x0a80ec20); /* vlstm r0 */
+    test_arm_emit32(code, 4, 0x1a10eeec); /* vmsr vpr,r1 */
+    uc_common_setup(&uc, UC_ARCH_ARM,
+                    UC_MODE_THUMB | UC_MODE_MCLASS,
+                    (const char *)code, sizeof(code),
+                    UC_CPU_ARM_CORTEX_M55);
+    test_arm_enable_vfp(uc);
+    test_arm_m_profile_activate_fp_context(uc);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INTR, test_arm_intr_capture_cb,
+                   &capture, 1, 0));
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &frame_addr));
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &replacement_vpr));
+    OK(uc_reg_write(uc, UC_ARM_REG_S0, &initial_s0));
+    OK(uc_reg_write(uc, UC_ARM_REG_FPSCR, &initial_fpscr));
+    OK(uc_reg_write(uc, UC_ARM_REG_VPR, &initial_vpr));
+
+    err = uc_emu_start(uc, code_start | 1,
+                       code_start + sizeof(code), 0, 0);
+    OK(uc_mem_read(uc, frame_addr, frame, sizeof(frame)));
+    OK(uc_reg_read(uc, UC_ARM_REG_VPR, &vpr));
+
+    TEST_CHECK_(err == UC_ERR_OK, "err=%u count=%u intno=%u",
+                (unsigned)err, capture.count, capture.intno);
+    TEST_CHECK_(capture.count == 0, "count=%u intno=%u",
+                capture.count, capture.intno);
+    TEST_CHECK(test_arm_load_le(frame, 4) == initial_s0);
+    TEST_CHECK(test_arm_load_le(frame + 0x40, 4) == initial_fpscr);
+    TEST_CHECK(test_arm_load_le(frame + 0x44, 4) == initial_vpr);
+    TEST_CHECK_(vpr == replacement_vpr,
+                "vpr=0x%08x expected=0x%08x",
+                vpr, replacement_vpr);
+    OK(uc_close(uc));
+}
+
+static void test_arm_m55_vlstm_lazy_fault(void)
+{
+    const uint32_t frame_addr = 0x800000;
+    const uint32_t initial_vpr = 0x00ab1357;
+    const uint32_t replacement_vpr = 0x0055cafe;
+    ArmIntrCapture capture = { 0 };
+    uc_engine *uc;
+    uc_hook hook;
+    uint8_t code[8];
+    uint32_t vpr;
+
+    test_arm_emit32(code, 0, 0x0a80ec20); /* vlstm r0 */
+    test_arm_emit32(code, 4, 0x1a10eeec); /* vmsr vpr,r1 */
+    uc_common_setup(&uc, UC_ARCH_ARM,
+                    UC_MODE_THUMB | UC_MODE_MCLASS,
+                    (const char *)code, sizeof(code),
+                    UC_CPU_ARM_CORTEX_M55);
+    test_arm_enable_vfp(uc);
+    test_arm_m_profile_activate_fp_context(uc);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INTR, test_arm_intr_capture_cb,
+                   &capture, 1, 0));
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &frame_addr));
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &replacement_vpr));
+    OK(uc_reg_write(uc, UC_ARM_REG_VPR, &initial_vpr));
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code), 0, 0));
+    OK(uc_reg_read(uc, UC_ARM_REG_VPR, &vpr));
+
+    TEST_CHECK_(capture.count == 1, "count=%u intno=%u",
+                capture.count, capture.intno);
+    TEST_CHECK_(capture.intno == 20, "intno=%u", capture.intno);
+    TEST_CHECK(vpr == initial_vpr);
+    OK(uc_close(uc));
+}
+
 static void test_arm_m55_sysreg_mem(void)
 {
     const uint32_t fpcr_ahp = 1U << 26;
@@ -11954,6 +12053,10 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_m55_fpscr_ltpsize", test_arm_m55_fpscr_ltpsize},
              {"test_arm_m55_fpscr_nzcvqc_sysreg",
               test_arm_m55_fpscr_nzcvqc_sysreg},
+             {"test_arm_m55_vlstm_lazy_preserve",
+              test_arm_m55_vlstm_lazy_preserve},
+             {"test_arm_m55_vlstm_lazy_fault",
+              test_arm_m55_vlstm_lazy_fault},
              {"test_arm_m55_sysreg_mem", test_arm_m55_sysreg_mem},
              {"test_arm_m55_vscclrm", test_arm_m55_vscclrm},
              {"test_arm_m55_vctp", test_arm_m55_vctp},

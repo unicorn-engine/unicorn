@@ -279,7 +279,11 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             break;
         case UC_ARM_REG_C1_C0_2:
             CHECK_REG_TYPE(int32_t);
-            *(int32_t *)value = env->cp15.cpacr_el1;
+            if (arm_feature(env, ARM_FEATURE_M)) {
+                *(int32_t *)value = env->v7m.cpacr[env->v7m.secure];
+            } else {
+                *(int32_t *)value = env->cp15.cpacr_el1;
+            }
             break;
         case UC_ARM_REG_C13_C0_3:
             CHECK_REG_TYPE(int32_t);
@@ -463,7 +467,11 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             break;
         case UC_ARM_REG_C1_C0_2:
             CHECK_REG_TYPE(int32_t);
-            env->cp15.cpacr_el1 = *(int32_t *)value;
+            if (arm_feature(env, ARM_FEATURE_M)) {
+                env->v7m.cpacr[env->v7m.secure] = *(int32_t *)value;
+            } else {
+                env->cp15.cpacr_el1 = *(int32_t *)value;
+            }
             break;
         case UC_ARM_REG_C13_C0_3:
             CHECK_REG_TYPE(int32_t);

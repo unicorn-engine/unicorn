@@ -111,6 +111,12 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
             CPUBreakpoint *bp;
             QTAILQ_FOREACH(bp, &cpu->breakpoints, entry) {
                 if (bp->pc == db->pc_next) {
+                    CPUClass *cc = CPU_GET_CLASS(cpu);
+
+                    if ((bp->flags & BP_CPU) &&
+                        !cc->tcg_ops->debug_check_breakpoint(cpu)) {
+                        continue;
+                    }
                     if (ops->breakpoint_check(db, cpu, bp)) {
                         bp_insn = 1;
                         break;

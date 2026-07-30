@@ -140,6 +140,11 @@ typedef struct CPUClass {
     void (*do_unaligned_access)(CPUState *cpu, vaddr addr,
                                 MMUAccessType access_type,
                                 int mmu_idx, uintptr_t retaddr);
+    void (*do_transaction_failed)(CPUState *cpu, hwaddr physaddr,
+                                  vaddr addr, unsigned size,
+                                  MMUAccessType access_type, int mmu_idx,
+                                  MemTxAttrs attrs, MemTxResult response,
+                                  uintptr_t retaddr);
     int64_t (*get_arch_id)(CPUState *cpu);
     bool (*get_paging_enabled)(const CPUState *cpu);
     void (*get_memory_mapping)(CPUState *cpu, MemoryMappingList *list);
@@ -156,6 +161,7 @@ typedef struct CPUClass {
                                         MemTxAttrs *attrs);
     int (*asidx_from_attrs)(CPUState *cpu, MemTxAttrs attrs);
     bool (*debug_check_watchpoint)(CPUState *cpu, CPUWatchpoint *wp);
+    bool (*debug_check_breakpoint)(CPUState *cpu);
     void (*debug_excp_handler)(CPUState *cpu);
 
     void (*cpu_exec_enter)(CPUState *cpu);
@@ -342,6 +348,8 @@ struct CPUState {
     uint32_t halted;
     uint32_t can_do_io;
     int32_t exception_index;
+    bool exception_pc_restored;
+    bool ignore_memory_transaction_failures;
 
     struct uc_struct* uc;
 

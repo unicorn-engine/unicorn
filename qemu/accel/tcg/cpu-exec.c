@@ -386,20 +386,27 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
 #if defined(TARGET_MIPS) || defined(TARGET_MIPS64)
         // Unicorn: Imported from https://github.com/unicorn-engine/unicorn/pull/1098
         CPUMIPSState *env = &(MIPS_CPU(cpu)->env);
-        env->active_tc.PC = uc->next_pc;
+        if (!cpu->exception_pc_restored) {
+            env->active_tc.PC = uc->next_pc;
+        }
 #endif
 #if defined(TARGET_RISCV)
         CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
-        env->pc += 4;
+        if (!cpu->exception_pc_restored) {
+            env->pc += 4;
+        }
 #endif
 #if defined(TARGET_SPARC)
         CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
-        env->pc = env->npc;
+        if (!cpu->exception_pc_restored) {
+            env->pc = env->npc;
+        }
 #endif
 #if defined(TARGET_PPC)
         CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
         env->nip += 4;
 #endif
+        cpu->exception_pc_restored = false;
         // Unicorn: call registered interrupt callbacks
         catched = false;
         HOOK_FOREACH_VAR_DECLARE;

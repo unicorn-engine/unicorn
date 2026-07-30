@@ -2003,6 +2003,9 @@ void host_vendor_fms(char *vendor, int *family, int *model, int *stepping);
 bool x86_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
                       MMUAccessType access_type, int mmu_idx,
                       bool probe, uintptr_t retaddr);
+G_NORETURN void x86_cpu_do_unaligned_access(CPUState *cs, vaddr vaddr,
+                                            MMUAccessType access_type,
+                                            int mmu_idx, uintptr_t retaddr);
 void x86_cpu_set_a20(X86CPU *cpu, int a20_state);
 
 static inline int x86_asidx_from_attrs(CPUState *cs, MemTxAttrs attrs)
