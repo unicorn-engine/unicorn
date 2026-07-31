@@ -219,6 +219,7 @@ typedef enum uc_hook_idx {
     UC_HOOK_EDGE_GENERATED_IDX,
     UC_HOOK_TCG_OPCODE_IDX,
     UC_HOOK_TLB_FILL_IDX,
+    UC_HOOK_BLOCK_ICOUNT_IDX,
 
     UC_HOOK_MAX,
 } uc_hook_idx;
@@ -532,6 +533,8 @@ static inline void hooked_regions_check(uc_engine *uc, uint64_t start,
     // Only UC_HOOK_BLOCK and UC_HOOK_CODE might be wrongle cached!
     hooked_regions_check_single(uc->hook[UC_HOOK_CODE_IDX].head, start, length);
     hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_IDX].head, start,
+                                length);
+    hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_ICOUNT_IDX].head, start,
                                 length);
 }
 

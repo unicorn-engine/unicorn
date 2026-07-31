@@ -1927,6 +1927,30 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 
     UC_INIT(uc);
 
+    int block_type = type & (UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT);
+    if (block_type == (UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT)) {
+        restore_jit_state(uc);
+        return UC_ERR_HOOK;
+    }
+    if (block_type != 0) {
+        int opposite_idx = block_type == UC_HOOK_BLOCK
+                               ? UC_HOOK_BLOCK_ICOUNT_IDX
+                               : UC_HOOK_BLOCK_IDX;
+        for (struct list_item *c = uc->hook[opposite_idx].head; c;
+             c = c->next) {
+            struct hook *other = c->data;
+            if (other->to_delete) {
+                continue;
+            }
+            bool overlaps = begin > end || other->begin > other->end ||
+                            (begin <= other->end && other->begin <= end);
+            if (overlaps) {
+                restore_jit_state(uc);
+                return UC_ERR_HOOK_EXIST;
+            }
+        }
+    }
+
     struct hook *hook = calloc(1, sizeof(struct hook));
     if (hook == NULL) {
         restore_jit_state(uc);
@@ -2013,7 +2037,8 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         return UC_ERR_OK;
     }
 
-    if (type & UC_HOOK_CODE || type & UC_HOOK_BLOCK) {
+    if (type & UC_HOOK_CODE || type & UC_HOOK_BLOCK ||
+        type & UC_HOOK_BLOCK_ICOUNT) {
         if (end <= begin) {
             uc->tb_flush(uc);
         } else {
@@ -2073,7 +2098,8 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
     // and store the type mask in the hook pointer.
     for (i = 0; i < UC_HOOK_MAX; i++) {
         if (list_exists(&uc->hook[i], (void *)hook)) {
-            if (hook->type & UC_HOOK_CODE || hook->type & UC_HOOK_BLOCK) {
+            if (hook->type & UC_HOOK_CODE || hook->type & UC_HOOK_BLOCK ||
+                hook->type & UC_HOOK_BLOCK_ICOUNT) {
                 g_hash_table_foreach(hook->hooked_regions,
                                      hook_invalidate_region, uc);
             }
@@ -2092,7 +2118,8 @@ UNICORN_EXPORT
 uc_err uc_hook_set_user_data(uc_engine *uc, uc_hook hh, void *user_data)
 {
     struct hook *hook = (struct hook *)hh;
-    if (hook->type == UC_HOOK_BLOCK || hook->type == UC_HOOK_CODE) {
+    if (hook->type == UC_HOOK_BLOCK || hook->type == UC_HOOK_CODE ||
+        hook->type == UC_HOOK_BLOCK_ICOUNT) {
         if (uc->nested_level) {
             return UC_ERR_ARG;
         }

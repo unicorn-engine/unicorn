@@ -80,6 +80,13 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
         gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, uc, db->pc_first);
     }
 
+    if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_BLOCK_ICOUNT, tb->pc)) {
+        ops->pc_sync(db, cpu);
+        prev_op = tcg_last_op(tcg_ctx);
+        block_hook = true;
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f9, UC_HOOK_BLOCK_ICOUNT_IDX, uc, db->pc_first);
+    }
+
     // tcg_dump_ops(tcg_ctx, false, "translator loop");
 
     /* Start translating.  */
@@ -166,6 +173,10 @@ _end_loop:
             tcg_op = QTAILQ_FIRST(&tcg_ctx->ops);
         }
 
-        tcg_op->args[1] = db->tb->size;
+        if (tcg_op->args[1] == 0xf8f8f8f8) {
+            tcg_op->args[1] = db->tb->size;
+        } else {
+            tcg_op->args[1] = db->tb->icount;
+        }
     }
 }

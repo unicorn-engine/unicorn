@@ -686,6 +686,7 @@ void uc_add_inline_hook(uc_engine *uc, struct hook *hk, void** args, int args_le
     // Only UC_HOOK_BLOCK and UC_HOOK_CODE is generated into tcg code and can be inlined.
     switch (hk->type) {
     case UC_HOOK_BLOCK:
+    case UC_HOOK_BLOCK_ICOUNT:
     case UC_HOOK_CODE:
         // (*uc_cb_hookcode_t)(uc_engine *uc, uint64_t address, uint32_t size, void *user_data);
         sizemask = dh_sizemask(void, 0) | dh_sizemask(ptr, 1) | dh_sizemask(i64, 2) | dh_sizemask(i32, 3) | dh_sizemask(ptr, 4);
