@@ -429,6 +429,35 @@ static void test_add_block_hook(void)
     OK(uc_close(uc));
 }
 
+static bool test_unmapped_end_tlb_fill_hook(uc_engine *uc, uint64_t addr,
+                                            uc_mem_type type,
+                                            uc_tlb_entry *result,
+                                            void *user_data)
+{
+    return false;
+}
+
+static void test_unmapped_end(void)
+{
+    uc_engine *uc;
+    uc_hook syscall_hook;
+    uc_hook tlb_hook;
+    /* nop
+     * syscall
+     */
+    char code[] = "\x90\x0F\x05";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &tlb_hook, UC_HOOK_TLB_FILL,
+                   test_unmapped_end_tlb_fill_hook, NULL, 0, code_start - 1));
+    OK(uc_hook_add(uc, &syscall_hook, UC_HOOK_INSN,
+                   &test_add_block_hook_syscall_cb, NULL, 1, 0,
+                   UC_X86_INS_SYSCALL));
+    OK(uc_emu_start(uc, code_start, 1, 0, 0));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_uc_ctl_mode", test_uc_ctl_mode},
     {"test_uc_ctl_page_size", test_uc_ctl_page_size},
@@ -448,4 +477,5 @@ TEST_LIST = {
     {"test_tlb_clear", test_tlb_clear},
     {"test_noexec", test_noexec},
     {"test_add_block_hook", test_add_block_hook},
+    {"test_unmapped_end", test_unmapped_end},
     {NULL, NULL}};
