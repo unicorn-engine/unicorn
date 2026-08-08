@@ -390,10 +390,6 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
         CPUMIPSState *env = &(MIPS_CPU(cpu)->env);
         env->active_tc.PC = uc->next_pc;
 #endif
-#if defined(TARGET_RISCV)
-        CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
-        env->pc += 4;
-#endif
 #if defined(TARGET_SPARC)
         CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
         env->pc = env->npc;
@@ -422,6 +418,15 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
             *ret = EXCP_HLT;
             return true;
         }
+
+#if defined(TARGET_RISCV)
+        if (cpu->exception_index == RISCV_EXCP_U_ECALL ||
+            cpu->exception_index == RISCV_EXCP_S_ECALL ||
+            cpu->exception_index == RISCV_EXCP_VS_ECALL ||
+            cpu->exception_index == RISCV_EXCP_M_ECALL) {
+            RISCV_CPU(uc->cpu)->env.pc = uc->next_pc;
+        }
+#endif
 
         cpu->exception_index = -1;
     }
