@@ -944,6 +944,32 @@ static void test_arm64_pauth_ctl(void)
     OK(uc_close(uc));
 }
 
+static void test_arm64_pstate_hflags_rebuild(void)
+{
+    uc_engine *uc;
+    // mrs x0, currentel
+    char code[] = "\x40\x42\x38\xd5";
+    uint64_t x0 = 0, pstate = 0;
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN | UC_MODE_ARM,
+                    code, sizeof(code) - 1, UC_CPU_ARM64_MAX);
+
+    // Elevate to EL2 by writing PSTATE. Writing PSTATE must refresh the cached
+    // hflags, otherwise the current exception level stays stale and MRS
+    // CurrentEL (as well as a subsequent ERET) observes the old level.
+    OK(uc_reg_read(uc, UC_ARM64_REG_PSTATE, &pstate));
+    pstate = (pstate & ~0xcUL) | (2UL << 2); // PSTATE.EL = 2 (EL2)
+    OK(uc_reg_write(uc, UC_ARM64_REG_PSTATE, &pstate));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 1));
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &x0));
+    // CurrentEL reports the current EL in bits [3:2]; EL2 -> 0x8.
+    TEST_CHECK(x0 == 0x8);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -965,4 +991,6 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_pc_guarantee", test_arm64_pc_guarantee},
              {"test_arm64_pauth_vanilla", test_arm64_pauth_vanilla},
              {"test_arm64_pauth_ctl", test_arm64_pauth_ctl},
+             {"test_arm64_pstate_hflags_rebuild",
+              test_arm64_pstate_hflags_rebuild},
              {NULL, NULL}};
