@@ -23,6 +23,7 @@
 #include "qemu/host-utils.h"
 #include "exec/helper-proto.h"
 #include "qemu/guest-random.h"
+#include "uc_priv.h"
 
 //#define DEBUG_MULDIV
 
@@ -487,9 +488,38 @@ void helper_cr4_testbit(CPUX86State *env, uint32_t bit)
 
 target_ulong HELPER(rdrand)(CPUX86State *env)
 {
-    target_ulong ret;
+    target_ulong ret = 0;
+    bool success;
+    uc_engine *uc = env->uc;
+    struct hook *hook;
+    bool synced = false;
 
-    if (qemu_guest_getrandom(&ret, sizeof(ret)) < 0) {
+    success = qemu_guest_getrandom(&ret, sizeof(ret)) == 0;
+
+    // Unicorn: call registered RDRAND hooks.
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->eip))
+            continue;
+
+        if (hook->insn == UC_X86_INS_RDRAND) {
+            uintptr_t pc = GETPC();
+            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
+                cpu_restore_state(uc->cpu, pc, false);
+                synced = true;
+            }
+            JIT_CALLBACK_GUARD(
+                ((uc_cb_insn_rdrand_t)hook->callback)(uc, (uint64_t *)&ret,
+                                                      &success, hook->user_data));
+        }
+
+        if (uc->stop_request)
+            break;
+    }
+
+    if (!success) {
         // qemu_log_mask(LOG_UNIMP, "rdrand: Crypto failure: %s",
         //               error_get_pretty(err));
         // error_free(err);
