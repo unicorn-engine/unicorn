@@ -3531,6 +3531,21 @@ static void test_x86_ro_segfault(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_vpermilps_null_ptr_call(void)
+{
+    char code[] = {
+        0x0f, 0x38, 0x0c, 0xff
+    };
+
+    uc_engine *uc;
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof code - 1);
+
+    uc_assert_err(UC_ERR_INSN_INVALID,
+            uc_emu_start(uc, code_start, code_start + sizeof code - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 static bool test_x86_hook_insn_rdtsc_cb(uc_engine *uc, void *user_data)
 {
     uint64_t h = 0x00000000FEDCBA98;
@@ -4066,6 +4081,7 @@ TEST_LIST = {
     {"test_bswap_x64", test_bswap_ax},
     {"test_rex_x64", test_rex_x64},
     {"test_x86_ro_segfault", test_x86_ro_segfault},
+    {"test_x86_vpermilps_null_ptr_call", test_x86_vpermilps_null_ptr_call},
     {"test_x86_hook_insn_rdtsc", test_x86_hook_insn_rdtsc},
     {"test_x86_hook_insn_rdtscp", test_x86_hook_insn_rdtscp},
     {"test_x86_hook_insn_wrmsr", test_x86_hook_insn_wrmsr},
