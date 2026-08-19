@@ -820,6 +820,59 @@ bool riscv_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
 }
 
 /*
+ * Return true if a synchronous exception carries a faulting address in
+ * env->badaddr (used as the machine trap value, mbadaddr/mtval).
+ */
+static bool riscv_cpu_exception_has_badaddr(target_ulong cause)
+{
+    switch (cause) {
+    case RISCV_EXCP_INST_GUEST_PAGE_FAULT:
+    case RISCV_EXCP_LOAD_GUEST_ACCESS_FAULT:
+    case RISCV_EXCP_STORE_GUEST_AMO_ACCESS_FAULT:
+    case RISCV_EXCP_INST_ADDR_MIS:
+    case RISCV_EXCP_INST_ACCESS_FAULT:
+    case RISCV_EXCP_LOAD_ADDR_MIS:
+    case RISCV_EXCP_STORE_AMO_ADDR_MIS:
+    case RISCV_EXCP_LOAD_ACCESS_FAULT:
+    case RISCV_EXCP_STORE_AMO_ACCESS_FAULT:
+    case RISCV_EXCP_INST_PAGE_FAULT:
+    case RISCV_EXCP_LOAD_PAGE_FAULT:
+    case RISCV_EXCP_STORE_PAGE_FAULT:
+        return true;
+    default:
+        return false;
+    }
+}
+
+/*
+ * Unicorn helper: prepare the PC for a UC_HOOK_INTR callback.  This mirrors
+ * the state riscv_cpu_do_interrupt would have set up (mbadaddr from badaddr
+ * for address-bearing exceptions) and advances the PC past the faulting
+ * instruction.  Instruction fetch faults already hold the faulting address
+ * in env->pc and are left untouched.
+ */
+void riscv_cpu_prepare_exception_pc(CPURISCVState *env, uint32_t cause)
+{
+    if (riscv_cpu_exception_has_badaddr(cause)) {
+        env->mbadaddr = env->badaddr;
+    }
+
+    if (cause == RISCV_EXCP_INST_ADDR_MIS ||
+        cause == RISCV_EXCP_INST_ACCESS_FAULT ||
+        cause == RISCV_EXCP_INST_PAGE_FAULT) {
+        return;
+    }
+
+    /*
+     * Execution-time exception: advance past the faulting instruction.
+     * RISC-V instructions are 16 or 32 bits, selected by the two
+     * least-significant bits of the opcode.
+     */
+    uint16_t op = cpu_lduw_code(env, env->pc);
+    env->pc += ((op & 0x3) == 0x3) ? 4 : 2;
+}
+
+/*
  * Handle Traps
  *
  * Adapted from Spike's processor_t::take_trap.
@@ -844,25 +897,13 @@ void riscv_cpu_do_interrupt(CPUState *cs)
 
     if (!async) {
         /* set tval to badaddr for traps with address information */
-        switch (cause) {
-        case RISCV_EXCP_INST_GUEST_PAGE_FAULT:
-        case RISCV_EXCP_LOAD_GUEST_ACCESS_FAULT:
-        case RISCV_EXCP_STORE_GUEST_AMO_ACCESS_FAULT:
-            force_hs_execp = true;
-            /* fallthrough */
-        case RISCV_EXCP_INST_ADDR_MIS:
-        case RISCV_EXCP_INST_ACCESS_FAULT:
-        case RISCV_EXCP_LOAD_ADDR_MIS:
-        case RISCV_EXCP_STORE_AMO_ADDR_MIS:
-        case RISCV_EXCP_LOAD_ACCESS_FAULT:
-        case RISCV_EXCP_STORE_AMO_ACCESS_FAULT:
-        case RISCV_EXCP_INST_PAGE_FAULT:
-        case RISCV_EXCP_LOAD_PAGE_FAULT:
-        case RISCV_EXCP_STORE_PAGE_FAULT:
+        if (riscv_cpu_exception_has_badaddr(cause)) {
             tval = env->badaddr;
-            break;
-        default:
-            break;
+        }
+        if (cause == RISCV_EXCP_INST_GUEST_PAGE_FAULT ||
+            cause == RISCV_EXCP_LOAD_GUEST_ACCESS_FAULT ||
+            cause == RISCV_EXCP_STORE_GUEST_AMO_ACCESS_FAULT) {
+            force_hs_execp = true;
         }
         /* ecall is dispatched as one cause so translate based on mode */
         if (cause == RISCV_EXCP_U_ECALL) {

@@ -391,8 +391,8 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
         env->active_tc.PC = uc->next_pc;
 #endif
 #if defined(TARGET_RISCV)
-        CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
-        env->pc += 4;
+        riscv_cpu_prepare_exception_pc(&(RISCV_CPU(uc->cpu)->env),
+                                       cpu->exception_index);
 #endif
 #if defined(TARGET_SPARC)
         CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);

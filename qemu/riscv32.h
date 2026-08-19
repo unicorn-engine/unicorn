@@ -1311,6 +1311,7 @@
 #define riscv_cpu_do_unaligned_access riscv_cpu_do_unaligned_access_riscv32
 #define riscv_cpu_tlb_fill riscv_cpu_tlb_fill_riscv32
 #define riscv_cpu_do_interrupt riscv_cpu_do_interrupt_riscv32
+#define riscv_cpu_prepare_exception_pc riscv_cpu_prepare_exception_pc_riscv32
 #define riscv_get_csr_ops riscv_get_csr_ops_riscv32
 #define riscv_set_csr_ops riscv_set_csr_ops_riscv32
 #define riscv_csrrw riscv_csrrw_riscv32
