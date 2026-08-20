@@ -2377,6 +2377,30 @@ static void test_x86_hook_insn_rdtscp(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_rdseed(void)
+{
+    char code[] = "\x48\x0F\xC7\xFB"; // RDSEED RBX
+    uc_engine *uc;
+
+    // RDSEED requires CPU support.
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_HASWELL));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    uc_assert_err(UC_ERR_INSN_INVALID,
+                  uc_emu_start(uc, code_start, code_start + sizeof(code) - 1,
+                               0, 0));
+
+    OK(uc_close(uc));
+
+    // RDSEED executes on supported CPUs.
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_BROADWELL));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_close(uc));
+}
 static int test_x86_hook_insn_wrmsr_cb(uc_engine *uc, void *user_data)
 {
     *(int *)user_data = 1;
@@ -2802,6 +2826,7 @@ TEST_LIST = {
     {"test_x86_ro_segfault", test_x86_ro_segfault},
     {"test_x86_hook_insn_rdtsc", test_x86_hook_insn_rdtsc},
     {"test_x86_hook_insn_rdtscp", test_x86_hook_insn_rdtscp},
+    {"test_x86_rdseed", test_x86_rdseed},
     {"test_x86_hook_insn_wrmsr", test_x86_hook_insn_wrmsr},
     {"test_x86_hook_insn_rdmsr", test_x86_hook_insn_rdmsr},
     {"test_x86_dr7", test_x86_dr7},
