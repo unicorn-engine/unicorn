@@ -459,6 +459,36 @@ static void test_riscv64_ecall(void)
     OK(uc_close(uc));
 }
 
+static void test_riscv32_architectural_exception_entry(void)
+{
+    uc_engine *uc;
+    char code[] = "\x73\x00\x00\x00"; // ecall
+    uint32_t mtvec = 0x1800;
+    uint32_t pc, mepc, mcause, priv;
+    int enabled = 0;
+    uc_hook h;
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
+                    sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_RISCV_REG_MTVEC, &mtvec));
+    OK(uc_ctl_set_architectural_exceptions(uc, 1));
+    OK(uc_ctl_get_architectural_exceptions(uc, &enabled));
+    TEST_CHECK(enabled == 1);
+    OK(uc_hook_add(uc, &h, UC_HOOK_INTR, test_riscv64_ecall_cb, NULL, 1, 0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &pc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_MEPC, &mepc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_MCAUSE, &mcause));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PRIV, &priv));
+    TEST_CHECK(pc == mtvec);
+    TEST_CHECK(mepc == code_start);
+    TEST_CHECK(mcause == 11); // machine-mode ecall
+    TEST_CHECK(priv == 3);    // machine mode
+
+    OK(uc_close(uc));
+}
+
 static uint64_t test_riscv32_mmio_map_read_cb(uc_engine *uc, uint64_t offset,
                                               unsigned size, void *data)
 {
@@ -810,6 +840,8 @@ TEST_LIST = {
      test_riscv64_fp_move_from_int_reg_write},
     {"test_riscv64_fp_move_to_int", test_riscv64_fp_move_to_int},
     {"test_riscv64_ecall", test_riscv64_ecall},
+    {"test_riscv32_architectural_exception_entry",
+     test_riscv32_architectural_exception_entry},
     {"test_riscv32_mmio_map", test_riscv32_mmio_map},
     {"test_riscv64_mmio_map", test_riscv64_mmio_map},
     {"test_riscv32_map", test_riscv32_map},

@@ -378,6 +378,7 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
         cpu->exception_index = -1;
         return true;
     } else {
+        int hook_exception = cpu->exception_index;
 #if defined(TARGET_X86_64)
         CPUArchState *env = cpu->env_ptr;
         if (env->exception_is_int) {
@@ -392,7 +393,11 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
 #endif
 #if defined(TARGET_RISCV)
         CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
-        env->pc += 4;
+        if (uc->architectural_exceptions) {
+            riscv_cpu_do_interrupt(cpu);
+        } else {
+            env->pc += 4;
+        }
 #endif
 #if defined(TARGET_SPARC)
         CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
@@ -409,7 +414,8 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
             if (hook->to_delete) {
                 continue;
             }
-            JIT_CALLBACK_GUARD(((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data));
+            JIT_CALLBACK_GUARD(((uc_cb_hookintr_t)hook->callback)(
+                uc, hook_exception, hook->user_data));
             catched = true;
         }
         // Unicorn: If un-catched interrupt, stop executions.

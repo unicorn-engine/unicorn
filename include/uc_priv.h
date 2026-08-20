@@ -335,6 +335,7 @@ struct uc_struct {
     TargetPageBits *init_target_page;
     int target_bits; // User defined page bits by uc_ctl
     int cpu_model;
+    bool architectural_exceptions;
     BounceBuffer bounce;                // qemu/cpu-exec.c
     volatile sig_atomic_t exit_request; // qemu/cpu-exec.c
     /* qemu/accel/tcg/cpu-exec-common.c */
