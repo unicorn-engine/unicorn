@@ -2656,6 +2656,54 @@ static void test_x86_group_1a(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_group_3_modrm_reg_1(void)
+{
+    uc_engine *uc;
+
+    char code[] = {
+        // xor eax, eax
+        0x31, 0xc0,
+        // test al, 0xff (ModRM.reg == 1)
+        0xf6, 0xc8, 0xff,
+        // jnz 0x30 (int3)
+        0x75, 0x29,
+        // test eax, 0x12345678
+        0xf7, 0xc8, 0x78, 0x56, 0x34, 0x12,
+        // jnz 0x30 (int3)
+        0x75, 0x21,
+        // mov eax, 0x10
+        0xb8, 0x10, 0x00, 0x00, 0x00,
+        // test al, 0xf0
+        0xf6, 0xc8, 0xf0,
+        // jz 0x30 (int3)
+        0x74, 0x17,
+        // test al, 0x20
+        0xf6, 0xc8, 0x20,
+        // jnz 0x30 (int3)
+        0x75, 0x12,
+        // test eax, 0x12345608
+        0xf7, 0xc8, 0x08, 0x56, 0x34, 0x12,
+        // jnz 0x30 (int3)
+        0x75, 0x0a,
+        // test eax, 0x12345678
+        0xf7, 0xc8, 0x78, 0x56, 0x34, 0x12,
+        // jz 0x30 (int3)
+        0x74, 0x02,
+        // jmp end
+        0xeb, 0x01,
+        // int3
+        0xcc,
+    };
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code));
+
+    OK(uc_mem_map(uc, code_start + code_len, 0x1000, UC_PROT_ALL));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_close(uc));
+}
+
 static void test_x86_lock_bt_mem(void)
 {
     uc_engine *uc;
@@ -2810,6 +2858,7 @@ TEST_LIST = {
     {"test_x86_aaa_flags", test_x86_aaa_flags},
     {"test_x86_aas_flags", test_x86_aas_flags},
     {"test_x86_group_1a", test_x86_group_1a},
+    {"test_x86_group_3_modrm_reg_1", test_x86_group_3_modrm_reg_1},
     {"test_x86_lock_bt_mem", test_x86_lock_bt_mem},
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
