@@ -91,7 +91,8 @@ static inline bool has_ext(DisasContext *ctx, uint32_t ext)
 static void generate_exception(DisasContext *ctx, int excp)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-
+    /* Save the post-exception PC so handled ecall hooks can resume execution. */
+    ctx->uc->next_pc = ctx->pc_succ_insn;
     tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
     TCGv_i32 helper_tmp = tcg_const_i32(tcg_ctx, excp);
     gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, helper_tmp);

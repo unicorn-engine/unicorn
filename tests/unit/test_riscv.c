@@ -545,30 +545,103 @@ static void test_riscv64_code_patching_count(void)
     OK(uc_close(uc));
 }
 
-static void test_riscv64_ecall_cb(uc_engine *uc, uint32_t intno, void *data)
+static void test_riscv_ecall_pc_cb(uc_engine *uc, uint32_t intno, void *data)
 {
+    uint64_t pc = 0;
+
+    TEST_CHECK(intno == 8); // U-mode ecall
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &pc));
+    TEST_CHECK(pc == *(uint64_t *)data);
+
     uc_emu_stop(uc);
-    return;
 }
 
-static void test_riscv64_ecall(void)
+static void test_riscv_illegal_pc_cb(uc_engine *uc, uint32_t intno, void *data)
+{
+    uint64_t pc = 0;
+
+    TEST_CHECK(intno == 2); // illegal instruction
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &pc));
+    TEST_CHECK(pc == *(uint64_t *)data);
+
+    uc_emu_stop(uc);
+}
+
+static void test_riscv_ecall_pc(uc_mode mode)
 {
     uc_engine *uc;
     char code[] = "\x73\x00\x00\x00"; // ecall
-    uint64_t r_pc;
+    uint64_t expected_pc = code_start;
+    uint64_t pc = 0;
     uc_hook h;
 
-    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
-                    sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_RISCV, mode, code, sizeof(code) - 1);
 
-    OK(uc_hook_add(uc, &h, UC_HOOK_INTR, test_riscv64_ecall_cb, NULL, 1, 0));
+    OK(uc_hook_add(uc, &h, UC_HOOK_INTR, test_riscv_ecall_pc_cb,
+                   &expected_pc, 1, 0));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
-
-    TEST_CHECK(r_pc == code_start + 4);
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &pc));
+    TEST_CHECK(pc == code_start + 4);
 
     OK(uc_close(uc));
+}
+
+static void test_riscv_exception_pc(uc_mode mode, const char *code, size_t size)
+{
+    uc_engine *uc;
+    uint64_t expected_pc = code_start;
+    uint64_t pc = 0;
+    uc_hook h;
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, mode, code, size);
+
+    OK(uc_hook_add(uc, &h, UC_HOOK_INTR, test_riscv_illegal_pc_cb,
+                   &expected_pc, 1, 0));
+    OK(uc_emu_start(uc, code_start, code_start + size, 0, 0));
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &pc));
+    TEST_CHECK(pc == code_start);
+
+    OK(uc_close(uc));
+}
+
+static void test_riscv32_ecall_pc(void)
+{
+    test_riscv_ecall_pc(UC_MODE_RISCV32);
+}
+
+static void test_riscv64_ecall_pc(void)
+{
+    test_riscv_ecall_pc(UC_MODE_RISCV64);
+}
+
+static void test_riscv32_illegal16_pc(void)
+{
+    char code[] = "\x00\x00"; // illegal compressed encoding
+
+    test_riscv_exception_pc(UC_MODE_RISCV32, code, sizeof(code) - 1);
+}
+
+static void test_riscv64_illegal16_pc(void)
+{
+    char code[] = "\x00\x00"; // illegal compressed encoding
+
+    test_riscv_exception_pc(UC_MODE_RISCV64, code, sizeof(code) - 1);
+}
+
+static void test_riscv32_illegal32_pc(void)
+{
+    char code[] = "\x7f\x00\x00\x00"; // illegal 32-bit encoding
+
+    test_riscv_exception_pc(UC_MODE_RISCV32, code, sizeof(code) - 1);
+}
+
+static void test_riscv64_illegal32_pc(void)
+{
+    char code[] = "\x7f\x00\x00\x00"; // illegal 32-bit encoding
+
+    test_riscv_exception_pc(UC_MODE_RISCV64, code, sizeof(code) - 1);
 }
 
 static uint64_t test_riscv32_mmio_map_read_cb(uc_engine *uc, uint64_t offset,
@@ -926,7 +999,12 @@ TEST_LIST = {
     {"test_riscv64_fclass_s_produced_nanbox",
      test_riscv64_fclass_s_produced_nanbox},
     {"test_riscv64_fmv_w_x_nanbox", test_riscv64_fmv_w_x_nanbox},
-    {"test_riscv64_ecall", test_riscv64_ecall},
+    {"test_riscv32_ecall_pc", test_riscv32_ecall_pc},
+    {"test_riscv64_ecall_pc", test_riscv64_ecall_pc},
+    {"test_riscv32_illegal16_pc", test_riscv32_illegal16_pc},
+    {"test_riscv64_illegal16_pc", test_riscv64_illegal16_pc},
+    {"test_riscv32_illegal32_pc", test_riscv32_illegal32_pc},
+    {"test_riscv64_illegal32_pc", test_riscv64_illegal32_pc},
     {"test_riscv32_mmio_map", test_riscv32_mmio_map},
     {"test_riscv64_mmio_map", test_riscv64_mmio_map},
     {"test_riscv32_map", test_riscv32_map},
