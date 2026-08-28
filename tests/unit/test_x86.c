@@ -3533,15 +3533,27 @@ static void test_x86_ro_segfault(void)
 
 static void test_x86_vpermilps_null_ptr_call(void)
 {
-    char code[] = {
+    char code_modrm_00[] = {
+        0x0f, 0x38, 0x0c, 0x00
+    };
+
+    char code_modrm_ff[] = {
         0x0f, 0x38, 0x0c, 0xff
     };
 
-    uc_engine *uc;
-    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof code - 1);
+    uc_engine *uc = NULL;
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code_modrm_00, sizeof(code_modrm_00));
 
     uc_assert_err(UC_ERR_INSN_INVALID,
-            uc_emu_start(uc, code_start, code_start + sizeof code - 1, 0, 0));
+            uc_emu_start(uc, code_start, code_start + sizeof(code_modrm_00), 0, 0));
+
+    OK(uc_close(uc));
+
+    uc = NULL;
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code_modrm_ff, sizeof(code_modrm_ff));
+
+    uc_assert_err(UC_ERR_INSN_INVALID,
+            uc_emu_start(uc, code_start, code_start + sizeof(code_modrm_ff), 0, 0));
 
     OK(uc_close(uc));
 }
