@@ -130,9 +130,9 @@ typedef enum uc_mode {
     UC_MODE_ARM1176 = 1 << 9, // ARM1176 CPU type
 
     // mips
-    UC_MODE_MICRO = 1 << 4,    // MicroMips mode (currently unsupported)
-    UC_MODE_MIPS3 = 1 << 5,    // Mips III ISA (currently unsupported)
-    UC_MODE_MIPS32R6 = 1 << 6, // Mips32r6 ISA (currently unsupported)
+    UC_MODE_MICRO = 1 << 4,    // MicroMips mode
+    UC_MODE_MIPS3 = 1 << 5,    // Mips III ISA
+    UC_MODE_MIPS32R6 = 1 << 6, // Mips32r6 ISA
     UC_MODE_MIPS32 = 1 << 2,   // Mips32 ISA
     UC_MODE_MIPS64 = 1 << 3,   // Mips64 ISA
 

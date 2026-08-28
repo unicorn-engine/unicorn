@@ -153,6 +153,7 @@ bool arm_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
     target_ulong page_size;
     int prot, ret;
     MemTxAttrs attrs = { 0 };
+    ARMCacheAttrs cacheattrs = { 0 };
     ARMMMUFaultInfo fi = { 0 };
 
     /*
@@ -163,19 +164,29 @@ bool arm_cpu_tlb_fill(CPUState *cs, vaddr address, int size,
      */
     ret = get_phys_addr(&cpu->env, address, access_type,
                         core_to_arm_mmu_idx(&cpu->env, mmu_idx),
-                        &phys_addr, &attrs, &prot, &page_size, &fi, NULL);
+                        &phys_addr, &attrs, &prot, &page_size, &fi,
+                        &cacheattrs);
     if (likely(!ret)) {
+        CPUTLBEntryFull full = {
+            .phys_addr = phys_addr,
+            .attrs = attrs,
+            .prot = prot,
+            .lg_page_size = ctz64(page_size),
+            .pte_attrs = cacheattrs.attrs,
+            .shareability = cacheattrs.shareability,
+            .guarded = cacheattrs.guarded,
+        };
+
         /*
          * Map a single [sub]page. Regions smaller than our declared
          * target page size are handled specially, so for those we
          * pass in the exact addresses.
          */
         if (page_size >= TARGET_PAGE_SIZE) {
-            phys_addr &= TARGET_PAGE_MASK;
+            full.phys_addr &= TARGET_PAGE_MASK;
             address &= TARGET_PAGE_MASK;
         }
-        tlb_set_page_with_attrs(cs, address, phys_addr, attrs,
-                                prot, mmu_idx, page_size);
+        tlb_set_page_full(cs, mmu_idx, address, &full);
         return true;
     } else if (probe) {
         return false;

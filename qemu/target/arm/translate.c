@@ -86,6 +86,76 @@ void arm_translate_init(struct uc_struct *uc)
     a64_translate_init(uc);
 }
 
+static uint64_t asimd_imm_const(uint32_t imm, int cmode, int op)
+{
+    switch (cmode) {
+    case 0:
+    case 1:
+        break;
+    case 2:
+    case 3:
+        imm <<= 8;
+        break;
+    case 4:
+    case 5:
+        imm <<= 16;
+        break;
+    case 6:
+    case 7:
+        imm <<= 24;
+        break;
+    case 8:
+    case 9:
+        imm |= imm << 16;
+        break;
+    case 10:
+    case 11:
+        imm = (imm << 8) | (imm << 24);
+        break;
+    case 12:
+        imm = (imm << 8) | 0xff;
+        break;
+    case 13:
+        imm = (imm << 16) | 0xffff;
+        break;
+    case 14:
+        if (op) {
+            uint64_t imm64 = 0;
+            int n;
+
+            for (n = 0; n < 8; n++) {
+                if (imm & (1 << n)) {
+                    imm64 |= 0xffULL << (n * 8);
+                }
+            }
+            return imm64;
+        }
+        imm |= (imm << 8) | (imm << 16) | (imm << 24);
+        break;
+    case 15:
+        if (op) {
+            uint64_t imm64 = (uint64_t)(imm & 0x3f) << 48;
+
+            if (imm & 0x80) {
+                imm64 |= 0x8000000000000000ULL;
+            }
+            if (imm & 0x40) {
+                imm64 |= 0x3fc0000000000000ULL;
+            } else {
+                imm64 |= 0x4000000000000000ULL;
+            }
+            return imm64;
+        }
+        imm = ((imm & 0x80) << 24) | ((imm & 0x3f) << 19) |
+              ((imm & 0x40) ? (0x1f << 25) : (1 << 30));
+        break;
+    }
+    if (op) {
+        imm = ~imm;
+    }
+    return dup_const(MO_32, imm);
+}
+
 /* Flags for the disas_set_da_iss info argument:
  * lower bits hold the Rt register number, higher bits are flags.
  */
@@ -1343,6 +1413,8 @@ static TCGv_ptr vfp_reg_ptr(TCGContext *tcg_ctx, bool dp, int reg)
 }
 
 #define ARM_CP_RW_BIT   (1 << 20)
+
+static void arm_gen_condlabel(DisasContext *s);
 
 /* Include the VFP decoder */
 #include "translate-vfp.inc.c"
@@ -4119,6 +4191,80 @@ const GVecGen2i usra_op[4] = {
       .vece = MO_64, },
 };
 
+static void gen_mve_srshr32_i32(TCGContext *tcg_ctx, TCGv_i32 d,
+                                TCGv_i32 a, int32_t shift)
+{
+    TCGv_i32 t;
+
+    if (shift == 32) {
+        tcg_gen_movi_i32(tcg_ctx, d, 0);
+        return;
+    }
+
+    t = tcg_temp_new_i32(tcg_ctx);
+    tcg_gen_extract_i32(tcg_ctx, t, a, shift - 1, 1);
+    tcg_gen_sari_i32(tcg_ctx, d, a, shift);
+    tcg_gen_add_i32(tcg_ctx, d, d, t);
+    tcg_temp_free_i32(tcg_ctx, t);
+}
+
+static void gen_mve_urshr32_i32(TCGContext *tcg_ctx, TCGv_i32 d,
+                                TCGv_i32 a, int32_t shift)
+{
+    TCGv_i32 t;
+
+    if (shift == 32) {
+        tcg_gen_extract_i32(tcg_ctx, d, a, shift - 1, 1);
+        return;
+    }
+
+    t = tcg_temp_new_i32(tcg_ctx);
+    tcg_gen_extract_i32(tcg_ctx, t, a, shift - 1, 1);
+    tcg_gen_shri_i32(tcg_ctx, d, a, shift);
+    tcg_gen_add_i32(tcg_ctx, d, d, t);
+    tcg_temp_free_i32(tcg_ctx, t);
+}
+
+static void gen_mve_srshr64_i64(TCGContext *tcg_ctx, TCGv_i64 d,
+                                TCGv_i64 a, int64_t shift)
+{
+    TCGv_i64 t = tcg_temp_new_i64(tcg_ctx);
+
+    tcg_gen_extract_i64(tcg_ctx, t, a, shift - 1, 1);
+    tcg_gen_sari_i64(tcg_ctx, d, a, shift);
+    tcg_gen_add_i64(tcg_ctx, d, d, t);
+    tcg_temp_free_i64(tcg_ctx, t);
+}
+
+static void gen_mve_urshr64_i64(TCGContext *tcg_ctx, TCGv_i64 d,
+                                TCGv_i64 a, int64_t shift)
+{
+    TCGv_i64 t = tcg_temp_new_i64(tcg_ctx);
+
+    tcg_gen_extract_i64(tcg_ctx, t, a, shift - 1, 1);
+    tcg_gen_shri_i64(tcg_ctx, d, a, shift);
+    tcg_gen_add_i64(tcg_ctx, d, d, t);
+    tcg_temp_free_i64(tcg_ctx, t);
+}
+
+static void gen_mve_shl64_i64(TCGContext *tcg_ctx, TCGv_i64 d,
+                              TCGv_i64 a, int64_t shift)
+{
+    tcg_gen_shli_i64(tcg_ctx, d, a, shift);
+}
+
+static void gen_mve_shr64_i64(TCGContext *tcg_ctx, TCGv_i64 d,
+                              TCGv_i64 a, int64_t shift)
+{
+    tcg_gen_shri_i64(tcg_ctx, d, a, shift);
+}
+
+static void gen_mve_sar64_i64(TCGContext *tcg_ctx, TCGv_i64 d,
+                              TCGv_i64 a, int64_t shift)
+{
+    tcg_gen_sari_i64(tcg_ctx, d, a, shift);
+}
+
 static void gen_shr8_ins_i64(TCGContext *tcg_ctx, TCGv_i64 d, TCGv_i64 a, int64_t shift)
 {
     uint64_t mask = dup_const(MO_8, 0xff >> shift);
@@ -6331,6 +6477,33 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                 /* Two register misc.  */
                 op = ((insn >> 12) & 0x30) | ((insn >> 7) & 0xf);
                 size = (insn >> 18) & 3;
+                if ((insn & 0xffb30fd0) == 0xf3b20640) {
+                    TCGv_ptr fpst;
+
+                    if (!dc_isar_feature(aa32_bf16, s) ||
+                        size != 1 || (rm & 1)) {
+                        return 1;
+                    }
+                    if (!dc_isar_feature(aa32_simd_r32, s) &&
+                        ((rd | rm) & 0x10)) {
+                        return 1;
+                    }
+                    fpst = get_fpstatus_ptr(tcg_ctx, true);
+                    tmp64 = tcg_temp_new_i64(tcg_ctx);
+                    tmp = tcg_temp_new_i32(tcg_ctx);
+                    tmp2 = tcg_temp_new_i32(tcg_ctx);
+
+                    neon_load_reg64(tcg_ctx, tmp64, rm);
+                    gen_helper_bfcvt_pair(tcg_ctx, tmp, tmp64, fpst);
+                    neon_load_reg64(tcg_ctx, tmp64, rm + 1);
+                    gen_helper_bfcvt_pair(tcg_ctx, tmp2, tmp64, fpst);
+                    neon_store_reg(tcg_ctx, rd, 0, tmp);
+                    neon_store_reg(tcg_ctx, rd, 1, tmp2);
+
+                    tcg_temp_free_i64(tcg_ctx, tmp64);
+                    tcg_temp_free_ptr(tcg_ctx, fpst);
+                    return 0;
+                }
                 /* UNDEF for unknown op values and bad op-size combinations */
                 if ((neon_2rm_sizes[op] & (1 << size)) == 0) {
                     return 1;
@@ -6939,7 +7112,9 @@ static int disas_neon_insn_3same_ext(DisasContext *s, uint32_t insn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     gen_helper_gvec_3 *fn_gvec = NULL;
+    gen_helper_gvec_4 *fn_gvec_acc = NULL;
     gen_helper_gvec_3_ptr *fn_gvec_ptr = NULL;
+    gen_helper_gvec_4_ptr *fn_gvec_acc_ptr = NULL;
     int rd, rn, rm, opr_sz;
     int data = 0;
     int off_rn, off_rm;
@@ -6970,7 +7145,48 @@ static int disas_neon_insn_3same_ext(DisasContext *s, uint32_t insn)
         if (!dc_isar_feature(aa32_dp, s)) {
             return 1;
         }
-        fn_gvec = u ? gen_helper_gvec_udot_b : gen_helper_gvec_sdot_b;
+        fn_gvec_acc = u ? gen_helper_gvec_udot_b : gen_helper_gvec_sdot_b;
+    } else if ((insn & 0xfeb00f10) == 0xfca00d00) {
+        /* VUSDOT -- 1111 1100 1.10 .... .... 1101 .Q.0 .... */
+        if (!dc_isar_feature(aa32_i8mm, s)) {
+            return 1;
+        }
+        fn_gvec_acc = gen_helper_gvec_usdot_b;
+    } else if ((insn & 0xfeb00f40) == 0xfc200c40) {
+        /* V[SU]MMLA -- 1111 1100 0.10 .... .... 1100 .1.U .... */
+        bool u = extract32(insn, 4, 1);
+        if (!dc_isar_feature(aa32_i8mm, s)) {
+            return 1;
+        }
+        fn_gvec_acc = u ? gen_helper_gvec_ummla_b
+                        : gen_helper_gvec_smmla_b;
+    } else if ((insn & 0xfeb00f50) == 0xfca00c40) {
+        /* VUSMMLA -- 1111 1100 1.10 .... .... 1100 .1.0 .... */
+        if (!dc_isar_feature(aa32_i8mm, s)) {
+            return 1;
+        }
+        fn_gvec_acc = gen_helper_gvec_usmmla_b;
+    } else if ((insn & 0xfeb00f10) == 0xfc000d00) {
+        /* VDOT.bf16 -- 1111 1100 0.00 .... .... 1101 .Q.0 .... */
+        if (!dc_isar_feature(aa32_bf16, s)) {
+            return 1;
+        }
+        fn_gvec_acc = gen_helper_gvec_bfdot;
+    } else if ((insn & 0xfeb00f50) == 0xfc000c40) {
+        /* VMMLA.bf16 -- 1111 1100 0.00 .... .... 1100 .1.0 .... */
+        if (!dc_isar_feature(aa32_bf16, s)) {
+            return 1;
+        }
+        q = true;
+        fn_gvec_acc = gen_helper_gvec_bfmmla;
+    } else if ((insn & 0xffb00f10) == 0xfc300810) {
+        /* VFMA.bf16 -- 1111 1100 0.11 .... .... 1000 .T.1 .... */
+        if (!dc_isar_feature(aa32_bf16, s)) {
+            return 1;
+        }
+        data = q;
+        q = true;
+        fn_gvec_acc_ptr = gen_helper_gvec_bfmlal;
     } else if ((insn & 0xff300f10) == 0xfc200810) {
         /* VFM[AS]L -- 1111 1100 S.10 .... .... 1000 .Q.1 .... */
         int is_s = extract32(insn, 23, 1);
@@ -7014,7 +7230,13 @@ static int disas_neon_insn_3same_ext(DisasContext *s, uint32_t insn)
     }
 
     opr_sz = (1 + q) * 8;
-    if (fn_gvec_ptr) {
+    if (fn_gvec_acc_ptr) {
+        TCGv_ptr ptr = get_fpstatus_ptr(tcg_ctx, 1);
+        tcg_gen_gvec_4_ptr(tcg_ctx, vfp_reg_offset(1, rd), off_rn, off_rm,
+                           vfp_reg_offset(1, rd), ptr, opr_sz, opr_sz, data,
+                           fn_gvec_acc_ptr);
+        tcg_temp_free_ptr(tcg_ctx, ptr);
+    } else if (fn_gvec_ptr) {
         TCGv_ptr ptr;
         if (ptr_is_env) {
             ptr = tcg_ctx->cpu_env;
@@ -7026,6 +7248,10 @@ static int disas_neon_insn_3same_ext(DisasContext *s, uint32_t insn)
         if (!ptr_is_env) {
             tcg_temp_free_ptr(tcg_ctx, ptr);
         }
+    } else if (fn_gvec_acc) {
+        tcg_gen_gvec_4_ool(tcg_ctx, vfp_reg_offset(1, rd), off_rn, off_rm,
+                           vfp_reg_offset(1, rd), opr_sz, opr_sz, data,
+                           fn_gvec_acc);
     } else {
         tcg_gen_gvec_3_ool(tcg_ctx, vfp_reg_offset(1, rd), off_rn, off_rm,
                            opr_sz, opr_sz, data, fn_gvec);
@@ -7045,7 +7271,9 @@ static int disas_neon_insn_2reg_scalar_ext(DisasContext *s, uint32_t insn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     gen_helper_gvec_3 *fn_gvec = NULL;
+    gen_helper_gvec_4 *fn_gvec_acc = NULL;
     gen_helper_gvec_3_ptr *fn_gvec_ptr = NULL;
+    gen_helper_gvec_4_ptr *fn_gvec_acc_ptr = NULL;
     int rd, rn, rm, opr_sz, data;
     int off_rn, off_rm;
     bool is_long = false, q = extract32(insn, 6, 1);
@@ -7082,10 +7310,41 @@ static int disas_neon_insn_2reg_scalar_ext(DisasContext *s, uint32_t insn)
         if (!dc_isar_feature(aa32_dp, s)) {
             return 1;
         }
-        fn_gvec = u ? gen_helper_gvec_udot_idx_b : gen_helper_gvec_sdot_idx_b;
+        fn_gvec_acc = u ? gen_helper_gvec_udot_idx_b
+                         : gen_helper_gvec_sdot_idx_b;
         /* rm is just Vm, and index is M.  */
         data = extract32(insn, 5, 1); /* index */
         rm = extract32(insn, 0, 4);
+    } else if ((insn & 0xffb00f00) == 0xfe800d00) {
+        /* V[S/U]DOT -- 1111 1110 1.00 .... .... 1101 .Q.I.U .... */
+        int u = extract32(insn, 4, 1);
+
+        if (!dc_isar_feature(aa32_i8mm, s)) {
+            return 1;
+        }
+        fn_gvec_acc = u ? gen_helper_gvec_sudot_idx_b
+                         : gen_helper_gvec_usdot_idx_b;
+        data = extract32(insn, 5, 1); /* index */
+        rm = extract32(insn, 0, 4);
+    } else if ((insn & 0xffb00f10) == 0xfe000d00) {
+        /* VDOT.bf16 scalar -- 1111 1110 0.00 .... .... 1101 .Q.I0 .... */
+        if (!dc_isar_feature(aa32_bf16, s)) {
+            return 1;
+        }
+        fn_gvec_acc = gen_helper_gvec_bfdot_idx;
+        data = extract32(insn, 5, 1);
+        rm = extract32(insn, 0, 4);
+    } else if ((insn & 0xffb00f10) == 0xfe300810) {
+        /* VFMA.bf16 scalar -- 1111 1110 0.11 .... .... 1000 .T.1I... */
+        int index = (extract32(insn, 5, 1) << 1) | extract32(insn, 3, 1);
+
+        if (!dc_isar_feature(aa32_bf16, s)) {
+            return 1;
+        }
+        data = (index << 1) | q;
+        q = true;
+        rm = extract32(insn, 0, 3);
+        fn_gvec_acc_ptr = gen_helper_gvec_bfmlal_idx;
     } else if ((insn & 0xffa00f10) == 0xfe000810) {
         /* VFM[AS]L -- 1111 1110 0.0S .... .... 1000 .Q.1 .... */
         int is_s = extract32(insn, 20, 1);
@@ -7138,7 +7397,13 @@ static int disas_neon_insn_2reg_scalar_ext(DisasContext *s, uint32_t insn)
     }
 
     opr_sz = (1 + q) * 8;
-    if (fn_gvec_ptr) {
+    if (fn_gvec_acc_ptr) {
+        TCGv_ptr ptr = get_fpstatus_ptr(tcg_ctx, 1);
+        tcg_gen_gvec_4_ptr(tcg_ctx, vfp_reg_offset(1, rd), off_rn, off_rm,
+                           vfp_reg_offset(1, rd), ptr, opr_sz, opr_sz, data,
+                           fn_gvec_acc_ptr);
+        tcg_temp_free_ptr(tcg_ctx, ptr);
+    } else if (fn_gvec_ptr) {
         TCGv_ptr ptr;
         if (ptr_is_env) {
             ptr = tcg_ctx->cpu_env;
@@ -7150,6 +7415,10 @@ static int disas_neon_insn_2reg_scalar_ext(DisasContext *s, uint32_t insn)
         if (!ptr_is_env) {
             tcg_temp_free_ptr(tcg_ctx, ptr);
         }
+    } else if (fn_gvec_acc) {
+        tcg_gen_gvec_4_ool(tcg_ctx, vfp_reg_offset(1, rd), off_rn, off_rm,
+                           vfp_reg_offset(1, rd), opr_sz, opr_sz, data,
+                           fn_gvec_acc);
     } else {
         tcg_gen_gvec_3_ool(tcg_ctx, vfp_reg_offset(1, rd), off_rn, off_rm,
                            opr_sz, opr_sz, data, fn_gvec);
@@ -7833,6 +8102,4643 @@ static int t16_push_list(DisasContext *s, int x)
 static int t16_pop_list(DisasContext *s, int x)
 {
     return (x & 0xff) | (x & 0x100) << (15 - 8);
+}
+
+static long mve_qreg_offset(unsigned reg)
+{
+    return offsetof(CPUARMState, vfp.zregs[reg].d[0]);
+}
+
+static TCGv_ptr mve_qreg_ptr(DisasContext *s, unsigned reg)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr ret = tcg_temp_new_ptr(tcg_ctx);
+
+    tcg_gen_addi_ptr(tcg_ctx, ret, tcg_ctx->cpu_env, mve_qreg_offset(reg));
+    return ret;
+}
+
+static bool mve_check_qreg_bank(int qmask)
+{
+    return qmask < 8;
+}
+
+typedef void MVEGenTwoOpFn(TCGContext *, TCGv_env, TCGv_ptr, TCGv_ptr,
+                           TCGv_ptr);
+typedef void MVEGenOneOpFn(TCGContext *, TCGv_env, TCGv_ptr, TCGv_ptr);
+typedef void MVEGenLdStFn(TCGContext *, TCGv_env, TCGv_ptr, TCGv_i32);
+typedef void MVEGenLdStSGFn(TCGContext *, TCGv_env, TCGv_ptr, TCGv_ptr,
+                            TCGv_i32);
+typedef void MVEGenLdStIlFn(TCGContext *, TCGv_env, TCGv_i32, TCGv_i32);
+typedef void MVEGenOneOpI32Fn(TCGContext *, TCGv_env, TCGv_ptr, TCGv_ptr,
+                              TCGv_i32);
+typedef void MVEGenVIDUPFn(TCGContext *, TCGv_i32, TCGv_env, TCGv_ptr,
+                           TCGv_i32, TCGv_i32);
+typedef void MVEGenVIWDUPFn(TCGContext *, TCGv_i32, TCGv_env, TCGv_ptr,
+                             TCGv_i32, TCGv_i32, TCGv_i32);
+typedef void MVEGenCmpFn(TCGContext *, TCGv_env, TCGv_ptr, TCGv_ptr);
+typedef void MVEGenScalarCmpFn(TCGContext *, TCGv_env, TCGv_ptr, TCGv_i32);
+typedef void MVEGenTwoOpScalarFn(TCGContext *, TCGv_env, TCGv_ptr,
+                                 TCGv_ptr, TCGv_i32);
+typedef void MVEGenOneOpImmFn(TCGContext *, TCGv_env, TCGv_ptr, TCGv_i64);
+typedef void MVEGenTwoOpShiftFn(TCGContext *, TCGv_env, TCGv_ptr, TCGv_ptr,
+                                TCGv_i32);
+typedef void MVEGenGPRShiftImmFn(TCGContext *, TCGv_i32, TCGv_i32, int32_t);
+typedef void MVEGenGPRWideShiftImmFn(TCGContext *, TCGv_i64, TCGv_i64,
+                                     int64_t);
+typedef void MVEGenGPRShiftFn(TCGContext *, TCGv_i32, TCGv_env, TCGv_i32,
+                              TCGv_i32);
+typedef void MVEGenGPRWideShiftFn(TCGContext *, TCGv_i64, TCGv_env,
+                                  TCGv_i64, TCGv_i32);
+typedef void MVEGenLongDualAccFn(TCGContext *, TCGv_i64, TCGv_env, TCGv_ptr,
+                                 TCGv_ptr, TCGv_i64);
+typedef void MVEGenDualAccFn(TCGContext *, TCGv_i32, TCGv_env, TCGv_ptr,
+                             TCGv_ptr, TCGv_i32);
+typedef void MVEGenVADDVFn(TCGContext *, TCGv_i32, TCGv_env, TCGv_ptr,
+                           TCGv_i32);
+typedef void MVEGenVABAVFn(TCGContext *, TCGv_i32, TCGv_env, TCGv_ptr,
+                            TCGv_ptr, TCGv_i32);
+
+static bool do_mve_2shift(DisasContext *s, uint32_t insn,
+                          MVEGenTwoOpShiftFn *fn, unsigned size,
+                          uint32_t shift, bool negateshift);
+
+static bool mve_eci_check(DisasContext *s)
+{
+    s->eci_handled = true;
+    switch (s->eci) {
+    case ECI_NONE:
+    case ECI_A0:
+    case ECI_A0A1:
+    case ECI_A0A1A2:
+    case ECI_A0A1A2B0:
+        return true;
+    default:
+        gen_exception_insn(s, s->pc_curr, EXCP_INVSTATE,
+                           syn_uncategorized(), default_exception_el(s));
+        return false;
+    }
+}
+
+static void mve_update_eci(DisasContext *s)
+{
+    if (s->eci) {
+        s->eci = (s->eci == ECI_A0A1A2B0) ? ECI_A0 : ECI_NONE;
+    }
+}
+
+static void mve_update_and_store_eci(DisasContext *s)
+{
+    if (s->eci) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        TCGv_i32 eci;
+
+        mve_update_eci(s);
+        eci = tcg_const_i32(tcg_ctx, s->eci << 4);
+        store_cpu_field(tcg_ctx, eci, condexec_bits);
+    }
+}
+
+static bool mve_skip_vmov(DisasContext *s, int vn, int index, int size)
+{
+    int ofs = (index << size) + ((vn & 1) * 8);
+
+    switch (s->eci) {
+    case ECI_NONE:
+        return false;
+    case ECI_A0:
+        return ofs < 4;
+    case ECI_A0A1:
+        return ofs < 8;
+    case ECI_A0A1A2:
+    case ECI_A0A1A2B0:
+        return ofs < 12;
+    default:
+        g_assert_not_reached();
+    }
+
+    return false;
+}
+
+static bool mve_skip_first_beat(DisasContext *s)
+{
+    switch (s->eci) {
+    case ECI_NONE:
+        return false;
+    case ECI_A0:
+    case ECI_A0A1:
+    case ECI_A0A1A2:
+    case ECI_A0A1A2B0:
+        return true;
+    default:
+        g_assert_not_reached();
+    }
+
+    return false;
+}
+
+static void gen_mve_vpst(DisasContext *s, uint32_t mask)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 vpr = load_cpu_field(tcg_ctx, v7m.vpr);
+    TCGv_i32 tcg_mask;
+    int shift;
+    int width;
+    uint32_t mask_value;
+
+    switch (s->eci) {
+    case ECI_NONE:
+    case ECI_A0:
+        shift = R_V7M_VPR_MASK01_SHIFT;
+        width = R_V7M_VPR_MASK01_LENGTH + R_V7M_VPR_MASK23_LENGTH;
+        mask_value = mask | (mask << 4);
+        break;
+    case ECI_A0A1:
+    case ECI_A0A1A2:
+    case ECI_A0A1A2B0:
+        shift = R_V7M_VPR_MASK23_SHIFT;
+        width = R_V7M_VPR_MASK23_LENGTH;
+        mask_value = mask;
+        break;
+    default:
+        g_assert_not_reached();
+        shift = 0;
+        width = 0;
+        mask_value = 0;
+        break;
+    }
+
+    tcg_mask = tcg_const_i32(tcg_ctx, mask_value);
+    tcg_gen_deposit_i32(tcg_ctx, vpr, vpr, tcg_mask, shift, width);
+    tcg_temp_free_i32(tcg_ctx, tcg_mask);
+    store_cpu_field(tcg_ctx, vpr, v7m.vpr);
+}
+
+static bool trans_mve_vctp(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 rn_shifted;
+    TCGv_i32 masklen;
+    TCGv_i32 limit;
+    TCGv_i32 full_mask;
+    int size;
+    int rn;
+
+    if ((insn & 0xffc0ffff) != 0xf000e801) {
+        return false;
+    }
+
+    size = extract32(insn, 20, 2);
+    rn = extract32(insn, 16, 4);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) || rn == 13 || rn == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    rn_shifted = tcg_temp_new_i32(tcg_ctx);
+    masklen = load_reg(s, rn);
+    limit = tcg_const_i32(tcg_ctx, 1 << (4 - size));
+    full_mask = tcg_const_i32(tcg_ctx, 16);
+
+    tcg_gen_shli_i32(tcg_ctx, rn_shifted, masklen, size);
+    tcg_gen_movcond_i32(tcg_ctx, TCG_COND_LEU, masklen,
+                        masklen, limit, rn_shifted, full_mask);
+    gen_helper_mve_vctp(tcg_ctx, tcg_ctx->cpu_env, masklen);
+    tcg_temp_free_i32(tcg_ctx, full_mask);
+    tcg_temp_free_i32(tcg_ctx, limit);
+    tcg_temp_free_i32(tcg_ctx, masklen);
+    tcg_temp_free_i32(tcg_ctx, rn_shifted);
+
+    mve_update_eci(s);
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_mve_vpnot(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (insn != 0xfe310f4d) {
+        return false;
+    }
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) || !dc_isar_feature(aa32_mve, s)) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    gen_helper_mve_vpnot(tcg_ctx, tcg_ctx->cpu_env);
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_mve_vpst(DisasContext *s, uint32_t insn)
+{
+    uint32_t mask;
+
+    if ((insn & 0xffbf1fff) != 0xfe310f4d) {
+        return false;
+    }
+
+    mask = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    if (!mask) {
+        return false;
+    }
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) || !dc_isar_feature(aa32_mve, s)) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    gen_mve_vpst(s, mask);
+    mve_update_and_store_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool do_mve_2op_inner(DisasContext *s, uint32_t insn,
+                             MVEGenTwoOpFn *fn, bool reversed);
+
+static bool do_mve_2op(DisasContext *s, uint32_t insn, MVEGenTwoOpFn *fn)
+{
+    return do_mve_2op_inner(s, insn, fn, false);
+}
+
+static bool do_mve_2op_rev(DisasContext *s, uint32_t insn,
+                            MVEGenTwoOpFn *fn)
+{
+    return do_mve_2op_inner(s, insn, fn, true);
+}
+
+static bool do_mve_2op_qdqn(DisasContext *s, uint32_t insn,
+                            MVEGenTwoOpFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_ptr qmptr;
+    int qd;
+    int qm;
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s)) {
+        return false;
+    }
+    if (!mve_check_qreg_bank(qd | qm)) {
+        unallocated_encoding(s);
+        return true;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    qmptr = mve_qreg_ptr(s, qm);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdptr, qdptr, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool do_mve_2op_inner(DisasContext *s, uint32_t insn,
+                             MVEGenTwoOpFn *fn, bool reversed)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_ptr qnptr;
+    TCGv_ptr qmptr;
+    int qd;
+    int qn;
+    int qm;
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    qn = (extract32(insn, 7, 1) << 3) | extract32(insn, 17, 3);
+    qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+    if (reversed) {
+        int tmp = qn;
+
+        qn = qm;
+        qm = tmp;
+    }
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd | qn | qm)) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    qnptr = mve_qreg_ptr(s, qn);
+    qmptr = mve_qreg_ptr(s, qm);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdptr, qnptr, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qnptr);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_mve_simple_2op(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpFn *fn = NULL;
+    bool reversed = false;
+
+    switch (insn & 0xffb11f51) {
+    case 0xef000150:
+        fn = gen_helper_mve_vand;
+        break;
+    case 0xef100150:
+        fn = gen_helper_mve_vbic;
+        break;
+    case 0xef200150:
+        fn = gen_helper_mve_vorr;
+        break;
+    case 0xef300150:
+        fn = gen_helper_mve_vorn;
+        break;
+    case 0xff000150:
+        fn = gen_helper_mve_veor;
+        break;
+    default:
+        break;
+    }
+
+    if (!fn) {
+        MVEGenTwoOpFn * const add_fns[] = {
+            gen_helper_mve_vaddb,
+            gen_helper_mve_vaddh,
+            gen_helper_mve_vaddw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const sub_fns[] = {
+            gen_helper_mve_vsubb,
+            gen_helper_mve_vsubh,
+            gen_helper_mve_vsubw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const mul_fns[] = {
+            gen_helper_mve_vmulb,
+            gen_helper_mve_vmulh,
+            gen_helper_mve_vmulw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmulhs_fns[] = {
+            gen_helper_mve_vmulhsb,
+            gen_helper_mve_vmulhsh,
+            gen_helper_mve_vmulhsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmulhu_fns[] = {
+            gen_helper_mve_vmulhub,
+            gen_helper_mve_vmulhuh,
+            gen_helper_mve_vmulhuw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vrmulhs_fns[] = {
+            gen_helper_mve_vrmulhsb,
+            gen_helper_mve_vrmulhsh,
+            gen_helper_mve_vrmulhsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vrmulhu_fns[] = {
+            gen_helper_mve_vrmulhub,
+            gen_helper_mve_vrmulhuh,
+            gen_helper_mve_vrmulhuw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmullbs_fns[] = {
+            gen_helper_mve_vmullbsb,
+            gen_helper_mve_vmullbsh,
+            gen_helper_mve_vmullbsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmullbu_fns[] = {
+            gen_helper_mve_vmullbub,
+            gen_helper_mve_vmullbuh,
+            gen_helper_mve_vmullbuw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmullts_fns[] = {
+            gen_helper_mve_vmulltsb,
+            gen_helper_mve_vmulltsh,
+            gen_helper_mve_vmulltsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmulltu_fns[] = {
+            gen_helper_mve_vmulltub,
+            gen_helper_mve_vmulltuh,
+            gen_helper_mve_vmulltuw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmullpb_fns[] = {
+            NULL,
+            gen_helper_mve_vmullpbh,
+            gen_helper_mve_vmullpbw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmullpt_fns[] = {
+            NULL,
+            gen_helper_mve_vmullpth,
+            gen_helper_mve_vmullptw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqdmullb_fns[] = {
+            NULL,
+            gen_helper_mve_vqdmullbh,
+            gen_helper_mve_vqdmullbw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqdmullt_fns[] = {
+            NULL,
+            gen_helper_mve_vqdmullth,
+            gen_helper_mve_vqdmulltw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vcadd90_fns[] = {
+            gen_helper_mve_vcadd90b,
+            gen_helper_mve_vcadd90h,
+            gen_helper_mve_vcadd90w,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vcadd270_fns[] = {
+            gen_helper_mve_vcadd270b,
+            gen_helper_mve_vcadd270h,
+            gen_helper_mve_vcadd270w,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vhcadd90_fns[] = {
+            gen_helper_mve_vhcadd90b,
+            gen_helper_mve_vhcadd90h,
+            gen_helper_mve_vhcadd90w,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vhcadd270_fns[] = {
+            gen_helper_mve_vhcadd270b,
+            gen_helper_mve_vhcadd270h,
+            gen_helper_mve_vhcadd270w,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmaxs_fns[] = {
+            gen_helper_mve_vmaxsb,
+            gen_helper_mve_vmaxsh,
+            gen_helper_mve_vmaxsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmaxu_fns[] = {
+            gen_helper_mve_vmaxub,
+            gen_helper_mve_vmaxuh,
+            gen_helper_mve_vmaxuw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vmins_fns[] = {
+            gen_helper_mve_vminsb,
+            gen_helper_mve_vminsh,
+            gen_helper_mve_vminsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vminu_fns[] = {
+            gen_helper_mve_vminub,
+            gen_helper_mve_vminuh,
+            gen_helper_mve_vminuw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vabds_fns[] = {
+            gen_helper_mve_vabdsb,
+            gen_helper_mve_vabdsh,
+            gen_helper_mve_vabdsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vabdu_fns[] = {
+            gen_helper_mve_vabdub,
+            gen_helper_mve_vabduh,
+            gen_helper_mve_vabduw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vhadds_fns[] = {
+            gen_helper_mve_vhaddsb,
+            gen_helper_mve_vhaddsh,
+            gen_helper_mve_vhaddsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vhaddu_fns[] = {
+            gen_helper_mve_vhaddub,
+            gen_helper_mve_vhadduh,
+            gen_helper_mve_vhadduw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vrhadds_fns[] = {
+            gen_helper_mve_vrhaddsb,
+            gen_helper_mve_vrhaddsh,
+            gen_helper_mve_vrhaddsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vrhaddu_fns[] = {
+            gen_helper_mve_vrhaddub,
+            gen_helper_mve_vrhadduh,
+            gen_helper_mve_vrhadduw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vhsubs_fns[] = {
+            gen_helper_mve_vhsubsb,
+            gen_helper_mve_vhsubsh,
+            gen_helper_mve_vhsubsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vhsubu_fns[] = {
+            gen_helper_mve_vhsubub,
+            gen_helper_mve_vhsubuh,
+            gen_helper_mve_vhsubuw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqadds_fns[] = {
+            gen_helper_mve_vqaddsb,
+            gen_helper_mve_vqaddsh,
+            gen_helper_mve_vqaddsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqaddu_fns[] = {
+            gen_helper_mve_vqaddub,
+            gen_helper_mve_vqadduh,
+            gen_helper_mve_vqadduw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqsubs_fns[] = {
+            gen_helper_mve_vqsubsb,
+            gen_helper_mve_vqsubsh,
+            gen_helper_mve_vqsubsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqsubu_fns[] = {
+            gen_helper_mve_vqsubub,
+            gen_helper_mve_vqsubuh,
+            gen_helper_mve_vqsubuw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqdmulh_fns[] = {
+            gen_helper_mve_vqdmulhb,
+            gen_helper_mve_vqdmulhh,
+            gen_helper_mve_vqdmulhw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqrdmulh_fns[] = {
+            gen_helper_mve_vqrdmulhb,
+            gen_helper_mve_vqrdmulhh,
+            gen_helper_mve_vqrdmulhw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vshls_fns[] = {
+            gen_helper_mve_vshlsb,
+            gen_helper_mve_vshlsh,
+            gen_helper_mve_vshlsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vshlu_fns[] = {
+            gen_helper_mve_vshlub,
+            gen_helper_mve_vshluh,
+            gen_helper_mve_vshluw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vrshls_fns[] = {
+            gen_helper_mve_vrshlsb,
+            gen_helper_mve_vrshlsh,
+            gen_helper_mve_vrshlsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vrshlu_fns[] = {
+            gen_helper_mve_vrshlub,
+            gen_helper_mve_vrshluh,
+            gen_helper_mve_vrshluw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqshls_fns[] = {
+            gen_helper_mve_vqshlsb,
+            gen_helper_mve_vqshlsh,
+            gen_helper_mve_vqshlsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqshlu_fns[] = {
+            gen_helper_mve_vqshlub,
+            gen_helper_mve_vqshluh,
+            gen_helper_mve_vqshluw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqrshls_fns[] = {
+            gen_helper_mve_vqrshlsb,
+            gen_helper_mve_vqrshlsh,
+            gen_helper_mve_vqrshlsw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqrshlu_fns[] = {
+            gen_helper_mve_vqrshlub,
+            gen_helper_mve_vqrshluh,
+            gen_helper_mve_vqrshluw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqdmladh_fns[] = {
+            gen_helper_mve_vqdmladhb,
+            gen_helper_mve_vqdmladhh,
+            gen_helper_mve_vqdmladhw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqdmladhx_fns[] = {
+            gen_helper_mve_vqdmladhxb,
+            gen_helper_mve_vqdmladhxh,
+            gen_helper_mve_vqdmladhxw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqrdmladh_fns[] = {
+            gen_helper_mve_vqrdmladhb,
+            gen_helper_mve_vqrdmladhh,
+            gen_helper_mve_vqrdmladhw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqrdmladhx_fns[] = {
+            gen_helper_mve_vqrdmladhxb,
+            gen_helper_mve_vqrdmladhxh,
+            gen_helper_mve_vqrdmladhxw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqdmlsdh_fns[] = {
+            gen_helper_mve_vqdmlsdhb,
+            gen_helper_mve_vqdmlsdhh,
+            gen_helper_mve_vqdmlsdhw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqdmlsdhx_fns[] = {
+            gen_helper_mve_vqdmlsdhxb,
+            gen_helper_mve_vqdmlsdhxh,
+            gen_helper_mve_vqdmlsdhxw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqrdmlsdh_fns[] = {
+            gen_helper_mve_vqrdmlsdhb,
+            gen_helper_mve_vqrdmlsdhh,
+            gen_helper_mve_vqrdmlsdhw,
+            NULL,
+        };
+        MVEGenTwoOpFn * const vqrdmlsdhx_fns[] = {
+            gen_helper_mve_vqrdmlsdhxb,
+            gen_helper_mve_vqrdmlsdhxh,
+            gen_helper_mve_vqrdmlsdhxw,
+            NULL,
+        };
+        unsigned size = extract32(insn, 20, 2);
+        unsigned psize = extract32(insn, 28, 1) + 1;
+
+        if ((insn & 0xefb11f51) == 0xee310e00) {
+            fn = vmullpb_fns[psize];
+        } else if ((insn & 0xefb11f51) == 0xee311e00) {
+            fn = vmullpt_fns[psize];
+        } else if ((insn & 0xefb11f51) == 0xee300f01) {
+            if (psize == 2) {
+                int qd = (extract32(insn, 22, 1) << 3) |
+                    extract32(insn, 13, 3);
+                int qn = (extract32(insn, 7, 1) << 3) |
+                    extract32(insn, 17, 3);
+                int qm = (extract32(insn, 5, 1) << 3) |
+                    extract32(insn, 1, 3);
+
+                if (qd == qn || qd == qm) {
+                    return false;
+                }
+            }
+            fn = vqdmullb_fns[psize];
+        } else if ((insn & 0xefb11f51) == 0xee301f01) {
+            if (psize == 2) {
+                int qd = (extract32(insn, 22, 1) << 3) |
+                    extract32(insn, 13, 3);
+                int qn = (extract32(insn, 7, 1) << 3) |
+                    extract32(insn, 17, 3);
+                int qm = (extract32(insn, 5, 1) << 3) |
+                    extract32(insn, 1, 3);
+
+                if (qd == qn || qd == qm) {
+                    return false;
+                }
+            }
+            fn = vqdmullt_fns[psize];
+        } else if ((insn & 0xffb11f51) == 0xee300f00) {
+            fn = gen_helper_mve_vadc;
+        } else if ((insn & 0xffb11f51) == 0xee301f00) {
+            fn = mve_skip_first_beat(s) ? gen_helper_mve_vadc :
+                                          gen_helper_mve_vadci;
+        } else if ((insn & 0xffb11f51) == 0xfe300f00) {
+            fn = gen_helper_mve_vsbc;
+        } else if ((insn & 0xffb11f51) == 0xfe301f00) {
+            fn = mve_skip_first_beat(s) ? gen_helper_mve_vsbc :
+                                          gen_helper_mve_vsbci;
+        } else if ((insn & 0xff811f51) == 0xee000f00) {
+            fn = vhcadd90_fns[size];
+        } else if ((insn & 0xff811f51) == 0xee001f00) {
+            fn = vhcadd270_fns[size];
+        } else if ((insn & 0xff811f51) == 0xfe000f00) {
+            fn = vcadd90_fns[size];
+        } else if ((insn & 0xff811f51) == 0xfe001f00) {
+            fn = vcadd270_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000840) {
+            fn = add_fns[size];
+        } else if ((insn & 0xff811f51) == 0xff000840) {
+            fn = sub_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000950) {
+            fn = mul_fns[size];
+        } else if ((insn & 0xff811f51) == 0xee010e01) {
+            fn = vmulhs_fns[size];
+        } else if ((insn & 0xff811f51) == 0xfe010e01) {
+            fn = vmulhu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xee011e01) {
+            fn = vrmulhs_fns[size];
+        } else if ((insn & 0xff811f51) == 0xfe011e01) {
+            fn = vrmulhu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xee010e00) {
+            fn = vmullbs_fns[size];
+        } else if ((insn & 0xff811f51) == 0xfe010e00) {
+            fn = vmullbu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xee011e00) {
+            fn = vmullts_fns[size];
+        } else if ((insn & 0xff811f51) == 0xfe011e00) {
+            fn = vmulltu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000640) {
+            fn = vmaxs_fns[size];
+        } else if ((insn & 0xff811f51) == 0xff000640) {
+            fn = vmaxu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000650) {
+            fn = vmins_fns[size];
+        } else if ((insn & 0xff811f51) == 0xff000650) {
+            fn = vminu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000740) {
+            fn = vabds_fns[size];
+        } else if ((insn & 0xff811f51) == 0xff000740) {
+            fn = vabdu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000040) {
+            fn = vhadds_fns[size];
+        } else if ((insn & 0xff811f51) == 0xff000040) {
+            fn = vhaddu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000140) {
+            fn = vrhadds_fns[size];
+        } else if ((insn & 0xff811f51) == 0xff000140) {
+            fn = vrhaddu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000240) {
+            fn = vhsubs_fns[size];
+        } else if ((insn & 0xff811f51) == 0xff000240) {
+            fn = vhsubu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000050) {
+            fn = vqadds_fns[size];
+        } else if ((insn & 0xff811f51) == 0xff000050) {
+            fn = vqaddu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000250) {
+            fn = vqsubs_fns[size];
+        } else if ((insn & 0xff811f51) == 0xff000250) {
+            fn = vqsubu_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000b40) {
+            fn = vqdmulh_fns[size];
+        } else if ((insn & 0xff811f51) == 0xff000b40) {
+            fn = vqrdmulh_fns[size];
+        } else if ((insn & 0xff811f51) == 0xef000440) {
+            fn = vshls_fns[size];
+            reversed = true;
+        } else if ((insn & 0xff811f51) == 0xff000440) {
+            fn = vshlu_fns[size];
+            reversed = true;
+        } else if ((insn & 0xff811f51) == 0xef000540) {
+            fn = vrshls_fns[size];
+            reversed = true;
+        } else if ((insn & 0xff811f51) == 0xff000540) {
+            fn = vrshlu_fns[size];
+            reversed = true;
+        } else if ((insn & 0xff811f51) == 0xef000450) {
+            fn = vqshls_fns[size];
+            reversed = true;
+        } else if ((insn & 0xff811f51) == 0xff000450) {
+            fn = vqshlu_fns[size];
+            reversed = true;
+        } else if ((insn & 0xff811f51) == 0xef000550) {
+            fn = vqrshls_fns[size];
+            reversed = true;
+        } else if ((insn & 0xff811f51) == 0xff000550) {
+            fn = vqrshlu_fns[size];
+            reversed = true;
+        } else if ((insn & 0xff811f51) == 0xee000e00) {
+            fn = vqdmladh_fns[size];
+        } else if ((insn & 0xff811f51) == 0xee001e00) {
+            fn = vqdmladhx_fns[size];
+        } else if ((insn & 0xff811f51) == 0xee000e01) {
+            fn = vqrdmladh_fns[size];
+        } else if ((insn & 0xff811f51) == 0xee001e01) {
+            fn = vqrdmladhx_fns[size];
+        } else if ((insn & 0xff811f51) == 0xfe000e00) {
+            fn = vqdmlsdh_fns[size];
+        } else if ((insn & 0xff811f51) == 0xfe001e00) {
+            fn = vqdmlsdhx_fns[size];
+        } else if ((insn & 0xff811f51) == 0xfe000e01) {
+            fn = vqrdmlsdh_fns[size];
+        } else if ((insn & 0xff811f51) == 0xfe001e01) {
+            fn = vqrdmlsdhx_fns[size];
+        }
+    }
+
+    if (!fn) {
+        return false;
+    }
+    return reversed ? do_mve_2op_rev(s, insn, fn) :
+                      do_mve_2op(s, insn, fn);
+}
+
+static bool trans_mve_fp_2op(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpFn * const vfadd_fns[] = {
+        NULL,
+        gen_helper_mve_vfaddh,
+        gen_helper_mve_vfadds,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vfsub_fns[] = {
+        NULL,
+        gen_helper_mve_vfsubh,
+        gen_helper_mve_vfsubs,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vfmul_fns[] = {
+        NULL,
+        gen_helper_mve_vfmulh,
+        gen_helper_mve_vfmuls,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vfabd_fns[] = {
+        NULL,
+        gen_helper_mve_vfabdh,
+        gen_helper_mve_vfabds,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vmaxnm_fns[] = {
+        NULL,
+        gen_helper_mve_vmaxnmh,
+        gen_helper_mve_vmaxnms,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vminnm_fns[] = {
+        NULL,
+        gen_helper_mve_vminnmh,
+        gen_helper_mve_vminnms,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vfcadd90_fns[] = {
+        NULL,
+        gen_helper_mve_vfcadd90h,
+        gen_helper_mve_vfcadd90s,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vfcadd270_fns[] = {
+        NULL,
+        gen_helper_mve_vfcadd270h,
+        gen_helper_mve_vfcadd270s,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vcmla0_fns[] = {
+        NULL,
+        gen_helper_mve_vcmla0h,
+        gen_helper_mve_vcmla0s,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vcmla90_fns[] = {
+        NULL,
+        gen_helper_mve_vcmla90h,
+        gen_helper_mve_vcmla90s,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vcmla180_fns[] = {
+        NULL,
+        gen_helper_mve_vcmla180h,
+        gen_helper_mve_vcmla180s,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vcmla270_fns[] = {
+        NULL,
+        gen_helper_mve_vcmla270h,
+        gen_helper_mve_vcmla270s,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vfma_fns[] = {
+        NULL,
+        gen_helper_mve_vfmah,
+        gen_helper_mve_vfmas,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vfms_fns[] = {
+        NULL,
+        gen_helper_mve_vfmsh,
+        gen_helper_mve_vfmss,
+        NULL,
+    };
+    MVEGenTwoOpFn *fn = NULL;
+    unsigned size;
+    unsigned size_rev;
+
+    if (!dc_isar_feature(aa32_mve_fp, s)) {
+        return false;
+    }
+
+    size = extract32(insn, 20, 1) ? 1 : 2;
+    size_rev = extract32(insn, 20, 1) + 1;
+    switch (insn & 0xffa11f51) {
+    case 0xef000d40:
+        fn = vfadd_fns[size];
+        break;
+    case 0xef200d40:
+        fn = vfsub_fns[size];
+        break;
+    case 0xff000d50:
+        fn = vfmul_fns[size];
+        break;
+    case 0xff200d40:
+        fn = vfabd_fns[size];
+        break;
+    case 0xff000f50:
+        fn = vmaxnm_fns[size];
+        break;
+    case 0xff200f50:
+        fn = vminnm_fns[size];
+        break;
+    case 0xfc800840:
+        fn = vfcadd90_fns[size_rev];
+        break;
+    case 0xfd800840:
+        fn = vfcadd270_fns[size_rev];
+        break;
+    case 0xfc200840:
+        fn = vcmla0_fns[size_rev];
+        break;
+    case 0xfca00840:
+        fn = vcmla90_fns[size_rev];
+        break;
+    case 0xfd200840:
+        fn = vcmla180_fns[size_rev];
+        break;
+    case 0xfda00840:
+        fn = vcmla270_fns[size_rev];
+        break;
+    case 0xef000c50:
+        fn = vfma_fns[size];
+        break;
+    case 0xef200c50:
+        fn = vfms_fns[size];
+        break;
+    default:
+        break;
+    }
+
+    return fn ? do_mve_2op(s, insn, fn) : false;
+}
+
+static bool trans_mve_fp_nma(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpFn *fn;
+
+    if (!dc_isar_feature(aa32_mve_fp, s)) {
+        return false;
+    }
+
+    switch (insn & 0xffbf1fd1) {
+    case 0xee3f0e41:
+        fn = gen_helper_mve_vmaxnmas;
+        break;
+    case 0xfe3f0e41:
+        fn = gen_helper_mve_vmaxnmah;
+        break;
+    case 0xee3f1e41:
+        fn = gen_helper_mve_vminnmas;
+        break;
+    case 0xfe3f1e41:
+        fn = gen_helper_mve_vminnmah;
+        break;
+    default:
+        return false;
+    }
+
+    return do_mve_2op_qdqn(s, insn, fn);
+}
+
+static bool trans_mve_fp_vcmul(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpFn * const vcmul0_fns[] = {
+        NULL,
+        gen_helper_mve_vcmul0h,
+        gen_helper_mve_vcmul0s,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vcmul90_fns[] = {
+        NULL,
+        gen_helper_mve_vcmul90h,
+        gen_helper_mve_vcmul90s,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vcmul180_fns[] = {
+        NULL,
+        gen_helper_mve_vcmul180h,
+        gen_helper_mve_vcmul180s,
+        NULL,
+    };
+    MVEGenTwoOpFn * const vcmul270_fns[] = {
+        NULL,
+        gen_helper_mve_vcmul270h,
+        gen_helper_mve_vcmul270s,
+        NULL,
+    };
+    MVEGenTwoOpFn *fn = NULL;
+    unsigned psize;
+
+    if (!dc_isar_feature(aa32_mve_fp, s)) {
+        return false;
+    }
+
+    psize = extract32(insn, 28, 1) + 1;
+    switch (insn & 0xefb11f51) {
+    case 0xee300e00:
+        fn = vcmul0_fns[psize];
+        break;
+    case 0xee300e01:
+        fn = vcmul90_fns[psize];
+        break;
+    case 0xee301e00:
+        fn = vcmul180_fns[psize];
+        break;
+    case 0xee301e01:
+        fn = vcmul270_fns[psize];
+        break;
+    default:
+        break;
+    }
+
+    return fn ? do_mve_2op(s, insn, fn) : false;
+}
+
+static bool do_mve_2op_scalar(DisasContext *s, uint32_t insn,
+                              MVEGenTwoOpScalarFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_ptr qnptr;
+    TCGv_i32 rmval;
+    int qd;
+    int qn;
+    int rm;
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    qn = (extract32(insn, 7, 1) << 3) | extract32(insn, 17, 3);
+    rm = extract32(insn, 0, 4);
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd | qn) || !fn) {
+        return false;
+    }
+    if (rm == 13 || rm == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    qnptr = mve_qreg_ptr(s, qn);
+    rmval = load_reg(s, rm);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdptr, qnptr, rmval);
+    tcg_temp_free_i32(tcg_ctx, rmval);
+    tcg_temp_free_ptr(tcg_ctx, qnptr);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_mve_scalar_2op(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpScalarFn * const vadd_fns[] = {
+        gen_helper_mve_vadd_scalarb,
+        gen_helper_mve_vadd_scalarh,
+        gen_helper_mve_vadd_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vsub_fns[] = {
+        gen_helper_mve_vsub_scalarb,
+        gen_helper_mve_vsub_scalarh,
+        gen_helper_mve_vsub_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vmul_fns[] = {
+        gen_helper_mve_vmul_scalarb,
+        gen_helper_mve_vmul_scalarh,
+        gen_helper_mve_vmul_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vhadds_fns[] = {
+        gen_helper_mve_vhadds_scalarb,
+        gen_helper_mve_vhadds_scalarh,
+        gen_helper_mve_vhadds_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vhaddu_fns[] = {
+        gen_helper_mve_vhaddu_scalarb,
+        gen_helper_mve_vhaddu_scalarh,
+        gen_helper_mve_vhaddu_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vhsubs_fns[] = {
+        gen_helper_mve_vhsubs_scalarb,
+        gen_helper_mve_vhsubs_scalarh,
+        gen_helper_mve_vhsubs_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vhsubu_fns[] = {
+        gen_helper_mve_vhsubu_scalarb,
+        gen_helper_mve_vhsubu_scalarh,
+        gen_helper_mve_vhsubu_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqadds_fns[] = {
+        gen_helper_mve_vqadds_scalarb,
+        gen_helper_mve_vqadds_scalarh,
+        gen_helper_mve_vqadds_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqaddu_fns[] = {
+        gen_helper_mve_vqaddu_scalarb,
+        gen_helper_mve_vqaddu_scalarh,
+        gen_helper_mve_vqaddu_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqsubs_fns[] = {
+        gen_helper_mve_vqsubs_scalarb,
+        gen_helper_mve_vqsubs_scalarh,
+        gen_helper_mve_vqsubs_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqsubu_fns[] = {
+        gen_helper_mve_vqsubu_scalarb,
+        gen_helper_mve_vqsubu_scalarh,
+        gen_helper_mve_vqsubu_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqdmulh_fns[] = {
+        gen_helper_mve_vqdmulh_scalarb,
+        gen_helper_mve_vqdmulh_scalarh,
+        gen_helper_mve_vqdmulh_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqrdmulh_fns[] = {
+        gen_helper_mve_vqrdmulh_scalarb,
+        gen_helper_mve_vqrdmulh_scalarh,
+        gen_helper_mve_vqrdmulh_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vmla_fns[] = {
+        gen_helper_mve_vmlab,
+        gen_helper_mve_vmlah,
+        gen_helper_mve_vmlaw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vmlas_fns[] = {
+        gen_helper_mve_vmlasb,
+        gen_helper_mve_vmlash,
+        gen_helper_mve_vmlasw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqdmlah_fns[] = {
+        gen_helper_mve_vqdmlahb,
+        gen_helper_mve_vqdmlahh,
+        gen_helper_mve_vqdmlahw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqrdmlah_fns[] = {
+        gen_helper_mve_vqrdmlahb,
+        gen_helper_mve_vqrdmlahh,
+        gen_helper_mve_vqrdmlahw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqdmlash_fns[] = {
+        gen_helper_mve_vqdmlashb,
+        gen_helper_mve_vqdmlashh,
+        gen_helper_mve_vqdmlashw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqrdmlash_fns[] = {
+        gen_helper_mve_vqrdmlashb,
+        gen_helper_mve_vqrdmlashh,
+        gen_helper_mve_vqrdmlashw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vbrsr_fns[] = {
+        gen_helper_mve_vbrsrb,
+        gen_helper_mve_vbrsrh,
+        gen_helper_mve_vbrsrw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn *fn = NULL;
+    unsigned size = extract32(insn, 20, 2);
+
+    switch (insn & 0xff811f70) {
+    case 0xee000f40:
+        fn = vhadds_fns[size];
+        break;
+    case 0xfe000f40:
+        fn = vhaddu_fns[size];
+        break;
+    case 0xee001f40:
+        fn = vhsubs_fns[size];
+        break;
+    case 0xfe001f40:
+        fn = vhsubu_fns[size];
+        break;
+    case 0xee000f60:
+        fn = vqadds_fns[size];
+        break;
+    case 0xfe000f60:
+        fn = vqaddu_fns[size];
+        break;
+    case 0xee001f60:
+        fn = vqsubs_fns[size];
+        break;
+    case 0xfe001f60:
+        fn = vqsubu_fns[size];
+        break;
+    case 0xee010e60:
+        fn = vqdmulh_fns[size];
+        break;
+    case 0xfe010e60:
+        fn = vqrdmulh_fns[size];
+        break;
+    case 0xee010f40:
+        fn = vadd_fns[size];
+        break;
+    case 0xee011f40:
+        fn = vsub_fns[size];
+        break;
+    case 0xee011e60:
+        fn = vmul_fns[size];
+        break;
+    case 0xee010e40:
+    case 0xfe010e40:
+        fn = vmla_fns[size];
+        break;
+    case 0xee011e40:
+    case 0xfe011e40:
+        fn = vmlas_fns[size];
+        break;
+    case 0xee000e60:
+        fn = vqdmlah_fns[size];
+        break;
+    case 0xee000e40:
+        fn = vqrdmlah_fns[size];
+        break;
+    case 0xee001e60:
+        fn = vqdmlash_fns[size];
+        break;
+    case 0xee001e40:
+        fn = vqrdmlash_fns[size];
+        break;
+    case 0xfe011e60:
+        fn = vbrsr_fns[size];
+        break;
+    default:
+        break;
+    }
+
+    return fn ? do_mve_2op_scalar(s, insn, fn) : false;
+}
+
+static bool trans_mve_fp_scalar_2op(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpScalarFn * const vfadd_fns[] = {
+        NULL,
+        gen_helper_mve_vfadd_scalarh,
+        gen_helper_mve_vfadd_scalars,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vfsub_fns[] = {
+        NULL,
+        gen_helper_mve_vfsub_scalarh,
+        gen_helper_mve_vfsub_scalars,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vfmul_fns[] = {
+        NULL,
+        gen_helper_mve_vfmul_scalarh,
+        gen_helper_mve_vfmul_scalars,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vfma_fns[] = {
+        NULL,
+        gen_helper_mve_vfma_scalarh,
+        gen_helper_mve_vfma_scalars,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vfmas_fns[] = {
+        NULL,
+        gen_helper_mve_vfmas_scalarh,
+        gen_helper_mve_vfmas_scalars,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn *fn = NULL;
+    unsigned size = extract32(insn, 28, 1) ? 1 : 2;
+
+    if (!dc_isar_feature(aa32_mve_fp, s)) {
+        return false;
+    }
+
+    switch (insn & 0xefb11f70) {
+    case 0xee300f40:
+        fn = vfadd_fns[size];
+        break;
+    case 0xee301f40:
+        fn = vfsub_fns[size];
+        break;
+    case 0xee310e60:
+        fn = vfmul_fns[size];
+        break;
+    case 0xee310e40:
+        fn = vfma_fns[size];
+        break;
+    case 0xee311e40:
+        fn = vfmas_fns[size];
+        break;
+    default:
+        break;
+    }
+
+    return fn ? do_mve_2op_scalar(s, insn, fn) : false;
+}
+
+static bool trans_mve_scalar_qdmull(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpScalarFn * const vqdmullb_fns[] = {
+        NULL,
+        gen_helper_mve_vqdmullb_scalarh,
+        gen_helper_mve_vqdmullb_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn * const vqdmullt_fns[] = {
+        NULL,
+        gen_helper_mve_vqdmullt_scalarh,
+        gen_helper_mve_vqdmullt_scalarw,
+        NULL,
+    };
+    MVEGenTwoOpScalarFn *fn = NULL;
+    unsigned size = extract32(insn, 28, 1) + 1;
+
+    if ((insn & 0xefb11f70) == 0xee300f60) {
+        fn = vqdmullb_fns[size];
+    } else if ((insn & 0xefb11f70) == 0xee301f60) {
+        fn = vqdmullt_fns[size];
+    }
+
+    if (fn && size == 2) {
+        int qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+        int qn = (extract32(insn, 7, 1) << 3) | extract32(insn, 17, 3);
+
+        if (qd == qn) {
+            return false;
+        }
+    }
+
+    return fn ? do_mve_2op_scalar(s, insn, fn) : false;
+}
+
+static bool do_mve_1op(DisasContext *s, uint32_t insn, MVEGenOneOpFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_ptr qmptr;
+    int qd;
+    int qm;
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd | qm) || !fn) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    qmptr = mve_qreg_ptr(s, qm);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdptr, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool do_mve_1op_i32(DisasContext *s, uint32_t insn,
+                           MVEGenOneOpI32Fn *fn, uint32_t imm)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_ptr qmptr;
+    TCGv_i32 immval;
+    int qd;
+    int qm;
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve_fp, s) ||
+        !mve_check_qreg_bank(qd | qm) || !fn) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    qmptr = mve_qreg_ptr(s, qm);
+    immval = tcg_const_i32(tcg_ctx, imm);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdptr, qmptr, immval);
+    tcg_temp_free_i32(tcg_ctx, immval);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static MVEGenOneOpI32Fn *mve_fp_convert_fn(uint32_t insn, unsigned size,
+                                           uint32_t *imm)
+{
+    switch (insn & 0xffb31fd1) {
+    case 0xffb30640:
+        return size == 1 ? gen_helper_mve_vcvt_sh :
+            size == 2 ? gen_helper_mve_vcvt_sf : NULL;
+    case 0xffb306c0:
+        return size == 1 ? gen_helper_mve_vcvt_uh :
+            size == 2 ? gen_helper_mve_vcvt_uf : NULL;
+    case 0xffb30740:
+        return size == 1 ? gen_helper_mve_vcvt_hs :
+            size == 2 ? gen_helper_mve_vcvt_fs : NULL;
+    case 0xffb307c0:
+        return size == 1 ? gen_helper_mve_vcvt_hu :
+            size == 2 ? gen_helper_mve_vcvt_fu : NULL;
+    case 0xffb30040:
+        *imm = arm_rmode_to_sf(FPROUNDING_TIEAWAY);
+        return size == 1 ? gen_helper_mve_vcvt_rm_sh :
+            size == 2 ? gen_helper_mve_vcvt_rm_ss : NULL;
+    case 0xffb300c0:
+        *imm = arm_rmode_to_sf(FPROUNDING_TIEAWAY);
+        return size == 1 ? gen_helper_mve_vcvt_rm_uh :
+            size == 2 ? gen_helper_mve_vcvt_rm_us : NULL;
+    case 0xffb30140:
+        *imm = arm_rmode_to_sf(FPROUNDING_TIEEVEN);
+        return size == 1 ? gen_helper_mve_vcvt_rm_sh :
+            size == 2 ? gen_helper_mve_vcvt_rm_ss : NULL;
+    case 0xffb301c0:
+        *imm = arm_rmode_to_sf(FPROUNDING_TIEEVEN);
+        return size == 1 ? gen_helper_mve_vcvt_rm_uh :
+            size == 2 ? gen_helper_mve_vcvt_rm_us : NULL;
+    case 0xffb30240:
+        *imm = arm_rmode_to_sf(FPROUNDING_POSINF);
+        return size == 1 ? gen_helper_mve_vcvt_rm_sh :
+            size == 2 ? gen_helper_mve_vcvt_rm_ss : NULL;
+    case 0xffb302c0:
+        *imm = arm_rmode_to_sf(FPROUNDING_POSINF);
+        return size == 1 ? gen_helper_mve_vcvt_rm_uh :
+            size == 2 ? gen_helper_mve_vcvt_rm_us : NULL;
+    case 0xffb30340:
+        *imm = arm_rmode_to_sf(FPROUNDING_NEGINF);
+        return size == 1 ? gen_helper_mve_vcvt_rm_sh :
+            size == 2 ? gen_helper_mve_vcvt_rm_ss : NULL;
+    case 0xffb303c0:
+        *imm = arm_rmode_to_sf(FPROUNDING_NEGINF);
+        return size == 1 ? gen_helper_mve_vcvt_rm_uh :
+            size == 2 ? gen_helper_mve_vcvt_rm_us : NULL;
+    case 0xffb20440:
+        *imm = arm_rmode_to_sf(FPROUNDING_TIEEVEN);
+        return size == 1 ? gen_helper_mve_vrint_rm_h :
+            size == 2 ? gen_helper_mve_vrint_rm_s : NULL;
+    case 0xffb20540:
+        *imm = arm_rmode_to_sf(FPROUNDING_TIEAWAY);
+        return size == 1 ? gen_helper_mve_vrint_rm_h :
+            size == 2 ? gen_helper_mve_vrint_rm_s : NULL;
+    case 0xffb205c0:
+        *imm = arm_rmode_to_sf(FPROUNDING_ZERO);
+        return size == 1 ? gen_helper_mve_vrint_rm_h :
+            size == 2 ? gen_helper_mve_vrint_rm_s : NULL;
+    case 0xffb206c0:
+        *imm = arm_rmode_to_sf(FPROUNDING_NEGINF);
+        return size == 1 ? gen_helper_mve_vrint_rm_h :
+            size == 2 ? gen_helper_mve_vrint_rm_s : NULL;
+    case 0xffb207c0:
+        *imm = arm_rmode_to_sf(FPROUNDING_POSINF);
+        return size == 1 ? gen_helper_mve_vrint_rm_h :
+            size == 2 ? gen_helper_mve_vrint_rm_s : NULL;
+    default:
+        return NULL;
+    }
+}
+
+static bool trans_mve_fp_convert_round(DisasContext *s, uint32_t insn)
+{
+    MVEGenOneOpI32Fn *fn;
+    MVEGenOneOpFn *oneop_fn = NULL;
+    uint32_t imm = 0;
+    unsigned size = extract32(insn, 18, 2);
+
+    switch (insn & 0xffbf1fd1) {
+    case 0xee3f0e01:
+        oneop_fn = gen_helper_mve_vcvtb_sh;
+        break;
+    case 0xee3f1e01:
+        oneop_fn = gen_helper_mve_vcvtt_sh;
+        break;
+    case 0xfe3f0e01:
+        oneop_fn = gen_helper_mve_vcvtb_hs;
+        break;
+    case 0xfe3f1e01:
+        oneop_fn = gen_helper_mve_vcvtt_hs;
+        break;
+    default:
+        break;
+    }
+    if (oneop_fn) {
+        if (!dc_isar_feature(aa32_mve_fp, s)) {
+            return false;
+        }
+        return do_mve_1op(s, insn, oneop_fn);
+    }
+
+    if ((insn & 0xffb31fd1) == 0xffb204c0) {
+        oneop_fn = size == 1 ? gen_helper_mve_vrintx_h :
+            size == 2 ? gen_helper_mve_vrintx_s : NULL;
+        if (!dc_isar_feature(aa32_mve_fp, s)) {
+            return false;
+        }
+        return do_mve_1op(s, insn, oneop_fn);
+    }
+
+    fn = mve_fp_convert_fn(insn, size, &imm);
+    return fn ? do_mve_1op_i32(s, insn, fn, imm) : false;
+}
+
+static MVEGenTwoOpShiftFn *mve_fp_vcvt_fixed_fn(uint32_t insn,
+                                                unsigned *size,
+                                                uint32_t *shift)
+{
+    switch (insn & 0xffb01fd1) {
+    case 0xefb00c50:
+        *size = 1;
+        *shift = 16 - extract32(insn, 16, 4);
+        return gen_helper_mve_vcvt_sh;
+    case 0xffb00c50:
+        *size = 1;
+        *shift = 16 - extract32(insn, 16, 4);
+        return gen_helper_mve_vcvt_uh;
+    case 0xefb00d50:
+        *size = 1;
+        *shift = 16 - extract32(insn, 16, 4);
+        return gen_helper_mve_vcvt_hs;
+    case 0xffb00d50:
+        *size = 1;
+        *shift = 16 - extract32(insn, 16, 4);
+        return gen_helper_mve_vcvt_hu;
+    default:
+        break;
+    }
+
+    switch (insn & 0xffa01fd1) {
+    case 0xefa00e50:
+        *size = 2;
+        *shift = 32 - extract32(insn, 16, 5);
+        return gen_helper_mve_vcvt_sf;
+    case 0xffa00e50:
+        *size = 2;
+        *shift = 32 - extract32(insn, 16, 5);
+        return gen_helper_mve_vcvt_uf;
+    case 0xefa00f50:
+        *size = 2;
+        *shift = 32 - extract32(insn, 16, 5);
+        return gen_helper_mve_vcvt_fs;
+    case 0xffa00f50:
+        *size = 2;
+        *shift = 32 - extract32(insn, 16, 5);
+        return gen_helper_mve_vcvt_fu;
+    default:
+        return NULL;
+    }
+}
+
+static bool trans_mve_fp_vcvt_fixed(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpShiftFn *fn;
+    uint32_t shift = 0;
+    unsigned size = 0;
+
+    fn = mve_fp_vcvt_fixed_fn(insn, &size, &shift);
+    if (!fn) {
+        return false;
+    }
+    if (!dc_isar_feature(aa32_mve_fp, s)) {
+        return false;
+    }
+    return do_mve_2shift(s, insn, fn, size, shift, false);
+}
+
+static bool trans_mve_simple_1op(DisasContext *s, uint32_t insn)
+{
+    MVEGenOneOpFn * const vcls_fns[] = {
+        gen_helper_mve_vclsb,
+        gen_helper_mve_vclsh,
+        gen_helper_mve_vclsw,
+        NULL,
+    };
+    MVEGenOneOpFn * const vclz_fns[] = {
+        gen_helper_mve_vclzb,
+        gen_helper_mve_vclzh,
+        gen_helper_mve_vclzw,
+        NULL,
+    };
+    MVEGenOneOpFn * const vrev16_fns[] = {
+        gen_helper_mve_vrev16b,
+        NULL,
+        NULL,
+        NULL,
+    };
+    MVEGenOneOpFn * const vrev32_fns[] = {
+        gen_helper_mve_vrev32b,
+        gen_helper_mve_vrev32h,
+        NULL,
+        NULL,
+    };
+    MVEGenOneOpFn * const vrev64_fns[] = {
+        gen_helper_mve_vrev64b,
+        gen_helper_mve_vrev64h,
+        gen_helper_mve_vrev64w,
+        NULL,
+    };
+    MVEGenOneOpFn * const vabs_fns[] = {
+        gen_helper_mve_vabsb,
+        gen_helper_mve_vabsh,
+        gen_helper_mve_vabsw,
+        NULL,
+    };
+    MVEGenOneOpFn * const vneg_fns[] = {
+        gen_helper_mve_vnegb,
+        gen_helper_mve_vnegh,
+        gen_helper_mve_vnegw,
+        NULL,
+    };
+    MVEGenOneOpFn * const vfabs_fns[] = {
+        NULL,
+        gen_helper_mve_vfabsh,
+        gen_helper_mve_vfabss,
+        NULL,
+    };
+    MVEGenOneOpFn * const vfneg_fns[] = {
+        NULL,
+        gen_helper_mve_vfnegh,
+        gen_helper_mve_vfnegs,
+        NULL,
+    };
+    MVEGenOneOpFn * const vqabs_fns[] = {
+        gen_helper_mve_vqabsb,
+        gen_helper_mve_vqabsh,
+        gen_helper_mve_vqabsw,
+        NULL,
+    };
+    MVEGenOneOpFn * const vqneg_fns[] = {
+        gen_helper_mve_vqnegb,
+        gen_helper_mve_vqnegh,
+        gen_helper_mve_vqnegw,
+        NULL,
+    };
+    MVEGenOneOpFn * const vmaxa_fns[] = {
+        gen_helper_mve_vmaxab,
+        gen_helper_mve_vmaxah,
+        gen_helper_mve_vmaxaw,
+        NULL,
+    };
+    MVEGenOneOpFn * const vmina_fns[] = {
+        gen_helper_mve_vminab,
+        gen_helper_mve_vminah,
+        gen_helper_mve_vminaw,
+        NULL,
+    };
+    MVEGenOneOpFn *fn = NULL;
+    unsigned size = extract32(insn, 18, 2);
+
+    if ((insn & 0xffbf1fd1) == 0xffb005c0) {
+        return do_mve_1op(s, insn, gen_helper_mve_vmvn);
+    }
+
+    switch (insn & 0xffb31fd1) {
+    case 0xffb00440:
+        fn = vcls_fns[size];
+        break;
+    case 0xffb004c0:
+        fn = vclz_fns[size];
+        break;
+    case 0xffb00140:
+        fn = vrev16_fns[size];
+        break;
+    case 0xffb000c0:
+        fn = vrev32_fns[size];
+        break;
+    case 0xffb00040:
+        fn = vrev64_fns[size];
+        break;
+    case 0xffb10340:
+        fn = vabs_fns[size];
+        break;
+    case 0xffb103c0:
+        fn = vneg_fns[size];
+        break;
+    case 0xffb10740:
+        if (!dc_isar_feature(aa32_mve_fp, s)) {
+            return false;
+        }
+        fn = vfabs_fns[size];
+        break;
+    case 0xffb107c0:
+        if (!dc_isar_feature(aa32_mve_fp, s)) {
+            return false;
+        }
+        fn = vfneg_fns[size];
+        break;
+    case 0xffb00740:
+        fn = vqabs_fns[size];
+        break;
+    case 0xffb007c0:
+        fn = vqneg_fns[size];
+        break;
+    case 0xee330e81:
+        fn = vmaxa_fns[size];
+        break;
+    case 0xee331e81:
+        fn = vmina_fns[size];
+        break;
+    default:
+        break;
+    }
+
+    return fn ? do_mve_1op(s, insn, fn) : false;
+}
+
+static bool trans_mve_movn(DisasContext *s, uint32_t insn)
+{
+    MVEGenOneOpFn * const vmovnb_fns[] = {
+        gen_helper_mve_vmovnbb,
+        gen_helper_mve_vmovnbh,
+        NULL,
+        NULL,
+    };
+    MVEGenOneOpFn * const vmovnt_fns[] = {
+        gen_helper_mve_vmovntb,
+        gen_helper_mve_vmovnth,
+        NULL,
+        NULL,
+    };
+    MVEGenOneOpFn * const vqmovnbs_fns[] = {
+        gen_helper_mve_vqmovnbsb,
+        gen_helper_mve_vqmovnbsh,
+        NULL,
+        NULL,
+    };
+    MVEGenOneOpFn * const vqmovnts_fns[] = {
+        gen_helper_mve_vqmovntsb,
+        gen_helper_mve_vqmovntsh,
+        NULL,
+        NULL,
+    };
+    MVEGenOneOpFn * const vqmovnbu_fns[] = {
+        gen_helper_mve_vqmovnbub,
+        gen_helper_mve_vqmovnbuh,
+        NULL,
+        NULL,
+    };
+    MVEGenOneOpFn * const vqmovntu_fns[] = {
+        gen_helper_mve_vqmovntub,
+        gen_helper_mve_vqmovntuh,
+        NULL,
+        NULL,
+    };
+    MVEGenOneOpFn * const vqmovunb_fns[] = {
+        gen_helper_mve_vqmovunbb,
+        gen_helper_mve_vqmovunbh,
+        NULL,
+        NULL,
+    };
+    MVEGenOneOpFn * const vqmovunt_fns[] = {
+        gen_helper_mve_vqmovuntb,
+        gen_helper_mve_vqmovunth,
+        NULL,
+        NULL,
+    };
+    MVEGenOneOpFn *fn = NULL;
+    unsigned size = extract32(insn, 18, 2);
+
+    switch (insn & 0xffb31fd1) {
+    case 0xfe310e81:
+        fn = vmovnb_fns[size];
+        break;
+    case 0xfe311e81:
+        fn = vmovnt_fns[size];
+        break;
+    case 0xee330e01:
+        fn = vqmovnbs_fns[size];
+        break;
+    case 0xee331e01:
+        fn = vqmovnts_fns[size];
+        break;
+    case 0xfe330e01:
+        fn = vqmovnbu_fns[size];
+        break;
+    case 0xfe331e01:
+        fn = vqmovntu_fns[size];
+        break;
+    case 0xee310e81:
+        fn = vqmovunb_fns[size];
+        break;
+    case 0xee311e81:
+        fn = vqmovunt_fns[size];
+        break;
+    default:
+        return false;
+    }
+
+    return fn ? do_mve_1op(s, insn, fn) : false;
+}
+
+static bool trans_mve_vmlaldav(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    MVEGenLongDualAccFn * const add_s_fns[3][2] = {
+        { NULL, NULL },
+        { gen_helper_mve_vmlaldavsh, gen_helper_mve_vmlaldavxsh },
+        { gen_helper_mve_vmlaldavsw, gen_helper_mve_vmlaldavxsw },
+    };
+    MVEGenLongDualAccFn * const add_u_fns[3][2] = {
+        { NULL, NULL },
+        { gen_helper_mve_vmlaldavuh, NULL },
+        { gen_helper_mve_vmlaldavuw, NULL },
+    };
+    MVEGenLongDualAccFn * const sub_s_fns[3][2] = {
+        { NULL, NULL },
+        { gen_helper_mve_vmlsldavsh, gen_helper_mve_vmlsldavxsh },
+        { gen_helper_mve_vmlsldavsw, gen_helper_mve_vmlsldavxsw },
+    };
+    MVEGenLongDualAccFn * const round_add_s_fns[] = {
+        gen_helper_mve_vrmlaldavhsw,
+        gen_helper_mve_vrmlaldavhxsw,
+    };
+    MVEGenLongDualAccFn * const round_add_u_fns[] = {
+        gen_helper_mve_vrmlaldavhuw,
+        NULL,
+    };
+    MVEGenLongDualAccFn * const round_sub_s_fns[] = {
+        gen_helper_mve_vrmlsldavhsw,
+        gen_helper_mve_vrmlsldavhxsw,
+    };
+    MVEGenLongDualAccFn *fn = NULL;
+    TCGv_i64 rda;
+    TCGv_i32 rdalo;
+    TCGv_i32 rdahi;
+    TCGv_ptr qnptr;
+    TCGv_ptr qmptr;
+    unsigned size;
+    unsigned rdalo_reg;
+    unsigned rdahi_reg;
+    unsigned qn;
+    unsigned qm;
+    bool accum;
+    bool xchg;
+
+    size = extract32(insn, 16, 1) + 1;
+    xchg = extract32(insn, 12, 1);
+    if ((insn & 0xff800f51) == 0xee800e00) {
+        fn = add_s_fns[size][xchg];
+    } else if ((insn & 0xff800f51) == 0xfe800e00) {
+        fn = add_u_fns[size][xchg];
+    } else if ((insn & 0xff800f51) == 0xee800e01) {
+        fn = sub_s_fns[size][xchg];
+    } else if ((insn & 0xff810f51) == 0xee800f00) {
+        fn = round_add_s_fns[xchg];
+    } else if ((insn & 0xff810f51) == 0xfe800f00) {
+        fn = round_add_u_fns[xchg];
+    } else if ((insn & 0xff810f51) == 0xfe800e01) {
+        fn = round_sub_s_fns[xchg];
+    } else {
+        return false;
+    }
+
+    rdalo_reg = extract32(insn, 13, 3) << 1;
+    rdahi_reg = (extract32(insn, 20, 3) << 1) | 1;
+    qn = (extract32(insn, 7, 1) << 3) | extract32(insn, 17, 3);
+    qm = extract32(insn, 1, 3);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qn | qm) || !fn ||
+        rdahi_reg == 13 || rdahi_reg == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    accum = extract32(insn, 5, 1);
+    if (accum || mve_skip_first_beat(s)) {
+        rda = tcg_temp_new_i64(tcg_ctx);
+        rdalo = load_reg(s, rdalo_reg);
+        rdahi = load_reg(s, rdahi_reg);
+        tcg_gen_concat_i32_i64(tcg_ctx, rda, rdalo, rdahi);
+        tcg_temp_free_i32(tcg_ctx, rdalo);
+        tcg_temp_free_i32(tcg_ctx, rdahi);
+    } else {
+        rda = tcg_const_i64(tcg_ctx, 0);
+    }
+
+    qnptr = mve_qreg_ptr(s, qn);
+    qmptr = mve_qreg_ptr(s, qm);
+    fn(tcg_ctx, rda, tcg_ctx->cpu_env, qnptr, qmptr, rda);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qnptr);
+
+    rdalo = tcg_temp_new_i32(tcg_ctx);
+    rdahi = tcg_temp_new_i32(tcg_ctx);
+    tcg_gen_extrl_i64_i32(tcg_ctx, rdalo, rda);
+    tcg_gen_extrh_i64_i32(tcg_ctx, rdahi, rda);
+    store_reg(s, rdalo_reg, rdalo);
+    store_reg(s, rdahi_reg, rdahi);
+    tcg_temp_free_i64(tcg_ctx, rda);
+
+    mve_update_eci(s);
+    return true;
+}
+
+static bool trans_mve_vmladav(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    MVEGenDualAccFn * const add_s_fns[3][2] = {
+        { gen_helper_mve_vmladavsb, gen_helper_mve_vmladavsxb },
+        { gen_helper_mve_vmladavsh, gen_helper_mve_vmladavsxh },
+        { gen_helper_mve_vmladavsw, gen_helper_mve_vmladavsxw },
+    };
+    MVEGenDualAccFn * const add_u_fns[3][2] = {
+        { gen_helper_mve_vmladavub, NULL },
+        { gen_helper_mve_vmladavuh, NULL },
+        { gen_helper_mve_vmladavuw, NULL },
+    };
+    MVEGenDualAccFn * const sub_s_fns[3][2] = {
+        { gen_helper_mve_vmlsdavb, gen_helper_mve_vmlsdavxb },
+        { gen_helper_mve_vmlsdavh, gen_helper_mve_vmlsdavxh },
+        { gen_helper_mve_vmlsdavw, gen_helper_mve_vmlsdavxw },
+    };
+    MVEGenDualAccFn *fn = NULL;
+    TCGv_i32 rda;
+    TCGv_ptr qnptr;
+    TCGv_ptr qmptr;
+    unsigned size;
+    unsigned rda_reg;
+    unsigned qn;
+    unsigned qm;
+    bool accum;
+    bool xchg;
+
+    xchg = extract32(insn, 12, 1);
+    if ((insn & 0xfff00f51) == 0xeef00e00) {
+        size = extract32(insn, 16, 1) + 1;
+        fn = add_s_fns[size][xchg];
+    } else if ((insn & 0xfff00f51) == 0xfef00e00) {
+        size = extract32(insn, 16, 1) + 1;
+        fn = add_u_fns[size][xchg];
+    } else if ((insn & 0xfff00f51) == 0xeef00e01) {
+        size = extract32(insn, 16, 1) + 1;
+        fn = sub_s_fns[size][xchg];
+    } else if ((insn & 0xfff10f50) == 0xeef00f00) {
+        size = 0;
+        fn = add_s_fns[size][xchg];
+    } else if ((insn & 0xfff10f50) == 0xfef00f00) {
+        size = 0;
+        fn = add_u_fns[size][xchg];
+    } else if ((insn & 0xfff10f51) == 0xfef00e01) {
+        size = 0;
+        fn = sub_s_fns[size][xchg];
+    } else {
+        return false;
+    }
+
+    rda_reg = extract32(insn, 13, 3) << 1;
+    qn = (extract32(insn, 7, 1) << 3) | extract32(insn, 17, 3);
+    qm = extract32(insn, 1, 3);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qn) || !fn) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    accum = extract32(insn, 5, 1);
+    rda = (accum || mve_skip_first_beat(s)) ?
+        load_reg(s, rda_reg) : tcg_const_i32(tcg_ctx, 0);
+    qnptr = mve_qreg_ptr(s, qn);
+    qmptr = mve_qreg_ptr(s, qm);
+    fn(tcg_ctx, rda, tcg_ctx->cpu_env, qnptr, qmptr, rda);
+    store_reg(s, rda_reg, rda);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qnptr);
+
+    mve_update_eci(s);
+    return true;
+}
+
+static bool trans_mve_vaddv(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    MVEGenVADDVFn * const vaddv_fns[3][2] = {
+        { gen_helper_mve_vaddvsb, gen_helper_mve_vaddvub },
+        { gen_helper_mve_vaddvsh, gen_helper_mve_vaddvuh },
+        { gen_helper_mve_vaddvsw, gen_helper_mve_vaddvuw },
+    };
+    TCGv_i32 rda;
+    TCGv_ptr qmptr;
+    unsigned size;
+    unsigned rda_reg;
+    unsigned qm;
+    bool accum;
+    bool is_unsigned;
+
+    if ((insn & 0xeff31fd1) != 0xeef10f00) {
+        return false;
+    }
+
+    size = extract32(insn, 18, 2);
+    if (size == 3 ||
+        !arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s)) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    rda_reg = extract32(insn, 13, 3) << 1;
+    qm = extract32(insn, 1, 3);
+    is_unsigned = extract32(insn, 28, 1);
+    accum = extract32(insn, 5, 1);
+
+    rda = (accum || mve_skip_first_beat(s)) ?
+        load_reg(s, rda_reg) : tcg_const_i32(tcg_ctx, 0);
+    qmptr = mve_qreg_ptr(s, qm);
+    vaddv_fns[size][is_unsigned](tcg_ctx, rda, tcg_ctx->cpu_env, qmptr,
+                                 rda);
+    store_reg(s, rda_reg, rda);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+
+    mve_update_eci(s);
+    return true;
+}
+
+static bool trans_mve_vmaxv(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    MVEGenVADDVFn * const vmaxvs_fns[] = {
+        gen_helper_mve_vmaxvsb,
+        gen_helper_mve_vmaxvsh,
+        gen_helper_mve_vmaxvsw,
+        NULL,
+    };
+    MVEGenVADDVFn * const vmaxvu_fns[] = {
+        gen_helper_mve_vmaxvub,
+        gen_helper_mve_vmaxvuh,
+        gen_helper_mve_vmaxvuw,
+        NULL,
+    };
+    MVEGenVADDVFn * const vmaxav_fns[] = {
+        gen_helper_mve_vmaxavb,
+        gen_helper_mve_vmaxavh,
+        gen_helper_mve_vmaxavw,
+        NULL,
+    };
+    MVEGenVADDVFn * const vminvs_fns[] = {
+        gen_helper_mve_vminvsb,
+        gen_helper_mve_vminvsh,
+        gen_helper_mve_vminvsw,
+        NULL,
+    };
+    MVEGenVADDVFn * const vminvu_fns[] = {
+        gen_helper_mve_vminvub,
+        gen_helper_mve_vminvuh,
+        gen_helper_mve_vminvuw,
+        NULL,
+    };
+    MVEGenVADDVFn * const vminav_fns[] = {
+        gen_helper_mve_vminavb,
+        gen_helper_mve_vminavh,
+        gen_helper_mve_vminavw,
+        NULL,
+    };
+    MVEGenVADDVFn *fn = NULL;
+    TCGv_i32 rda;
+    TCGv_ptr qmptr;
+    unsigned size;
+    unsigned rda_reg;
+    unsigned qm;
+
+    size = extract32(insn, 18, 2);
+    if ((insn & 0xfff30fd1) == 0xeee20f00) {
+        fn = vmaxvs_fns[size];
+    } else if ((insn & 0xfff30fd1) == 0xfee20f00) {
+        fn = vmaxvu_fns[size];
+    } else if ((insn & 0xfff30fd1) == 0xeee00f00) {
+        fn = vmaxav_fns[size];
+    } else if ((insn & 0xfff30fd1) == 0xeee20f80) {
+        fn = vminvs_fns[size];
+    } else if ((insn & 0xfff30fd1) == 0xfee20f80) {
+        fn = vminvu_fns[size];
+    } else if ((insn & 0xfff30fd1) == 0xeee00f80) {
+        fn = vminav_fns[size];
+    } else {
+        return false;
+    }
+
+    rda_reg = extract32(insn, 12, 4);
+    qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qm) || !fn ||
+        rda_reg == 13 || rda_reg == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    rda = load_reg(s, rda_reg);
+    qmptr = mve_qreg_ptr(s, qm);
+    fn(tcg_ctx, rda, tcg_ctx->cpu_env, qmptr, rda);
+    store_reg(s, rda_reg, rda);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+
+    mve_update_eci(s);
+    return true;
+}
+
+static bool trans_mve_vmaxnmv(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    MVEGenVADDVFn *fn = NULL;
+    TCGv_i32 rda;
+    TCGv_ptr qmptr;
+    unsigned rda_reg;
+    unsigned qm;
+
+    if ((insn & 0xffff0fd1) == 0xeeee0f00) {
+        fn = gen_helper_mve_vmaxnmvs;
+    } else if ((insn & 0xffff0fd1) == 0xfeee0f00) {
+        fn = gen_helper_mve_vmaxnmvh;
+    } else if ((insn & 0xffff0fd1) == 0xeeec0f00) {
+        fn = gen_helper_mve_vmaxnmavs;
+    } else if ((insn & 0xffff0fd1) == 0xfeec0f00) {
+        fn = gen_helper_mve_vmaxnmavh;
+    } else if ((insn & 0xffff0fd1) == 0xeeee0f80) {
+        fn = gen_helper_mve_vminnmvs;
+    } else if ((insn & 0xffff0fd1) == 0xfeee0f80) {
+        fn = gen_helper_mve_vminnmvh;
+    } else if ((insn & 0xffff0fd1) == 0xeeec0f80) {
+        fn = gen_helper_mve_vminnmavs;
+    } else if ((insn & 0xffff0fd1) == 0xfeec0f80) {
+        fn = gen_helper_mve_vminnmavh;
+    } else {
+        return false;
+    }
+
+    rda_reg = extract32(insn, 12, 4);
+    qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve_fp, s) ||
+        !mve_check_qreg_bank(qm) ||
+        rda_reg == 13 || rda_reg == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    rda = load_reg(s, rda_reg);
+    qmptr = mve_qreg_ptr(s, qm);
+    fn(tcg_ctx, rda, tcg_ctx->cpu_env, qmptr, rda);
+    store_reg(s, rda_reg, rda);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+
+    mve_update_eci(s);
+    return true;
+}
+
+static bool trans_mve_vaddlv(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i64 rda;
+    TCGv_i32 rdalo;
+    TCGv_i32 rdahi;
+    TCGv_ptr qmptr;
+    unsigned rdalo_reg;
+    unsigned rdahi_reg;
+    unsigned qm;
+    bool accum;
+    bool is_unsigned;
+
+    if ((insn & 0xef8f1fd1) != 0xee890f00) {
+        return false;
+    }
+
+    rdahi_reg = (extract32(insn, 20, 3) << 1) | 1;
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        rdahi_reg == 13 || rdahi_reg == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    rdalo_reg = extract32(insn, 13, 3) << 1;
+    qm = extract32(insn, 1, 3);
+    is_unsigned = extract32(insn, 28, 1);
+    accum = extract32(insn, 5, 1);
+
+    if (accum || mve_skip_first_beat(s)) {
+        rda = tcg_temp_new_i64(tcg_ctx);
+        rdalo = load_reg(s, rdalo_reg);
+        rdahi = load_reg(s, rdahi_reg);
+        tcg_gen_concat_i32_i64(tcg_ctx, rda, rdalo, rdahi);
+        tcg_temp_free_i32(tcg_ctx, rdalo);
+        tcg_temp_free_i32(tcg_ctx, rdahi);
+    } else {
+        rda = tcg_const_i64(tcg_ctx, 0);
+    }
+
+    qmptr = mve_qreg_ptr(s, qm);
+    if (is_unsigned) {
+        gen_helper_mve_vaddlv_u(tcg_ctx, rda, tcg_ctx->cpu_env, qmptr, rda);
+    } else {
+        gen_helper_mve_vaddlv_s(tcg_ctx, rda, tcg_ctx->cpu_env, qmptr, rda);
+    }
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+
+    rdalo = tcg_temp_new_i32(tcg_ctx);
+    rdahi = tcg_temp_new_i32(tcg_ctx);
+    tcg_gen_extrl_i64_i32(tcg_ctx, rdalo, rda);
+    tcg_gen_extrh_i64_i32(tcg_ctx, rdahi, rda);
+    store_reg(s, rdalo_reg, rdalo);
+    store_reg(s, rdahi_reg, rdahi);
+    tcg_temp_free_i64(tcg_ctx, rda);
+
+    mve_update_eci(s);
+    return true;
+}
+
+static bool trans_mve_vabav(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    MVEGenVABAVFn * const vabavs_fns[] = {
+        gen_helper_mve_vabavsb,
+        gen_helper_mve_vabavsh,
+        gen_helper_mve_vabavsw,
+        NULL,
+    };
+    MVEGenVABAVFn * const vabavu_fns[] = {
+        gen_helper_mve_vabavub,
+        gen_helper_mve_vabavuh,
+        gen_helper_mve_vabavuw,
+        NULL,
+    };
+    MVEGenVABAVFn *fn;
+    TCGv_i32 rda;
+    TCGv_ptr qnptr;
+    TCGv_ptr qmptr;
+    unsigned size;
+    unsigned rda_reg;
+    unsigned qn;
+    unsigned qm;
+    bool is_unsigned;
+
+    if ((insn & 0xefc10f51) != 0xee800f01) {
+        return false;
+    }
+
+    size = extract32(insn, 20, 2);
+    rda_reg = extract32(insn, 12, 4);
+    qn = (extract32(insn, 7, 1) << 3) | extract32(insn, 17, 3);
+    qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+    is_unsigned = extract32(insn, 28, 1);
+    fn = is_unsigned ? vabavu_fns[size] : vabavs_fns[size];
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qn | qm) || !fn ||
+        rda_reg == 13 || rda_reg == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qnptr = mve_qreg_ptr(s, qn);
+    qmptr = mve_qreg_ptr(s, qm);
+    rda = load_reg(s, rda_reg);
+    fn(tcg_ctx, rda, tcg_ctx->cpu_env, qnptr, qmptr, rda);
+    store_reg(s, rda_reg, rda);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qnptr);
+
+    mve_update_eci(s);
+    return true;
+}
+
+static bool do_mve_ldst_reg(DisasContext *s, uint32_t insn, MVEGenLdStFn *fn,
+                             bool p, bool w, unsigned msize, int qd, int rn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 addr;
+    TCGv_ptr qreg;
+    int32_t offset;
+    bool add;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd) || !fn || rn == 15 || (rn == 13 && w)) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    add = extract32(insn, 23, 1);
+    offset = extract32(insn, 0, 7) << msize;
+    if (!add) {
+        offset = -offset;
+    }
+
+    addr = load_reg(s, rn);
+    if (p) {
+        tcg_gen_addi_i32(tcg_ctx, addr, addr, offset);
+    }
+
+    qreg = mve_qreg_ptr(s, qd);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qreg, addr);
+    tcg_temp_free_ptr(tcg_ctx, qreg);
+
+    if (w) {
+        if (!p) {
+            tcg_gen_addi_i32(tcg_ctx, addr, addr, offset);
+        }
+        store_reg(s, rn, addr);
+    } else {
+        tcg_temp_free_i32(tcg_ctx, addr);
+    }
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool do_mve_ldst(DisasContext *s, uint32_t insn, MVEGenLdStFn *fn,
+                        bool p, bool w, unsigned msize)
+{
+    int qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    int rn = extract32(insn, 16, 4);
+
+    return do_mve_ldst_reg(s, insn, fn, p, w, msize, qd, rn);
+}
+
+static bool trans_mve_vldst_wn(DisasContext *s, uint32_t insn)
+{
+    MVEGenLdStFn * const ldst_fns[3][2][2] = {
+        {
+            { gen_helper_mve_vstrb_h, gen_helper_mve_vldrb_sh },
+            { NULL, gen_helper_mve_vldrb_uh },
+        },
+        {
+            { gen_helper_mve_vstrb_w, gen_helper_mve_vldrb_sw },
+            { NULL, gen_helper_mve_vldrb_uw },
+        },
+        {
+            { gen_helper_mve_vstrh_w, gen_helper_mve_vldrh_sw },
+            { NULL, gen_helper_mve_vldrh_uw },
+        },
+    };
+    MVEGenLdStFn *fn;
+    unsigned group;
+    unsigned msize;
+    int qd;
+    int rn;
+    bool p;
+    bool w;
+
+    switch (insn & 0xef681f80) {
+    case 0xec200e80:
+        group = 0;
+        msize = 0;
+        p = false;
+        w = true;
+        break;
+    case 0xec200f00:
+        group = 1;
+        msize = 0;
+        p = false;
+        w = true;
+        break;
+    case 0xec280f00:
+        group = 2;
+        msize = 1;
+        p = false;
+        w = true;
+        break;
+    default:
+        switch (insn & 0xef481f80) {
+        case 0xed000e80:
+            group = 0;
+            msize = 0;
+            p = true;
+            w = extract32(insn, 21, 1);
+            break;
+        case 0xed000f00:
+            group = 1;
+            msize = 0;
+            p = true;
+            w = extract32(insn, 21, 1);
+            break;
+        case 0xed080f00:
+            group = 2;
+            msize = 1;
+            p = true;
+            w = extract32(insn, 21, 1);
+            break;
+        default:
+            return false;
+        }
+        break;
+    }
+
+    fn = ldst_fns[group][extract32(insn, 28, 1)][extract32(insn, 20, 1)];
+    qd = extract32(insn, 13, 3);
+    rn = extract32(insn, 16, 3);
+    return do_mve_ldst_reg(s, insn, fn, p, w, msize, qd, rn);
+}
+
+static bool trans_mve_vldr_vstr(DisasContext *s, uint32_t insn)
+{
+    MVEGenLdStFn * const ldst_fns[3][2] = {
+        { gen_helper_mve_vstrb, gen_helper_mve_vldrb },
+        { gen_helper_mve_vstrh, gen_helper_mve_vldrh },
+        { gen_helper_mve_vstrw, gen_helper_mve_vldrw },
+    };
+    MVEGenLdStFn *fn;
+    unsigned msize;
+    bool p;
+    bool w;
+
+    switch (insn & 0xff201f80) {
+    case 0xec201e00:
+        msize = 0;
+        p = false;
+        w = true;
+        break;
+    case 0xec201e80:
+        msize = 1;
+        p = false;
+        w = true;
+        break;
+    case 0xec201f00:
+        msize = 2;
+        p = false;
+        w = true;
+        break;
+    default:
+        switch (insn & 0xff001f80) {
+        case 0xed001e00:
+            msize = 0;
+            p = true;
+            w = extract32(insn, 21, 1);
+            break;
+        case 0xed001e80:
+            msize = 1;
+            p = true;
+            w = extract32(insn, 21, 1);
+            break;
+        case 0xed001f00:
+            msize = 2;
+            p = true;
+            w = extract32(insn, 21, 1);
+            break;
+        default:
+            return false;
+        }
+        break;
+    }
+
+    fn = ldst_fns[msize][extract32(insn, 20, 1)];
+    return do_mve_ldst(s, insn, fn, p, w, msize);
+}
+
+static bool do_mve_ldst_sg(DisasContext *s, MVEGenLdStSGFn *fn,
+                           int qd, int qm, int rn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 addr;
+    TCGv_ptr qdptr;
+    TCGv_ptr qmptr;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd | qm) || !fn || rn == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    addr = load_reg(s, rn);
+    qdptr = mve_qreg_ptr(s, qd);
+    qmptr = mve_qreg_ptr(s, qm);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdptr, qmptr, addr);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+    tcg_temp_free_i32(tcg_ctx, addr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_mve_vldst_sg(DisasContext *s, uint32_t insn)
+{
+    MVEGenLdStSGFn * const s_load_fns[2][4][4] = {
+        {
+            { NULL, gen_helper_mve_vldrb_sg_sh,
+              gen_helper_mve_vldrb_sg_sw, NULL },
+            { NULL, NULL, gen_helper_mve_vldrh_sg_sw, NULL },
+            { NULL, NULL, NULL, NULL },
+            { NULL, NULL, NULL, NULL },
+        },
+        {
+            { NULL, NULL, NULL, NULL },
+            { NULL, NULL, gen_helper_mve_vldrh_sg_os_sw, NULL },
+            { NULL, NULL, NULL, NULL },
+            { NULL, NULL, NULL, NULL },
+        },
+    };
+    MVEGenLdStSGFn * const u_load_fns[2][4][4] = {
+        {
+            { gen_helper_mve_vldrb_sg_ub, gen_helper_mve_vldrb_sg_uh,
+              gen_helper_mve_vldrb_sg_uw, NULL },
+            { NULL, gen_helper_mve_vldrh_sg_uh,
+              gen_helper_mve_vldrh_sg_uw, NULL },
+            { NULL, NULL, gen_helper_mve_vldrw_sg_uw, NULL },
+            { NULL, NULL, NULL, gen_helper_mve_vldrd_sg_ud },
+        },
+        {
+            { NULL, NULL, NULL, NULL },
+            { NULL, gen_helper_mve_vldrh_sg_os_uh,
+              gen_helper_mve_vldrh_sg_os_uw, NULL },
+            { NULL, NULL, gen_helper_mve_vldrw_sg_os_uw, NULL },
+            { NULL, NULL, NULL, gen_helper_mve_vldrd_sg_os_ud },
+        },
+    };
+    MVEGenLdStSGFn * const store_fns[2][4][4] = {
+        {
+            { gen_helper_mve_vstrb_sg_ub, gen_helper_mve_vstrb_sg_uh,
+              gen_helper_mve_vstrb_sg_uw, NULL },
+            { NULL, gen_helper_mve_vstrh_sg_uh,
+              gen_helper_mve_vstrh_sg_uw, NULL },
+            { NULL, NULL, gen_helper_mve_vstrw_sg_uw, NULL },
+            { NULL, NULL, NULL, gen_helper_mve_vstrd_sg_ud },
+        },
+        {
+            { NULL, NULL, NULL, NULL },
+            { NULL, gen_helper_mve_vstrh_sg_os_uh,
+              gen_helper_mve_vstrh_sg_os_uw, NULL },
+            { NULL, NULL, gen_helper_mve_vstrw_sg_os_uw, NULL },
+            { NULL, NULL, NULL, gen_helper_mve_vstrd_sg_os_ud },
+        },
+    };
+    MVEGenLdStSGFn *fn;
+    unsigned size;
+    unsigned msize;
+    unsigned os;
+    int qd;
+    int qm;
+    int rn;
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+    rn = extract32(insn, 16, 4);
+    size = extract32(insn, 7, 2);
+    msize = (extract32(insn, 6, 1) << 1) | extract32(insn, 4, 1);
+    os = extract32(insn, 0, 1);
+
+    switch (insn & 0xffb01e00) {
+    case 0xec900e00:
+        if (qd == qm) {
+            return false;
+        }
+        fn = s_load_fns[os][msize][size];
+        break;
+    case 0xfc900e00:
+        if (qd == qm) {
+            return false;
+        }
+        fn = u_load_fns[os][msize][size];
+        break;
+    case 0xec800e00:
+        fn = store_fns[os][msize][size];
+        break;
+    default:
+        return false;
+    }
+
+    return do_mve_ldst_sg(s, fn, qd, qm, rn);
+}
+
+static bool do_mve_ldst_sg_imm(DisasContext *s, MVEGenLdStSGFn *fn,
+                               int qd, int qm, bool add,
+                               unsigned msize, uint32_t imm)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 offset_tcg;
+    TCGv_ptr qdptr;
+    TCGv_ptr qmptr;
+    uint32_t offset;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd | qm) || !fn) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    offset = imm << msize;
+    if (!add) {
+        offset = -offset;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    qmptr = mve_qreg_ptr(s, qm);
+    offset_tcg = tcg_const_i32(tcg_ctx, offset);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdptr, qmptr, offset_tcg);
+    tcg_temp_free_i32(tcg_ctx, offset_tcg);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_mve_vldst_sg_imm(DisasContext *s, uint32_t insn)
+{
+    MVEGenLdStSGFn * const ldrw_fns[] = {
+        gen_helper_mve_vldrw_sg_uw,
+        gen_helper_mve_vldrw_sg_wb_uw,
+    };
+    MVEGenLdStSGFn * const ldrd_fns[] = {
+        gen_helper_mve_vldrd_sg_ud,
+        gen_helper_mve_vldrd_sg_wb_ud,
+    };
+    MVEGenLdStSGFn * const strw_fns[] = {
+        gen_helper_mve_vstrw_sg_uw,
+        gen_helper_mve_vstrw_sg_wb_uw,
+    };
+    MVEGenLdStSGFn * const strd_fns[] = {
+        gen_helper_mve_vstrd_sg_ud,
+        gen_helper_mve_vstrd_sg_wb_ud,
+    };
+    MVEGenLdStSGFn *fn;
+    unsigned msize;
+    int qd;
+    int qm;
+    bool add;
+    bool writeback;
+    bool is_load;
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    qm = (extract32(insn, 7, 1) << 3) | extract32(insn, 17, 3);
+    add = extract32(insn, 23, 1);
+    writeback = extract32(insn, 21, 1);
+
+    switch (insn & 0xff111f00) {
+    case 0xfd101e00:
+        fn = ldrw_fns[writeback];
+        msize = 2;
+        is_load = true;
+        break;
+    case 0xfd101f00:
+        fn = ldrd_fns[writeback];
+        msize = 3;
+        is_load = true;
+        break;
+    case 0xfd001e00:
+        fn = strw_fns[writeback];
+        msize = 2;
+        is_load = false;
+        break;
+    case 0xfd001f00:
+        fn = strd_fns[writeback];
+        msize = 3;
+        is_load = false;
+        break;
+    default:
+        return false;
+    }
+
+    if (is_load && qd == qm) {
+        return false;
+    }
+
+    return do_mve_ldst_sg_imm(s, fn, qd, qm, add, msize,
+                              extract32(insn, 0, 7));
+}
+
+static bool do_mve_vldst_il(DisasContext *s, MVEGenLdStIlFn *fn,
+                            int qd, int rnidx, bool writeback,
+                            int addrinc)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 rn;
+    TCGv_i32 qdidx;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd) || !fn ||
+        (rnidx == 13 && writeback) || rnidx == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    rn = load_reg(s, rnidx);
+    qdidx = tcg_const_i32(tcg_ctx, qd);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdidx, rn);
+    tcg_temp_free_i32(tcg_ctx, qdidx);
+
+    if (writeback) {
+        tcg_gen_addi_i32(tcg_ctx, rn, rn, addrinc);
+        store_reg(s, rnidx, rn);
+    } else {
+        tcg_temp_free_i32(tcg_ctx, rn);
+    }
+
+    mve_update_and_store_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_mve_vldst_il(DisasContext *s, uint32_t insn)
+{
+    MVEGenLdStIlFn * const vld2_fns[4][4] = {
+        { gen_helper_mve_vld20b, gen_helper_mve_vld20h,
+          gen_helper_mve_vld20w, NULL },
+        { gen_helper_mve_vld21b, gen_helper_mve_vld21h,
+          gen_helper_mve_vld21w, NULL },
+        { NULL, NULL, NULL, NULL },
+        { NULL, NULL, NULL, NULL },
+    };
+    MVEGenLdStIlFn * const vst2_fns[4][4] = {
+        { gen_helper_mve_vst20b, gen_helper_mve_vst20h,
+          gen_helper_mve_vst20w, NULL },
+        { gen_helper_mve_vst21b, gen_helper_mve_vst21h,
+          gen_helper_mve_vst21w, NULL },
+        { NULL, NULL, NULL, NULL },
+        { NULL, NULL, NULL, NULL },
+    };
+    MVEGenLdStIlFn * const vld4_fns[4][4] = {
+        { gen_helper_mve_vld40b, gen_helper_mve_vld40h,
+          gen_helper_mve_vld40w, NULL },
+        { gen_helper_mve_vld41b, gen_helper_mve_vld41h,
+          gen_helper_mve_vld41w, NULL },
+        { gen_helper_mve_vld42b, gen_helper_mve_vld42h,
+          gen_helper_mve_vld42w, NULL },
+        { gen_helper_mve_vld43b, gen_helper_mve_vld43h,
+          gen_helper_mve_vld43w, NULL },
+    };
+    MVEGenLdStIlFn * const vst4_fns[4][4] = {
+        { gen_helper_mve_vst40b, gen_helper_mve_vst40h,
+          gen_helper_mve_vst40w, NULL },
+        { gen_helper_mve_vst41b, gen_helper_mve_vst41h,
+          gen_helper_mve_vst41w, NULL },
+        { gen_helper_mve_vst42b, gen_helper_mve_vst42h,
+          gen_helper_mve_vst42w, NULL },
+        { gen_helper_mve_vst43b, gen_helper_mve_vst43h,
+          gen_helper_mve_vst43w, NULL },
+    };
+    MVEGenLdStIlFn *fn;
+    unsigned size;
+    unsigned pat;
+    int addrinc;
+    int qd;
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    size = extract32(insn, 7, 2);
+    pat = extract32(insn, 5, 2);
+
+    switch (insn & 0xff901e1f) {
+    case 0xfc901e00:
+        if (qd > 6) {
+            return false;
+        }
+        fn = vld2_fns[pat][size];
+        addrinc = 32;
+        break;
+    case 0xfc901e01:
+        if (qd > 4) {
+            return false;
+        }
+        fn = vld4_fns[pat][size];
+        addrinc = 64;
+        break;
+    case 0xfc801e00:
+        if (qd > 6) {
+            return false;
+        }
+        fn = vst2_fns[pat][size];
+        addrinc = 32;
+        break;
+    case 0xfc801e01:
+        if (qd > 4) {
+            return false;
+        }
+        fn = vst4_fns[pat][size];
+        addrinc = 64;
+        break;
+    default:
+        return false;
+    }
+
+    return do_mve_vldst_il(s, fn, qd, extract32(insn, 16, 4),
+                           extract32(insn, 21, 1), addrinc);
+}
+
+static bool trans_mve_vmov_2gp(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 tmp;
+    int qd;
+    int rt;
+    int rt2;
+    int idx;
+    int vd;
+    bool from_gp;
+
+    switch (insn & 0xffb01fe0) {
+    case 0xec000f00:
+        from_gp = false;
+        break;
+    case 0xec100f00:
+        from_gp = true;
+        break;
+    default:
+        return false;
+    }
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    rt = extract32(insn, 0, 4);
+    rt2 = extract32(insn, 16, 4);
+    idx = extract32(insn, 4, 1);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd) ||
+        rt == 13 || rt == 15 || rt2 == 13 || rt2 == 15 ||
+        (!from_gp && rt == rt2)) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    vd = qd * 2;
+    if (from_gp) {
+        if (!mve_skip_vmov(s, vd, idx, MO_32)) {
+            tmp = load_reg(s, rt);
+            neon_store_element(tcg_ctx, vd, idx, MO_32, tmp);
+            tcg_temp_free_i32(tcg_ctx, tmp);
+        }
+        if (!mve_skip_vmov(s, vd + 1, idx, MO_32)) {
+            tmp = load_reg(s, rt2);
+            neon_store_element(tcg_ctx, vd + 1, idx, MO_32, tmp);
+            tcg_temp_free_i32(tcg_ctx, tmp);
+        }
+    } else {
+        if (!mve_skip_vmov(s, vd, idx, MO_32)) {
+            tmp = tcg_temp_new_i32(tcg_ctx);
+            neon_load_element(tcg_ctx, tmp, vd, idx, MO_UL);
+            store_reg(s, rt, tmp);
+        }
+        if (!mve_skip_vmov(s, vd + 1, idx, MO_32)) {
+            tmp = tcg_temp_new_i32(tcg_ctx);
+            neon_load_element(tcg_ctx, tmp, vd + 1, idx, MO_UL);
+            store_reg(s, rt2, tmp);
+        }
+    }
+
+    mve_update_and_store_eci(s);
+    return true;
+}
+
+static bool trans_mve_vpsel(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_ptr qnptr;
+    TCGv_ptr qmptr;
+    int qd;
+    int qn;
+    int qm;
+
+    if ((insn & 0xffb11f51) != 0xfe310f01) {
+        return false;
+    }
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    qn = (extract32(insn, 7, 1) << 3) | extract32(insn, 17, 3);
+    qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd | qn | qm)) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    qnptr = mve_qreg_ptr(s, qn);
+    qmptr = mve_qreg_ptr(s, qm);
+    gen_helper_mve_vpsel(tcg_ctx, tcg_ctx->cpu_env, qdptr, qnptr, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qnptr);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool do_mve_vcmp(DisasContext *s, int qn, int qm, uint32_t mask,
+                        MVEGenCmpFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qnptr;
+    TCGv_ptr qmptr;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qn | qm)) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qnptr = mve_qreg_ptr(s, qn);
+    qmptr = mve_qreg_ptr(s, qm);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qnptr, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qnptr);
+    if (mask) {
+        gen_mve_vpst(s, mask);
+    }
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool do_mve_vcmp_scalar(DisasContext *s, int qn, int rm,
+                               uint32_t mask, MVEGenScalarCmpFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qnptr;
+    TCGv_i32 rmval;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qn) || rm == 13) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qnptr = mve_qreg_ptr(s, qn);
+    if (rm == 15) {
+        rmval = tcg_const_i32(tcg_ctx, 0);
+    } else {
+        rmval = load_reg(s, rm);
+    }
+    fn(tcg_ctx, tcg_ctx->cpu_env, qnptr, rmval);
+    tcg_temp_free_i32(tcg_ctx, rmval);
+    tcg_temp_free_ptr(tcg_ctx, qnptr);
+    if (mask) {
+        gen_mve_vpst(s, mask);
+    }
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static MVEGenCmpFn *mve_vcmp_fn(uint32_t insn, unsigned size)
+{
+    static MVEGenCmpFn * const fns[8][3] = {
+        { gen_helper_mve_vcmpeqb, gen_helper_mve_vcmpeqh,
+          gen_helper_mve_vcmpeqw },
+        { gen_helper_mve_vcmpneb, gen_helper_mve_vcmpneh,
+          gen_helper_mve_vcmpnew },
+        { gen_helper_mve_vcmpcsb, gen_helper_mve_vcmpcsh,
+          gen_helper_mve_vcmpcsw },
+        { gen_helper_mve_vcmphib, gen_helper_mve_vcmphih,
+          gen_helper_mve_vcmphiw },
+        { gen_helper_mve_vcmpgeb, gen_helper_mve_vcmpgeh,
+          gen_helper_mve_vcmpgew },
+        { gen_helper_mve_vcmpltb, gen_helper_mve_vcmplth,
+          gen_helper_mve_vcmpltw },
+        { gen_helper_mve_vcmpgtb, gen_helper_mve_vcmpgth,
+          gen_helper_mve_vcmpgtw },
+        { gen_helper_mve_vcmpleb, gen_helper_mve_vcmpleh,
+          gen_helper_mve_vcmplew },
+    };
+
+    if (size == 3) {
+        return NULL;
+    }
+
+    switch (insn & 0xff811fd1) {
+    case 0xfe010f00:
+        return fns[0][size];
+    case 0xfe010f80:
+        return fns[1][size];
+    case 0xfe010f01:
+        return fns[2][size];
+    case 0xfe010f81:
+        return fns[3][size];
+    case 0xfe011f00:
+        return fns[4][size];
+    case 0xfe011f80:
+        return fns[5][size];
+    case 0xfe011f01:
+        return fns[6][size];
+    case 0xfe011f81:
+        return fns[7][size];
+    default:
+        return NULL;
+    }
+}
+
+static MVEGenScalarCmpFn *mve_vcmp_scalar_fn(uint32_t insn, unsigned size)
+{
+    static MVEGenScalarCmpFn * const fns[8][3] = {
+        { gen_helper_mve_vcmpeq_scalarb, gen_helper_mve_vcmpeq_scalarh,
+          gen_helper_mve_vcmpeq_scalarw },
+        { gen_helper_mve_vcmpne_scalarb, gen_helper_mve_vcmpne_scalarh,
+          gen_helper_mve_vcmpne_scalarw },
+        { gen_helper_mve_vcmpcs_scalarb, gen_helper_mve_vcmpcs_scalarh,
+          gen_helper_mve_vcmpcs_scalarw },
+        { gen_helper_mve_vcmphi_scalarb, gen_helper_mve_vcmphi_scalarh,
+          gen_helper_mve_vcmphi_scalarw },
+        { gen_helper_mve_vcmpge_scalarb, gen_helper_mve_vcmpge_scalarh,
+          gen_helper_mve_vcmpge_scalarw },
+        { gen_helper_mve_vcmplt_scalarb, gen_helper_mve_vcmplt_scalarh,
+          gen_helper_mve_vcmplt_scalarw },
+        { gen_helper_mve_vcmpgt_scalarb, gen_helper_mve_vcmpgt_scalarh,
+          gen_helper_mve_vcmpgt_scalarw },
+        { gen_helper_mve_vcmple_scalarb, gen_helper_mve_vcmple_scalarh,
+          gen_helper_mve_vcmple_scalarw },
+    };
+
+    if (size == 3) {
+        return NULL;
+    }
+
+    switch (insn & 0xff811ff0) {
+    case 0xfe010f40:
+        return fns[0][size];
+    case 0xfe010fc0:
+        return fns[1][size];
+    case 0xfe010f60:
+        return fns[2][size];
+    case 0xfe010fe0:
+        return fns[3][size];
+    case 0xfe011f40:
+        return fns[4][size];
+    case 0xfe011fc0:
+        return fns[5][size];
+    case 0xfe011f60:
+        return fns[6][size];
+    case 0xfe011fe0:
+        return fns[7][size];
+    default:
+        return NULL;
+    }
+}
+
+static MVEGenCmpFn *mve_vcmp_fp_fn(uint32_t insn, unsigned size)
+{
+    static MVEGenCmpFn * const fns[6][4] = {
+        { NULL, gen_helper_mve_vfcmpeqh, gen_helper_mve_vfcmpeqs, NULL },
+        { NULL, gen_helper_mve_vfcmpneh, gen_helper_mve_vfcmpnes, NULL },
+        { NULL, gen_helper_mve_vfcmpgeh, gen_helper_mve_vfcmpges, NULL },
+        { NULL, gen_helper_mve_vfcmplth, gen_helper_mve_vfcmplts, NULL },
+        { NULL, gen_helper_mve_vfcmpgth, gen_helper_mve_vfcmpgts, NULL },
+        { NULL, gen_helper_mve_vfcmpleh, gen_helper_mve_vfcmples, NULL },
+    };
+
+    switch (insn & 0xefb11fd1) {
+    case 0xee310f00:
+        return fns[0][size];
+    case 0xee310f80:
+        return fns[1][size];
+    case 0xee311f00:
+        return fns[2][size];
+    case 0xee311f80:
+        return fns[3][size];
+    case 0xee311f01:
+        return fns[4][size];
+    case 0xee311f81:
+        return fns[5][size];
+    default:
+        return NULL;
+    }
+}
+
+static MVEGenScalarCmpFn *mve_vcmp_fp_scalar_fn(uint32_t insn,
+                                                unsigned size)
+{
+    static MVEGenScalarCmpFn * const fns[6][4] = {
+        { NULL, gen_helper_mve_vfcmpeq_scalarh,
+          gen_helper_mve_vfcmpeq_scalars, NULL },
+        { NULL, gen_helper_mve_vfcmpne_scalarh,
+          gen_helper_mve_vfcmpne_scalars, NULL },
+        { NULL, gen_helper_mve_vfcmpge_scalarh,
+          gen_helper_mve_vfcmpge_scalars, NULL },
+        { NULL, gen_helper_mve_vfcmplt_scalarh,
+          gen_helper_mve_vfcmplt_scalars, NULL },
+        { NULL, gen_helper_mve_vfcmpgt_scalarh,
+          gen_helper_mve_vfcmpgt_scalars, NULL },
+        { NULL, gen_helper_mve_vfcmple_scalarh,
+          gen_helper_mve_vfcmple_scalars, NULL },
+    };
+
+    switch (insn & 0xefb11ff0) {
+    case 0xee310f40:
+        return fns[0][size];
+    case 0xee310fc0:
+        return fns[1][size];
+    case 0xee311f40:
+        return fns[2][size];
+    case 0xee311fc0:
+        return fns[3][size];
+    case 0xee311f60:
+        return fns[4][size];
+    case 0xee311fe0:
+        return fns[5][size];
+    default:
+        return NULL;
+    }
+}
+
+static bool trans_mve_vcmp_fp(DisasContext *s, uint32_t insn)
+{
+    MVEGenCmpFn *fn;
+    MVEGenScalarCmpFn *scalar_fn;
+    unsigned size = extract32(insn, 28, 1) ? 1 : 2;
+    uint32_t mask;
+    int qn;
+    int qm;
+    int rm;
+
+    if (!dc_isar_feature(aa32_mve_fp, s)) {
+        return false;
+    }
+
+    fn = mve_vcmp_fp_fn(insn, size);
+    if (fn) {
+        qn = extract32(insn, 17, 3);
+        qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+        mask = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+        return do_mve_vcmp(s, qn, qm, mask, fn);
+    }
+
+    scalar_fn = mve_vcmp_fp_scalar_fn(insn, size);
+    if (scalar_fn) {
+        qn = extract32(insn, 17, 3);
+        rm = extract32(insn, 0, 4);
+        mask = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+        return do_mve_vcmp_scalar(s, qn, rm, mask, scalar_fn);
+    }
+
+    return false;
+}
+
+static bool trans_mve_vcmp(DisasContext *s, uint32_t insn)
+{
+    MVEGenCmpFn *fn;
+    MVEGenScalarCmpFn *scalar_fn;
+    unsigned size = extract32(insn, 20, 2);
+    uint32_t mask;
+    int qn;
+    int qm;
+    int rm;
+
+    fn = mve_vcmp_fn(insn, size);
+    if (fn) {
+        qn = extract32(insn, 17, 3);
+        qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+        mask = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+        return do_mve_vcmp(s, qn, qm, mask, fn);
+    }
+
+    scalar_fn = mve_vcmp_scalar_fn(insn, size);
+    if (scalar_fn) {
+        qn = extract32(insn, 17, 3);
+        rm = extract32(insn, 0, 4);
+        mask = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+        return do_mve_vcmp_scalar(s, qn, rm, mask, scalar_fn);
+    }
+
+    return false;
+}
+
+static bool trans_mve_vimm_1r(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    MVEGenOneOpImmFn *fn;
+    TCGv_ptr qdptr;
+    TCGv_i64 immval;
+    uint64_t imm64;
+    uint32_t imm;
+    unsigned cmode;
+    unsigned op;
+    int qd;
+
+    if ((insn & 0xefb810d0) != 0xef800050) {
+        return false;
+    }
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    imm = (extract32(insn, 28, 1) << 7) |
+          (extract32(insn, 16, 3) << 4) |
+          extract32(insn, 0, 4);
+    cmode = extract32(insn, 8, 4);
+    op = extract32(insn, 5, 1);
+
+    if ((cmode & 1) && cmode < 12) {
+        fn = op ? gen_helper_mve_vandi : gen_helper_mve_vorri;
+    } else {
+        if (cmode == 15 && op) {
+            return false;
+        }
+        fn = gen_helper_mve_vmovi;
+    }
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd)) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    imm64 = asimd_imm_const(imm, cmode, op);
+    qdptr = mve_qreg_ptr(s, qd);
+    immval = tcg_const_i64(tcg_ctx, imm64);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdptr, immval);
+    tcg_temp_free_i64(tcg_ctx, immval);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool mve_decode_shl_size_shift(uint32_t insn, unsigned *size,
+                                      uint32_t *shift)
+{
+    if (extract32(insn, 21, 1)) {
+        *size = 2;
+        *shift = extract32(insn, 16, 5);
+        return true;
+    }
+    if (extract32(insn, 20, 1)) {
+        *size = 1;
+        *shift = extract32(insn, 16, 4);
+        return true;
+    }
+    if (extract32(insn, 19, 1)) {
+        *size = 0;
+        *shift = extract32(insn, 16, 3);
+        return true;
+    }
+    return false;
+}
+
+static bool mve_decode_shr_size_shift(uint32_t insn, unsigned *size,
+                                      uint32_t *shift)
+{
+    uint32_t encoded;
+
+    if (extract32(insn, 21, 1)) {
+        *size = 2;
+        encoded = extract32(insn, 16, 5);
+        *shift = 32 - encoded;
+        return true;
+    }
+    if (extract32(insn, 20, 1)) {
+        *size = 1;
+        encoded = extract32(insn, 16, 4);
+        *shift = 16 - encoded;
+        return true;
+    }
+    if (extract32(insn, 19, 1)) {
+        *size = 0;
+        encoded = extract32(insn, 16, 3);
+        *shift = 8 - encoded;
+        return true;
+    }
+    return false;
+}
+
+static bool mve_decode_shll_size_shift(uint32_t insn, unsigned *size,
+                                       uint32_t *shift)
+{
+    if (extract32(insn, 20, 1)) {
+        *size = 1;
+        *shift = extract32(insn, 16, 4);
+        return true;
+    }
+    if (extract32(insn, 19, 1)) {
+        *size = 0;
+        *shift = extract32(insn, 16, 3);
+        return true;
+    }
+    return false;
+}
+
+static bool mve_decode_shll_esize_size_shift(uint32_t insn, unsigned *size,
+                                             uint32_t *shift)
+{
+    switch (extract32(insn, 18, 2)) {
+    case 0:
+        *size = 0;
+        *shift = 8;
+        return true;
+    case 1:
+        *size = 1;
+        *shift = 16;
+        return true;
+    default:
+        return false;
+    }
+}
+
+static bool do_mve_2shift(DisasContext *s, uint32_t insn,
+                          MVEGenTwoOpShiftFn *fn, unsigned size,
+                          uint32_t shift, bool negateshift)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_ptr qmptr;
+    TCGv_i32 shiftval;
+    int qd;
+    int qm;
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    qm = (extract32(insn, 5, 1) << 3) | extract32(insn, 1, 3);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd | qm) || !fn) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    if (negateshift) {
+        shift = -shift;
+    }
+    qdptr = mve_qreg_ptr(s, qd);
+    qmptr = mve_qreg_ptr(s, qm);
+    shiftval = tcg_const_i32(tcg_ctx, shift);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdptr, qmptr, shiftval);
+    tcg_temp_free_i32(tcg_ctx, shiftval);
+    tcg_temp_free_ptr(tcg_ctx, qmptr);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool do_mve_2shift_scalar(DisasContext *s, uint32_t insn,
+                                 MVEGenTwoOpShiftFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdaptr;
+    TCGv_i32 rmval;
+    int qda;
+    int rm;
+
+    qda = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    rm = extract32(insn, 0, 4);
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qda) || rm == 13 || rm == 15 || !fn) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdaptr = mve_qreg_ptr(s, qda);
+    rmval = load_reg(s, rm);
+    fn(tcg_ctx, tcg_ctx->cpu_env, qdaptr, qdaptr, rmval);
+    tcg_temp_free_i32(tcg_ctx, rmval);
+    tcg_temp_free_ptr(tcg_ctx, qdaptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_mve_scalar_shift(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpShiftFn * const vshls_fns[] = {
+        gen_helper_mve_vshli_sb,
+        gen_helper_mve_vshli_sh,
+        gen_helper_mve_vshli_sw,
+        NULL,
+    };
+    MVEGenTwoOpShiftFn * const vshlu_fns[] = {
+        gen_helper_mve_vshli_ub,
+        gen_helper_mve_vshli_uh,
+        gen_helper_mve_vshli_uw,
+        NULL,
+    };
+    MVEGenTwoOpShiftFn * const vrshls_fns[] = {
+        gen_helper_mve_vrshli_sb,
+        gen_helper_mve_vrshli_sh,
+        gen_helper_mve_vrshli_sw,
+        NULL,
+    };
+    MVEGenTwoOpShiftFn * const vrshlu_fns[] = {
+        gen_helper_mve_vrshli_ub,
+        gen_helper_mve_vrshli_uh,
+        gen_helper_mve_vrshli_uw,
+        NULL,
+    };
+    MVEGenTwoOpShiftFn * const vqshls_fns[] = {
+        gen_helper_mve_vqshli_sb,
+        gen_helper_mve_vqshli_sh,
+        gen_helper_mve_vqshli_sw,
+        NULL,
+    };
+    MVEGenTwoOpShiftFn * const vqshlu_fns[] = {
+        gen_helper_mve_vqshli_ub,
+        gen_helper_mve_vqshli_uh,
+        gen_helper_mve_vqshli_uw,
+        NULL,
+    };
+    MVEGenTwoOpShiftFn * const vqrshls_fns[] = {
+        gen_helper_mve_vqrshli_sb,
+        gen_helper_mve_vqrshli_sh,
+        gen_helper_mve_vqrshli_sw,
+        NULL,
+    };
+    MVEGenTwoOpShiftFn * const vqrshlu_fns[] = {
+        gen_helper_mve_vqrshli_ub,
+        gen_helper_mve_vqrshli_uh,
+        gen_helper_mve_vqrshli_uw,
+        NULL,
+    };
+    MVEGenTwoOpShiftFn *fn = NULL;
+    unsigned size = extract32(insn, 18, 2);
+
+    switch (insn & 0xffb31ff0) {
+    case 0xee311e60:
+        fn = vshls_fns[size];
+        break;
+    case 0xfe311e60:
+        fn = vshlu_fns[size];
+        break;
+    case 0xee331e60:
+        fn = vrshls_fns[size];
+        break;
+    case 0xfe331e60:
+        fn = vrshlu_fns[size];
+        break;
+    case 0xee311ee0:
+        fn = vqshls_fns[size];
+        break;
+    case 0xfe311ee0:
+        fn = vqshlu_fns[size];
+        break;
+    case 0xee331ee0:
+        fn = vqrshls_fns[size];
+        break;
+    case 0xfe331ee0:
+        fn = vqrshlu_fns[size];
+        break;
+    default:
+        break;
+    }
+
+    return fn ? do_mve_2shift_scalar(s, insn, fn) : false;
+}
+
+static void gen_mve_gpr_sqshll(TCGContext *tcg_ctx, TCGv_i64 r,
+                               TCGv_i64 n, int64_t shift)
+{
+    TCGv_i32 shiftv = tcg_const_i32(tcg_ctx, shift);
+
+    gen_helper_mve_sqshll(tcg_ctx, r, tcg_ctx->cpu_env, n, shiftv);
+    tcg_temp_free_i32(tcg_ctx, shiftv);
+}
+
+static void gen_mve_gpr_uqshll(TCGContext *tcg_ctx, TCGv_i64 r,
+                               TCGv_i64 n, int64_t shift)
+{
+    TCGv_i32 shiftv = tcg_const_i32(tcg_ctx, shift);
+
+    gen_helper_mve_uqshll(tcg_ctx, r, tcg_ctx->cpu_env, n, shiftv);
+    tcg_temp_free_i32(tcg_ctx, shiftv);
+}
+
+static void gen_mve_gpr_sqshl(TCGContext *tcg_ctx, TCGv_i32 r, TCGv_i32 n,
+                              int32_t shift)
+{
+    TCGv_i32 shiftv = tcg_const_i32(tcg_ctx, shift);
+
+    gen_helper_mve_sqshl(tcg_ctx, r, tcg_ctx->cpu_env, n, shiftv);
+    tcg_temp_free_i32(tcg_ctx, shiftv);
+}
+
+static void gen_mve_gpr_uqshl(TCGContext *tcg_ctx, TCGv_i32 r, TCGv_i32 n,
+                              int32_t shift)
+{
+    TCGv_i32 shiftv = tcg_const_i32(tcg_ctx, shift);
+
+    gen_helper_mve_uqshl(tcg_ctx, r, tcg_ctx->cpu_env, n, shiftv);
+    tcg_temp_free_i32(tcg_ctx, shiftv);
+}
+
+static bool do_mve_gpr_shl_ri(DisasContext *s, uint32_t insn,
+                              MVEGenGPRWideShiftImmFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i64 rda;
+    unsigned rdalo;
+    unsigned rdahi;
+    uint32_t shim;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_V8_1M)) {
+        return false;
+    }
+
+    rdalo = extract32(insn, 17, 3) << 1;
+    rdahi = (extract32(insn, 9, 3) << 1) | 1;
+    if (rdahi == 15) {
+        return false;
+    }
+    if (!dc_isar_feature(aa32_mve, s) ||
+        !arm_dc_feature(s, ARM_FEATURE_M_MAIN) ||
+        rdahi == 13) {
+        unallocated_encoding(s);
+        return true;
+    }
+
+    shim = (extract32(insn, 12, 3) << 2) | extract32(insn, 6, 2);
+    if (shim == 0) {
+        shim = 32;
+    }
+
+    rda = tcg_temp_new_i64(tcg_ctx);
+    tcg_gen_concat_i32_i64(tcg_ctx, rda, tcg_ctx->cpu_R[rdalo],
+                           tcg_ctx->cpu_R[rdahi]);
+    fn(tcg_ctx, rda, rda, shim);
+    tcg_gen_extrl_i64_i32(tcg_ctx, tcg_ctx->cpu_R[rdalo], rda);
+    tcg_gen_extrh_i64_i32(tcg_ctx, tcg_ctx->cpu_R[rdahi], rda);
+    tcg_temp_free_i64(tcg_ctx, rda);
+    return true;
+}
+
+static bool do_mve_gpr_shl_rr(DisasContext *s, uint32_t insn,
+                              MVEGenGPRWideShiftFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i64 rda;
+    unsigned rdalo;
+    unsigned rdahi;
+    unsigned rm;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_V8_1M)) {
+        return false;
+    }
+
+    rdalo = extract32(insn, 17, 3) << 1;
+    rdahi = (extract32(insn, 9, 3) << 1) | 1;
+    if (rdahi == 15) {
+        return false;
+    }
+
+    rm = extract32(insn, 12, 4);
+    if (!dc_isar_feature(aa32_mve, s) ||
+        !arm_dc_feature(s, ARM_FEATURE_M_MAIN) ||
+        rdahi == 13 || rm == 13 || rm == 15 ||
+        rm == rdahi || rm == rdalo) {
+        unallocated_encoding(s);
+        return true;
+    }
+
+    rda = tcg_temp_new_i64(tcg_ctx);
+    tcg_gen_concat_i32_i64(tcg_ctx, rda, tcg_ctx->cpu_R[rdalo],
+                           tcg_ctx->cpu_R[rdahi]);
+    fn(tcg_ctx, rda, tcg_ctx->cpu_env, rda, tcg_ctx->cpu_R[rm]);
+    tcg_gen_extrl_i64_i32(tcg_ctx, tcg_ctx->cpu_R[rdalo], rda);
+    tcg_gen_extrh_i64_i32(tcg_ctx, tcg_ctx->cpu_R[rdahi], rda);
+    tcg_temp_free_i64(tcg_ctx, rda);
+    return true;
+}
+
+static bool do_mve_gpr_sh_ri(DisasContext *s, uint32_t insn,
+                             MVEGenGPRShiftImmFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    unsigned rda;
+    uint32_t shim;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_V8_1M)) {
+        return false;
+    }
+
+    rda = extract32(insn, 16, 4);
+    if (!dc_isar_feature(aa32_mve, s) ||
+        !arm_dc_feature(s, ARM_FEATURE_M_MAIN) ||
+        rda == 13 || rda == 15) {
+        unallocated_encoding(s);
+        return true;
+    }
+
+    shim = (extract32(insn, 12, 3) << 2) | extract32(insn, 6, 2);
+    if (shim == 0) {
+        shim = 32;
+    }
+    fn(tcg_ctx, tcg_ctx->cpu_R[rda], tcg_ctx->cpu_R[rda], shim);
+    return true;
+}
+
+static bool do_mve_gpr_sh_rr(DisasContext *s, uint32_t insn,
+                             MVEGenGPRShiftFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    unsigned rda;
+    unsigned rm;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_V8_1M)) {
+        return false;
+    }
+
+    rda = extract32(insn, 16, 4);
+    rm = extract32(insn, 12, 4);
+    if (!dc_isar_feature(aa32_mve, s) ||
+        !arm_dc_feature(s, ARM_FEATURE_M_MAIN) ||
+        rda == 13 || rda == 15 || rm == 13 || rm == 15 ||
+        rm == rda) {
+        unallocated_encoding(s);
+        return true;
+    }
+
+    fn(tcg_ctx, tcg_ctx->cpu_R[rda], tcg_ctx->cpu_env,
+       tcg_ctx->cpu_R[rda], tcg_ctx->cpu_R[rm]);
+    return true;
+}
+
+static bool trans_mve_gpr_shift(DisasContext *s, uint32_t insn)
+{
+    uint32_t key;
+
+    key = insn & 0xfff08f3f;
+    switch (key) {
+    case 0xea500f0f:
+        return do_mve_gpr_sh_ri(s, insn, gen_mve_gpr_uqshl);
+    case 0xea500f1f:
+        return do_mve_gpr_sh_ri(s, insn, gen_mve_urshr32_i32);
+    case 0xea500f2f:
+        return do_mve_gpr_sh_ri(s, insn, gen_mve_srshr32_i32);
+    case 0xea500f3f:
+        return do_mve_gpr_sh_ri(s, insn, gen_mve_gpr_sqshl);
+    default:
+        break;
+    }
+
+    key = insn & 0xfff1813f;
+    switch (key) {
+    case 0xea50010f:
+        return do_mve_gpr_shl_ri(s, insn, gen_mve_shl64_i64);
+    case 0xea51010f:
+        return do_mve_gpr_shl_ri(s, insn, gen_mve_gpr_uqshll);
+    case 0xea50011f:
+        return do_mve_gpr_shl_ri(s, insn, gen_mve_shr64_i64);
+    case 0xea51011f:
+        return do_mve_gpr_shl_ri(s, insn, gen_mve_urshr64_i64);
+    case 0xea50012f:
+        return do_mve_gpr_shl_ri(s, insn, gen_mve_sar64_i64);
+    case 0xea51012f:
+        return do_mve_gpr_shl_ri(s, insn, gen_mve_srshr64_i64);
+    case 0xea51013f:
+        return do_mve_gpr_shl_ri(s, insn, gen_mve_gpr_sqshll);
+    default:
+        break;
+    }
+
+    key = insn & 0xfff00fff;
+    switch (key) {
+    case 0xea500f0d:
+        return do_mve_gpr_sh_rr(s, insn, gen_helper_mve_uqrshl);
+    case 0xea500f2d:
+        return do_mve_gpr_sh_rr(s, insn, gen_helper_mve_sqrshr);
+    default:
+        break;
+    }
+
+    key = insn & 0xfff101ff;
+    switch (key) {
+    case 0xea50010d:
+        return do_mve_gpr_shl_rr(s, insn, gen_helper_mve_ushll);
+    case 0xea51010d:
+        return do_mve_gpr_shl_rr(s, insn, gen_helper_mve_uqrshll);
+    case 0xea50012d:
+        return do_mve_gpr_shl_rr(s, insn, gen_helper_mve_sshrl);
+    case 0xea51012d:
+        return do_mve_gpr_shl_rr(s, insn, gen_helper_mve_sqrshrl);
+    case 0xea51018d:
+        return do_mve_gpr_shl_rr(s, insn, gen_helper_mve_uqrshll48);
+    case 0xea5101ad:
+        return do_mve_gpr_shl_rr(s, insn, gen_helper_mve_sqrshrl48);
+    default:
+        return false;
+    }
+}
+
+static bool trans_mve_shift_imm(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpShiftFn *fn = NULL;
+    unsigned size;
+    uint32_t shift;
+    uint32_t key;
+    bool negateshift = false;
+    bool right_shift = false;
+
+    key = insn & 0xff801fd1;
+    switch (key) {
+    case 0xef800550:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vshli_ub,
+                gen_helper_mve_vshli_uh,
+                gen_helper_mve_vshli_uw,
+            };
+
+            if (!mve_decode_shl_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xef800050:
+        right_shift = true;
+        negateshift = true;
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vshli_sb,
+                gen_helper_mve_vshli_sh,
+                gen_helper_mve_vshli_sw,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xff800050:
+        right_shift = true;
+        negateshift = true;
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vshli_ub,
+                gen_helper_mve_vshli_uh,
+                gen_helper_mve_vshli_uw,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xef800250:
+        right_shift = true;
+        negateshift = true;
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vrshli_sb,
+                gen_helper_mve_vrshli_sh,
+                gen_helper_mve_vrshli_sw,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xff800250:
+        right_shift = true;
+        negateshift = true;
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vrshli_ub,
+                gen_helper_mve_vrshli_uh,
+                gen_helper_mve_vrshli_uw,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xff800450:
+        right_shift = true;
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vsrib,
+                gen_helper_mve_vsrih,
+                gen_helper_mve_vsriw,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xff800550:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vslib,
+                gen_helper_mve_vslih,
+                gen_helper_mve_vsliw,
+            };
+
+            if (!mve_decode_shl_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xef800750:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqshli_sb,
+                gen_helper_mve_vqshli_sh,
+                gen_helper_mve_vqshli_sw,
+            };
+
+            if (!mve_decode_shl_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xff800750:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqshli_ub,
+                gen_helper_mve_vqshli_uh,
+                gen_helper_mve_vqshli_uw,
+            };
+
+            if (!mve_decode_shl_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xff800650:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqshlui_sb,
+                gen_helper_mve_vqshlui_sh,
+                gen_helper_mve_vqshlui_sw,
+            };
+
+            if (!mve_decode_shl_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    default:
+        return false;
+    }
+
+    return do_mve_2shift(s, insn, fn, size, shift,
+                         right_shift && negateshift);
+}
+
+static bool trans_mve_vshll(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpShiftFn *fn = NULL;
+    unsigned size;
+    uint32_t shift;
+    uint32_t key;
+    bool esize_shift = false;
+
+    key = insn & 0xffa01fd1;
+    switch (key) {
+    case 0xeea00f40:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vshllbsb,
+                gen_helper_mve_vshllbsh,
+            };
+
+            fn = fns[0];
+            if (!mve_decode_shll_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xfea00f40:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vshllbub,
+                gen_helper_mve_vshllbuh,
+            };
+
+            if (!mve_decode_shll_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xeea01f40:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vshlltsb,
+                gen_helper_mve_vshlltsh,
+            };
+
+            if (!mve_decode_shll_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xfea01f40:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vshlltub,
+                gen_helper_mve_vshlltuh,
+            };
+
+            if (!mve_decode_shll_size_shift(insn, &size, &shift)) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    default:
+        esize_shift = true;
+        break;
+    }
+
+    if (esize_shift) {
+        key = insn & 0xffb31fd1;
+        switch (key) {
+        case 0xee310e01:
+            {
+                MVEGenTwoOpShiftFn * const fns[] = {
+                    gen_helper_mve_vshllbsb,
+                    gen_helper_mve_vshllbsh,
+                };
+
+                if (!mve_decode_shll_esize_size_shift(insn, &size, &shift)) {
+                    return false;
+                }
+                fn = fns[size];
+            }
+            break;
+        case 0xfe310e01:
+            {
+                MVEGenTwoOpShiftFn * const fns[] = {
+                    gen_helper_mve_vshllbub,
+                    gen_helper_mve_vshllbuh,
+                };
+
+                if (!mve_decode_shll_esize_size_shift(insn, &size, &shift)) {
+                    return false;
+                }
+                fn = fns[size];
+            }
+            break;
+        case 0xee311e01:
+            {
+                MVEGenTwoOpShiftFn * const fns[] = {
+                    gen_helper_mve_vshlltsb,
+                    gen_helper_mve_vshlltsh,
+                };
+
+                if (!mve_decode_shll_esize_size_shift(insn, &size, &shift)) {
+                    return false;
+                }
+                fn = fns[size];
+            }
+            break;
+        case 0xfe311e01:
+            {
+                MVEGenTwoOpShiftFn * const fns[] = {
+                    gen_helper_mve_vshlltub,
+                    gen_helper_mve_vshlltuh,
+                };
+
+                if (!mve_decode_shll_esize_size_shift(insn, &size, &shift)) {
+                    return false;
+                }
+                fn = fns[size];
+            }
+            break;
+        default:
+            return false;
+        }
+    }
+
+    return do_mve_2shift(s, insn, fn, size, shift, false);
+}
+
+static bool trans_mve_shrn(DisasContext *s, uint32_t insn)
+{
+    MVEGenTwoOpShiftFn *fn = NULL;
+    unsigned size;
+    uint32_t shift;
+    uint32_t key;
+
+    key = insn & 0xff801fd1;
+    switch (key) {
+    case 0xee800fc1:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vshrnbb,
+                gen_helper_mve_vshrnbh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xee801fc1:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vshrntb,
+                gen_helper_mve_vshrnth,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xfe800fc1:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vrshrnbb,
+                gen_helper_mve_vrshrnbh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xfe801fc1:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vrshrntb,
+                gen_helper_mve_vrshrnth,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xee800f40:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqshrnb_sb,
+                gen_helper_mve_vqshrnb_sh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xee801f40:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqshrnt_sb,
+                gen_helper_mve_vqshrnt_sh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xfe800f40:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqshrnb_ub,
+                gen_helper_mve_vqshrnb_uh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xfe801f40:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqshrnt_ub,
+                gen_helper_mve_vqshrnt_uh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xee800fc0:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqshrunbb,
+                gen_helper_mve_vqshrunbh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xee801fc0:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqshruntb,
+                gen_helper_mve_vqshrunth,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xee800f41:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqrshrnb_sb,
+                gen_helper_mve_vqrshrnb_sh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xee801f41:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqrshrnt_sb,
+                gen_helper_mve_vqrshrnt_sh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xfe800f41:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqrshrnb_ub,
+                gen_helper_mve_vqrshrnb_uh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xfe801f41:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqrshrnt_ub,
+                gen_helper_mve_vqrshrnt_uh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xfe800fc0:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqrshrunbb,
+                gen_helper_mve_vqrshrunbh,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    case 0xfe801fc0:
+        {
+            MVEGenTwoOpShiftFn * const fns[] = {
+                gen_helper_mve_vqrshruntb,
+                gen_helper_mve_vqrshrunth,
+            };
+
+            if (!mve_decode_shr_size_shift(insn, &size, &shift) ||
+                size == 2) {
+                return false;
+            }
+            fn = fns[size];
+        }
+        break;
+    default:
+        return false;
+    }
+
+    return do_mve_2shift(s, insn, fn, size, shift, false);
+}
+
+static bool trans_mve_vshlc(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_i32 rdmval;
+    TCGv_i32 shiftval;
+    int qd;
+    int rdm;
+    uint32_t shift;
+
+    if ((insn & 0xffa01ff0) != 0xeea00fc0) {
+        return false;
+    }
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    rdm = extract32(insn, 0, 4);
+    shift = extract32(insn, 16, 5);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd) ||
+        rdm == 13 || rdm == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    rdmval = load_reg(s, rdm);
+    shiftval = tcg_const_i32(tcg_ctx, shift);
+    gen_helper_mve_vshlc(tcg_ctx, rdmval, tcg_ctx->cpu_env, qdptr, rdmval,
+                         shiftval);
+    tcg_temp_free_i32(tcg_ctx, shiftval);
+    store_reg(s, rdm, rdmval);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static void gen_mve_dup_i32(TCGContext *tcg_ctx, TCGv_i32 val,
+                            unsigned size)
+{
+    TCGv_i32 tmp;
+
+    switch (size) {
+    case 0:
+        tmp = tcg_temp_new_i32(tcg_ctx);
+        tcg_gen_ext8u_i32(tcg_ctx, val, val);
+        tcg_gen_shli_i32(tcg_ctx, tmp, val, 8);
+        tcg_gen_or_i32(tcg_ctx, val, val, tmp);
+        tcg_gen_shli_i32(tcg_ctx, tmp, val, 16);
+        tcg_gen_or_i32(tcg_ctx, val, val, tmp);
+        tcg_temp_free_i32(tcg_ctx, tmp);
+        break;
+    case 1:
+        tmp = tcg_temp_new_i32(tcg_ctx);
+        tcg_gen_ext16u_i32(tcg_ctx, val, val);
+        tcg_gen_shli_i32(tcg_ctx, tmp, val, 16);
+        tcg_gen_or_i32(tcg_ctx, val, val, tmp);
+        tcg_temp_free_i32(tcg_ctx, tmp);
+        break;
+    case 2:
+        break;
+    default:
+        g_assert_not_reached();
+    }
+}
+
+static bool trans_mve_vdup(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_i32 rtval;
+    uint32_t key;
+    unsigned size;
+    int qd;
+    int rt;
+
+    key = insn & 0xfff10f7f;
+    switch (key) {
+    case 0xeee00b10:
+        size = 0;
+        break;
+    case 0xeea00b30:
+        size = 1;
+        break;
+    case 0xeea00b10:
+        size = 2;
+        break;
+    default:
+        return false;
+    }
+
+    qd = (extract32(insn, 7, 1) << 3) | extract32(insn, 17, 3);
+    rt = extract32(insn, 12, 4);
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd) ||
+        rt == 13 || rt == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    rtval = load_reg(s, rt);
+    gen_mve_dup_i32(tcg_ctx, rtval, size);
+    gen_helper_mve_vdup(tcg_ctx, tcg_ctx->cpu_env, qdptr, rtval);
+    tcg_temp_free_i32(tcg_ctx, rtval);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool do_mve_vidup(DisasContext *s, int qd, int rn, uint32_t imm,
+                         MVEGenVIDUPFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_i32 rnval;
+    TCGv_i32 immval;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd)) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    rnval = load_reg(s, rn);
+    immval = tcg_const_i32(tcg_ctx, imm);
+    fn(tcg_ctx, rnval, tcg_ctx->cpu_env, qdptr, rnval, immval);
+    tcg_temp_free_i32(tcg_ctx, immval);
+    store_reg(s, rn, rnval);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool do_mve_viwdup(DisasContext *s, int qd, int rn, int rm,
+                          uint32_t imm, MVEGenVIWDUPFn *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr qdptr;
+    TCGv_i32 rnval;
+    TCGv_i32 rmval;
+    TCGv_i32 immval;
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !dc_isar_feature(aa32_mve, s) ||
+        !mve_check_qreg_bank(qd) ||
+        rm == 13 || rm == 15) {
+        return false;
+    }
+
+    if (!mve_eci_check(s) || !vfp_access_check(s)) {
+        return true;
+    }
+
+    qdptr = mve_qreg_ptr(s, qd);
+    rnval = load_reg(s, rn);
+    rmval = load_reg(s, rm);
+    immval = tcg_const_i32(tcg_ctx, imm);
+    fn(tcg_ctx, rnval, tcg_ctx->cpu_env, qdptr, rnval, rmval, immval);
+    tcg_temp_free_i32(tcg_ctx, immval);
+    tcg_temp_free_i32(tcg_ctx, rmval);
+    store_reg(s, rn, rnval);
+    tcg_temp_free_ptr(tcg_ctx, qdptr);
+
+    mve_update_eci(s);
+    s->mve_no_pred = false;
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_mve_vidup(DisasContext *s, uint32_t insn)
+{
+    MVEGenVIDUPFn * const vidup_fns[] = {
+        gen_helper_mve_vidupb,
+        gen_helper_mve_viduph,
+        gen_helper_mve_vidupw,
+        NULL,
+    };
+    MVEGenVIWDUPFn * const viwdup_fns[] = {
+        gen_helper_mve_viwdupb,
+        gen_helper_mve_viwduph,
+        gen_helper_mve_viwdupw,
+        NULL,
+    };
+    MVEGenVIWDUPFn * const vdwdup_fns[] = {
+        gen_helper_mve_vdwdupb,
+        gen_helper_mve_vdwduph,
+        gen_helper_mve_vdwdupw,
+        NULL,
+    };
+    unsigned size;
+    uint32_t imm;
+    int qd;
+    int rn;
+    int rm;
+
+    size = extract32(insn, 20, 2);
+    if (size == 3) {
+        return false;
+    }
+
+    qd = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    rn = extract32(insn, 17, 3) * 2;
+    rm = extract32(insn, 1, 3) * 2 + 1;
+    imm = 1U << ((extract32(insn, 7, 1) << 1) | extract32(insn, 0, 1));
+
+    switch (insn & 0xff811f7e) {
+    case 0xee010f6e:
+        return do_mve_vidup(s, qd, rn, imm, vidup_fns[size]);
+    case 0xee011f6e:
+        return do_mve_vidup(s, qd, rn, -imm, vidup_fns[size]);
+    default:
+        break;
+    }
+
+    switch (insn & 0xff811f70) {
+    case 0xee010f60:
+        return do_mve_viwdup(s, qd, rn, rm, imm, viwdup_fns[size]);
+    case 0xee011f60:
+        return do_mve_viwdup(s, qd, rn, rm, imm, vdwdup_fns[size]);
+    default:
+        return false;
+    }
 }
 
 /*
@@ -11131,7 +16037,49 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
      * Note disas_vfp is written for a32 with cond field in the
      * top nibble.  The t32 encoding requires 0xe in the top nibble.
      */
-    if (disas_t32(s, insn) ||
+    if (trans_m_profile_vlldm_vlstm(s, insn) ||
+        trans_m_profile_vscclrm(s, insn) ||
+        trans_m_profile_sysreg_mem(s, insn) ||
+        trans_mve_vctp(s, insn) ||
+        trans_mve_vpnot(s, insn) ||
+        trans_mve_vpst(s, insn) ||
+        trans_mve_vpsel(s, insn) ||
+        trans_mve_vcmp_fp(s, insn) ||
+        trans_mve_vcmp(s, insn) ||
+        trans_mve_vimm_1r(s, insn) ||
+        trans_mve_scalar_shift(s, insn) ||
+        trans_mve_gpr_shift(s, insn) ||
+        trans_mve_fp_vcvt_fixed(s, insn) ||
+        trans_mve_shift_imm(s, insn) ||
+        trans_mve_fp_nma(s, insn) ||
+        trans_mve_movn(s, insn) ||
+        trans_mve_vshll(s, insn) ||
+        trans_mve_shrn(s, insn) ||
+        trans_mve_vshlc(s, insn) ||
+        trans_mve_vmlaldav(s, insn) ||
+        trans_mve_vmladav(s, insn) ||
+        trans_mve_vmaxnmv(s, insn) ||
+        trans_mve_vmaxv(s, insn) ||
+        trans_mve_vaddv(s, insn) ||
+        trans_mve_vaddlv(s, insn) ||
+        trans_mve_vabav(s, insn) ||
+        trans_mve_vdup(s, insn) ||
+        trans_mve_vidup(s, insn) ||
+        trans_mve_vmov_2gp(s, insn) ||
+        trans_mve_fp_scalar_2op(s, insn) ||
+        trans_mve_scalar_qdmull(s, insn) ||
+        trans_mve_scalar_2op(s, insn) ||
+        trans_mve_fp_vcmul(s, insn) ||
+        trans_mve_fp_2op(s, insn) ||
+        trans_mve_simple_2op(s, insn) ||
+        trans_mve_fp_convert_round(s, insn) ||
+        trans_mve_simple_1op(s, insn) ||
+        trans_mve_vldst_wn(s, insn) ||
+        trans_mve_vldst_il(s, insn) ||
+        trans_mve_vldst_sg_imm(s, insn) ||
+        trans_mve_vldst_sg(s, insn) ||
+        trans_mve_vldr_vstr(s, insn) ||
+        disas_t32(s, insn) ||
         disas_vfp_uncond(s, insn) ||
         ((insn >> 28) == 0xe && disas_vfp(s, insn))) {
         return;
@@ -11250,8 +16198,16 @@ static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
     dc->thumb = FIELD_EX32(tb_flags, TBFLAG_AM32, THUMB);
     dc->be_data = FIELD_EX32(tb_flags, TBFLAG_ANY, BE_DATA) ? MO_BE : MO_LE;
     condexec = FIELD_EX32(tb_flags, TBFLAG_AM32, CONDEXEC);
-    dc->condexec_mask = (condexec & 0xf) << 1;
-    dc->condexec_cond = condexec >> 4;
+    dc->eci = 0;
+    dc->eci_handled = false;
+    dc->condexec_mask = 0;
+    dc->condexec_cond = 0;
+    if (condexec & 0xf) {
+        dc->condexec_mask = (condexec & 0xf) << 1;
+        dc->condexec_cond = condexec >> 4;
+    } else if (arm_feature(env, ARM_FEATURE_M)) {
+        dc->eci = condexec >> 4;
+    }
 
     core_mmu_idx = FIELD_EX32(tb_flags, TBFLAG_ANY, MMUIDX);
     dc->mmu_idx = core_to_arm_mmu_idx(env, core_mmu_idx);
@@ -11271,7 +16227,9 @@ static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
         dc->v7m_new_fp_ctxt_needed =
             FIELD_EX32(tb_flags, TBFLAG_M32, NEW_FP_CTXT_NEEDED);
         dc->v7m_lspact = FIELD_EX32(tb_flags, TBFLAG_M32, LSPACT);
+        dc->mve_no_pred = FIELD_EX32(tb_flags, TBFLAG_M32, MVE_NO_PRED);
     } else {
+        dc->mve_no_pred = false;
         dc->be_data =
             FIELD_EX32(tb_flags, TBFLAG_ANY, BE_DATA) ? MO_BE : MO_LE;
         dc->debug_target_el =
@@ -11381,10 +16339,15 @@ static void arm_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+    uint32_t condexec;
 
-    tcg_gen_insn_start(tcg_ctx, dc->base.pc_next,
-                       (dc->condexec_cond << 4) | (dc->condexec_mask >> 1),
-                       0);
+    if (dc->eci) {
+        condexec = dc->eci << 4;
+    } else {
+        condexec = (dc->condexec_cond << 4) | (dc->condexec_mask >> 1);
+    }
+
+    tcg_gen_insn_start(tcg_ctx, dc->base.pc_next, condexec, 0);
     dc->insn_start = tcg_last_op(tcg_ctx);
 }
 
@@ -11547,6 +16510,8 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     uint32_t insn;
     bool is_16bit;
     uint32_t insn_size;
+    TCGOp *insn_eci_rewind = NULL;
+    target_ulong insn_eci_pc_curr = 0;
 
     if (arm_pre_translate_insn(dc)) {
         return;
@@ -11570,6 +16535,11 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         dc->base.pc_next += 2;
     }
     dc->insn = insn;
+
+    if (dc->eci) {
+        insn_eci_rewind = tcg_last_op(tcg_ctx);
+        insn_eci_pc_curr = dc->pc_curr;
+    }
 
     if (dc->condexec_mask && !thumb_insn_is_unconditional(dc, insn)) {
         uint32_t cond = dc->condexec_cond;
@@ -11620,6 +16590,14 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         if (dc->condexec_mask == 0) {
             dc->condexec_cond = 0;
         }
+    }
+
+    if (dc->eci && !dc->eci_handled) {
+        tcg_remove_ops_after(tcg_ctx, insn_eci_rewind);
+        dc->pc_curr = insn_eci_pc_curr;
+        dc->condjmp = 0;
+        gen_exception_insn(dc, dc->pc_curr, EXCP_INVSTATE,
+                           syn_uncategorized(), default_exception_el(dc));
     }
 
     arm_post_translate_insn(dc);

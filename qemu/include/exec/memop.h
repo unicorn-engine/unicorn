@@ -19,12 +19,16 @@ typedef enum MemOp {
     MO_16    = 1,
     MO_32    = 2,
     MO_64    = 3,
-    MO_SIZE  = 3,   /* Mask for the above.  */
+    MO_128   = 4,
+    MO_256   = 5,
+    MO_512   = 6,
+    MO_1024  = 7,
+    MO_SIZE  = 0x07,   /* Mask for the above.  */
 
-    MO_SIGN  = 4,   /* Sign-extended, otherwise zero-extended.  */
+    MO_SIGN  = 0x08,   /* Sign-extended, otherwise zero-extended.  */
 
-    MO_BSWAP = 8,   /* Host reverse endian.  */
-#ifdef HOST_WORDS_BIGENDIAN
+    MO_BSWAP = 0x10,   /* Host reverse endian.  */
+#if HOST_BIG_ENDIAN
     MO_LE    = MO_BSWAP,
     MO_BE    = 0,
 #else
@@ -32,11 +36,19 @@ typedef enum MemOp {
     MO_BE    = MO_BSWAP,
 #endif
 #ifdef NEED_CPU_H
-#ifdef TARGET_WORDS_BIGENDIAN
+#if defined(TARGET_BIG_ENDIAN)
+# define MEMOP_TARGET_BIG_ENDIAN TARGET_BIG_ENDIAN
+#elif defined(TARGET_WORDS_BIGENDIAN)
+# define MEMOP_TARGET_BIG_ENDIAN 1
+#else
+# define MEMOP_TARGET_BIG_ENDIAN 0
+#endif
+#if MEMOP_TARGET_BIG_ENDIAN
     MO_TE    = MO_BE,
 #else
     MO_TE    = MO_LE,
 #endif
+#undef MEMOP_TARGET_BIG_ENDIAN
 #endif
 
     /*
@@ -59,8 +71,8 @@ typedef enum MemOp {
      * - an alignment to a specified size, which may be more or less than
      *   the access size (MO_ALIGN_x where 'x' is a size in bytes);
      */
-    MO_ASHIFT = 4,
-    MO_AMASK = 7 << MO_ASHIFT,
+    MO_ASHIFT = 5,
+    MO_AMASK = 0x7 << MO_ASHIFT,
 #ifdef NEED_CPU_H
 #ifdef TARGET_ALIGNED_ONLY
     MO_ALIGN = 0,
@@ -81,29 +93,41 @@ typedef enum MemOp {
     MO_UB    = MO_8,
     MO_UW    = MO_16,
     MO_UL    = MO_32,
+    MO_UQ    = MO_64,
+    MO_UO    = MO_128,
     MO_SB    = MO_SIGN | MO_8,
     MO_SW    = MO_SIGN | MO_16,
     MO_SL    = MO_SIGN | MO_32,
-    MO_Q     = MO_64,
+    MO_SQ    = MO_SIGN | MO_64,
+    MO_SO    = MO_SIGN | MO_128,
 
     MO_LEUW  = MO_LE | MO_UW,
     MO_LEUL  = MO_LE | MO_UL,
+    MO_LEUQ  = MO_LE | MO_UQ,
     MO_LESW  = MO_LE | MO_SW,
     MO_LESL  = MO_LE | MO_SL,
-    MO_LEQ   = MO_LE | MO_Q,
+    MO_LESQ  = MO_LE | MO_SQ,
 
     MO_BEUW  = MO_BE | MO_UW,
     MO_BEUL  = MO_BE | MO_UL,
+    MO_BEUQ  = MO_BE | MO_UQ,
     MO_BESW  = MO_BE | MO_SW,
     MO_BESL  = MO_BE | MO_SL,
-    MO_BEQ   = MO_BE | MO_Q,
+    MO_BESQ  = MO_BE | MO_SQ,
+
+    MO_Q     = MO_UQ,
+    MO_LEQ   = MO_LEUQ,
+    MO_BEQ   = MO_BEUQ,
 
 #ifdef NEED_CPU_H
     MO_TEUW  = MO_TE | MO_UW,
     MO_TEUL  = MO_TE | MO_UL,
+    MO_TEUQ  = MO_TE | MO_UQ,
+    MO_TEUO  = MO_TE | MO_UO,
     MO_TESW  = MO_TE | MO_SW,
     MO_TESL  = MO_TE | MO_SL,
-    MO_TEQ   = MO_TE | MO_Q,
+    MO_TESQ  = MO_TE | MO_SQ,
+    MO_TEQ   = MO_TEUQ,
 #endif
 
     MO_SSIZE = MO_SIZE | MO_SIGN,

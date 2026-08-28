@@ -44,7 +44,7 @@ static int glib_random_bytes(void *buf, size_t len)
     }
     if (i < len) {
         x = g_rand_int(rand);
-        __builtin_memcpy(buf + i, &x, i - len);
+        __builtin_memcpy(buf + i, &x, len - i);
     }
 #else
     uint32_t x;
@@ -56,15 +56,16 @@ static int glib_random_bytes(void *buf, size_t len)
         } else {
             srand(time(NULL));
         }
+        initialized = true;
+    }
 
-        for (i = 0; i + 4 <= len; i += 4) {
-            x = rand();
-            memcpy(((uint8_t*)buf) + i, &x, 4);
-        }
-        if (i < len) {
-            x = rand();
-            memcpy(((uint8_t*)buf) + i, &x, i - len);
-        }
+    for (i = 0; i + 4 <= len; i += 4) {
+        x = rand();
+        memcpy(((uint8_t *)buf) + i, &x, 4);
+    }
+    if (i < len) {
+        x = rand();
+        memcpy(((uint8_t *)buf) + i, &x, len - i);
     }
 #endif
     return 0;
@@ -101,4 +102,3 @@ void qemu_guest_random_seed_thread_part2(uint64_t seed)
     }
 #endif
 }
-

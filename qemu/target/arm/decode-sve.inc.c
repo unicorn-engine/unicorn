@@ -208,6 +208,15 @@ typedef struct {
 
 typedef struct {
     int esz;
+    int imm;
+    int pd;
+    int pm;
+    int pn;
+    int rv;
+} arg_psel;
+
+typedef struct {
+    int esz;
     int pg;
     int rd;
     int rn;
@@ -336,6 +345,15 @@ typedef struct {
 } arg_rprrr_esz;
 
 typedef struct {
+    int esz;
+    int ra;
+    int rd;
+    int rm;
+    int rn;
+    int rot;
+} arg_rprrr_rot_esz;
+
+typedef struct {
     int dbm;
     int rd;
     int rn;
@@ -374,6 +392,45 @@ typedef struct {
     int rn;
 } arg_rrri;
 
+typedef struct {
+    int esz;
+    int imm;
+    int rd;
+    int rm;
+    int rn;
+} arg_rrri_esz;
+
+typedef struct {
+    int esz;
+    int index;
+    int rd;
+    int rm;
+    int rn;
+} arg_rrx_esz;
+
+typedef struct {
+    int esz;
+    int index;
+    int ra;
+    int rd;
+    int rm;
+    int rn;
+} arg_rrxr_esz;
+
+typedef arg_rprrr_esz arg_EOR3;
+static bool trans_EOR3(DisasContext *ctx, arg_EOR3 *a);
+typedef arg_rprrr_esz arg_BSL;
+static bool trans_BSL(DisasContext *ctx, arg_BSL *a);
+typedef arg_rprrr_esz arg_BCAX;
+static bool trans_BCAX(DisasContext *ctx, arg_BCAX *a);
+typedef arg_rprrr_esz arg_BSL1N;
+static bool trans_BSL1N(DisasContext *ctx, arg_BSL1N *a);
+typedef arg_rprrr_esz arg_BSL2N;
+static bool trans_BSL2N(DisasContext *ctx, arg_BSL2N *a);
+typedef arg_rprrr_esz arg_NBSL;
+static bool trans_NBSL(DisasContext *ctx, arg_NBSL *a);
+typedef arg_rrri_esz arg_XAR;
+static bool trans_XAR(DisasContext *ctx, arg_XAR *a);
 typedef arg_rprr_esz arg_ORR_zpzz;
 static bool trans_ORR_zpzz(DisasContext *ctx, arg_ORR_zpzz *a);
 typedef arg_rprr_esz arg_EOR_zpzz;
@@ -398,6 +455,66 @@ typedef arg_rprr_esz arg_SABD_zpzz;
 static bool trans_SABD_zpzz(DisasContext *ctx, arg_SABD_zpzz *a);
 typedef arg_rprr_esz arg_UABD_zpzz;
 static bool trans_UABD_zpzz(DisasContext *ctx, arg_UABD_zpzz *a);
+typedef arg_rprr_esz arg_SADALP_zpzz;
+static bool trans_SADALP_zpzz(DisasContext *ctx, arg_SADALP_zpzz *a);
+typedef arg_rprr_esz arg_UADALP_zpzz;
+static bool trans_UADALP_zpzz(DisasContext *ctx, arg_UADALP_zpzz *a);
+typedef arg_rprr_esz arg_SHADD;
+static bool trans_SHADD(DisasContext *ctx, arg_SHADD *a);
+typedef arg_rprr_esz arg_UHADD;
+static bool trans_UHADD(DisasContext *ctx, arg_UHADD *a);
+typedef arg_rprr_esz arg_SHSUB;
+static bool trans_SHSUB(DisasContext *ctx, arg_SHSUB *a);
+typedef arg_rprr_esz arg_UHSUB;
+static bool trans_UHSUB(DisasContext *ctx, arg_UHSUB *a);
+typedef arg_rprr_esz arg_SRHADD;
+static bool trans_SRHADD(DisasContext *ctx, arg_SRHADD *a);
+typedef arg_rprr_esz arg_URHADD;
+static bool trans_URHADD(DisasContext *ctx, arg_URHADD *a);
+typedef arg_rprr_esz arg_ADDP;
+static bool trans_ADDP(DisasContext *ctx, arg_ADDP *a);
+typedef arg_rprr_esz arg_SMAXP;
+static bool trans_SMAXP(DisasContext *ctx, arg_SMAXP *a);
+typedef arg_rprr_esz arg_UMAXP;
+static bool trans_UMAXP(DisasContext *ctx, arg_UMAXP *a);
+typedef arg_rprr_esz arg_SMINP;
+static bool trans_SMINP(DisasContext *ctx, arg_SMINP *a);
+typedef arg_rprr_esz arg_UMINP;
+static bool trans_UMINP(DisasContext *ctx, arg_UMINP *a);
+typedef arg_rprr_esz arg_FADDP;
+static bool trans_FADDP(DisasContext *ctx, arg_FADDP *a);
+typedef arg_rprr_esz arg_FMAXNMP;
+static bool trans_FMAXNMP(DisasContext *ctx, arg_FMAXNMP *a);
+typedef arg_rprr_esz arg_FMINNMP;
+static bool trans_FMINNMP(DisasContext *ctx, arg_FMINNMP *a);
+typedef arg_rprr_esz arg_FMAXP;
+static bool trans_FMAXP(DisasContext *ctx, arg_FMAXP *a);
+typedef arg_rprr_esz arg_FMINP;
+static bool trans_FMINP(DisasContext *ctx, arg_FMINP *a);
+typedef arg_rprr_esz arg_SRSHL;
+static bool trans_SRSHL(DisasContext *ctx, arg_SRSHL *a);
+typedef arg_rprr_esz arg_URSHL;
+static bool trans_URSHL(DisasContext *ctx, arg_URSHL *a);
+typedef arg_rprr_esz arg_SQSHL;
+static bool trans_SQSHL(DisasContext *ctx, arg_SQSHL *a);
+typedef arg_rprr_esz arg_UQSHL;
+static bool trans_UQSHL(DisasContext *ctx, arg_UQSHL *a);
+typedef arg_rprr_esz arg_SQRSHL;
+static bool trans_SQRSHL(DisasContext *ctx, arg_SQRSHL *a);
+typedef arg_rprr_esz arg_UQRSHL;
+static bool trans_UQRSHL(DisasContext *ctx, arg_UQRSHL *a);
+typedef arg_rprr_esz arg_SQADD_zpzz;
+static bool trans_SQADD_zpzz(DisasContext *ctx, arg_SQADD_zpzz *a);
+typedef arg_rprr_esz arg_UQADD_zpzz;
+static bool trans_UQADD_zpzz(DisasContext *ctx, arg_UQADD_zpzz *a);
+typedef arg_rprr_esz arg_SQSUB_zpzz;
+static bool trans_SQSUB_zpzz(DisasContext *ctx, arg_SQSUB_zpzz *a);
+typedef arg_rprr_esz arg_UQSUB_zpzz;
+static bool trans_UQSUB_zpzz(DisasContext *ctx, arg_UQSUB_zpzz *a);
+typedef arg_rprr_esz arg_SUQADD;
+static bool trans_SUQADD(DisasContext *ctx, arg_SUQADD *a);
+typedef arg_rprr_esz arg_USQADD;
+static bool trans_USQADD(DisasContext *ctx, arg_USQADD *a);
 typedef arg_rprr_esz arg_MUL_zpzz;
 static bool trans_MUL_zpzz(DisasContext *ctx, arg_MUL_zpzz *a);
 typedef arg_rprr_esz arg_SMULH_zpzz;
@@ -468,6 +585,14 @@ typedef arg_rpr_esz arg_ABS;
 static bool trans_ABS(DisasContext *ctx, arg_ABS *a);
 typedef arg_rpr_esz arg_NEG;
 static bool trans_NEG(DisasContext *ctx, arg_NEG *a);
+typedef arg_rpr_esz arg_SQABS;
+static bool trans_SQABS(DisasContext *ctx, arg_SQABS *a);
+typedef arg_rpr_esz arg_SQNEG;
+static bool trans_SQNEG(DisasContext *ctx, arg_SQNEG *a);
+typedef arg_rpr_esz arg_URECPE;
+static bool trans_URECPE(DisasContext *ctx, arg_URECPE *a);
+typedef arg_rpr_esz arg_URSQRTE;
+static bool trans_URSQRTE(DisasContext *ctx, arg_URSQRTE *a);
 typedef arg_rpr_esz arg_SXTB;
 static bool trans_SXTB(DisasContext *ctx, arg_SXTB *a);
 typedef arg_rpr_esz arg_UXTB;
@@ -498,6 +623,102 @@ typedef arg_rprrr_esz arg_MLA;
 static bool trans_MLA(DisasContext *ctx, arg_MLA *a);
 typedef arg_rprrr_esz arg_MLS;
 static bool trans_MLS(DisasContext *ctx, arg_MLS *a);
+typedef arg_rprrr_esz arg_SQDMLALB_zzzw;
+static bool trans_SQDMLALB_zzzw(DisasContext *ctx, arg_SQDMLALB_zzzw *a);
+typedef arg_rprrr_esz arg_SQDMLALT_zzzw;
+static bool trans_SQDMLALT_zzzw(DisasContext *ctx, arg_SQDMLALT_zzzw *a);
+typedef arg_rprrr_esz arg_SQDMLALBT;
+static bool trans_SQDMLALBT(DisasContext *ctx, arg_SQDMLALBT *a);
+typedef arg_rprrr_esz arg_SQDMLSLB_zzzw;
+static bool trans_SQDMLSLB_zzzw(DisasContext *ctx, arg_SQDMLSLB_zzzw *a);
+typedef arg_rprrr_esz arg_SQDMLSLT_zzzw;
+static bool trans_SQDMLSLT_zzzw(DisasContext *ctx, arg_SQDMLSLT_zzzw *a);
+typedef arg_rprrr_esz arg_SQDMLSLBT;
+static bool trans_SQDMLSLBT(DisasContext *ctx, arg_SQDMLSLBT *a);
+typedef arg_rprrr_esz arg_SMLALB_zzzw;
+static bool trans_SMLALB_zzzw(DisasContext *ctx, arg_SMLALB_zzzw *a);
+typedef arg_rprrr_esz arg_SMLALT_zzzw;
+static bool trans_SMLALT_zzzw(DisasContext *ctx, arg_SMLALT_zzzw *a);
+typedef arg_rprrr_esz arg_UMLALB_zzzw;
+static bool trans_UMLALB_zzzw(DisasContext *ctx, arg_UMLALB_zzzw *a);
+typedef arg_rprrr_esz arg_UMLALT_zzzw;
+static bool trans_UMLALT_zzzw(DisasContext *ctx, arg_UMLALT_zzzw *a);
+typedef arg_rprrr_esz arg_SMLSLB_zzzw;
+static bool trans_SMLSLB_zzzw(DisasContext *ctx, arg_SMLSLB_zzzw *a);
+typedef arg_rprrr_esz arg_SMLSLT_zzzw;
+static bool trans_SMLSLT_zzzw(DisasContext *ctx, arg_SMLSLT_zzzw *a);
+typedef arg_rprrr_esz arg_UMLSLB_zzzw;
+static bool trans_UMLSLB_zzzw(DisasContext *ctx, arg_UMLSLB_zzzw *a);
+typedef arg_rprrr_esz arg_UMLSLT_zzzw;
+static bool trans_UMLSLT_zzzw(DisasContext *ctx, arg_UMLSLT_zzzw *a);
+typedef arg_rprrr_esz arg_SABALB;
+static bool trans_SABALB(DisasContext *ctx, arg_SABALB *a);
+typedef arg_rprrr_esz arg_SABALT;
+static bool trans_SABALT(DisasContext *ctx, arg_SABALT *a);
+typedef arg_rprrr_esz arg_UABALB;
+static bool trans_UABALB(DisasContext *ctx, arg_UABALB *a);
+typedef arg_rprrr_esz arg_UABALT;
+static bool trans_UABALT(DisasContext *ctx, arg_UABALT *a);
+typedef arg_rprrr_esz arg_SQRDMLAH_zzzz;
+static bool trans_SQRDMLAH_zzzz(DisasContext *ctx, arg_SQRDMLAH_zzzz *a);
+typedef arg_rprrr_esz arg_SQRDMLSH_zzzz;
+static bool trans_SQRDMLSH_zzzz(DisasContext *ctx, arg_SQRDMLSH_zzzz *a);
+typedef arg_rprrr_rot_esz arg_CMLA_zzzz;
+static bool trans_CMLA_zzzz(DisasContext *ctx, arg_CMLA_zzzz *a);
+typedef arg_rprrr_rot_esz arg_CDOT_zzzz;
+static bool trans_CDOT_zzzz(DisasContext *ctx, arg_CDOT_zzzz *a);
+typedef arg_rprrr_rot_esz arg_SQRDCMLAH_zzzz;
+static bool trans_SQRDCMLAH_zzzz(DisasContext *ctx, arg_SQRDCMLAH_zzzz *a);
+typedef arg_rprrr_esz arg_USDOT_zzzz;
+static bool trans_USDOT_zzzz(DisasContext *ctx, arg_USDOT_zzzz *a);
+typedef arg_rprrr_esz arg_SMMLA;
+static bool trans_SMMLA(DisasContext *ctx, arg_SMMLA *a);
+typedef arg_rprrr_esz arg_USMMLA;
+static bool trans_USMMLA(DisasContext *ctx, arg_USMMLA *a);
+typedef arg_rprrr_esz arg_UMMLA;
+static bool trans_UMMLA(DisasContext *ctx, arg_UMMLA *a);
+typedef arg_rprrr_esz arg_BFDOT_zzzz;
+static bool trans_BFDOT_zzzz(DisasContext *ctx, arg_BFDOT_zzzz *a);
+typedef arg_rrxr_esz arg_BFDOT_zzxz;
+static bool trans_BFDOT_zzxz(DisasContext *ctx, arg_BFDOT_zzxz *a);
+typedef arg_rprrr_esz arg_BFMMLA;
+static bool trans_BFMMLA(DisasContext *ctx, arg_BFMMLA *a);
+typedef arg_rprrr_esz arg_FMMLA_s;
+static bool trans_FMMLA_s(DisasContext *ctx, arg_FMMLA_s *a);
+typedef arg_rprrr_esz arg_FMMLA_d;
+static bool trans_FMMLA_d(DisasContext *ctx, arg_FMMLA_d *a);
+typedef arg_rprrr_esz arg_BFMLALB_zzzw;
+static bool trans_BFMLALB_zzzw(DisasContext *ctx, arg_BFMLALB_zzzw *a);
+typedef arg_rprrr_esz arg_BFMLALT_zzzw;
+static bool trans_BFMLALT_zzzw(DisasContext *ctx, arg_BFMLALT_zzzw *a);
+typedef arg_rrxr_esz arg_BFMLALB_zzxw;
+static bool trans_BFMLALB_zzxw(DisasContext *ctx, arg_BFMLALB_zzxw *a);
+typedef arg_rrxr_esz arg_BFMLALT_zzxw;
+static bool trans_BFMLALT_zzxw(DisasContext *ctx, arg_BFMLALT_zzxw *a);
+typedef arg_rprrr_esz arg_FMLALB_zzzw;
+static bool trans_FMLALB_zzzw(DisasContext *ctx, arg_FMLALB_zzzw *a);
+typedef arg_rprrr_esz arg_FMLALT_zzzw;
+static bool trans_FMLALT_zzzw(DisasContext *ctx, arg_FMLALT_zzzw *a);
+typedef arg_rprrr_esz arg_FMLSLB_zzzw;
+static bool trans_FMLSLB_zzzw(DisasContext *ctx, arg_FMLSLB_zzzw *a);
+typedef arg_rprrr_esz arg_FMLSLT_zzzw;
+static bool trans_FMLSLT_zzzw(DisasContext *ctx, arg_FMLSLT_zzzw *a);
+typedef arg_rrxr_esz arg_FMLALB_zzxw;
+static bool trans_FMLALB_zzxw(DisasContext *ctx, arg_FMLALB_zzxw *a);
+typedef arg_rrxr_esz arg_FMLALT_zzxw;
+static bool trans_FMLALT_zzxw(DisasContext *ctx, arg_FMLALT_zzxw *a);
+typedef arg_rrxr_esz arg_FMLSLB_zzxw;
+static bool trans_FMLSLB_zzxw(DisasContext *ctx, arg_FMLSLB_zzxw *a);
+typedef arg_rrxr_esz arg_FMLSLT_zzxw;
+static bool trans_FMLSLT_zzxw(DisasContext *ctx, arg_FMLSLT_zzxw *a);
+typedef arg_rrr_esz arg_CADD_rot90;
+static bool trans_CADD_rot90(DisasContext *ctx, arg_CADD_rot90 *a);
+typedef arg_rrr_esz arg_CADD_rot270;
+static bool trans_CADD_rot270(DisasContext *ctx, arg_CADD_rot270 *a);
+typedef arg_rrr_esz arg_SQCADD_rot90;
+static bool trans_SQCADD_rot90(DisasContext *ctx, arg_SQCADD_rot90 *a);
+typedef arg_rrr_esz arg_SQCADD_rot270;
+static bool trans_SQCADD_rot270(DisasContext *ctx, arg_SQCADD_rot270 *a);
 typedef arg_rrr_esz arg_ADD_zzz;
 static bool trans_ADD_zzz(DisasContext *ctx, arg_ADD_zzz *a);
 typedef arg_rrr_esz arg_SUB_zzz;
@@ -518,6 +739,266 @@ typedef arg_rrr_esz arg_EOR_zzz;
 static bool trans_EOR_zzz(DisasContext *ctx, arg_EOR_zzz *a);
 typedef arg_rrr_esz arg_BIC_zzz;
 static bool trans_BIC_zzz(DisasContext *ctx, arg_BIC_zzz *a);
+typedef arg_rrr_esz arg_PMULLB;
+static bool trans_PMULLB(DisasContext *ctx, arg_PMULLB *a);
+typedef arg_rrr_esz arg_PMULLT;
+static bool trans_PMULLT(DisasContext *ctx, arg_PMULLT *a);
+typedef arg_rrr_esz arg_MUL_zzz;
+static bool trans_MUL_zzz(DisasContext *ctx, arg_MUL_zzz *a);
+typedef arg_rrr_esz arg_SMULH_zzz;
+static bool trans_SMULH_zzz(DisasContext *ctx, arg_SMULH_zzz *a);
+typedef arg_rrr_esz arg_UMULH_zzz;
+static bool trans_UMULH_zzz(DisasContext *ctx, arg_UMULH_zzz *a);
+typedef arg_rrr_esz arg_PMUL_zzz;
+static bool trans_PMUL_zzz(DisasContext *ctx, arg_PMUL_zzz *a);
+typedef arg_rrr_esz arg_SQDMULH_zzz;
+static bool trans_SQDMULH_zzz(DisasContext *ctx, arg_SQDMULH_zzz *a);
+typedef arg_rrr_esz arg_SQRDMULH_zzz;
+static bool trans_SQRDMULH_zzz(DisasContext *ctx, arg_SQRDMULH_zzz *a);
+typedef arg_rrx_esz arg_MUL_zzx;
+static bool trans_MUL_zzx(DisasContext *ctx, arg_MUL_zzx *a);
+typedef arg_rrx_esz arg_SQDMULH_zzx;
+static bool trans_SQDMULH_zzx(DisasContext *ctx, arg_SQDMULH_zzx *a);
+typedef arg_rrx_esz arg_SQRDMULH_zzx;
+static bool trans_SQRDMULH_zzx(DisasContext *ctx, arg_SQRDMULH_zzx *a);
+typedef arg_rrxr_esz arg_SQRDMLAH_zzxz;
+static bool trans_SQRDMLAH_zzxz(DisasContext *ctx, arg_SQRDMLAH_zzxz *a);
+typedef arg_rrxr_esz arg_SQRDMLSH_zzxz;
+static bool trans_SQRDMLSH_zzxz(DisasContext *ctx, arg_SQRDMLSH_zzxz *a);
+typedef arg_disas_sve43 arg_CMLA_zzxz_h;
+static bool trans_CMLA_zzxz_h(DisasContext *ctx, arg_CMLA_zzxz_h *a);
+typedef arg_disas_sve43 arg_CMLA_zzxz_s;
+static bool trans_CMLA_zzxz_s(DisasContext *ctx, arg_CMLA_zzxz_s *a);
+typedef arg_disas_sve43 arg_SQRDCMLAH_zzxz_h;
+static bool trans_SQRDCMLAH_zzxz_h(DisasContext *ctx,
+                                   arg_SQRDCMLAH_zzxz_h *a);
+typedef arg_disas_sve43 arg_SQRDCMLAH_zzxz_s;
+static bool trans_SQRDCMLAH_zzxz_s(DisasContext *ctx,
+                                   arg_SQRDCMLAH_zzxz_s *a);
+typedef arg_disas_sve43 arg_CDOT_zzxw_s;
+static bool trans_CDOT_zzxw_s(DisasContext *ctx, arg_CDOT_zzxw_s *a);
+typedef arg_disas_sve43 arg_CDOT_zzxw_d;
+static bool trans_CDOT_zzxw_d(DisasContext *ctx, arg_CDOT_zzxw_d *a);
+typedef arg_rrxr_esz arg_USDOT_zzxw_s;
+static bool trans_USDOT_zzxw_s(DisasContext *ctx, arg_USDOT_zzxw_s *a);
+typedef arg_rrxr_esz arg_SUDOT_zzxw_s;
+static bool trans_SUDOT_zzxw_s(DisasContext *ctx, arg_SUDOT_zzxw_s *a);
+typedef arg_rrx_esz arg_SMULLB_zzx;
+static bool trans_SMULLB_zzx(DisasContext *ctx, arg_SMULLB_zzx *a);
+typedef arg_rrx_esz arg_SMULLT_zzx;
+static bool trans_SMULLT_zzx(DisasContext *ctx, arg_SMULLT_zzx *a);
+typedef arg_rrx_esz arg_UMULLB_zzx;
+static bool trans_UMULLB_zzx(DisasContext *ctx, arg_UMULLB_zzx *a);
+typedef arg_rrx_esz arg_UMULLT_zzx;
+static bool trans_UMULLT_zzx(DisasContext *ctx, arg_UMULLT_zzx *a);
+typedef arg_rrx_esz arg_SQDMULLB_zzx;
+static bool trans_SQDMULLB_zzx(DisasContext *ctx, arg_SQDMULLB_zzx *a);
+typedef arg_rrx_esz arg_SQDMULLT_zzx;
+static bool trans_SQDMULLT_zzx(DisasContext *ctx, arg_SQDMULLT_zzx *a);
+typedef arg_rrx_esz arg_SQDMLALB_zzxw;
+static bool trans_SQDMLALB_zzxw(DisasContext *ctx,
+                                arg_SQDMLALB_zzxw *a);
+typedef arg_rrx_esz arg_SQDMLALT_zzxw;
+static bool trans_SQDMLALT_zzxw(DisasContext *ctx,
+                                arg_SQDMLALT_zzxw *a);
+typedef arg_rrx_esz arg_SQDMLSLB_zzxw;
+static bool trans_SQDMLSLB_zzxw(DisasContext *ctx,
+                                arg_SQDMLSLB_zzxw *a);
+typedef arg_rrx_esz arg_SQDMLSLT_zzxw;
+static bool trans_SQDMLSLT_zzxw(DisasContext *ctx,
+                                arg_SQDMLSLT_zzxw *a);
+typedef arg_rrx_esz arg_SMLALB_zzxw;
+static bool trans_SMLALB_zzxw(DisasContext *ctx, arg_SMLALB_zzxw *a);
+typedef arg_rrx_esz arg_SMLALT_zzxw;
+static bool trans_SMLALT_zzxw(DisasContext *ctx, arg_SMLALT_zzxw *a);
+typedef arg_rrx_esz arg_UMLALB_zzxw;
+static bool trans_UMLALB_zzxw(DisasContext *ctx, arg_UMLALB_zzxw *a);
+typedef arg_rrx_esz arg_UMLALT_zzxw;
+static bool trans_UMLALT_zzxw(DisasContext *ctx, arg_UMLALT_zzxw *a);
+typedef arg_rrx_esz arg_SMLSLB_zzxw;
+static bool trans_SMLSLB_zzxw(DisasContext *ctx, arg_SMLSLB_zzxw *a);
+typedef arg_rrx_esz arg_SMLSLT_zzxw;
+static bool trans_SMLSLT_zzxw(DisasContext *ctx, arg_SMLSLT_zzxw *a);
+typedef arg_rrx_esz arg_UMLSLB_zzxw;
+static bool trans_UMLSLB_zzxw(DisasContext *ctx, arg_UMLSLB_zzxw *a);
+typedef arg_rrx_esz arg_UMLSLT_zzxw;
+static bool trans_UMLSLT_zzxw(DisasContext *ctx, arg_UMLSLT_zzxw *a);
+typedef arg_rrr_esz arg_SADDLB;
+static bool trans_SADDLB(DisasContext *ctx, arg_SADDLB *a);
+typedef arg_rrr_esz arg_SADDLT;
+static bool trans_SADDLT(DisasContext *ctx, arg_SADDLT *a);
+typedef arg_rrr_esz arg_UADDLB;
+static bool trans_UADDLB(DisasContext *ctx, arg_UADDLB *a);
+typedef arg_rrr_esz arg_UADDLT;
+static bool trans_UADDLT(DisasContext *ctx, arg_UADDLT *a);
+typedef arg_rrr_esz arg_SSUBLB;
+static bool trans_SSUBLB(DisasContext *ctx, arg_SSUBLB *a);
+typedef arg_rrr_esz arg_SSUBLT;
+static bool trans_SSUBLT(DisasContext *ctx, arg_SSUBLT *a);
+typedef arg_rrr_esz arg_USUBLB;
+static bool trans_USUBLB(DisasContext *ctx, arg_USUBLB *a);
+typedef arg_rrr_esz arg_USUBLT;
+static bool trans_USUBLT(DisasContext *ctx, arg_USUBLT *a);
+typedef arg_rrr_esz arg_SADDLBT;
+static bool trans_SADDLBT(DisasContext *ctx, arg_SADDLBT *a);
+typedef arg_rrr_esz arg_SSUBLBT;
+static bool trans_SSUBLBT(DisasContext *ctx, arg_SSUBLBT *a);
+typedef arg_rrr_esz arg_SSUBLTB;
+static bool trans_SSUBLTB(DisasContext *ctx, arg_SSUBLTB *a);
+typedef arg_rrr_esz arg_SABDLB;
+static bool trans_SABDLB(DisasContext *ctx, arg_SABDLB *a);
+typedef arg_rrr_esz arg_SABDLT;
+static bool trans_SABDLT(DisasContext *ctx, arg_SABDLT *a);
+typedef arg_rrr_esz arg_UABDLB;
+static bool trans_UABDLB(DisasContext *ctx, arg_UABDLB *a);
+typedef arg_rrr_esz arg_UABDLT;
+static bool trans_UABDLT(DisasContext *ctx, arg_UABDLT *a);
+typedef arg_rrr_esz arg_SABA;
+static bool trans_SABA(DisasContext *ctx, arg_SABA *a);
+typedef arg_rrr_esz arg_UABA;
+static bool trans_UABA(DisasContext *ctx, arg_UABA *a);
+typedef arg_rrr_esz arg_SMULLB_zzz;
+static bool trans_SMULLB_zzz(DisasContext *ctx, arg_SMULLB_zzz *a);
+typedef arg_rrr_esz arg_SMULLT_zzz;
+static bool trans_SMULLT_zzz(DisasContext *ctx, arg_SMULLT_zzz *a);
+typedef arg_rrr_esz arg_UMULLB_zzz;
+static bool trans_UMULLB_zzz(DisasContext *ctx, arg_UMULLB_zzz *a);
+typedef arg_rrr_esz arg_UMULLT_zzz;
+static bool trans_UMULLT_zzz(DisasContext *ctx, arg_UMULLT_zzz *a);
+typedef arg_rrr_esz arg_SQDMULLB_zzz;
+static bool trans_SQDMULLB_zzz(DisasContext *ctx, arg_SQDMULLB_zzz *a);
+typedef arg_rrr_esz arg_SQDMULLT_zzz;
+static bool trans_SQDMULLT_zzz(DisasContext *ctx, arg_SQDMULLT_zzz *a);
+typedef arg_rrr_esz arg_SADDWB;
+static bool trans_SADDWB(DisasContext *ctx, arg_SADDWB *a);
+typedef arg_rrr_esz arg_SADDWT;
+static bool trans_SADDWT(DisasContext *ctx, arg_SADDWT *a);
+typedef arg_rrr_esz arg_UADDWB;
+static bool trans_UADDWB(DisasContext *ctx, arg_UADDWB *a);
+typedef arg_rrr_esz arg_UADDWT;
+static bool trans_UADDWT(DisasContext *ctx, arg_UADDWT *a);
+typedef arg_rrr_esz arg_SSUBWB;
+static bool trans_SSUBWB(DisasContext *ctx, arg_SSUBWB *a);
+typedef arg_rrr_esz arg_SSUBWT;
+static bool trans_SSUBWT(DisasContext *ctx, arg_SSUBWT *a);
+typedef arg_rrr_esz arg_USUBWB;
+static bool trans_USUBWB(DisasContext *ctx, arg_USUBWB *a);
+typedef arg_rrr_esz arg_USUBWT;
+static bool trans_USUBWT(DisasContext *ctx, arg_USUBWT *a);
+typedef arg_rri_esz arg_SSHLLB;
+static bool trans_SSHLLB(DisasContext *ctx, arg_SSHLLB *a);
+typedef arg_rri_esz arg_SSHLLT;
+static bool trans_SSHLLT(DisasContext *ctx, arg_SSHLLT *a);
+typedef arg_rri_esz arg_USHLLB;
+static bool trans_USHLLB(DisasContext *ctx, arg_USHLLB *a);
+typedef arg_rri_esz arg_USHLLT;
+static bool trans_USHLLT(DisasContext *ctx, arg_USHLLT *a);
+typedef arg_rri_esz arg_SSRA;
+static bool trans_SSRA(DisasContext *ctx, arg_SSRA *a);
+typedef arg_rri_esz arg_USRA;
+static bool trans_USRA(DisasContext *ctx, arg_USRA *a);
+typedef arg_rri_esz arg_SRSRA;
+static bool trans_SRSRA(DisasContext *ctx, arg_SRSRA *a);
+typedef arg_rri_esz arg_URSRA;
+static bool trans_URSRA(DisasContext *ctx, arg_URSRA *a);
+typedef arg_rri_esz arg_SRI;
+static bool trans_SRI(DisasContext *ctx, arg_SRI *a);
+typedef arg_rri_esz arg_SLI;
+static bool trans_SLI(DisasContext *ctx, arg_SLI *a);
+typedef arg_rri_esz arg_SQSHRUNB;
+static bool trans_SQSHRUNB(DisasContext *ctx, arg_SQSHRUNB *a);
+typedef arg_rri_esz arg_SQSHRUNT;
+static bool trans_SQSHRUNT(DisasContext *ctx, arg_SQSHRUNT *a);
+typedef arg_rri_esz arg_SQRSHRUNB;
+static bool trans_SQRSHRUNB(DisasContext *ctx, arg_SQRSHRUNB *a);
+typedef arg_rri_esz arg_SQRSHRUNT;
+static bool trans_SQRSHRUNT(DisasContext *ctx, arg_SQRSHRUNT *a);
+typedef arg_rri_esz arg_SHRNB;
+static bool trans_SHRNB(DisasContext *ctx, arg_SHRNB *a);
+typedef arg_rri_esz arg_SHRNT;
+static bool trans_SHRNT(DisasContext *ctx, arg_SHRNT *a);
+typedef arg_rri_esz arg_RSHRNB;
+static bool trans_RSHRNB(DisasContext *ctx, arg_RSHRNB *a);
+typedef arg_rri_esz arg_RSHRNT;
+static bool trans_RSHRNT(DisasContext *ctx, arg_RSHRNT *a);
+typedef arg_rri_esz arg_SQSHRNB;
+static bool trans_SQSHRNB(DisasContext *ctx, arg_SQSHRNB *a);
+typedef arg_rri_esz arg_SQSHRNT;
+static bool trans_SQSHRNT(DisasContext *ctx, arg_SQSHRNT *a);
+typedef arg_rri_esz arg_SQRSHRNB;
+static bool trans_SQRSHRNB(DisasContext *ctx, arg_SQRSHRNB *a);
+typedef arg_rri_esz arg_SQRSHRNT;
+static bool trans_SQRSHRNT(DisasContext *ctx, arg_SQRSHRNT *a);
+typedef arg_rri_esz arg_UQSHRNB;
+static bool trans_UQSHRNB(DisasContext *ctx, arg_UQSHRNB *a);
+typedef arg_rri_esz arg_UQSHRNT;
+static bool trans_UQSHRNT(DisasContext *ctx, arg_UQSHRNT *a);
+typedef arg_rri_esz arg_UQRSHRNB;
+static bool trans_UQRSHRNB(DisasContext *ctx, arg_UQRSHRNB *a);
+typedef arg_rri_esz arg_UQRSHRNT;
+static bool trans_UQRSHRNT(DisasContext *ctx, arg_UQRSHRNT *a);
+typedef arg_rrr_esz arg_ADDHNB;
+static bool trans_ADDHNB(DisasContext *ctx, arg_ADDHNB *a);
+typedef arg_rrr_esz arg_ADDHNT;
+static bool trans_ADDHNT(DisasContext *ctx, arg_ADDHNT *a);
+typedef arg_rrr_esz arg_RADDHNB;
+static bool trans_RADDHNB(DisasContext *ctx, arg_RADDHNB *a);
+typedef arg_rrr_esz arg_RADDHNT;
+static bool trans_RADDHNT(DisasContext *ctx, arg_RADDHNT *a);
+typedef arg_rrr_esz arg_SUBHNB;
+static bool trans_SUBHNB(DisasContext *ctx, arg_SUBHNB *a);
+typedef arg_rrr_esz arg_SUBHNT;
+static bool trans_SUBHNT(DisasContext *ctx, arg_SUBHNT *a);
+typedef arg_rrr_esz arg_RSUBHNB;
+static bool trans_RSUBHNB(DisasContext *ctx, arg_RSUBHNB *a);
+typedef arg_rrr_esz arg_RSUBHNT;
+static bool trans_RSUBHNT(DisasContext *ctx, arg_RSUBHNT *a);
+typedef arg_rri_esz arg_SQXTNB;
+static bool trans_SQXTNB(DisasContext *ctx, arg_SQXTNB *a);
+typedef arg_rri_esz arg_SQXTNT;
+static bool trans_SQXTNT(DisasContext *ctx, arg_SQXTNT *a);
+typedef arg_rri_esz arg_UQXTNB;
+static bool trans_UQXTNB(DisasContext *ctx, arg_UQXTNB *a);
+typedef arg_rri_esz arg_UQXTNT;
+static bool trans_UQXTNT(DisasContext *ctx, arg_UQXTNT *a);
+typedef arg_rri_esz arg_SQXTUNB;
+static bool trans_SQXTUNB(DisasContext *ctx, arg_SQXTUNB *a);
+typedef arg_rri_esz arg_SQXTUNT;
+static bool trans_SQXTUNT(DisasContext *ctx, arg_SQXTUNT *a);
+typedef arg_rrr_esz arg_EORBT;
+static bool trans_EORBT(DisasContext *ctx, arg_EORBT *a);
+typedef arg_rrr_esz arg_EORTB;
+static bool trans_EORTB(DisasContext *ctx, arg_EORTB *a);
+typedef arg_rrr_esz arg_BEXT;
+static bool trans_BEXT(DisasContext *ctx, arg_BEXT *a);
+typedef arg_rrr_esz arg_BDEP;
+static bool trans_BDEP(DisasContext *ctx, arg_BDEP *a);
+typedef arg_rrr_esz arg_BGRP;
+static bool trans_BGRP(DisasContext *ctx, arg_BGRP *a);
+typedef arg_rprr_esz arg_MATCH;
+static bool trans_MATCH(DisasContext *ctx, arg_MATCH *a);
+typedef arg_rprr_esz arg_NMATCH;
+static bool trans_NMATCH(DisasContext *ctx, arg_NMATCH *a);
+typedef arg_rprr_esz arg_HISTCNT;
+static bool trans_HISTCNT(DisasContext *ctx, arg_HISTCNT *a);
+typedef arg_rrr_esz arg_HISTSEG;
+static bool trans_HISTSEG(DisasContext *ctx, arg_HISTSEG *a);
+typedef arg_rri arg_AESMC;
+static bool trans_AESMC(DisasContext *ctx, arg_AESMC *a);
+typedef arg_rrr_esz arg_AESE;
+static bool trans_AESE(DisasContext *ctx, arg_AESE *a);
+typedef arg_rrr_esz arg_AESD;
+static bool trans_AESD(DisasContext *ctx, arg_AESD *a);
+typedef arg_rrr_esz arg_SM4E;
+static bool trans_SM4E(DisasContext *ctx, arg_SM4E *a);
+typedef arg_rrr_esz arg_SM4EKEY;
+static bool trans_SM4EKEY(DisasContext *ctx, arg_SM4EKEY *a);
+typedef arg_rrr_esz arg_RAX1;
+static bool trans_RAX1(DisasContext *ctx, arg_RAX1 *a);
+typedef arg_rprrr_esz arg_ADCLB;
+static bool trans_ADCLB(DisasContext *ctx, arg_ADCLB *a);
+typedef arg_rprrr_esz arg_ADCLT;
+static bool trans_ADCLT(DisasContext *ctx, arg_ADCLT *a);
 typedef arg_disas_sve25 arg_INDEX_ii;
 static bool trans_INDEX_ii(DisasContext *ctx, arg_INDEX_ii *a);
 typedef arg_disas_sve26 arg_INDEX_ir;
@@ -528,10 +1009,16 @@ typedef arg_rrr_esz arg_INDEX_rr;
 static bool trans_INDEX_rr(DisasContext *ctx, arg_INDEX_rr *a);
 typedef arg_rri arg_ADDVL;
 static bool trans_ADDVL(DisasContext *ctx, arg_ADDVL *a);
+typedef arg_rri arg_ADDSVL;
+static bool trans_ADDSVL(DisasContext *ctx, arg_ADDSVL *a);
 typedef arg_rri arg_ADDPL;
 static bool trans_ADDPL(DisasContext *ctx, arg_ADDPL *a);
+typedef arg_rri arg_ADDSPL;
+static bool trans_ADDSPL(DisasContext *ctx, arg_ADDSPL *a);
 typedef arg_disas_sve27 arg_RDVL;
 static bool trans_RDVL(DisasContext *ctx, arg_RDVL *a);
+typedef arg_disas_sve27 arg_RDSVL;
+static bool trans_RDSVL(DisasContext *ctx, arg_RDSVL *a);
 typedef arg_rri_esz arg_ASR_zzi;
 static bool trans_ASR_zzi(DisasContext *ctx, arg_ASR_zzi *a);
 typedef arg_rri_esz arg_LSR_zzi;
@@ -586,6 +1073,8 @@ typedef arg_rpri_esz arg_CPY_z_i;
 static bool trans_CPY_z_i(DisasContext *ctx, arg_CPY_z_i *a);
 typedef arg_rrri arg_EXT;
 static bool trans_EXT(DisasContext *ctx, arg_EXT *a);
+typedef arg_rri arg_EXT_sve2;
+static bool trans_EXT_sve2(DisasContext *ctx, arg_EXT_sve2 *a);
 typedef arg_rr_esz arg_DUP_s;
 static bool trans_DUP_s(DisasContext *ctx, arg_DUP_s *a);
 typedef arg_rri arg_DUP_x;
@@ -598,6 +1087,10 @@ typedef arg_rr_esz arg_REV_v;
 static bool trans_REV_v(DisasContext *ctx, arg_REV_v *a);
 typedef arg_rrr_esz arg_TBL;
 static bool trans_TBL(DisasContext *ctx, arg_TBL *a);
+typedef arg_rrr_esz arg_TBL_sve2;
+static bool trans_TBL_sve2(DisasContext *ctx, arg_TBL_sve2 *a);
+typedef arg_rrr_esz arg_TBX;
+static bool trans_TBX(DisasContext *ctx, arg_TBX *a);
 typedef arg_disas_sve30 arg_UNPK;
 static bool trans_UNPK(DisasContext *ctx, arg_UNPK *a);
 typedef arg_rrr_esz arg_ZIP1_p;
@@ -622,14 +1115,26 @@ typedef arg_rrr_esz arg_ZIP1_z;
 static bool trans_ZIP1_z(DisasContext *ctx, arg_ZIP1_z *a);
 typedef arg_rrr_esz arg_ZIP2_z;
 static bool trans_ZIP2_z(DisasContext *ctx, arg_ZIP2_z *a);
+typedef arg_rrr_esz arg_ZIP1_q;
+static bool trans_ZIP1_q(DisasContext *ctx, arg_ZIP1_q *a);
+typedef arg_rrr_esz arg_ZIP2_q;
+static bool trans_ZIP2_q(DisasContext *ctx, arg_ZIP2_q *a);
 typedef arg_rrr_esz arg_UZP1_z;
 static bool trans_UZP1_z(DisasContext *ctx, arg_UZP1_z *a);
 typedef arg_rrr_esz arg_UZP2_z;
 static bool trans_UZP2_z(DisasContext *ctx, arg_UZP2_z *a);
+typedef arg_rrr_esz arg_UZP1_q;
+static bool trans_UZP1_q(DisasContext *ctx, arg_UZP1_q *a);
+typedef arg_rrr_esz arg_UZP2_q;
+static bool trans_UZP2_q(DisasContext *ctx, arg_UZP2_q *a);
 typedef arg_rrr_esz arg_TRN1_z;
 static bool trans_TRN1_z(DisasContext *ctx, arg_TRN1_z *a);
 typedef arg_rrr_esz arg_TRN2_z;
 static bool trans_TRN2_z(DisasContext *ctx, arg_TRN2_z *a);
+typedef arg_rrr_esz arg_TRN1_q;
+static bool trans_TRN1_q(DisasContext *ctx, arg_TRN1_q *a);
+typedef arg_rrr_esz arg_TRN2_q;
+static bool trans_TRN2_q(DisasContext *ctx, arg_TRN2_q *a);
 typedef arg_rpr_esz arg_COMPACT;
 static bool trans_COMPACT(DisasContext *ctx, arg_COMPACT *a);
 typedef arg_rprr_esz arg_CLASTA_z;
@@ -666,6 +1171,8 @@ typedef arg_rpr_esz arg_RBIT;
 static bool trans_RBIT(DisasContext *ctx, arg_RBIT *a);
 typedef arg_rprr_esz arg_SPLICE;
 static bool trans_SPLICE(DisasContext *ctx, arg_SPLICE *a);
+typedef arg_rpr_esz arg_SPLICE_sve2;
+static bool trans_SPLICE_sve2(DisasContext *ctx, arg_SPLICE_sve2 *a);
 typedef arg_rprr_esz arg_SEL_zpzz;
 static bool trans_SEL_zpzz(DisasContext *ctx, arg_SEL_zpzz *a);
 typedef arg_rprr_esz arg_CMPHS_ppzz;
@@ -740,6 +1247,8 @@ typedef arg_disas_sve31 arg_PTEST;
 static bool trans_PTEST(DisasContext *ctx, arg_PTEST *a);
 typedef arg_ptrue arg_PTRUE;
 static bool trans_PTRUE(DisasContext *ctx, arg_PTRUE *a);
+typedef arg_psel arg_PSEL;
+static bool trans_PSEL(DisasContext *ctx, arg_PSEL *a);
 typedef arg_disas_sve32 arg_SETFFR;
 static bool trans_SETFFR(DisasContext *ctx, arg_SETFFR *a);
 typedef arg_disas_sve33 arg_PFALSE;
@@ -926,6 +1435,24 @@ typedef arg_rpr_esz arg_FCVT_ds;
 static bool trans_FCVT_ds(DisasContext *ctx, arg_FCVT_ds *a);
 typedef arg_rpr_esz arg_FCVT_sd;
 static bool trans_FCVT_sd(DisasContext *ctx, arg_FCVT_sd *a);
+typedef arg_rpr_esz arg_BFCVT;
+static bool trans_BFCVT(DisasContext *ctx, arg_BFCVT *a);
+typedef arg_rpr_esz arg_FCVTNT_sh;
+static bool trans_FCVTNT_sh(DisasContext *ctx, arg_FCVTNT_sh *a);
+typedef arg_rpr_esz arg_FCVTNT_ds;
+static bool trans_FCVTNT_ds(DisasContext *ctx, arg_FCVTNT_ds *a);
+typedef arg_rpr_esz arg_BFCVTNT;
+static bool trans_BFCVTNT(DisasContext *ctx, arg_BFCVTNT *a);
+typedef arg_rpr_esz arg_FCVTLT_hs;
+static bool trans_FCVTLT_hs(DisasContext *ctx, arg_FCVTLT_hs *a);
+typedef arg_rpr_esz arg_FCVTLT_sd;
+static bool trans_FCVTLT_sd(DisasContext *ctx, arg_FCVTLT_sd *a);
+typedef arg_rpr_esz arg_FCVTX_ds;
+static bool trans_FCVTX_ds(DisasContext *ctx, arg_FCVTX_ds *a);
+typedef arg_rpr_esz arg_FCVTXNT_ds;
+static bool trans_FCVTXNT_ds(DisasContext *ctx, arg_FCVTXNT_ds *a);
+typedef arg_rpr_esz arg_FLOGB;
+static bool trans_FLOGB(DisasContext *ctx, arg_FLOGB *a);
 typedef arg_rpr_esz arg_FCVTZS_hh;
 static bool trans_FCVTZS_hh(DisasContext *ctx, arg_FCVTZS_hh *a);
 typedef arg_rpr_esz arg_FCVTZU_hh;
@@ -1010,6 +1537,8 @@ typedef arg_rprr_gather_load arg_LD1_zprz;
 static bool trans_LD1_zprz(DisasContext *ctx, arg_LD1_zprz *a);
 typedef arg_rpri_gather_load arg_LD1_zpiz;
 static bool trans_LD1_zpiz(DisasContext *ctx, arg_LD1_zpiz *a);
+typedef arg_rprr_gather_load arg_LDNT1_zprz;
+static bool trans_LDNT1_zprz(DisasContext *ctx, arg_LDNT1_zprz *a);
 typedef arg_rprr_load arg_LD_zprr;
 static bool trans_LD_zprr(DisasContext *ctx, arg_LD_zprr *a);
 typedef arg_rprr_load arg_LDFF1_zprr;
@@ -1022,6 +1551,10 @@ typedef arg_rprr_load arg_LD1RQ_zprr;
 static bool trans_LD1RQ_zprr(DisasContext *ctx, arg_LD1RQ_zprr *a);
 typedef arg_rpri_load arg_LD1RQ_zpri;
 static bool trans_LD1RQ_zpri(DisasContext *ctx, arg_LD1RQ_zpri *a);
+typedef arg_rprr_load arg_LD1RO_zprr;
+static bool trans_LD1RO_zprr(DisasContext *ctx, arg_LD1RO_zprr *a);
+typedef arg_rpri_load arg_LD1RO_zpri;
+static bool trans_LD1RO_zpri(DisasContext *ctx, arg_LD1RO_zpri *a);
 typedef arg_disas_sve32 arg_PRF;
 static bool trans_PRF(DisasContext *ctx, arg_PRF *a);
 typedef arg_disas_sve47 arg_PRF_rr;
@@ -1038,6 +1571,8 @@ typedef arg_rprr_scatter_store arg_ST1_zprz;
 static bool trans_ST1_zprz(DisasContext *ctx, arg_ST1_zprz *a);
 typedef arg_rpri_scatter_store arg_ST1_zpiz;
 static bool trans_ST1_zpiz(DisasContext *ctx, arg_ST1_zpiz *a);
+typedef arg_rprr_scatter_store arg_STNT1_zprz;
+static bool trans_STNT1_zprz(DisasContext *ctx, arg_STNT1_zprz *a);
 
 static void disas_sve_extract_disas_sve_Fmt_55(DisasContext *ctx, arg_disas_sve25 *a, uint32_t insn)
 {
@@ -1089,6 +1624,13 @@ static void disas_sve_extract_disas_sve_Fmt_61(DisasContext *ctx, arg_rrri *a, u
     a->imm = deposit32(extract32(insn, 10, 3), 3, 29, extract32(insn, 16, 5));
 }
 
+static void disas_sve_extract_ext_sve2(DisasContext *ctx, arg_rri *a, uint32_t insn)
+{
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->imm = deposit32(extract32(insn, 10, 3), 3, 29, extract32(insn, 16, 5));
+}
+
 static void disas_sve_extract_disas_sve_Fmt_62(DisasContext *ctx, arg_rri *a, uint32_t insn)
 {
     a->rn = extract32(insn, 5, 5);
@@ -1117,6 +1659,46 @@ static void disas_sve_extract_disas_sve_Fmt_65(DisasContext *ctx, arg_ptrue *a, 
     a->s = extract32(insn, 16, 1);
     a->pat = extract32(insn, 5, 5);
     a->rd = extract32(insn, 0, 4);
+}
+
+static bool disas_sve_extract_psel(DisasContext *ctx, arg_psel *a,
+                                   uint32_t insn)
+{
+    switch (extract32(insn, 18, 3)) {
+    case 0x1:
+    case 0x3:
+    case 0x5:
+    case 0x7:
+        a->esz = 0;
+        a->imm = (extract32(insn, 22, 2) << 2) |
+                 extract32(insn, 19, 2);
+        break;
+    case 0x2:
+    case 0x6:
+        a->esz = 1;
+        a->imm = (extract32(insn, 22, 2) << 1) |
+                 extract32(insn, 20, 1);
+        break;
+    case 0x4:
+        a->esz = 2;
+        a->imm = extract32(insn, 22, 2);
+        break;
+    case 0x0:
+        if (!extract32(insn, 22, 1)) {
+            return false;
+        }
+        a->esz = 3;
+        a->imm = extract32(insn, 23, 1);
+        break;
+    default:
+        return false;
+    }
+
+    a->pd = extract32(insn, 0, 4);
+    a->pm = extract32(insn, 5, 4);
+    a->pn = extract32(insn, 10, 4);
+    a->rv = extract32(insn, 16, 2) + 12;
+    return true;
 }
 
 static void disas_sve_extract_disas_sve_Fmt_66(DisasContext *ctx, arg_disas_sve32 *a, uint32_t insn)
@@ -1246,6 +1828,56 @@ static void disas_sve_extract_disas_sve_Fmt_80(DisasContext *ctx, arg_disas_sve4
     a->rd = extract32(insn, 0, 5);
     a->ra = extract32(insn, 0, 5);
     a->esz = 2;
+}
+
+static void disas_sve_extract_rrxr_rot_h(DisasContext *ctx,
+                                         arg_disas_sve43 *a, uint32_t insn)
+{
+    a->index = extract32(insn, 19, 2);
+    a->rm = extract32(insn, 16, 3);
+    a->rot = extract32(insn, 10, 2);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+    a->esz = 1;
+}
+
+static void disas_sve_extract_rrxr_rot_s(DisasContext *ctx,
+                                         arg_disas_sve43 *a, uint32_t insn)
+{
+    a->index = extract32(insn, 20, 1);
+    a->rm = extract32(insn, 16, 4);
+    a->rot = extract32(insn, 10, 2);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+    a->esz = 2;
+}
+
+static void disas_sve_extract_rrxr_rot_cdot_s(DisasContext *ctx,
+                                              arg_disas_sve43 *a,
+                                              uint32_t insn)
+{
+    a->index = extract32(insn, 19, 2);
+    a->rm = extract32(insn, 16, 3);
+    a->rot = extract32(insn, 10, 2);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+    a->esz = 2;
+}
+
+static void disas_sve_extract_rrxr_rot_cdot_d(DisasContext *ctx,
+                                              arg_disas_sve43 *a,
+                                              uint32_t insn)
+{
+    a->index = extract32(insn, 20, 1);
+    a->rm = extract32(insn, 16, 4);
+    a->rot = extract32(insn, 10, 2);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+    a->esz = 3;
 }
 
 static void disas_sve_extract_disas_sve_Fmt_81(DisasContext *ctx, arg_disas_sve44 *a, uint32_t insn)
@@ -1470,9 +2102,34 @@ static void disas_sve_extract_rd_pg4_rn_rm(DisasContext *ctx, arg_rprr_esz *a, u
     a->rd = extract32(insn, 0, 5);
 }
 
+static void disas_sve_extract_rd_pg_rn_rm(DisasContext *ctx, arg_rprr_esz *a, uint32_t insn)
+{
+    a->esz = extract32(insn, 22, 2);
+    a->rm = extract32(insn, 16, 5);
+    a->pg = extract32(insn, 10, 3);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+}
+
+static void disas_sve_extract_rd_decrypt(DisasContext *ctx, arg_rri *a, uint32_t insn)
+{
+    a->imm = extract32(insn, 10, 1);
+    a->rd = extract32(insn, 0, 5);
+    a->rn = 0;
+}
+
 static void disas_sve_extract_rd_pg_rn(DisasContext *ctx, arg_rpr_esz *a, uint32_t insn)
 {
     a->esz = extract32(insn, 22, 2);
+    a->pg = extract32(insn, 10, 3);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+}
+
+static void disas_sve_extract_rd_pg_rn_esz17(DisasContext *ctx,
+                                             arg_rpr_esz *a, uint32_t insn)
+{
+    a->esz = extract32(insn, 17, 2);
     a->pg = extract32(insn, 10, 3);
     a->rn = extract32(insn, 5, 5);
     a->rd = extract32(insn, 0, 5);
@@ -1531,11 +2188,180 @@ static void disas_sve_extract_rd_rn_rm_e0(DisasContext *ctx, arg_rrr_esz *a, uin
     a->esz = 0;
 }
 
+static void disas_sve_extract_rrx_3(DisasContext *ctx, arg_rrx_esz *a, uint32_t insn)
+{
+    a->index = (extract32(insn, 22, 1) << 2) | extract32(insn, 19, 2);
+    a->rm = extract32(insn, 16, 3);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->esz = 1;
+}
+
+static void disas_sve_extract_rrx_2(DisasContext *ctx, arg_rrx_esz *a, uint32_t insn)
+{
+    a->index = extract32(insn, 19, 2);
+    a->rm = extract32(insn, 16, 3);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->esz = 2;
+}
+
+static void disas_sve_extract_rrx_1(DisasContext *ctx, arg_rrx_esz *a, uint32_t insn)
+{
+    a->index = extract32(insn, 20, 1);
+    a->rm = extract32(insn, 16, 4);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->esz = 3;
+}
+
+static void disas_sve_extract_rrxr_3(DisasContext *ctx,
+                                     arg_rrxr_esz *a, uint32_t insn)
+{
+    a->index = (extract32(insn, 22, 1) << 2) | extract32(insn, 19, 2);
+    a->rm = extract32(insn, 16, 3);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+    a->esz = 1;
+}
+
+static void disas_sve_extract_rrxr_2(DisasContext *ctx,
+                                     arg_rrxr_esz *a, uint32_t insn)
+{
+    a->index = extract32(insn, 19, 2);
+    a->rm = extract32(insn, 16, 3);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+    a->esz = 2;
+}
+
+static void disas_sve_extract_rrxr_1(DisasContext *ctx,
+                                     arg_rrxr_esz *a, uint32_t insn)
+{
+    a->index = extract32(insn, 20, 1);
+    a->rm = extract32(insn, 16, 4);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+    a->esz = 3;
+}
+
+static void disas_sve_extract_rrx_3a(DisasContext *ctx,
+                                     arg_rrx_esz *a, uint32_t insn)
+{
+    a->index = (extract32(insn, 19, 2) << 1) | extract32(insn, 11, 1);
+    a->rm = extract32(insn, 16, 3);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->esz = 2;
+}
+
+static void disas_sve_extract_rrxr_3a(DisasContext *ctx,
+                                      arg_rrxr_esz *a, uint32_t insn)
+{
+    a->index = (extract32(insn, 19, 2) << 1) | extract32(insn, 11, 1);
+    a->rm = extract32(insn, 16, 3);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+    a->esz = 2;
+}
+
+static void disas_sve_extract_rrx_2a(DisasContext *ctx,
+                                     arg_rrx_esz *a, uint32_t insn)
+{
+    a->index = (extract32(insn, 20, 1) << 1) | extract32(insn, 11, 1);
+    a->rm = extract32(insn, 16, 4);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->esz = 3;
+}
+
+static void disas_sve_extract_rd_rn_tszimm_shl(DisasContext *ctx,
+                                               arg_rri_esz *a, uint32_t insn)
+{
+    int tszimm = deposit32(extract32(insn, 16, 5), 5, 27,
+                           extract32(insn, 22, 2));
+
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->esz = tszimm_esz(ctx, tszimm);
+    a->imm = tszimm_shl(ctx, tszimm);
+}
+
+static void disas_sve_extract_rd_rn_tszimm_shr(DisasContext *ctx,
+                                               arg_rri_esz *a, uint32_t insn)
+{
+    int tszimm = deposit32(extract32(insn, 16, 5), 5, 27,
+                           extract32(insn, 22, 2));
+
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->esz = tszimm_esz(ctx, tszimm);
+    a->imm = tszimm_shr(ctx, tszimm);
+}
+
+static void disas_sve_extract_rda_rn_rm(DisasContext *ctx, arg_rprrr_esz *a, uint32_t insn)
+{
+    a->esz = extract32(insn, 22, 2);
+    a->rm = extract32(insn, 16, 5);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+    a->pg = 0;
+}
+
+static void disas_sve_extract_rda_rn_rm_e0(DisasContext *ctx,
+                                           arg_rprrr_esz *a, uint32_t insn)
+{
+    a->esz = 0;
+    a->rm = extract32(insn, 16, 5);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+    a->pg = 0;
+}
+
+static void disas_sve_extract_rda_rn_rm_rot(DisasContext *ctx,
+                                            arg_rprrr_rot_esz *a,
+                                            uint32_t insn)
+{
+    a->esz = extract32(insn, 22, 2);
+    a->rm = extract32(insn, 16, 5);
+    a->rot = extract32(insn, 10, 2);
+    a->rn = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->ra = extract32(insn, 0, 5);
+}
+
+static void disas_sve_extract_rdn_ra_rm_e0(DisasContext *ctx, arg_rprrr_esz *a, uint32_t insn)
+{
+    a->rm = extract32(insn, 16, 5);
+    a->ra = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->rn = extract32(insn, 0, 5);
+    a->pg = 0;
+    a->esz = 0;
+}
+
 static void disas_sve_extract_rd_rn_tszimm(DisasContext *ctx, arg_rri_esz *a, uint32_t insn)
 {
     a->rn = extract32(insn, 5, 5);
     a->rd = extract32(insn, 0, 5);
     a->esz = tszimm_esz(ctx, deposit32(extract32(insn, 16, 5), 5, 27, extract32(insn, 22, 2)));
+}
+
+static void disas_sve_extract_rdn_rm_tszimm16(DisasContext *ctx, arg_rrri_esz *a, uint32_t insn)
+{
+    int tszimm = deposit32(extract32(insn, 16, 5), 5, 27, extract32(insn, 22, 2));
+
+    a->rm = extract32(insn, 5, 5);
+    a->rd = extract32(insn, 0, 5);
+    a->rn = extract32(insn, 0, 5);
+    a->esz = tszimm_esz(ctx, tszimm);
+    a->imm = tszimm_shr(ctx, tszimm);
 }
 
 static void disas_sve_extract_rda_pg_rn_rm(DisasContext *ctx, arg_rprrr_esz *a, uint32_t insn)
@@ -1840,6 +2666,7 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
         arg_incdec2_pred f_incdec2_pred;
         arg_incdec_cnt f_incdec_cnt;
         arg_incdec_pred f_incdec_pred;
+        arg_psel f_psel;
         arg_ptrue f_ptrue;
         arg_rpr_esz f_rpr_esz;
         arg_rpr_s f_rpr_s;
@@ -1855,12 +2682,16 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
         arg_rprr_scatter_store f_rprr_scatter_store;
         arg_rprr_store f_rprr_store;
         arg_rprrr_esz f_rprrr_esz;
+        arg_rprrr_rot_esz f_rprrr_rot_esz;
         arg_rr_dbm f_rr_dbm;
         arg_rr_esz f_rr_esz;
         arg_rri f_rri;
         arg_rri_esz f_rri_esz;
         arg_rrr_esz f_rrr_esz;
         arg_rrri f_rrri;
+        arg_rrri_esz f_rrri_esz;
+        arg_rrx_esz f_rrx_esz;
+        arg_rrxr_esz f_rrxr_esz;
     } u;
 
     switch ((insn >> 25) & 0x7f) {
@@ -2319,6 +3150,37 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                     /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:375 */
                     if (trans_BIC_zzz(ctx, &u.f_rrr_esz)) return true;
                     return false;
+                case 0x00000400:
+                case 0x00400400:
+                case 0x00800400:
+                case 0x00c00400:
+                    disas_sve_extract_rdn_rm_tszimm16(ctx, &u.f_rrri_esz, insn);
+                    if (trans_XAR(ctx, &u.f_rrri_esz)) return true;
+                    return false;
+                case 0x00000800:
+                    disas_sve_extract_rdn_ra_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                    if (trans_EOR3(ctx, &u.f_rprrr_esz)) return true;
+                    return false;
+                case 0x00000c00:
+                    disas_sve_extract_rdn_ra_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                    if (trans_BSL(ctx, &u.f_rprrr_esz)) return true;
+                    return false;
+                case 0x00400800:
+                    disas_sve_extract_rdn_ra_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                    if (trans_BCAX(ctx, &u.f_rprrr_esz)) return true;
+                    return false;
+                case 0x00400c00:
+                    disas_sve_extract_rdn_ra_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                    if (trans_BSL1N(ctx, &u.f_rprrr_esz)) return true;
+                    return false;
+                case 0x00800c00:
+                    disas_sve_extract_rdn_ra_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                    if (trans_BSL2N(ctx, &u.f_rprrr_esz)) return true;
+                    return false;
+                case 0x00c00c00:
+                    disas_sve_extract_rdn_ra_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                    if (trans_NBSL(ctx, &u.f_rprrr_esz)) return true;
+                    return false;
                 }
                 return false;
             case 0x4:
@@ -2359,11 +3221,21 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                     disas_sve_extract_rd_rn_i6(ctx, &u.f_rri, insn);
                     if (trans_ADDVL(ctx, &u.f_rri)) return true;
                     return false;
+                case 0x00000800:
+                    /* 00000100 001..... 01011... ........ */
+                    disas_sve_extract_rd_rn_i6(ctx, &u.f_rri, insn);
+                    if (trans_ADDSVL(ctx, &u.f_rri)) return true;
+                    return false;
                 case 0x00400000:
                     /* 00000100 011..... 01010... ........ */
                     /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:395 */
                     disas_sve_extract_rd_rn_i6(ctx, &u.f_rri, insn);
                     if (trans_ADDPL(ctx, &u.f_rri)) return true;
+                    return false;
+                case 0x00400800:
+                    /* 00000100 011..... 01011... ........ */
+                    disas_sve_extract_rd_rn_i6(ctx, &u.f_rri, insn);
+                    if (trans_ADDSPL(ctx, &u.f_rri)) return true;
                     return false;
                 case 0x00800000:
                     /* 00000100 101..... 01010... ........ */
@@ -2375,6 +3247,46 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                         if (trans_RDVL(ctx, &u.f_disas_sve27)) return true;
                         return false;
                     }
+                    return false;
+                case 0x00800800:
+                    /* 00000100 101..... 01011... ........ */
+                    disas_sve_extract_disas_sve_Fmt_58(ctx, &u.f_disas_sve27, insn);
+                    switch ((insn >> 16) & 0x1f) {
+                    case 0x1f:
+                        /* 00000100 10111111 01011... ........ */
+                        if (trans_RDSVL(ctx, &u.f_disas_sve27)) return true;
+                        return false;
+                    }
+                    return false;
+                }
+                return false;
+            case 0x6:
+                /* 00000100 ..1..... 0110.... ........ */
+                disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+                switch ((insn >> 10) & 0x3) {
+                case 0x0:
+                    if (trans_MUL_zzz(ctx, &u.f_rrr_esz)) return true;
+                    return false;
+                case 0x1:
+                    if (trans_PMUL_zzz(ctx, &u.f_rrr_esz)) return true;
+                    return false;
+                case 0x2:
+                    if (trans_SMULH_zzz(ctx, &u.f_rrr_esz)) return true;
+                    return false;
+                case 0x3:
+                    if (trans_UMULH_zzz(ctx, &u.f_rrr_esz)) return true;
+                    return false;
+                }
+                return false;
+            case 0x7:
+                /* 00000100 ..1..... 0111.... ........ */
+                disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+                switch ((insn >> 10) & 0x3) {
+                case 0x0:
+                    if (trans_SQDMULH_zzz(ctx, &u.f_rrr_esz)) return true;
+                    return false;
+                case 0x1:
+                    if (trans_SQRDMULH_zzz(ctx, &u.f_rrr_esz)) return true;
                     return false;
                 }
                 return false;
@@ -2619,6 +3531,38 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
             return false;
         case 0x01200000:
             /* 00000101 ..1..... ........ ........ */
+            switch (insn & 0xffe0fc00) {
+            case 0x05a00000:
+                /* 00000101 101..... 000000.. ........ */
+                disas_sve_extract_rd_rn_rm_e0(ctx, &u.f_rrr_esz, insn);
+                if (trans_ZIP1_q(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            case 0x05a00400:
+                /* 00000101 101..... 000001.. ........ */
+                disas_sve_extract_rd_rn_rm_e0(ctx, &u.f_rrr_esz, insn);
+                if (trans_ZIP2_q(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            case 0x05a00800:
+                /* 00000101 101..... 000010.. ........ */
+                disas_sve_extract_rd_rn_rm_e0(ctx, &u.f_rrr_esz, insn);
+                if (trans_UZP1_q(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            case 0x05a00c00:
+                /* 00000101 101..... 000011.. ........ */
+                disas_sve_extract_rd_rn_rm_e0(ctx, &u.f_rrr_esz, insn);
+                if (trans_UZP2_q(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            case 0x05a01800:
+                /* 00000101 101..... 000110.. ........ */
+                disas_sve_extract_rd_rn_rm_e0(ctx, &u.f_rrr_esz, insn);
+                if (trans_TRN1_q(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            case 0x05a01c00:
+                /* 00000101 101..... 000111.. ........ */
+                disas_sve_extract_rd_rn_rm_e0(ctx, &u.f_rrr_esz, insn);
+                if (trans_TRN2_q(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            }
             switch ((insn >> 14) & 0x3) {
             case 0x0:
                 /* 00000101 ..1..... 00...... ........ */
@@ -2632,6 +3576,10 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                         /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:479 */
                         if (trans_EXT(ctx, &u.f_rrri)) return true;
                         return false;
+                    case 0x1:
+                        disas_sve_extract_ext_sve2(ctx, &u.f_rri, insn);
+                        if (trans_EXT_sve2(ctx, &u.f_rri)) return true;
+                        return false;
                     }
                     return false;
                 case 0x1:
@@ -2642,6 +3590,14 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                         /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:488 */
                         disas_sve_extract_disas_sve_Fmt_62(ctx, &u.f_rri, insn);
                         if (trans_DUP_x(ctx, &u.f_rri)) return true;
+                        return false;
+                    case 0x2:
+                        disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+                        if (trans_TBL_sve2(ctx, &u.f_rrr_esz)) return true;
+                        return false;
+                    case 0x3:
+                        disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+                        if (trans_TBX(ctx, &u.f_rrr_esz)) return true;
                         return false;
                     case 0x4:
                         /* 00000101 ..1..... 001100.. ........ */
@@ -2946,6 +3902,11 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                     /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:573 */
                     disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
                     if (trans_SPLICE(ctx, &u.f_rprr_esz)) return true;
+                    return false;
+                case 0x000d0000:
+                    /* 00000101 ..101101 100..... ........ */
+                    disas_sve_extract_rd_pg_rn(ctx, &u.f_rpr_esz, insn);
+                    if (trans_SPLICE_sve2(ctx, &u.f_rpr_esz)) return true;
                     return false;
                 case 0x00102000:
                     /* 00000101 ..110000 101..... ........ */
@@ -3363,6 +4324,14 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
             return false;
         case 0x01200000:
             /* 00100101 ..1..... ........ ........ */
+            switch (insn & 0x0020c210) {
+            case 0x00204000:
+                if (disas_sve_extract_psel(ctx, &u.f_psel, insn) &&
+                    trans_PSEL(ctx, &u.f_psel)) {
+                    return true;
+                }
+                return false;
+            }
             switch ((insn >> 14) & 0x3) {
             case 0x0:
                 /* 00100101 ..1..... 00...... ........ */
@@ -3599,7 +4568,941 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
         return false;
     case 0x22:
         /* 0100010. ........ ........ ........ */
+        if ((insn & 0x0120e000) == 0x01208000) {
+            disas_sve_extract_pd_pg_rn_rm(ctx, &u.f_rprr_esz, insn);
+            switch ((insn >> 4) & 0x1) {
+            case 0x0:
+                if (trans_MATCH(ctx, &u.f_rprr_esz)) return true;
+                return false;
+            case 0x1:
+                if (trans_NMATCH(ctx, &u.f_rprr_esz)) return true;
+                return false;
+            }
+            return false;
+        }
+        if ((insn & 0x0120e000) == 0x0120c000) {
+            disas_sve_extract_rd_pg_rn_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_HISTCNT(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        }
+        if ((insn & 0x0120fc00) == 0x0120a000) {
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_HISTSEG(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xff3fe000) {
+        case 0x4404a000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_SADALP_zpzz(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x4405a000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_UADALP_zpzz(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44028000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SRSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44038000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_URSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44068000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_SRSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44078000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_URSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44088000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SQSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44098000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_UQSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x440a8000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SQRSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x440b8000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_UQRSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x440c8000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_SQSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x440d8000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_UQSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x440e8000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_SQRSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x440f8000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_UQRSHL(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44108000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SHADD(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44118000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_UHADD(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44128000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SHSUB(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44138000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_UHSUB(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44148000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SRHADD(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44158000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_URHADD(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44168000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_SHSUB(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44178000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_UHSUB(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x4411a000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_ADDP(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x4414a000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SMAXP(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x4415a000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_UMAXP(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x4416a000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SMINP(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x4417a000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_UMINP(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44188000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SQADD_zpzz(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x44198000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_UQADD_zpzz(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x441a8000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SQSUB_zpzz(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x441b8000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_UQSUB_zpzz(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x441c8000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_SUQADD(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x441d8000:
+            disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+            if (trans_USQADD(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x441e8000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_SQSUB_zpzz(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x441f8000:
+            disas_sve_extract_rdm_pg_rn(ctx, &u.f_rprr_esz, insn);
+            if (trans_UQSUB_zpzz(ctx, &u.f_rprr_esz)) return true;
+            return false;
+        case 0x4400a000:
+            disas_sve_extract_rd_pg_rn(ctx, &u.f_rpr_esz, insn);
+            if (trans_URECPE(ctx, &u.f_rpr_esz)) return true;
+            return false;
+        case 0x4401a000:
+            disas_sve_extract_rd_pg_rn(ctx, &u.f_rpr_esz, insn);
+            if (trans_URSQRTE(ctx, &u.f_rpr_esz)) return true;
+            return false;
+        case 0x4408a000:
+            disas_sve_extract_rd_pg_rn(ctx, &u.f_rpr_esz, insn);
+            if (trans_SQABS(ctx, &u.f_rpr_esz)) return true;
+            return false;
+        case 0x4409a000:
+            disas_sve_extract_rd_pg_rn(ctx, &u.f_rpr_esz, insn);
+            if (trans_SQNEG(ctx, &u.f_rpr_esz)) return true;
+            return false;
+        }
+        if ((insn & 0xfffffbe0) == 0x4520e000) {
+            disas_sve_extract_rd_decrypt(ctx, &u.f_rri, insn);
+            if (trans_AESMC(ctx, &u.f_rri)) return true;
+            return false;
+        }
+        switch (insn & 0xfffffc00) {
+        case 0x4522e000:
+            disas_sve_extract_rdn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_AESE(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x4522e400:
+            disas_sve_extract_rdn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_AESD(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x4523e000:
+            disas_sve_extract_rdn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SM4E(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xff3ffc00) {
+        case 0x4500d800:
+            disas_sve_extract_rdn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_CADD_rot90(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x4500dc00:
+            disas_sve_extract_rdn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_CADD_rot270(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x4501d800:
+            disas_sve_extract_rdn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SQCADD_rot90(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x4501dc00:
+            disas_sve_extract_rdn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SQCADD_rot270(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xffe0fc00) {
+        case 0x4520f000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SM4EKEY(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x4520f400:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_RAX1(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xff20fc00) {
+        case 0x44000800:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SQDMLALBT(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44000c00:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SQDMLSLBT(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44004000:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SMLALB_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44004400:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SMLALT_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44004800:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_UMLALB_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44004c00:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_UMLALT_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44005000:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SMLSLB_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44005400:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SMLSLT_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44005800:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_UMLSLB_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44005c00:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_UMLSLT_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44006000:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SQDMLALB_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44006400:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SQDMLALT_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44006800:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SQDMLSLB_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44006c00:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SQDMLSLT_zzzw(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44007000:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SQRDMLAH_zzzz(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44007400:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SQRDMLSH_zzzz(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x44007800:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_USDOT_zzzz(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xff20f000) {
+        case 0x44001000:
+            disas_sve_extract_rda_rn_rm_rot(ctx, &u.f_rprrr_rot_esz, insn);
+            if (trans_CDOT_zzzz(ctx, &u.f_rprrr_rot_esz)) return true;
+            return false;
+        case 0x44002000:
+            disas_sve_extract_rda_rn_rm_rot(ctx, &u.f_rprrr_rot_esz, insn);
+            if (trans_CMLA_zzzz(ctx, &u.f_rprrr_rot_esz)) return true;
+            return false;
+        case 0x44003000:
+            disas_sve_extract_rda_rn_rm_rot(ctx, &u.f_rprrr_rot_esz, insn);
+            if (trans_SQRDCMLAH_zzzz(ctx, &u.f_rprrr_rot_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xffa0fc00) {
+        case 0x44201000:
+            disas_sve_extract_rrxr_3(ctx, &u.f_rrxr_esz, insn);
+            if (trans_SQRDMLAH_zzxz(ctx, &u.f_rrxr_esz)) return true;
+            return false;
+        case 0x44201400:
+            disas_sve_extract_rrxr_3(ctx, &u.f_rrxr_esz, insn);
+            if (trans_SQRDMLSH_zzxz(ctx, &u.f_rrxr_esz)) return true;
+            return false;
+        case 0x4420f000:
+            disas_sve_extract_rrx_3(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMULH_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x4420f400:
+            disas_sve_extract_rrx_3(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQRDMULH_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x4420f800:
+            disas_sve_extract_rrx_3(ctx, &u.f_rrx_esz, insn);
+            if (trans_MUL_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xffe0fc00) {
+        case 0x44a01000:
+            disas_sve_extract_rrxr_2(ctx, &u.f_rrxr_esz, insn);
+            if (trans_SQRDMLAH_zzxz(ctx, &u.f_rrxr_esz)) return true;
+            return false;
+        case 0x44a01400:
+            disas_sve_extract_rrxr_2(ctx, &u.f_rrxr_esz, insn);
+            if (trans_SQRDMLSH_zzxz(ctx, &u.f_rrxr_esz)) return true;
+            return false;
+        case 0x44a01800:
+            disas_sve_extract_rrxr_2(ctx, &u.f_rrxr_esz, insn);
+            if (trans_USDOT_zzxw_s(ctx, &u.f_rrxr_esz)) return true;
+            return false;
+        case 0x44a01c00:
+            disas_sve_extract_rrxr_2(ctx, &u.f_rrxr_esz, insn);
+            if (trans_SUDOT_zzxw_s(ctx, &u.f_rrxr_esz)) return true;
+            return false;
+        case 0x44a0f000:
+            disas_sve_extract_rrx_2(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMULH_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0f400:
+            disas_sve_extract_rrx_2(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQRDMULH_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0f800:
+            disas_sve_extract_rrx_2(ctx, &u.f_rrx_esz, insn);
+            if (trans_MUL_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e01000:
+            disas_sve_extract_rrxr_1(ctx, &u.f_rrxr_esz, insn);
+            if (trans_SQRDMLAH_zzxz(ctx, &u.f_rrxr_esz)) return true;
+            return false;
+        case 0x44e01400:
+            disas_sve_extract_rrxr_1(ctx, &u.f_rrxr_esz, insn);
+            if (trans_SQRDMLSH_zzxz(ctx, &u.f_rrxr_esz)) return true;
+            return false;
+        case 0x44e0f000:
+            disas_sve_extract_rrx_1(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMULH_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0f400:
+            disas_sve_extract_rrx_1(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQRDMULH_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0f800:
+            disas_sve_extract_rrx_1(ctx, &u.f_rrx_esz, insn);
+            if (trans_MUL_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xffe0f000) {
+        case 0x44a04000:
+            disas_sve_extract_rrxr_rot_cdot_s(ctx, &u.f_disas_sve43, insn);
+            if (trans_CDOT_zzxw_s(ctx, &u.f_disas_sve43)) return true;
+            return false;
+        case 0x44e04000:
+            disas_sve_extract_rrxr_rot_cdot_d(ctx, &u.f_disas_sve43, insn);
+            if (trans_CDOT_zzxw_d(ctx, &u.f_disas_sve43)) return true;
+            return false;
+        case 0x44a06000:
+            disas_sve_extract_rrxr_rot_h(ctx, &u.f_disas_sve43, insn);
+            if (trans_CMLA_zzxz_h(ctx, &u.f_disas_sve43)) return true;
+            return false;
+        case 0x44e06000:
+            disas_sve_extract_rrxr_rot_s(ctx, &u.f_disas_sve43, insn);
+            if (trans_CMLA_zzxz_s(ctx, &u.f_disas_sve43)) return true;
+            return false;
+        case 0x44a07000:
+            disas_sve_extract_rrxr_rot_h(ctx, &u.f_disas_sve43, insn);
+            if (trans_SQRDCMLAH_zzxz_h(ctx, &u.f_disas_sve43)) return true;
+            return false;
+        case 0x44e07000:
+            disas_sve_extract_rrxr_rot_s(ctx, &u.f_disas_sve43, insn);
+            if (trans_SQRDCMLAH_zzxz_s(ctx, &u.f_disas_sve43)) return true;
+            return false;
+        }
+        switch (insn & 0xffe0f400) {
+        case 0x44a02000:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMLALB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a02400:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMLALT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a03000:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMLSLB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a03400:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMLSLT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a08000:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMLALB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a08400:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMLALT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a09000:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMLALB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a09400:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMLALT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0a000:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMLSLB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0a400:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMLSLT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0b000:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMLSLB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0b400:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMLSLT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0c000:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMULLB_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0c400:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMULLT_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0d000:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMULLB_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0d400:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMULLT_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0e000:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMULLB_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44a0e400:
+            disas_sve_extract_rrx_3a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMULLT_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e02000:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMLALB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e02400:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMLALT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e03000:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMLSLB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e03400:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMLSLT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e08000:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMLALB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e08400:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMLALT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e09000:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMLALB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e09400:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMLALT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0a000:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMLSLB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0a400:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMLSLT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0b000:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMLSLB_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0b400:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMLSLT_zzxw(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0c000:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMULLB_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0c400:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SMULLT_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0d000:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMULLB_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0d400:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_UMULLT_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0e000:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMULLB_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        case 0x44e0e400:
+            disas_sve_extract_rrx_2a(ctx, &u.f_rrx_esz, insn);
+            if (trans_SQDMULLT_zzx(ctx, &u.f_rrx_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xffe0fc00) {
+        case 0x45009800:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SMMLA(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x45809800:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_USMMLA(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x45c09800:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_UMMLA(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xff20fc00) {
+        case 0x45000000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SADDLB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45000400:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SADDLT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45000800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_UADDLB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45000c00:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_UADDLT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45001000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SSUBLB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45001400:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SSUBLT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45001800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_USUBLB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45001c00:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_USUBLT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45003000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SABDLB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45003400:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SABDLT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45003800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_UABDLB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45003c00:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_UABDLT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45004000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SADDWB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45004400:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SADDWT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45004800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_UADDWB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45004c00:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_UADDWT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45005000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SSUBWB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45005400:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SSUBWT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45005800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_USUBWB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45005c00:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_USUBWT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45006000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SQDMULLB_zzz(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45006400:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SQDMULLT_zzz(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45007000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SMULLB_zzz(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45007400:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SMULLT_zzz(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45007800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_UMULLB_zzz(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45007c00:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_UMULLT_zzz(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45008000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SADDLBT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45008800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SSUBLBT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45008c00:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SSUBLTB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x4500c000:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SABALB(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x4500c400:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_SABALT(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x4500c800:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_UABALB(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        case 0x4500cc00:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            if (trans_UABALT(ctx, &u.f_rprrr_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xff20fc00) {
+        case 0x4500a000:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_SSHLLB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x4500a400:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_SSHLLT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x4500a800:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_USHLLB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x4500ac00:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_USHLLT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xff20fc00) {
+        case 0x4500e000:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SSRA(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x4500e400:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_USRA(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x4500e800:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SRSRA(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x4500ec00:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_URSRA(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x4500f000:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SRI(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x4500f400:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_SLI(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x4500f800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SABA(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x4500fc00:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_UABA(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xff20fc00) {
+        case 0x45200000:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SQSHRUNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45200400:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SQSHRUNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45200800:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SQRSHRUNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45200c00:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SQRSHRUNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45201000:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SHRNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45201400:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SHRNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45201800:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_RSHRNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45201c00:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_RSHRNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45202000:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SQSHRNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45202400:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SQSHRNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45202800:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SQRSHRNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45202c00:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_SQRSHRNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45203000:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_UQSHRNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45203400:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_UQSHRNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45203800:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_UQRSHRNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45203c00:
+            disas_sve_extract_rd_rn_tszimm_shr(ctx, &u.f_rri_esz, insn);
+            if (trans_UQRSHRNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xff20fc00) {
+        case 0x45206000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_ADDHNB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45206400:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_ADDHNT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45206800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_RADDHNB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45206c00:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_RADDHNT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45207000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SUBHNB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45207400:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_SUBHNT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45207800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_RSUBHNB(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        case 0x45207c00:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            if (trans_RSUBHNT(ctx, &u.f_rrr_esz)) return true;
+            return false;
+        }
+        switch (insn & 0xff20fc00) {
+        case 0x45204000:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_SQXTNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45204400:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_SQXTNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45204800:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_UQXTNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45204c00:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_UQXTNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45205000:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_SQXTUNB(ctx, &u.f_rri_esz)) return true;
+            return false;
+        case 0x45205400:
+            disas_sve_extract_rd_rn_tszimm_shl(ctx, &u.f_rri_esz, insn);
+            if (trans_SQXTUNT(ctx, &u.f_rri_esz)) return true;
+            return false;
+        }
         switch (insn & 0x01a0f800) {
+        case 0x01006800:
+        case 0x01806800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            switch ((insn >> 10) & 0x1) {
+            case 0x0:
+                if (trans_PMULLB(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            case 0x1:
+                if (trans_PMULLT(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            }
+            return false;
+        case 0x01009000:
+        case 0x01809000:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            switch ((insn >> 10) & 0x1) {
+            case 0x0:
+                if (trans_EORBT(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            case 0x1:
+                if (trans_EORTB(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            }
+            return false;
+        case 0x0100b000:
+        case 0x0180b000:
+        case 0x0100b800:
+        case 0x0180b800:
+            disas_sve_extract_rd_rn_rm(ctx, &u.f_rrr_esz, insn);
+            switch ((insn >> 10) & 0x3) {
+            case 0x0:
+                if (trans_BEXT(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            case 0x1:
+                if (trans_BDEP(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            case 0x2:
+                if (trans_BGRP(ctx, &u.f_rrr_esz)) return true;
+                return false;
+            }
+            return false;
+        case 0x0100d000:
+        case 0x0180d000:
+            disas_sve_extract_rda_rn_rm(ctx, &u.f_rprrr_esz, insn);
+            switch ((insn >> 10) & 0x1) {
+            case 0x0:
+                if (trans_ADCLB(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            case 0x1:
+                if (trans_ADCLT(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            }
+            return false;
         case 0x00800000:
             /* 01000100 1.0..... 00000... ........ */
             /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:730 */
@@ -3636,6 +5539,54 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
             return false;
         case 0x00008000:
             /* 01100100 ..0..... 1....... ........ */
+            switch (insn & 0xff3fe000) {
+            case 0x64108000:
+                disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+                if (trans_FADDP(ctx, &u.f_rprr_esz)) return true;
+                return false;
+            case 0x64148000:
+                disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+                if (trans_FMAXNMP(ctx, &u.f_rprr_esz)) return true;
+                return false;
+            case 0x64158000:
+                disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+                if (trans_FMINNMP(ctx, &u.f_rprr_esz)) return true;
+                return false;
+            case 0x64168000:
+                disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+                if (trans_FMAXP(ctx, &u.f_rprr_esz)) return true;
+                return false;
+            case 0x64178000:
+                disas_sve_extract_rdn_pg_rm(ctx, &u.f_rprr_esz, insn);
+                if (trans_FMINP(ctx, &u.f_rprr_esz)) return true;
+                return false;
+            }
+            switch (insn & 0xffffe000) {
+            case 0x640aa000:
+                disas_sve_extract_rd_pg_rn_e0(ctx, &u.f_rpr_esz, insn);
+                if (trans_FCVTXNT_ds(ctx, &u.f_rpr_esz)) return true;
+                return false;
+            case 0x6488a000:
+                disas_sve_extract_rd_pg_rn_e0(ctx, &u.f_rpr_esz, insn);
+                if (trans_FCVTNT_sh(ctx, &u.f_rpr_esz)) return true;
+                return false;
+            case 0x648aa000:
+                disas_sve_extract_rd_pg_rn_e0(ctx, &u.f_rpr_esz, insn);
+                if (trans_BFCVTNT(ctx, &u.f_rpr_esz)) return true;
+                return false;
+            case 0x6489a000:
+                disas_sve_extract_rd_pg_rn_e0(ctx, &u.f_rpr_esz, insn);
+                if (trans_FCVTLT_hs(ctx, &u.f_rpr_esz)) return true;
+                return false;
+            case 0x64caa000:
+                disas_sve_extract_rd_pg_rn_e0(ctx, &u.f_rpr_esz, insn);
+                if (trans_FCVTNT_ds(ctx, &u.f_rpr_esz)) return true;
+                return false;
+            case 0x64cba000:
+                disas_sve_extract_rd_pg_rn_e0(ctx, &u.f_rpr_esz, insn);
+                if (trans_FCVTLT_sd(ctx, &u.f_rpr_esz)) return true;
+                return false;
+            }
             disas_sve_extract_disas_sve_Fmt_77(ctx, &u.f_disas_sve41, insn);
             switch (insn & 0x001e6000) {
             case 0x00000000:
@@ -3647,6 +5598,36 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
             return false;
         case 0x00200000:
             /* 01100100 ..1..... 0....... ........ */
+            switch (insn & 0xffe0f400) {
+            case 0x64604000:
+                disas_sve_extract_rrxr_2(ctx, &u.f_rrxr_esz, insn);
+                if (trans_BFDOT_zzxz(ctx, &u.f_rrxr_esz)) return true;
+                return false;
+            case 0x64a04000:
+                disas_sve_extract_rrxr_3a(ctx, &u.f_rrxr_esz, insn);
+                if (trans_FMLALB_zzxw(ctx, &u.f_rrxr_esz)) return true;
+                return false;
+            case 0x64a04400:
+                disas_sve_extract_rrxr_3a(ctx, &u.f_rrxr_esz, insn);
+                if (trans_FMLALT_zzxw(ctx, &u.f_rrxr_esz)) return true;
+                return false;
+            case 0x64e04000:
+                disas_sve_extract_rrxr_3a(ctx, &u.f_rrxr_esz, insn);
+                if (trans_BFMLALB_zzxw(ctx, &u.f_rrxr_esz)) return true;
+                return false;
+            case 0x64e04400:
+                disas_sve_extract_rrxr_3a(ctx, &u.f_rrxr_esz, insn);
+                if (trans_BFMLALT_zzxw(ctx, &u.f_rrxr_esz)) return true;
+                return false;
+            case 0x64a06000:
+                disas_sve_extract_rrxr_3a(ctx, &u.f_rrxr_esz, insn);
+                if (trans_FMLSLB_zzxw(ctx, &u.f_rrxr_esz)) return true;
+                return false;
+            case 0x64a06400:
+                disas_sve_extract_rrxr_3a(ctx, &u.f_rrxr_esz, insn);
+                if (trans_FMLSLT_zzxw(ctx, &u.f_rrxr_esz)) return true;
+                return false;
+            }
             switch (insn & 0x00807000) {
             case 0x00000000:
                 /* 01100100 0.1..... 0000.... ........ */
@@ -3720,6 +5701,50 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                     if (trans_FMUL_zzx(ctx, &u.f_disas_sve45)) return true;
                     return false;
                 }
+                return false;
+            }
+            return false;
+        case 0x00208000:
+            switch (insn & 0xffe0fc00) {
+            case 0x64608000:
+                disas_sve_extract_rda_rn_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                if (trans_BFDOT_zzzz(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            case 0x6460e400:
+                disas_sve_extract_rda_rn_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                if (trans_BFMMLA(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            case 0x64a0e400:
+                disas_sve_extract_rda_rn_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                if (trans_FMMLA_s(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            case 0x64e0e400:
+                disas_sve_extract_rda_rn_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                if (trans_FMMLA_d(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            case 0x64a08000:
+                disas_sve_extract_rda_rn_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                if (trans_FMLALB_zzzw(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            case 0x64a08400:
+                disas_sve_extract_rda_rn_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                if (trans_FMLALT_zzzw(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            case 0x64e08000:
+                disas_sve_extract_rda_rn_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                if (trans_BFMLALB_zzzw(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            case 0x64e08400:
+                disas_sve_extract_rda_rn_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                if (trans_BFMLALT_zzzw(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            case 0x64a0a000:
+                disas_sve_extract_rda_rn_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                if (trans_FMLSLB_zzzw(ctx, &u.f_rprrr_esz)) return true;
+                return false;
+            case 0x64a0a400:
+                disas_sve_extract_rda_rn_rm_e0(ctx, &u.f_rprrr_esz, insn);
+                if (trans_FMLSLT_zzzw(ctx, &u.f_rprrr_esz)) return true;
                 return false;
             }
             return false;
@@ -4068,6 +6093,16 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                 return false;
             case 0x1:
                 /* 01100101 ..0..... 101..... ........ */
+                if ((insn & 0xffffe000) == 0x658aa000) {
+                    disas_sve_extract_rd_pg_rn_e0(ctx, &u.f_rpr_esz, insn);
+                    if (trans_BFCVT(ctx, &u.f_rpr_esz)) return true;
+                    return false;
+                }
+                if ((insn & 0xfff9e000) == 0x6518a000) {
+                    disas_sve_extract_rd_pg_rn_esz17(ctx, &u.f_rpr_esz, insn);
+                    if (trans_FLOGB(ctx, &u.f_rpr_esz)) return true;
+                    return false;
+                }
                 switch ((insn >> 16) & 0x1f) {
                 case 0x0:
                     /* 01100101 ..000000 101..... ........ */
@@ -4147,6 +6182,10 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                     /* 01100101 ..001010 101..... ........ */
                     disas_sve_extract_rd_pg_rn_e0(ctx, &u.f_rpr_esz, insn);
                     switch ((insn >> 22) & 0x3) {
+                    case 0x0:
+                        /* 01100101 00001010 101..... ........ */
+                        if (trans_FCVTX_ds(ctx, &u.f_rpr_esz)) return true;
+                        return false;
                     case 0x3:
                         /* 01100101 11001010 101..... ........ */
                         /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:860 */
@@ -4600,6 +6639,17 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                 case 0x0:
                     /* 1000010. .00..... 1....... ........ */
                     switch (insn & 0x00006010) {
+                    case 0x00002000:
+                        /* 1000010. .00..... 101..... ........ */
+                        disas_sve_extract_rprr_g_load_xs_u(ctx, &u.f_rprr_gather_load, insn);
+                        u.f_rprr_gather_load.u = extract32(insn, 13, 1);
+                        u.f_rprr_gather_load.ff = 0;
+                        u.f_rprr_gather_load.xs = 0;
+                        u.f_rprr_gather_load.esz = 2;
+                        u.f_rprr_gather_load.msz = extract32(insn, 23, 2);
+                        u.f_rprr_gather_load.scale = 0;
+                        if (trans_LDNT1_zprz(ctx, &u.f_rprr_gather_load)) return true;
+                        return false;
                     case 0x00004000:
                         /* 1000010. .00..... 110..... ...0.... */
                         /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:979 */
@@ -4646,6 +6696,11 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                 u.f_rprr_load.nreg = 0;
                 if (trans_LD1RQ_zprr(ctx, &u.f_rprr_load)) return true;
                 return false;
+            case 0x1:
+                /* 1010010. .01..... 000..... ........ */
+                u.f_rprr_load.nreg = 0;
+                if (trans_LD1RO_zprr(ctx, &u.f_rprr_load)) return true;
+                return false;
             }
             return false;
         case 0x1:
@@ -4657,6 +6712,11 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                 /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:966 */
                 u.f_rpri_load.nreg = 0;
                 if (trans_LD1RQ_zpri(ctx, &u.f_rpri_load)) return true;
+                return false;
+            case 0x2:
+                /* 1010010. .010.... 001..... ........ */
+                u.f_rpri_load.nreg = 0;
+                if (trans_LD1RO_zpri(ctx, &u.f_rpri_load)) return true;
                 return false;
             }
             return false;
@@ -4786,6 +6846,15 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                     /* 1100010. .00..... 1....... ........ */
                     disas_sve_extract_disas_sve_Fmt_66(ctx, &u.f_disas_sve32, insn);
                     switch (insn & 0x00006010) {
+                    case 0x00004000:
+                        /* 1100010. .00..... 110..... ........ */
+                        disas_sve_extract_rprr_g_load_u(ctx, &u.f_rprr_gather_load, insn);
+                        u.f_rprr_gather_load.ff = 0;
+                        u.f_rprr_gather_load.esz = 3;
+                        u.f_rprr_gather_load.msz = extract32(insn, 23, 2);
+                        u.f_rprr_gather_load.scale = 0;
+                        if (trans_LDNT1_zprz(ctx, &u.f_rprr_gather_load)) return true;
+                        return false;
                     case 0x00006000:
                         /* 1100010. .00..... 111..... ...0.... */
                         /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:1016 */
@@ -4877,6 +6946,26 @@ bool disas_sve(DisasContext *ctx, uint32_t insn)
                 /* 11100101 10...... 000..... ...0.... */
                 /* /mnt/c/Users/me/Documents/projects/unicorn2/tmp/tmp/qemu-5.0.0/target/arm/sve.decode:1021 */
                 if (trans_STR_pri(ctx, &u.f_rri)) return true;
+                return false;
+            }
+            return false;
+        case 0x1:
+            /* 1110010. ........ 001..... ........ */
+            disas_sve_extract_rprr_scatter_store(ctx, &u.f_rprr_scatter_store, insn);
+            switch ((insn >> 21) & 0x3) {
+            case 0x0:
+                /* 1110010. .00..... 001..... ........ */
+                u.f_rprr_scatter_store.xs = 2;
+                u.f_rprr_scatter_store.esz = 3;
+                u.f_rprr_scatter_store.scale = 0;
+                if (trans_STNT1_zprz(ctx, &u.f_rprr_scatter_store)) return true;
+                return false;
+            case 0x2:
+                /* 1110010. .10..... 001..... ........ */
+                u.f_rprr_scatter_store.xs = 0;
+                u.f_rprr_scatter_store.esz = 2;
+                u.f_rprr_scatter_store.scale = 0;
+                if (trans_STNT1_zprz(ctx, &u.f_rprr_scatter_store)) return true;
                 return false;
             }
             return false;

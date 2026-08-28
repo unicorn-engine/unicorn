@@ -37,10 +37,20 @@
  * where this is valid. This allows for warningless compilation of
  * "long long" types even in the presence of '-ansi -pedantic'. 
  */
-#if     __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)
+#if defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8))
 #define G_GNUC_EXTENSION __extension__
 #else
 #define G_GNUC_EXTENSION
+#endif
+
+#if defined(__GNUC__)
+#define G_GNUC_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#define G_NORETURN __attribute__((noreturn))
+#elif defined(_MSC_VER)
+#define G_NORETURN __declspec(noreturn)
+#else
+#define G_GNUC_WARN_UNUSED_RESULT
+#define G_NORETURN
 #endif
 
 #if !(defined (G_STMT_START) && defined (G_STMT_END))

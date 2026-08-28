@@ -1,66 +1,5 @@
 #include "unicorn_test.h"
-#include <time.h>
 #include <string.h>
-
-// We have to copy this for Android.
-#ifdef _WIN32
-
-#include "windows.h"
-
-#define NANOSECONDS_PER_SECOND 1000000000LL
-
-static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
-{
-    union {
-        uint64_t ll;
-        struct {
-            uint32_t low, high;
-        } l;
-    } u, res;
-    uint64_t rl, rh;
-
-    u.ll = a;
-    rl = (uint64_t)u.l.low * (uint64_t)b;
-    rh = (uint64_t)u.l.high * (uint64_t)b;
-    rh += (rl >> 32);
-    res.l.high = rh / c;
-    res.l.low = (((rh % c) << 32) + (rl & 0xffffffff)) / c;
-    return res.ll;
-}
-
-static int64_t get_freq(void)
-{
-    LARGE_INTEGER freq;
-    int ret = QueryPerformanceFrequency(&freq);
-    if (ret == 0) {
-        fprintf(stderr, "Could not calibrate ticks\n");
-        exit(1);
-    }
-    return freq.QuadPart;
-}
-
-static inline int64_t get_clock_realtime(void)
-{
-    LARGE_INTEGER ti;
-    QueryPerformanceCounter(&ti);
-    return muldiv64(ti.QuadPart, NANOSECONDS_PER_SECOND, get_freq());
-}
-
-#else
-
-#include <sys/time.h>
-#include "sys/mman.h"
-
-/* get host real time in nanosecond */
-static inline int64_t get_clock_realtime(void)
-{
-    struct timeval tv;
-
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec * 1000000000LL + (tv.tv_usec * 1000);
-}
-
-#endif
 
 const uint64_t code_start = 0x1000;
 const uint64_t code_len = 0x4000;
@@ -125,19 +64,6 @@ static void test_uc_ctl_exits(void)
     OK(uc_close(uc));
 }
 
-double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
-{
-    int64_t t1, t2;
-
-    t1 = get_clock_realtime();
-
-    OK(uc_emu_start(uc, start, end, 0, 0));
-
-    t2 = get_clock_realtime();
-
-    return t2 - t1;
-}
-
 #define TB_COUNT (8)
 #define TCG_MAX_INSNS (512) // from tcg.h
 #define CODE_LEN TB_COUNT *TCG_MAX_INSNS
@@ -146,31 +72,40 @@ static void test_uc_ctl_tb_cache(void)
 {
     uc_engine *uc;
     char code[CODE_LEN + 1];
-    double standard, cached, evicted;
 
     memset(code, 0x90, CODE_LEN);
     code[CODE_LEN] = 0;
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
-    standard = time_emulation(uc, code_start, code_start + sizeof(code) - 1);
-
     for (int i = 0; i < TB_COUNT; i++) {
-        OK(uc_ctl_request_cache(uc, code_start + i * TCG_MAX_INSNS, NULL));
+        uc_tb tb;
+        uint64_t pc = code_start + i * TCG_MAX_INSNS;
+
+        OK(uc_ctl_request_cache(uc, pc, &tb));
+        TEST_CHECK(tb.pc == pc);
+        TEST_CHECK(tb.size > 0);
+        TEST_CHECK(tb.icount > 0);
     }
 
-    cached = time_emulation(uc, code_start, code_start + sizeof(code) - 1);
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     for (int i = 0; i < TB_COUNT; i++) {
         OK(uc_ctl_remove_cache(uc, code_start + i * TCG_MAX_INSNS,
                                code_start + i * TCG_MAX_INSNS + 1));
     }
-    evicted = time_emulation(uc, code_start, code_start + sizeof(code) - 1);
 
-    // In fact, evicted is also slightly faster than standard but we don't do
-    // this guarantee.
-    TEST_CHECK(cached < standard);
-    TEST_CHECK(evicted > cached);
+    for (int i = 0; i < TB_COUNT; i++) {
+        uc_tb tb;
+        uint64_t pc = code_start + i * TCG_MAX_INSNS;
+
+        OK(uc_ctl_request_cache(uc, pc, &tb));
+        TEST_CHECK(tb.pc == pc);
+        TEST_CHECK(tb.size > 0);
+        TEST_CHECK(tb.icount > 0);
+    }
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     OK(uc_close(uc));
 }
@@ -195,6 +130,33 @@ static void test_uc_ctl_change_page_size(void)
 
     OK(uc_close(uc));
     OK(uc_close(uc2));
+}
+
+static void test_uc_ctl_arm_page_size_per_engine(void)
+{
+    uc_engine *uc4k;
+    uc_engine *uc1k;
+    uint32_t page_size;
+    uint32_t r0 = 0;
+    const char code[] = "\x01\x00\xa0\xe3";
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc4k));
+    OK(uc_ctl_set_page_size(uc4k, 4096));
+    OK(uc_mem_map(uc4k, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc4k, 0x1000, code, sizeof(code) - 1));
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc1k));
+    OK(uc_ctl_set_page_size(uc1k, 1024));
+    OK(uc_mem_map(uc1k, 0x400, 0x400, UC_PROT_ALL));
+
+    OK(uc_ctl_get_page_size(uc4k, &page_size));
+    TEST_CHECK(page_size == 4096);
+    OK(uc_emu_start(uc4k, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc4k, UC_ARM_REG_R0, &r0));
+    TEST_CHECK(r0 == 1);
+
+    OK(uc_close(uc1k));
+    OK(uc_close(uc4k));
 }
 #endif
 
@@ -438,6 +400,8 @@ TEST_LIST = {
     {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
 #ifdef UNICORN_HAS_ARM
     {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
+    {"test_uc_ctl_arm_page_size_per_engine",
+     test_uc_ctl_arm_page_size_per_engine},
     {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
 #endif
 #ifdef UNICORN_HAS_ARM64

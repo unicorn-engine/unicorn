@@ -117,9 +117,9 @@ Public Enum uc_mode                   'from /bindings/dotnet/common.fs
 '     UC_MODE_THUMB = 16               'THUMB mode (including Thumb-2)
 '     UC_MODE_MCLASS = 32              'ARM's Cortex-M series (currently unsupported)
 '     UC_MODE_V8 = 64                  'ARMv8 A32 encodings for ARM (currently unsupported)
-'     UC_MODE_MICRO = 16               'MicroMips mode (currently unsupported)
-'     UC_MODE_MIPS3 = 32               'Mips III ISA (currently unsupported)
-'     UC_MODE_MIPS32R6 = 64            'Mips32r6 ISA (currently unsupported)
+'     UC_MODE_MICRO = 16               'MicroMips mode
+'     UC_MODE_MIPS3 = 32               'Mips III ISA
+'     UC_MODE_MIPS32R6 = 64            'Mips32r6 ISA
 '     UC_MODE_MIPS32 = 4               'Mips32 ISA
 '     UC_MODE_MIPS64 = 8               'Mips64 ISA
      UC_MODE_16 = 2                   '16-bit mode

@@ -23,8 +23,8 @@
      UC_MODE_ARM926 | UC_MODE_ARM946 | UC_MODE_ARM1176 | UC_MODE_BIG_ENDIAN |  \
      UC_MODE_ARMBE8)
 #define UC_MODE_MIPS_MASK                                                      \
-    (UC_MODE_MIPS32 | UC_MODE_MIPS64 | UC_MODE_LITTLE_ENDIAN |                 \
-     UC_MODE_BIG_ENDIAN)
+    (UC_MODE_MIPS32 | UC_MODE_MIPS64 | UC_MODE_MICRO | UC_MODE_MIPS3 |         \
+     UC_MODE_MIPS32R6 | UC_MODE_LITTLE_ENDIAN | UC_MODE_BIG_ENDIAN)
 #define UC_MODE_X86_MASK                                                       \
     (UC_MODE_16 | UC_MODE_32 | UC_MODE_64 | UC_MODE_LITTLE_ENDIAN)
 #define UC_MODE_PPC_MASK (UC_MODE_PPC32 | UC_MODE_PPC64 | UC_MODE_BIG_ENDIAN)

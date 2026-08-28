@@ -251,6 +251,27 @@ static void get_vec_element_ptr_i64(TCGContext *tcg_ctx, TCGv_ptr ptr, uint8_t r
     tcg_gen_gvec_##fn(tcg_ctx, es, vec_full_reg_offset(v1), vec_full_reg_offset(v2), \
                       vec_full_reg_offset(v3), vec_full_reg_offset(v4), 16, 16)
 
+static void gen_hswap_i64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv_i64 arg)
+{
+    TCGv_i64 t0 = tcg_temp_new_i64(tcg_ctx);
+    TCGv_i64 t1 = tcg_temp_new_i64(tcg_ctx);
+
+    tcg_gen_rotli_i64(tcg_ctx, t1, arg, 32);
+    tcg_gen_andi_i64(tcg_ctx, t0, t1, 0x0000ffff0000ffffull);
+    tcg_gen_shli_i64(tcg_ctx, t0, t0, 16);
+    tcg_gen_shri_i64(tcg_ctx, t1, t1, 16);
+    tcg_gen_andi_i64(tcg_ctx, t1, t1, 0x0000ffff0000ffffull);
+    tcg_gen_or_i64(tcg_ctx, ret, t0, t1);
+
+    tcg_temp_free_i64(tcg_ctx, t0);
+    tcg_temp_free_i64(tcg_ctx, t1);
+}
+
+static void gen_wswap_i64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv_i64 arg)
+{
+    tcg_gen_rotli_i64(tcg_ctx, ret, arg, 32);
+}
+
 /*
  * Helper to carry out a 128 bit vector computation using 2 i64 values per
  * vector.
@@ -352,6 +373,59 @@ static void gen_addi2_i64(TCGContext *tcg_ctx, TCGv_i64 dl, TCGv_i64 dh, TCGv_i6
     tcg_gen_add2_i64(tcg_ctx, dl, dh, al, ah, bl, bh);
     tcg_temp_free_i64(tcg_ctx, bl);
     tcg_temp_free_i64(tcg_ctx, bh);
+}
+
+static DisasJumpType op_vbperm(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    gen_gvec_3_ool(tcg_ctx, get_field(s, v1), get_field(s, v2),
+                   get_field(s, v3), 0, gen_helper_gvec_vbperm);
+    return DISAS_NEXT;
+}
+
+static DisasJumpType op_vmsl(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i64 l1, h1, l2, h2;
+
+    if (get_field(s, m5) != ES_64) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    l1 = tcg_temp_new_i64(tcg_ctx);
+    h1 = tcg_temp_new_i64(tcg_ctx);
+    l2 = tcg_temp_new_i64(tcg_ctx);
+    h2 = tcg_temp_new_i64(tcg_ctx);
+
+    read_vec_element_i64(tcg_ctx, l1, get_field(s, v2), 0, ES_64);
+    read_vec_element_i64(tcg_ctx, h1, get_field(s, v3), 0, ES_64);
+    tcg_gen_mulu2_i64(tcg_ctx, l1, h1, l1, h1);
+    if (extract32(get_field(s, m6), 3, 1)) {
+        tcg_gen_add2_i64(tcg_ctx, l1, h1, l1, h1, l1, h1);
+    }
+
+    read_vec_element_i64(tcg_ctx, l2, get_field(s, v2), 1, ES_64);
+    read_vec_element_i64(tcg_ctx, h2, get_field(s, v3), 1, ES_64);
+    tcg_gen_mulu2_i64(tcg_ctx, l2, h2, l2, h2);
+    if (extract32(get_field(s, m6), 2, 1)) {
+        tcg_gen_add2_i64(tcg_ctx, l2, h2, l2, h2, l2, h2);
+    }
+
+    tcg_gen_add2_i64(tcg_ctx, l1, h1, l1, h1, l2, h2);
+    read_vec_element_i64(tcg_ctx, h2, get_field(s, v4), 0, ES_64);
+    read_vec_element_i64(tcg_ctx, l2, get_field(s, v4), 1, ES_64);
+    tcg_gen_add2_i64(tcg_ctx, l1, h1, l1, h1, l2, h2);
+
+    write_vec_element_i64(tcg_ctx, h1, get_field(s, v1), 0, ES_64);
+    write_vec_element_i64(tcg_ctx, l1, get_field(s, v1), 1, ES_64);
+
+    tcg_temp_free_i64(tcg_ctx, l1);
+    tcg_temp_free_i64(tcg_ctx, h1);
+    tcg_temp_free_i64(tcg_ctx, l2);
+    tcg_temp_free_i64(tcg_ctx, h2);
+    return DISAS_NEXT;
 }
 
 static DisasJumpType op_vge(DisasContext *s, DisasOps *o)
@@ -482,6 +556,131 @@ static DisasJumpType op_vlrep(DisasContext *s, DisasOps *o)
     return DISAS_NEXT;
 }
 
+static DisasJumpType op_vlebr(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    const uint8_t es = s->insn->data;
+    const uint8_t enr = get_field(s, m3);
+    TCGv_i64 tmp;
+
+    if (!valid_vec_element(enr, es)) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    tmp = tcg_temp_new_i64(tcg_ctx);
+    tcg_gen_qemu_ld_i64(tcg_ctx, tmp, o->addr1, get_mem_index(s), MO_LE | es);
+    write_vec_element_i64(tcg_ctx, tmp, get_field(s, v1), enr, es);
+    tcg_temp_free_i64(tcg_ctx, tmp);
+    return DISAS_NEXT;
+}
+
+static DisasJumpType op_vlbrrep(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    const uint8_t es = get_field(s, m3);
+    TCGv_i64 tmp;
+    int i;
+
+    if (es < ES_16 || es > ES_64) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    tmp = tcg_temp_new_i64(tcg_ctx);
+    tcg_gen_qemu_ld_i64(tcg_ctx, tmp, o->addr1, get_mem_index(s), MO_LE | es);
+    for (i = 0; i < NUM_VEC_ELEMENTS(es); i++) {
+        write_vec_element_i64(tcg_ctx, tmp, get_field(s, v1), i, es);
+    }
+    tcg_temp_free_i64(tcg_ctx, tmp);
+    return DISAS_NEXT;
+}
+
+static DisasJumpType op_vllebrz(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    const uint8_t m3 = get_field(s, m3);
+    TCGv_i64 tmp;
+    TCGv_i64 zero;
+    int es;
+    int lshift;
+
+    switch (m3) {
+    case ES_16:
+    case ES_32:
+    case ES_64:
+        es = m3;
+        lshift = 0;
+        break;
+    case 6:
+        es = ES_32;
+        lshift = 32;
+        break;
+    default:
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    tmp = tcg_temp_new_i64(tcg_ctx);
+    zero = tcg_const_i64(tcg_ctx, 0);
+    tcg_gen_qemu_ld_i64(tcg_ctx, tmp, o->addr1, get_mem_index(s), MO_LE | es);
+    tcg_gen_shli_i64(tcg_ctx, tmp, tmp, lshift);
+    write_vec_element_i64(tcg_ctx, tmp, get_field(s, v1), 0, ES_64);
+    write_vec_element_i64(tcg_ctx, zero, get_field(s, v1), 1, ES_64);
+    tcg_temp_free_i64(tcg_ctx, tmp);
+    tcg_temp_free_i64(tcg_ctx, zero);
+    return DISAS_NEXT;
+}
+
+static DisasJumpType op_vlbr(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    const uint8_t es = get_field(s, m3);
+    TCGv_i64 t0;
+    TCGv_i64 t1;
+
+    if (es < ES_16 || es > ES_128) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    t0 = tcg_temp_new_i64(tcg_ctx);
+    t1 = tcg_temp_new_i64(tcg_ctx);
+
+    if (es == ES_128) {
+        tcg_gen_qemu_ld_i64(tcg_ctx, t1, o->addr1, get_mem_index(s), MO_LEUQ);
+        gen_addi_and_wrap_i64(s, o->addr1, o->addr1, 8);
+        tcg_gen_qemu_ld_i64(tcg_ctx, t0, o->addr1, get_mem_index(s), MO_LEUQ);
+        goto write;
+    }
+
+    tcg_gen_qemu_ld_i64(tcg_ctx, t0, o->addr1, get_mem_index(s), MO_LEUQ);
+    gen_addi_and_wrap_i64(s, o->addr1, o->addr1, 8);
+    tcg_gen_qemu_ld_i64(tcg_ctx, t1, o->addr1, get_mem_index(s), MO_LEUQ);
+
+    switch (es) {
+    case ES_16:
+        gen_hswap_i64(tcg_ctx, t0, t0);
+        gen_hswap_i64(tcg_ctx, t1, t1);
+        break;
+    case ES_32:
+        gen_wswap_i64(tcg_ctx, t0, t0);
+        gen_wswap_i64(tcg_ctx, t1, t1);
+        break;
+    case ES_64:
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+write:
+    write_vec_element_i64(tcg_ctx, t0, get_field(s, v1), 0, ES_64);
+    write_vec_element_i64(tcg_ctx, t1, get_field(s, v1), 1, ES_64);
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
+    return DISAS_NEXT;
+}
+
 static DisasJumpType op_vle(DisasContext *s, DisasOps *o)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -516,6 +715,46 @@ static DisasJumpType op_vlei(DisasContext *s, DisasOps *o)
     tmp = tcg_const_i64(tcg_ctx, (int16_t)get_field(s, i2));
     write_vec_element_i64(tcg_ctx, tmp, get_field(s, v1), enr, es);
     tcg_temp_free_i64(tcg_ctx, tmp);
+    return DISAS_NEXT;
+}
+
+static DisasJumpType op_vler(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    const uint8_t es = get_field(s, m3);
+    TCGv_i64 t0;
+    TCGv_i64 t1;
+
+    if (es < ES_16 || es > ES_64) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    t0 = tcg_temp_new_i64(tcg_ctx);
+    t1 = tcg_temp_new_i64(tcg_ctx);
+    tcg_gen_qemu_ld_i64(tcg_ctx, t1, o->addr1, get_mem_index(s), MO_TEUQ);
+    gen_addi_and_wrap_i64(s, o->addr1, o->addr1, 8);
+    tcg_gen_qemu_ld_i64(tcg_ctx, t0, o->addr1, get_mem_index(s), MO_TEUQ);
+
+    switch (es) {
+    case ES_16:
+        gen_hswap_i64(tcg_ctx, t1, t1);
+        gen_hswap_i64(tcg_ctx, t0, t0);
+        break;
+    case ES_32:
+        gen_wswap_i64(tcg_ctx, t1, t1);
+        gen_wswap_i64(tcg_ctx, t0, t0);
+        break;
+    case ES_64:
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    write_vec_element_i64(tcg_ctx, t0, get_field(s, v1), 0, ES_64);
+    write_vec_element_i64(tcg_ctx, t1, get_field(s, v1), 1, ES_64);
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
     return DISAS_NEXT;
 }
 
@@ -1004,6 +1243,78 @@ static DisasJumpType op_vst(DisasContext *s, DisasOps *o)
     return DISAS_NEXT;
 }
 
+static DisasJumpType op_vstebr(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    const uint8_t es = s->insn->data;
+    const uint8_t enr = get_field(s, m3);
+    TCGv_i64 tmp;
+
+    if (!valid_vec_element(enr, es)) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    tmp = tcg_temp_new_i64(tcg_ctx);
+    read_vec_element_i64(tcg_ctx, tmp, get_field(s, v1), enr, es);
+    tcg_gen_qemu_st_i64(tcg_ctx, tmp, o->addr1, get_mem_index(s), MO_LE | es);
+    tcg_temp_free_i64(tcg_ctx, tmp);
+    return DISAS_NEXT;
+}
+
+static DisasJumpType op_vstbr(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    const uint8_t es = get_field(s, m3);
+    TCGv_i64 t0;
+    TCGv_i64 t1;
+    TCGv_i64 bytes;
+
+    if (es < ES_16 || es > ES_128) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    bytes = tcg_const_i64(tcg_ctx, 16);
+    gen_helper_probe_write_access(tcg_ctx, tcg_ctx->cpu_env, o->addr1, bytes);
+    tcg_temp_free_i64(tcg_ctx, bytes);
+
+    t0 = tcg_temp_new_i64(tcg_ctx);
+    t1 = tcg_temp_new_i64(tcg_ctx);
+
+    if (es == ES_128) {
+        read_vec_element_i64(tcg_ctx, t1, get_field(s, v1), 0, ES_64);
+        read_vec_element_i64(tcg_ctx, t0, get_field(s, v1), 1, ES_64);
+        goto write;
+    }
+
+    read_vec_element_i64(tcg_ctx, t0, get_field(s, v1), 0, ES_64);
+    read_vec_element_i64(tcg_ctx, t1, get_field(s, v1), 1, ES_64);
+
+    switch (es) {
+    case ES_16:
+        gen_hswap_i64(tcg_ctx, t0, t0);
+        gen_hswap_i64(tcg_ctx, t1, t1);
+        break;
+    case ES_32:
+        gen_wswap_i64(tcg_ctx, t0, t0);
+        gen_wswap_i64(tcg_ctx, t1, t1);
+        break;
+    case ES_64:
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+write:
+    tcg_gen_qemu_st_i64(tcg_ctx, t0, o->addr1, get_mem_index(s), MO_LEUQ);
+    gen_addi_and_wrap_i64(s, o->addr1, o->addr1, 8);
+    tcg_gen_qemu_st_i64(tcg_ctx, t1, o->addr1, get_mem_index(s), MO_LEUQ);
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
+    return DISAS_NEXT;
+}
+
 static DisasJumpType op_vste(DisasContext *s, DisasOps *o)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -1020,6 +1331,51 @@ static DisasJumpType op_vste(DisasContext *s, DisasOps *o)
     read_vec_element_i64(tcg_ctx, tmp, get_field(s, v1), enr, es);
     tcg_gen_qemu_st_i64(tcg_ctx, tmp, o->addr1, get_mem_index(s), MO_TE | es);
     tcg_temp_free_i64(tcg_ctx, tmp);
+    return DISAS_NEXT;
+}
+
+static DisasJumpType op_vster(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    const uint8_t es = get_field(s, m3);
+    TCGv_i64 t0;
+    TCGv_i64 t1;
+    TCGv_i64 bytes;
+
+    if (es < ES_16 || es > ES_64) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    bytes = tcg_const_i64(tcg_ctx, 16);
+    gen_helper_probe_write_access(tcg_ctx, tcg_ctx->cpu_env, o->addr1, bytes);
+    tcg_temp_free_i64(tcg_ctx, bytes);
+
+    t0 = tcg_temp_new_i64(tcg_ctx);
+    t1 = tcg_temp_new_i64(tcg_ctx);
+    read_vec_element_i64(tcg_ctx, t1, get_field(s, v1), 0, ES_64);
+    read_vec_element_i64(tcg_ctx, t0, get_field(s, v1), 1, ES_64);
+
+    switch (es) {
+    case ES_16:
+        gen_hswap_i64(tcg_ctx, t1, t1);
+        gen_hswap_i64(tcg_ctx, t0, t0);
+        break;
+    case ES_32:
+        gen_wswap_i64(tcg_ctx, t1, t1);
+        gen_wswap_i64(tcg_ctx, t0, t0);
+        break;
+    case ES_64:
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    tcg_gen_qemu_st_i64(tcg_ctx, t0, o->addr1, get_mem_index(s), MO_TEUQ);
+    gen_addi_and_wrap_i64(s, o->addr1, o->addr1, 8);
+    tcg_gen_qemu_st_i64(tcg_ctx, t1, o->addr1, get_mem_index(s), MO_TEUQ);
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
     return DISAS_NEXT;
 }
 
@@ -2101,30 +2457,43 @@ static DisasJumpType op_ves(DisasContext *s, DisasOps *o)
 static DisasJumpType op_vsl(DisasContext *s, DisasOps *o)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv_i64 shift = tcg_temp_new_i64(tcg_ctx);
+    const bool byte = s->insn->data;
 
-    read_vec_element_i64(tcg_ctx, shift, get_field(s, v3), 7, ES_8);
-    if (s->fields.op2 == 0x74) {
-        tcg_gen_andi_i64(tcg_ctx, shift, shift, 0x7);
+    if (!byte && s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH2)) {
+        gen_gvec_3_ool(tcg_ctx, get_field(s, v1), get_field(s, v2),
+                       get_field(s, v3), 0, gen_helper_gvec_vsl_ve2);
     } else {
-        tcg_gen_andi_i64(tcg_ctx, shift, shift, 0x78);
-    }
+        TCGv_i64 shift = tcg_temp_new_i64(tcg_ctx);
 
-    gen_gvec_2i_ool(tcg_ctx, get_field(s, v1), get_field(s, v2),
-                    shift, 0, gen_helper_gvec_vsl);
-    tcg_temp_free_i64(tcg_ctx, shift);
+        read_vec_element_i64(tcg_ctx, shift, get_field(s, v3), 7, ES_8);
+        tcg_gen_andi_i64(tcg_ctx, shift, shift, byte ? 0x78 : 7);
+        gen_gvec_2i_ool(tcg_ctx, get_field(s, v1), get_field(s, v2),
+                        shift, 0, gen_helper_gvec_vsl);
+        tcg_temp_free_i64(tcg_ctx, shift);
+    }
     return DISAS_NEXT;
 }
 
-static DisasJumpType op_vsldb(DisasContext *s, DisasOps *o)
+static DisasJumpType op_vsld(DisasContext *s, DisasOps *o)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    const uint8_t i4 = get_field(s, i4) & 0xf;
-    const int left_shift = (i4 & 7) * 8;
-    const int right_shift = 64 - left_shift;
-    TCGv_i64 t0 = tcg_temp_new_i64(tcg_ctx);
-    TCGv_i64 t1 = tcg_temp_new_i64(tcg_ctx);
-    TCGv_i64 t2 = tcg_temp_new_i64(tcg_ctx);
+    const bool byte = s->insn->data;
+    const uint8_t mask = byte ? 15 : 7;
+    const uint8_t mul = byte ? 8 : 1;
+    const uint8_t i4 = get_field(s, i4);
+    const int right_shift = 64 - (i4 & 7) * mul;
+    TCGv_i64 t0;
+    TCGv_i64 t1;
+    TCGv_i64 t2;
+
+    if (i4 & ~mask) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    t0 = tcg_temp_new_i64(tcg_ctx);
+    t1 = tcg_temp_new_i64(tcg_ctx);
+    t2 = tcg_temp_new_i64(tcg_ctx);
 
     if ((i4 & 8) == 0) {
         read_vec_element_i64(tcg_ctx, t0, get_field(s, v2), 0, ES_64);
@@ -2146,39 +2515,76 @@ static DisasJumpType op_vsldb(DisasContext *s, DisasOps *o)
     return DISAS_NEXT;
 }
 
+static DisasJumpType op_vsrd(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    const uint8_t i4 = get_field(s, i4);
+    TCGv_i64 t0;
+    TCGv_i64 t1;
+    TCGv_i64 t2;
+
+    if (i4 & ~7) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    t0 = tcg_temp_new_i64(tcg_ctx);
+    t1 = tcg_temp_new_i64(tcg_ctx);
+    t2 = tcg_temp_new_i64(tcg_ctx);
+
+    read_vec_element_i64(tcg_ctx, t0, get_field(s, v2), 1, ES_64);
+    read_vec_element_i64(tcg_ctx, t1, get_field(s, v3), 0, ES_64);
+    read_vec_element_i64(tcg_ctx, t2, get_field(s, v3), 1, ES_64);
+
+    tcg_gen_extract2_i64(tcg_ctx, t0, t1, t0, i4);
+    tcg_gen_extract2_i64(tcg_ctx, t1, t2, t1, i4);
+
+    write_vec_element_i64(tcg_ctx, t0, get_field(s, v1), 0, ES_64);
+    write_vec_element_i64(tcg_ctx, t1, get_field(s, v1), 1, ES_64);
+
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
+    tcg_temp_free(tcg_ctx, t2);
+    return DISAS_NEXT;
+}
+
 static DisasJumpType op_vsra(DisasContext *s, DisasOps *o)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv_i64 shift = tcg_temp_new_i64(tcg_ctx);
+    const bool byte = s->insn->data;
 
-    read_vec_element_i64(tcg_ctx, shift, get_field(s, v3), 7, ES_8);
-    if (s->fields.op2 == 0x7e) {
-        tcg_gen_andi_i64(tcg_ctx, shift, shift, 0x7);
+    if (!byte && s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH2)) {
+        gen_gvec_3_ool(tcg_ctx, get_field(s, v1), get_field(s, v2),
+                       get_field(s, v3), 0, gen_helper_gvec_vsra_ve2);
     } else {
-        tcg_gen_andi_i64(tcg_ctx, shift, shift, 0x78);
-    }
+        TCGv_i64 shift = tcg_temp_new_i64(tcg_ctx);
 
-    gen_gvec_2i_ool(tcg_ctx, get_field(s, v1), get_field(s, v2),
-                    shift, 0, gen_helper_gvec_vsra);
-    tcg_temp_free_i64(tcg_ctx, shift);
+        read_vec_element_i64(tcg_ctx, shift, get_field(s, v3), 7, ES_8);
+        tcg_gen_andi_i64(tcg_ctx, shift, shift, byte ? 0x78 : 7);
+        gen_gvec_2i_ool(tcg_ctx, get_field(s, v1), get_field(s, v2),
+                        shift, 0, gen_helper_gvec_vsra);
+        tcg_temp_free_i64(tcg_ctx, shift);
+    }
     return DISAS_NEXT;
 }
 
 static DisasJumpType op_vsrl(DisasContext *s, DisasOps *o)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv_i64 shift = tcg_temp_new_i64(tcg_ctx);
+    const bool byte = s->insn->data;
 
-    read_vec_element_i64(tcg_ctx, shift, get_field(s, v3), 7, ES_8);
-    if (s->fields.op2 == 0x7c) {
-        tcg_gen_andi_i64(tcg_ctx, shift, shift, 0x7);
+    if (!byte && s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH2)) {
+        gen_gvec_3_ool(tcg_ctx, get_field(s, v1), get_field(s, v2),
+                       get_field(s, v3), 0, gen_helper_gvec_vsrl_ve2);
     } else {
-        tcg_gen_andi_i64(tcg_ctx, shift, shift, 0x78);
-    }
+        TCGv_i64 shift = tcg_temp_new_i64(tcg_ctx);
 
-    gen_gvec_2i_ool(tcg_ctx, get_field(s, v1), get_field(s, v2),
-                    shift, 0, gen_helper_gvec_vsrl);
-    tcg_temp_free_i64(tcg_ctx, shift);
+        read_vec_element_i64(tcg_ctx, shift, get_field(s, v3), 7, ES_8);
+        tcg_gen_andi_i64(tcg_ctx, shift, shift, byte ? 0x78 : 7);
+        gen_gvec_2i_ool(tcg_ctx, get_field(s, v1), get_field(s, v2),
+                        shift, 0, gen_helper_gvec_vsrl);
+        tcg_temp_free_i64(tcg_ctx, shift);
+    }
     return DISAS_NEXT;
 }
 
@@ -2594,37 +3000,125 @@ static DisasJumpType op_vstrc(DisasContext *s, DisasOps *o)
     return DISAS_NEXT;
 }
 
+static DisasJumpType op_vstrs(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    static gen_helper_gvec_4_ptr * const fns[3][2] = {
+        { gen_helper_gvec_vstrs_8, gen_helper_gvec_vstrs_zs8 },
+        { gen_helper_gvec_vstrs_16, gen_helper_gvec_vstrs_zs16 },
+        { gen_helper_gvec_vstrs_32, gen_helper_gvec_vstrs_zs32 },
+    };
+    const uint8_t es = get_field(s, m5);
+    const uint8_t m6 = get_field(s, m6);
+    const bool zs = extract32(m6, 1, 1);
+
+    if (es > ES_32 || (m6 & ~2)) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    gen_gvec_4_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2),
+                   get_field(s, v3), get_field(s, v4),
+                   tcg_ctx->cpu_env, 0, fns[es][zs]);
+    set_cc_static(s);
+    return DISAS_NEXT;
+}
+
 static DisasJumpType op_vfa(DisasContext *s, DisasOps *o)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     const uint8_t fpf = get_field(s, m4);
     const uint8_t m5 = get_field(s, m5);
-    const bool se = extract32(m5, 3, 1);
-    gen_helper_gvec_3_ptr *fn;
-
-    if (fpf != FPF_LONG || extract32(m5, 0, 3)) {
-        gen_program_exception(s, PGM_SPECIFICATION);
-        return DISAS_NORETURN;
-    }
+    gen_helper_gvec_3_ptr *fn = NULL;
 
     switch (s->fields.op2) {
     case 0xe3:
-        fn = se ? gen_helper_gvec_vfa64s : gen_helper_gvec_vfa64;
+        switch (fpf) {
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfa32;
+            }
+            break;
+        case FPF_LONG:
+            fn = gen_helper_gvec_vfa64;
+            break;
+        case FPF_EXT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfa128;
+            }
+            break;
+        default:
+            break;
+        }
         break;
     case 0xe5:
-        fn = se ? gen_helper_gvec_vfd64s : gen_helper_gvec_vfd64;
+        switch (fpf) {
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfd32;
+            }
+            break;
+        case FPF_LONG:
+            fn = gen_helper_gvec_vfd64;
+            break;
+        case FPF_EXT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfd128;
+            }
+            break;
+        default:
+            break;
+        }
         break;
     case 0xe7:
-        fn = se ? gen_helper_gvec_vfm64s : gen_helper_gvec_vfm64;
+        switch (fpf) {
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfm32;
+            }
+            break;
+        case FPF_LONG:
+            fn = gen_helper_gvec_vfm64;
+            break;
+        case FPF_EXT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfm128;
+            }
+            break;
+        default:
+            break;
+        }
         break;
     case 0xe2:
-        fn = se ? gen_helper_gvec_vfs64s : gen_helper_gvec_vfs64;
+        switch (fpf) {
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfs32;
+            }
+            break;
+        case FPF_LONG:
+            fn = gen_helper_gvec_vfs64;
+            break;
+        case FPF_EXT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfs128;
+            }
+            break;
+        default:
+            break;
+        }
         break;
     default:
         g_assert_not_reached();
     }
+
+    if (!fn || extract32(m5, 0, 3)) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
     gen_gvec_3_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2),
-                   get_field(s, v3), tcg_ctx->cpu_env, 0, fn);
+                   get_field(s, v3), tcg_ctx->cpu_env, m5, fn);
     return DISAS_NEXT;
 }
 
@@ -2633,19 +3127,42 @@ static DisasJumpType op_wfc(DisasContext *s, DisasOps *o)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     const uint8_t fpf = get_field(s, m3);
     const uint8_t m4 = get_field(s, m4);
+    gen_helper_gvec_2_ptr *fn = NULL;
 
-    if (fpf != FPF_LONG || m4) {
+    switch (fpf) {
+    case FPF_SHORT:
+        if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+            fn = gen_helper_gvec_wfk32;
+            if (s->fields.op2 == 0xcb) {
+                fn = gen_helper_gvec_wfc32;
+            }
+        }
+        break;
+    case FPF_LONG:
+        fn = gen_helper_gvec_wfk64;
+        if (s->fields.op2 == 0xcb) {
+            fn = gen_helper_gvec_wfc64;
+        }
+        break;
+    case FPF_EXT:
+        if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+            fn = gen_helper_gvec_wfk128;
+            if (s->fields.op2 == 0xcb) {
+                fn = gen_helper_gvec_wfc128;
+            }
+        }
+        break;
+    default:
+        break;
+    }
+
+    if (!fn || m4) {
         gen_program_exception(s, PGM_SPECIFICATION);
         return DISAS_NORETURN;
     }
 
-    if (s->fields.op2 == 0xcb) {
-        gen_gvec_2_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2),
-                       tcg_ctx->cpu_env, 0, gen_helper_gvec_wfc64);
-    } else {
-        gen_gvec_2_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2),
-                       tcg_ctx->cpu_env, 0, gen_helper_gvec_wfk64);
-    }
+    gen_gvec_2_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2),
+                   tcg_ctx->cpu_env, 0, fn);
     set_cc_static(s);
     return DISAS_NEXT;
 }
@@ -2656,46 +3173,68 @@ static DisasJumpType op_vfc(DisasContext *s, DisasOps *o)
     const uint8_t fpf = get_field(s, m4);
     const uint8_t m5 = get_field(s, m5);
     const uint8_t m6 = get_field(s, m6);
-    const bool se = extract32(m5, 3, 1);
     const bool cs = extract32(m6, 0, 1);
-    gen_helper_gvec_3_ptr *fn;
+    const bool sq = extract32(m5, 2, 1);
+    gen_helper_gvec_3_ptr *fn = NULL;
 
-    if (fpf != FPF_LONG || extract32(m5, 0, 3) || extract32(m6, 1, 3)) {
+    switch (s->fields.op2) {
+    case 0xe8:
+        switch (fpf) {
+        case FPF_SHORT:
+            fn = cs ? gen_helper_gvec_vfce32_cc : gen_helper_gvec_vfce32;
+            break;
+        case FPF_LONG:
+            fn = cs ? gen_helper_gvec_vfce64_cc : gen_helper_gvec_vfce64;
+            break;
+        case FPF_EXT:
+            fn = cs ? gen_helper_gvec_vfce128_cc : gen_helper_gvec_vfce128;
+            break;
+        default:
+            break;
+        }
+        break;
+    case 0xeb:
+        switch (fpf) {
+        case FPF_SHORT:
+            fn = cs ? gen_helper_gvec_vfch32_cc : gen_helper_gvec_vfch32;
+            break;
+        case FPF_LONG:
+            fn = cs ? gen_helper_gvec_vfch64_cc : gen_helper_gvec_vfch64;
+            break;
+        case FPF_EXT:
+            fn = cs ? gen_helper_gvec_vfch128_cc : gen_helper_gvec_vfch128;
+            break;
+        default:
+            break;
+        }
+        break;
+    case 0xea:
+        switch (fpf) {
+        case FPF_SHORT:
+            fn = cs ? gen_helper_gvec_vfche32_cc : gen_helper_gvec_vfche32;
+            break;
+        case FPF_LONG:
+            fn = cs ? gen_helper_gvec_vfche64_cc : gen_helper_gvec_vfche64;
+            break;
+        case FPF_EXT:
+            fn = cs ? gen_helper_gvec_vfche128_cc : gen_helper_gvec_vfche128;
+            break;
+        default:
+            break;
+        }
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    if (!fn || extract32(m5, 0, 2) || extract32(m6, 1, 3) ||
+        (!s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH) &&
+         (fpf != FPF_LONG || sq))) {
         gen_program_exception(s, PGM_SPECIFICATION);
         return DISAS_NORETURN;
     }
-
-    if (cs) {
-        switch (s->fields.op2) {
-        case 0xe8:
-            fn = se ? gen_helper_gvec_vfce64s_cc : gen_helper_gvec_vfce64_cc;
-            break;
-        case 0xeb:
-            fn = se ? gen_helper_gvec_vfch64s_cc : gen_helper_gvec_vfch64_cc;
-            break;
-        case 0xea:
-            fn = se ? gen_helper_gvec_vfche64s_cc : gen_helper_gvec_vfche64_cc;
-            break;
-        default:
-            g_assert_not_reached();
-        }
-    } else {
-        switch (s->fields.op2) {
-        case 0xe8:
-            fn = se ? gen_helper_gvec_vfce64s : gen_helper_gvec_vfce64;
-            break;
-        case 0xeb:
-            fn = se ? gen_helper_gvec_vfch64s : gen_helper_gvec_vfch64;
-            break;
-        case 0xea:
-            fn = se ? gen_helper_gvec_vfche64s : gen_helper_gvec_vfche64;
-            break;
-        default:
-            g_assert_not_reached();
-        }
-    }
     gen_gvec_3_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2),
-                   get_field(s, v3), tcg_ctx->cpu_env, 0, fn);
+                   get_field(s, v3), tcg_ctx->cpu_env, m5, fn);
     if (cs) {
         set_cc_static(s);
     }
@@ -2708,36 +3247,107 @@ static DisasJumpType op_vcdg(DisasContext *s, DisasOps *o)
     const uint8_t fpf = get_field(s, m3);
     const uint8_t m4 = get_field(s, m4);
     const uint8_t erm = get_field(s, m5);
-    const bool se = extract32(m4, 3, 1);
-    gen_helper_gvec_2_ptr *fn;
-
-    if (fpf != FPF_LONG || extract32(m4, 0, 2) || erm > 7 || erm == 2) {
-        gen_program_exception(s, PGM_SPECIFICATION);
-        return DISAS_NORETURN;
-    }
+    gen_helper_gvec_2_ptr *fn = NULL;
 
     switch (s->fields.op2) {
     case 0xc3:
-        fn = se ? gen_helper_gvec_vcdg64s : gen_helper_gvec_vcdg64;
+        switch (fpf) {
+        case FPF_LONG:
+            fn = gen_helper_gvec_vcdg64;
+            break;
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH2)) {
+                fn = gen_helper_gvec_vcdg32;
+            }
+            break;
+        default:
+            break;
+        }
         break;
     case 0xc1:
-        fn = se ? gen_helper_gvec_vcdlg64s : gen_helper_gvec_vcdlg64;
+        switch (fpf) {
+        case FPF_LONG:
+            fn = gen_helper_gvec_vcdlg64;
+            break;
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH2)) {
+                fn = gen_helper_gvec_vcdlg32;
+            }
+            break;
+        default:
+            break;
+        }
         break;
     case 0xc2:
-        fn = se ? gen_helper_gvec_vcgd64s : gen_helper_gvec_vcgd64;
+        switch (fpf) {
+        case FPF_LONG:
+            fn = gen_helper_gvec_vcgd64;
+            break;
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH2)) {
+                fn = gen_helper_gvec_vcgd32;
+            }
+            break;
+        default:
+            break;
+        }
         break;
     case 0xc0:
-        fn = se ? gen_helper_gvec_vclgd64s : gen_helper_gvec_vclgd64;
+        switch (fpf) {
+        case FPF_LONG:
+            fn = gen_helper_gvec_vclgd64;
+            break;
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH2)) {
+                fn = gen_helper_gvec_vclgd32;
+            }
+            break;
+        default:
+            break;
+        }
         break;
     case 0xc7:
-        fn = se ? gen_helper_gvec_vfi64s : gen_helper_gvec_vfi64;
+        switch (fpf) {
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfi32;
+            }
+            break;
+        case FPF_LONG:
+            fn = gen_helper_gvec_vfi64;
+            break;
+        case FPF_EXT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfi128;
+            }
+            break;
+        default:
+            break;
+        }
         break;
     case 0xc5:
-        fn = se ? gen_helper_gvec_vflr64s : gen_helper_gvec_vflr64;
+        switch (fpf) {
+        case FPF_LONG:
+            fn = gen_helper_gvec_vflr64;
+            break;
+        case FPF_EXT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vflr128;
+            }
+            break;
+        default:
+            break;
+        }
         break;
     default:
         g_assert_not_reached();
     }
+
+    if (!fn || extract32(m4, 0, 2) || erm > 7 || erm == 2) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
     gen_gvec_2_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2), tcg_ctx->cpu_env,
                    deposit32(m4, 4, 4, erm), fn);
     return DISAS_NEXT;
@@ -2748,18 +3358,74 @@ static DisasJumpType op_vfll(DisasContext *s, DisasOps *o)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     const uint8_t fpf = get_field(s, m3);
     const uint8_t m4 = get_field(s, m4);
-    gen_helper_gvec_2_ptr *fn = gen_helper_gvec_vfll32;
+    gen_helper_gvec_2_ptr *fn = NULL;
 
-    if (fpf != FPF_SHORT || extract32(m4, 0, 3)) {
+    switch (fpf) {
+    case FPF_SHORT:
+        fn = gen_helper_gvec_vfll32;
+        break;
+    case FPF_LONG:
+        if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+            fn = gen_helper_gvec_vfll64;
+        }
+        break;
+    default:
+        break;
+    }
+
+    if (!fn || extract32(m4, 0, 3)) {
         gen_program_exception(s, PGM_SPECIFICATION);
         return DISAS_NORETURN;
     }
 
-    if (extract32(m4, 3, 1)) {
-        fn = gen_helper_gvec_vfll32s;
-    }
     gen_gvec_2_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2), tcg_ctx->cpu_env,
-                   0, fn);
+                   m4, fn);
+    return DISAS_NEXT;
+}
+
+static DisasJumpType op_vfmax(DisasContext *s, DisasOps *o)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    const uint8_t fpf = get_field(s, m4);
+    const uint8_t m6 = get_field(s, m6);
+    const uint8_t m5 = get_field(s, m5);
+    gen_helper_gvec_3_ptr *fn;
+
+    if (m6 == 5 || m6 == 6 || m6 == 7 || m6 >= 13 || (m5 & 7)) {
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    switch (fpf) {
+    case FPF_SHORT:
+        if (s->fields.op2 == 0xef) {
+            fn = gen_helper_gvec_vfmax32;
+        } else {
+            fn = gen_helper_gvec_vfmin32;
+        }
+        break;
+    case FPF_LONG:
+        if (s->fields.op2 == 0xef) {
+            fn = gen_helper_gvec_vfmax64;
+        } else {
+            fn = gen_helper_gvec_vfmin64;
+        }
+        break;
+    case FPF_EXT:
+        if (s->fields.op2 == 0xef) {
+            fn = gen_helper_gvec_vfmax128;
+        } else {
+            fn = gen_helper_gvec_vfmin128;
+        }
+        break;
+    default:
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
+    }
+
+    gen_gvec_3_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2),
+                   get_field(s, v3), tcg_ctx->cpu_env,
+                   deposit32(m5, 4, 4, m6), fn);
     return DISAS_NEXT;
 }
 
@@ -2768,22 +3434,89 @@ static DisasJumpType op_vfma(DisasContext *s, DisasOps *o)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     const uint8_t m5 = get_field(s, m5);
     const uint8_t fpf = get_field(s, m6);
-    const bool se = extract32(m5, 3, 1);
-    gen_helper_gvec_4_ptr *fn;
+    gen_helper_gvec_4_ptr *fn = NULL;
 
-    if (fpf != FPF_LONG || extract32(m5, 0, 3)) {
+    switch (s->fields.op2) {
+    case 0x8f:
+        switch (fpf) {
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfma32;
+            }
+            break;
+        case FPF_LONG:
+            fn = gen_helper_gvec_vfma64;
+            break;
+        case FPF_EXT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfma128;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    case 0x8e:
+        switch (fpf) {
+        case FPF_SHORT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfms32;
+            }
+            break;
+        case FPF_LONG:
+            fn = gen_helper_gvec_vfms64;
+            break;
+        case FPF_EXT:
+            if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+                fn = gen_helper_gvec_vfms128;
+            }
+            break;
+        default:
+            break;
+        }
+        break;
+    case 0x9f:
+        switch (fpf) {
+        case FPF_SHORT:
+            fn = gen_helper_gvec_vfnma32;
+            break;
+        case FPF_LONG:
+            fn = gen_helper_gvec_vfnma64;
+            break;
+        case FPF_EXT:
+            fn = gen_helper_gvec_vfnma128;
+            break;
+        default:
+            break;
+        }
+        break;
+    case 0x9e:
+        switch (fpf) {
+        case FPF_SHORT:
+            fn = gen_helper_gvec_vfnms32;
+            break;
+        case FPF_LONG:
+            fn = gen_helper_gvec_vfnms64;
+            break;
+        case FPF_EXT:
+            fn = gen_helper_gvec_vfnms128;
+            break;
+        default:
+            break;
+        }
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    if (!fn || extract32(m5, 0, 3)) {
         gen_program_exception(s, PGM_SPECIFICATION);
         return DISAS_NORETURN;
     }
 
-    if (s->fields.op2 == 0x8f) {
-        fn = se ? gen_helper_gvec_vfma64s : gen_helper_gvec_vfma64;
-    } else {
-        fn = se ? gen_helper_gvec_vfms64s : gen_helper_gvec_vfms64;
-    }
     gen_gvec_4_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2),
                    get_field(s, v3), get_field(s, v4), tcg_ctx->cpu_env,
-                   0, fn);
+                   m5, fn);
     return DISAS_NEXT;
 }
 
@@ -2795,48 +3528,86 @@ static DisasJumpType op_vfpso(DisasContext *s, DisasOps *o)
     const uint8_t fpf = get_field(s, m3);
     const uint8_t m4 = get_field(s, m4);
     const uint8_t m5 = get_field(s, m5);
+    const bool se = extract32(m4, 3, 1);
     TCGv_i64 tmp;
 
-    if (fpf != FPF_LONG || extract32(m4, 0, 3) || m5 > 2) {
+    if ((fpf != FPF_LONG && !s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) ||
+        extract32(m4, 0, 3) || m5 > 2) {
         gen_program_exception(s, PGM_SPECIFICATION);
         return DISAS_NORETURN;
     }
 
-    if (extract32(m4, 3, 1)) {
-        tmp = tcg_temp_new_i64(tcg_ctx);
-        read_vec_element_i64(tcg_ctx, tmp, v2, 0, ES_64);
-        switch (m5) {
-        case 0:
-            /* sign bit is inverted (complement) */
-            tcg_gen_xori_i64(tcg_ctx, tmp, tmp, 1ull << 63);
-            break;
-        case 1:
-            /* sign bit is set to one (negative) */
-            tcg_gen_ori_i64(tcg_ctx, tmp, tmp, 1ull << 63);
-            break;
-        case 2:
-            /* sign bit is set to zero (positive) */
-            tcg_gen_andi_i64(tcg_ctx, tmp, tmp, (1ull << 63) - 1);
-            break;
+    switch (fpf) {
+    case FPF_SHORT:
+        if (!se) {
+            TCGv_i32 tmp32 = tcg_temp_new_i32(tcg_ctx);
+            int i;
+
+            for (i = 0; i < 4; i++) {
+                read_vec_element_i32(tcg_ctx, tmp32, v2, i, ES_32);
+                switch (m5) {
+                case 0:
+                    tcg_gen_xori_i32(tcg_ctx, tmp32, tmp32,
+                                      (int32_t)0x80000000u);
+                    break;
+                case 1:
+                    tcg_gen_ori_i32(tcg_ctx, tmp32, tmp32,
+                                    (int32_t)0x80000000u);
+                    break;
+                case 2:
+                    tcg_gen_andi_i32(tcg_ctx, tmp32, tmp32, 0x7fffffff);
+                    break;
+                }
+                write_vec_element_i32(tcg_ctx, tmp32, v1, i, ES_32);
+            }
+            tcg_temp_free_i32(tcg_ctx, tmp32);
+            return DISAS_NEXT;
         }
-        write_vec_element_i64(tcg_ctx, tmp, v1, 0, ES_64);
-        tcg_temp_free_i64(tcg_ctx, tmp);
-    } else {
-        switch (m5) {
-        case 0:
-            /* sign bit is inverted (complement) */
-            gen_gvec_fn_2i(tcg_ctx, xori, ES_64, v1, v2, 1ull << 63);
-            break;
-        case 1:
-            /* sign bit is set to one (negative) */
-            gen_gvec_fn_2i(tcg_ctx, ori, ES_64, v1, v2, 1ull << 63);
-            break;
-        case 2:
-            /* sign bit is set to zero (positive) */
-            gen_gvec_fn_2i(tcg_ctx, andi, ES_64, v1, v2, (1ull << 63) - 1);
-            break;
+        break;
+    case FPF_LONG:
+        if (!se) {
+            switch (m5) {
+            case 0:
+                gen_gvec_fn_2i(tcg_ctx, xori, ES_64, v1, v2, 1ull << 63);
+                break;
+            case 1:
+                gen_gvec_fn_2i(tcg_ctx, ori, ES_64, v1, v2, 1ull << 63);
+                break;
+            case 2:
+                gen_gvec_fn_2i(tcg_ctx, andi, ES_64, v1, v2, (1ull << 63) - 1);
+                break;
+            }
+            return DISAS_NEXT;
         }
+        break;
+    case FPF_EXT:
+        break;
+    default:
+        gen_program_exception(s, PGM_SPECIFICATION);
+        return DISAS_NORETURN;
     }
+
+    tmp = tcg_temp_new_i64(tcg_ctx);
+    read_vec_element_i64(tcg_ctx, tmp, v2, 0, ES_64);
+    switch (m5) {
+    case 0:
+        tcg_gen_xori_i64(tcg_ctx, tmp, tmp, 1ull << 63);
+        break;
+    case 1:
+        tcg_gen_ori_i64(tcg_ctx, tmp, tmp, 1ull << 63);
+        break;
+    case 2:
+        tcg_gen_andi_i64(tcg_ctx, tmp, tmp, (1ull << 63) - 1);
+        break;
+    }
+    write_vec_element_i64(tcg_ctx, tmp, v1, 0, ES_64);
+
+    if (fpf == FPF_EXT) {
+        read_vec_element_i64(tcg_ctx, tmp, v2, 1, ES_64);
+        write_vec_element_i64(tcg_ctx, tmp, v1, 1, ES_64);
+    }
+
+    tcg_temp_free_i64(tcg_ctx, tmp);
     return DISAS_NEXT;
 }
 
@@ -2845,18 +3616,33 @@ static DisasJumpType op_vfsq(DisasContext *s, DisasOps *o)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     const uint8_t fpf = get_field(s, m3);
     const uint8_t m4 = get_field(s, m4);
-    gen_helper_gvec_2_ptr *fn = gen_helper_gvec_vfsq64;
+    gen_helper_gvec_2_ptr *fn = NULL;
 
-    if (fpf != FPF_LONG || extract32(m4, 0, 3)) {
+    switch (fpf) {
+    case FPF_SHORT:
+        if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+            fn = gen_helper_gvec_vfsq32;
+        }
+        break;
+    case FPF_LONG:
+        fn = gen_helper_gvec_vfsq64;
+        break;
+    case FPF_EXT:
+        if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+            fn = gen_helper_gvec_vfsq128;
+        }
+        break;
+    default:
+        break;
+    }
+
+    if (!fn || extract32(m4, 0, 3)) {
         gen_program_exception(s, PGM_SPECIFICATION);
         return DISAS_NORETURN;
     }
 
-    if (extract32(m4, 3, 1)) {
-        fn = gen_helper_gvec_vfsq64s;
-    }
     gen_gvec_2_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2), tcg_ctx->cpu_env,
-                   0, fn);
+                   m4, fn);
     return DISAS_NEXT;
 }
 
@@ -2866,17 +3652,33 @@ static DisasJumpType op_vftci(DisasContext *s, DisasOps *o)
     const uint16_t i3 = get_field(s, i3);
     const uint8_t fpf = get_field(s, m4);
     const uint8_t m5 = get_field(s, m5);
-    gen_helper_gvec_2_ptr *fn = gen_helper_gvec_vftci64;
+    gen_helper_gvec_2_ptr *fn = NULL;
 
-    if (fpf != FPF_LONG || extract32(m5, 0, 3)) {
+    switch (fpf) {
+    case FPF_SHORT:
+        if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+            fn = gen_helper_gvec_vftci32;
+        }
+        break;
+    case FPF_LONG:
+        fn = gen_helper_gvec_vftci64;
+        break;
+    case FPF_EXT:
+        if (s390_has_feat(s->uc, S390_FEAT_VECTOR_ENH)) {
+            fn = gen_helper_gvec_vftci128;
+        }
+        break;
+    default:
+        break;
+    }
+
+    if (!fn || extract32(m5, 0, 3)) {
         gen_program_exception(s, PGM_SPECIFICATION);
         return DISAS_NORETURN;
     }
 
-    if (extract32(m5, 3, 1)) {
-        fn = gen_helper_gvec_vftci64s;
-    }
-    gen_gvec_2_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2), tcg_ctx->cpu_env, i3, fn);
+    gen_gvec_2_ptr(tcg_ctx, get_field(s, v1), get_field(s, v2), tcg_ctx->cpu_env,
+                   deposit32(m5, 4, 12, i3), fn);
     set_cc_static(s);
     return DISAS_NEXT;
 }

@@ -82,6 +82,35 @@ void QEMU_NORETURN tcg_s390_vector_exception(CPUS390XState *env, uint32_t vxc,
     tcg_s390_program_interrupt(env, PGM_VECTOR_PROCESSING, ra);
 }
 
+static void QEMU_NORETURN monitor_event(CPUS390XState *env,
+                                        uint64_t monitor_code,
+                                        uint8_t monitor_class, uintptr_t ra)
+{
+#ifdef UNICORN_ARCH_POSTFIX
+    glue(stq_phys, UNICORN_ARCH_POSTFIX)(env->uc, env_cpu(env)->as,
+             env->psa + offsetof(LowCore, monitor_code), monitor_code);
+    glue(stw_phys, UNICORN_ARCH_POSTFIX)(env->uc, env_cpu(env)->as,
+             env->psa + offsetof(LowCore, mon_class_num), monitor_class);
+#else
+    stq_phys(env->uc, env_cpu(env)->as,
+             env->psa + offsetof(LowCore, monitor_code), monitor_code);
+    stw_phys(env->uc, env_cpu(env)->as,
+             env->psa + offsetof(LowCore, mon_class_num), monitor_class);
+#endif
+
+    tcg_s390_program_interrupt(env, PGM_MONITOR, ra);
+}
+
+void HELPER(monitor_call)(CPUS390XState *env, uint64_t monitor_code,
+                          uint32_t monitor_class)
+{
+    g_assert(monitor_class <= 0xf);
+
+    if (env->cregs[8] & (0x8000 >> monitor_class)) {
+        monitor_event(env, monitor_code, monitor_class, GETPC());
+    }
+}
+
 void HELPER(data_exception)(CPUS390XState *env, uint32_t dxc)
 {
     tcg_s390_data_exception(env, dxc, GETPC());

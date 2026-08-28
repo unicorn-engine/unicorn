@@ -35,22 +35,22 @@ bool set_preferred_target_page_bits(struct uc_struct *uc, int bits)
      * a particular size.
      */
 #ifdef TARGET_PAGE_BITS_VARY
-    //assert(bits >= TARGET_PAGE_BITS_MIN);
-    if (uc->init_target_page == NULL) {
-        uc->init_target_page = calloc(1, sizeof(TargetPageBits));
-    } else {
-        return false;
-    }
+    TargetPageBits *page = uc->init_target_page;
 
     if (bits < TARGET_PAGE_BITS_MIN) {
         return false;
     }
 
-    if (uc->init_target_page->bits == 0 || uc->init_target_page->bits > bits) {
-        if (uc->init_target_page->decided) {
+    if (page == NULL) {
+        page = g_new0(TargetPageBits, 1);
+        uc->init_target_page = page;
+    }
+
+    if (page->bits == 0 || page->bits > bits) {
+        if (page->decided) {
             return false;
         }
-        uc->init_target_page->bits = bits;
+        page->bits = bits;
     }
 #endif
     return true;
@@ -59,25 +59,28 @@ bool set_preferred_target_page_bits(struct uc_struct *uc, int bits)
 void finalize_target_page_bits(struct uc_struct *uc)
 {
 #ifdef TARGET_PAGE_BITS_VARY
-    if (uc->init_target_page == NULL) {
-        uc->init_target_page = calloc(1, sizeof(TargetPageBits));
-    } else {
-        return;
+    TargetPageBits *page = uc->init_target_page;
+
+    if (page == NULL) {
+        page = g_new0(TargetPageBits, 1);
+        uc->init_target_page = page;
     }
 
-    if (uc->target_bits != 0) {
-        uc->init_target_page->bits = uc->target_bits;
-    }
+    if (!page->decided) {
+        if (uc->target_bits != 0) {
+            page->bits = uc->target_bits;
+        }
 
-    if (uc->init_target_page->bits == 0) {
-        uc->init_target_page->bits = TARGET_PAGE_BITS_MIN;
+        if (page->bits == 0) {
+            page->bits = TARGET_PAGE_BITS_MIN;
+        }
+        page->mask = ((target_ulong)-1) << page->bits;
+        page->decided = true;
     }
-    uc->init_target_page->mask = ((target_ulong)-1) << uc->init_target_page->bits;
-    uc->init_target_page->decided = true;
 
     /*
-     * For the benefit of an -flto build, prevent the compiler from
-     * hoisting a read from target_page before we finish initializing.
+     * For the benefit of an -flto build, prevent the compiler from hoisting
+     * a read from the target page data before we finish initializing.
      */
     barrier();
 #endif

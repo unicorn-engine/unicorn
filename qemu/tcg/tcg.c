@@ -31,6 +31,7 @@
 #undef DEBUG_JIT
 
 #include "qemu/cutils.h"
+#include "qemu/cacheflush.h"
 #include "qemu/host-utils.h"
 #include "qemu/timer.h"
 
@@ -250,7 +251,7 @@ static void tcg_out_label(TCGContext *s, TCGLabel *l, tcg_insn_unit *ptr)
 {
     tcg_debug_assert(!l->has_value);
     l->has_value = 1;
-    l->u.value_ptr = ptr;
+    l->u.value_ptr = (tcg_insn_unit *)tcg_splitwx_to_rx(ptr);
 }
 
 TCGLabel *gen_new_label(TCGContext *s)
@@ -651,7 +652,7 @@ typedef struct TCGHelperInfo {
     void *func;
     const char *name;
     unsigned flags;
-    unsigned sizemask;
+    unsigned typemask;
 } TCGHelperInfo;
 
 #include "exec/helper-proto.h"
@@ -675,7 +676,7 @@ void uc_add_inline_hook(uc_engine *uc, struct hook *hk, void** args, int args_le
 {
     TCGHelperInfo* info = g_malloc(sizeof(TCGHelperInfo));
     char *name = g_malloc(64);
-    unsigned sizemask = 0xFFFFFFFF;
+    unsigned typemask = 0xFFFFFFFF;
     TCGContext *tcg_ctx = uc->tcg_ctx;
     GHashTable *helper_table = uc->tcg_ctx->helper_table;
 
@@ -688,7 +689,9 @@ void uc_add_inline_hook(uc_engine *uc, struct hook *hk, void** args, int args_le
     case UC_HOOK_BLOCK:
     case UC_HOOK_CODE:
         // (*uc_cb_hookcode_t)(uc_engine *uc, uint64_t address, uint32_t size, void *user_data);
-        sizemask = dh_sizemask(void, 0) | dh_sizemask(ptr, 1) | dh_sizemask(i64, 2) | dh_sizemask(i32, 3) | dh_sizemask(ptr, 4);
+        typemask = dh_typemask(void, 0) | dh_typemask(ptr, 1) |
+                   dh_typemask(i64, 2) | dh_typemask(i32, 3) |
+                   dh_typemask(ptr, 4);
         snprintf(name, 63, "hookcode_%d_%" PRIxPTR , hk->type, (uintptr_t)hk->callback);
         break;
 
@@ -698,7 +701,7 @@ void uc_add_inline_hook(uc_engine *uc, struct hook *hk, void** args, int args_le
 
     name[63] = 0;
     info->name = name;
-    info->sizemask = sizemask;
+    info->typemask = typemask;
 
     g_hash_table_insert(helper_table, (gpointer)info->func, (gpointer)info);
     g_hash_table_insert(uc->tcg_ctx->custom_helper_infos, (gpointer)info->func, (gpointer)info);
@@ -834,7 +837,7 @@ void tcg_prologue_init(TCGContext *s)
     s->code_ptr = buf0;
     s->code_buf = buf0;
     s->data_gen_ptr = NULL;
-    s->code_gen_prologue = buf0;
+    s->code_gen_prologue = (void *)tcg_splitwx_to_rx(buf0);
 
     /* Compute a high-water mark, at which we voluntarily flush the buffer
        and start over.  The size here is arbitrary, significantly larger
@@ -857,7 +860,8 @@ void tcg_prologue_init(TCGContext *s)
 #endif
 
     buf1 = s->code_ptr;
-    flush_icache_range((uintptr_t)buf0, (uintptr_t)buf1);
+    flush_idcache_range((uintptr_t)tcg_splitwx_to_rx(buf0), (uintptr_t)buf0,
+                        (uintptr_t)buf1 - (uintptr_t)buf0);
 
     /* Deduct the prologue from the buffer.  */
     prologue_size = tcg_current_code_size(s);
@@ -867,7 +871,8 @@ void tcg_prologue_init(TCGContext *s)
     total_size -= prologue_size;
     s->code_gen_buffer_size = total_size;
 
-    tcg_register_jit(s, s->code_gen_buffer, total_size);
+    tcg_register_jit(s, (void *)tcg_splitwx_to_rx(s->code_gen_buffer),
+                     total_size);
 
     /* Assert that goto_ptr is implemented completely.  */
     if (TCG_TARGET_HAS_goto_ptr) {
@@ -1438,53 +1443,27 @@ bool tcg_op_supported(TCGOpcode op)
 void tcg_gen_callN(TCGContext *tcg_ctx, void *func, TCGTemp *ret, int nargs, TCGTemp **args)
 {
     int i, real_args, nb_rets, pi;
-    unsigned sizemask, flags;
+    unsigned typemask, flags;
     TCGHelperInfo *info;
     TCGOp *op;
 
     info = g_hash_table_lookup(tcg_ctx->helper_table, (gpointer)func);
     flags = info->flags;
-    sizemask = info->sizemask;
+    typemask = info->typemask;
 
-#if defined(__sparc__) && !defined(__arch64__)
-    /* We have 64-bit values in one register, but need to pass as two
-       separate parameters.  Split them.  */
-    int orig_sizemask = sizemask;
-    int orig_nargs = nargs;
-    TCGv_i64 retl, reth;
-    TCGTemp *split_args[MAX_OPC_PARAM];
-
-    retl = NULL;
-    reth = NULL;
-    if (sizemask != 0) {
-        for (i = real_args = 0; i < nargs; ++i) {
-            int is_64bit = sizemask & (1 << (i+1)*2);
-            if (is_64bit) {
-                TCGv_i64 orig = temp_tcgv_i64(args[i]);
-                TCGv_i32 h = tcg_temp_new_i32();
-                TCGv_i32 l = tcg_temp_new_i32();
-                tcg_gen_extr_i64_i32(l, h, orig);
-                split_args[real_args++] = tcgv_i32_temp(h);
-                split_args[real_args++] = tcgv_i32_temp(l);
-            } else {
-                split_args[real_args++] = args[i];
-            }
-        }
-        nargs = real_args;
-        args = split_args;
-        sizemask = 0;
-    }
-#elif defined(TCG_TARGET_EXTEND_ARGS) && TCG_TARGET_REG_BITS == 64
+#if defined(TCG_TARGET_EXTEND_ARGS) && TCG_TARGET_REG_BITS == 64
     for (i = 0; i < nargs; ++i) {
-        int is_64bit = sizemask & (1 << (i+1)*2);
-        int is_signed = sizemask & (2 << (i+1)*2);
-        if (!is_64bit) {
+        int argtype = extract32(typemask, (i + 1) * 3, 3);
+        bool is_32bit = (argtype & ~1) == dh_typecode_i32;
+        bool is_signed = argtype & 1;
+
+        if (is_32bit) {
             TCGv_i64 temp = tcg_temp_new_i64(tcg_ctx);
-            TCGv_i64 orig = temp_tcgv_i64(tcg_ctx, args[i]);
+            TCGv_i32 orig = temp_tcgv_i32(tcg_ctx, args[i]);
             if (is_signed) {
-                tcg_gen_ext32s_i64(tcg_ctx, temp, orig);
+                tcg_gen_ext_i32_i64(tcg_ctx, temp, orig);
             } else {
-                tcg_gen_ext32u_i64(tcg_ctx, temp, orig);
+                tcg_gen_extu_i32_i64(tcg_ctx, temp, orig);
             }
             args[i] = tcgv_i64_temp(tcg_ctx, temp);
         }
@@ -1495,22 +1474,8 @@ void tcg_gen_callN(TCGContext *tcg_ctx, void *func, TCGTemp *ret, int nargs, TCG
 
     pi = 0;
     if (ret != NULL) {
-#if defined(__sparc__) && !defined(__arch64__)
-        if (orig_sizemask & 1) {
-            /* The 32-bit ABI is going to return the 64-bit value in
-               the %o0/%o1 register pair.  Prepare for this by using
-               two return temporaries, and reassemble below.  */
-            retl = tcg_temp_new_i64();
-            reth = tcg_temp_new_i64();
-            op->args[pi++] = tcgv_i64_arg(reth);
-            op->args[pi++] = tcgv_i64_arg(retl);
-            nb_rets = 2;
-        } else {
-            op->args[pi++] = temp_arg(ret);
-            nb_rets = 1;
-        }
-#else
-        if (TCG_TARGET_REG_BITS < 64 && (sizemask & 1)) {
+        if (TCG_TARGET_REG_BITS < 64 &&
+            (typemask & 6) == dh_typecode_i64) {
 #ifdef HOST_WORDS_BIGENDIAN
             op->args[pi++] = temp_arg(ret + 1);
             op->args[pi++] = temp_arg(ret);
@@ -1523,7 +1488,6 @@ void tcg_gen_callN(TCGContext *tcg_ctx, void *func, TCGTemp *ret, int nargs, TCG
             op->args[pi++] = temp_arg(ret);
             nb_rets = 1;
         }
-#endif
     } else {
         nb_rets = 0;
     }
@@ -1531,16 +1495,23 @@ void tcg_gen_callN(TCGContext *tcg_ctx, void *func, TCGTemp *ret, int nargs, TCG
 
     real_args = 0;
     for (i = 0; i < nargs; i++) {
-        int is_64bit = sizemask & (1 << (i+1)*2);
-        if (TCG_TARGET_REG_BITS < 64 && is_64bit) {
-#ifdef TCG_TARGET_CALL_ALIGN_ARGS
-            /* some targets want aligned 64 bit args */
-            if (real_args & 1) {
-                op->args[pi++] = TCG_CALL_DUMMY_ARG;
-                real_args++;
-            }
+        int argtype = extract32(typemask, (i + 1) * 3, 3);
+        bool is_64bit = (argtype & ~1) == dh_typecode_i64;
+        bool want_align = false;
+
+#if defined(CONFIG_TCG_INTERPRETER)
+        want_align = true;
+#elif defined(TCG_TARGET_CALL_ALIGN_ARGS)
+        want_align = is_64bit;
 #endif
-           /* If stack grows up, then we will be placing successive
+
+        if (TCG_TARGET_REG_BITS < 64 && want_align && (real_args & 1)) {
+            op->args[pi++] = TCG_CALL_DUMMY_ARG;
+            real_args++;
+        }
+
+        if (TCG_TARGET_REG_BITS < 64 && is_64bit) {
+            /* If stack grows up, then we will be placing successive
               arguments at lower addresses, which means we need to
               reverse the order compared to how we would normally
               treat either big or little-endian.  For those arguments
@@ -1572,29 +1543,12 @@ void tcg_gen_callN(TCGContext *tcg_ctx, void *func, TCGTemp *ret, int nargs, TCG
     tcg_debug_assert(TCGOP_CALLI(op) == real_args);
     tcg_debug_assert(pi <= ARRAY_SIZE(op->args));
 
-#if defined(__sparc__) && !defined(__arch64__)
-    /* Free all of the parts we allocated above.  */
-    for (i = real_args = 0; i < orig_nargs; ++i) {
-        int is_64bit = orig_sizemask & (1 << (i+1)*2);
-        if (is_64bit) {
-            tcg_temp_free_internal(args[real_args++]);
-            tcg_temp_free_internal(args[real_args++]);
-        } else {
-            real_args++;
-        }
-    }
-    if (orig_sizemask & 1) {
-        /* The 32-bit ABI returned two 32-bit pieces.  Re-assemble them.
-           Note that describing these as TCGv_i64 eliminates an unnecessary
-           zero-extension that tcg_gen_concat_i32_i64 would create.  */
-        tcg_gen_concat32_i64(temp_tcgv_i64(ret), retl, reth);
-        tcg_temp_free_i64(retl);
-        tcg_temp_free_i64(reth);
-    }
-#elif defined(TCG_TARGET_EXTEND_ARGS) && TCG_TARGET_REG_BITS == 64
+#if defined(TCG_TARGET_EXTEND_ARGS) && TCG_TARGET_REG_BITS == 64
     for (i = 0; i < nargs; ++i) {
-        int is_64bit = sizemask & (1 << (i+1)*2);
-        if (!is_64bit) {
+        int argtype = extract32(typemask, (i + 1) * 3, 3);
+        bool is_32bit = (argtype & ~1) == dh_typecode_i32;
+
+        if (is_32bit) {
             tcg_temp_free_internal(tcg_ctx, args[i]);
         }
     }
@@ -2145,6 +2099,19 @@ TCGOp *tcg_op_insert_after(TCGContext *s, TCGOp *old_op, TCGOpcode opc)
     TCGOp *new_op = tcg_op_alloc(s, opc);
     QTAILQ_INSERT_AFTER(&s->ops, old_op, new_op, link);
     return new_op;
+}
+
+void tcg_remove_ops_after(TCGContext *tcg_ctx, TCGOp *op)
+{
+    TCGOp *last;
+
+    for (;;) {
+        last = tcg_last_op(tcg_ctx);
+        if (last == op) {
+            return;
+        }
+        tcg_op_remove(tcg_ctx, last);
+    }
 }
 
 /* Reachable analysis : remove unreachable code.  */
@@ -3750,8 +3717,8 @@ int tcg_gen_code(TCGContext *s, TranslationBlock *tb)
     //tcg_dump_ops(s, false, "after opt4:");
     tcg_reg_alloc_start(s);
 
-    s->code_buf = tb->tc.ptr;
-    s->code_ptr = tb->tc.ptr;
+    s->code_buf = tcg_splitwx_to_rw(tb->tc.ptr);
+    s->code_ptr = s->code_buf;
 
 #ifdef TCG_TARGET_NEED_LDST_LABELS
     QSIMPLEQ_INIT(&s->ldst_labels);
@@ -3857,7 +3824,9 @@ int tcg_gen_code(TCGContext *s, TranslationBlock *tb)
     }
 
     /* flush instruction cache */
-    flush_icache_range((uintptr_t)s->code_buf, (uintptr_t)s->code_ptr);
+    flush_idcache_range((uintptr_t)tcg_splitwx_to_rx(s->code_buf),
+                        (uintptr_t)s->code_buf,
+                        (uintptr_t)s->code_ptr - (uintptr_t)s->code_buf);
 
     return tcg_current_code_size(s);
 }

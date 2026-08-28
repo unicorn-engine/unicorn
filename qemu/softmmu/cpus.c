@@ -189,15 +189,20 @@ static inline gboolean uc_exit_invalidate_iter(gpointer key, gpointer val, gpoin
     uc_engine *uc = (uc_engine*)data;
     
     if (exit != 0) {
-        // Unicorn: Why addr - 1?
-        // 
-        // 0: INC ecx
-        // 1: DEC edx <--- We put exit here, then the range of TB is [0, 1)
-        //
-        // While tb_invalidate_phys_range invalides [start, end)
-        //
-        // This function is designed to used with g_tree_foreach
-        uc->uc_invalidate_tb(uc, exit - 1, 1);
+        /*
+         * Unicorn: Why addr - 1 through addr?
+         *
+         * 0: INC ecx
+         * 1: DEC edx <--- We put exit here, then the range of TB is [0, 1).
+         *
+         * Nested emulation may also cache a normal TB starting at the active
+         * exit address, so the byte at addr has to be invalidated too.
+         *
+         * While tb_invalidate_phys_range invalidates [start, end).
+         *
+         * This function is designed to be used with g_tree_foreach.
+         */
+        uc->uc_invalidate_tb(uc, exit - 1, 2);
     }
 
     return false;
@@ -224,7 +229,12 @@ void resume_all_vcpus(struct uc_struct* uc)
     if (uc->use_exits) {
         g_tree_foreach(uc->ctl_exits, uc_exit_invalidate_iter, (void*)uc);
     } else {
-        uc_exit_invalidate_iter((gpointer)&uc->exits[uc->nested_level - 1], NULL, (gpointer)uc);
+        int i;
+
+        for (i = 0; i < uc->nested_level; i++) {
+            uc_exit_invalidate_iter((gpointer)&uc->exits[i], NULL,
+                                    (gpointer)uc);
+        }
     }
 
     cpu->created = false;

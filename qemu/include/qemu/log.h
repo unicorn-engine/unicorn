@@ -1,6 +1,8 @@
 #ifndef QEMU_LOG_H
 #define QEMU_LOG_H
 
+#include <stdio.h>
+
 #define CPU_LOG_TB_OUT_ASM (1 << 0)
 #define CPU_LOG_TB_IN_ASM  (1 << 1)
 #define CPU_LOG_TB_OP      (1 << 2)
@@ -233,5 +235,24 @@ static inline bool is_log_level_active(uint32_t level)
  */
 #define qemu_log_mask(mask, fmt, ...) \
     LOG_MESSAGE(mask, fmt, ## __VA_ARGS__)
+
+static inline bool qemu_loglevel_mask(int mask)
+{
+    return is_log_level_active(mask);
+}
+
+static inline FILE *qemu_log_trylock(void)
+{
+#ifdef UNICORN_LOGGING
+    return stdout;
+#else
+    return NULL;
+#endif
+}
+
+static inline void qemu_log_unlock(FILE *fd)
+{
+    (void)fd;
+}
 
 #endif /* QEMU_LOG_H */

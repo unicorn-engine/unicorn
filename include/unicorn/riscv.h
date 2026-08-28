@@ -15,6 +15,12 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
+#define UC_RISCV_VLEN_MAX 1024
+
+typedef struct uc_riscv_vreg {
+    unsigned char bytes[UC_RISCV_VLEN_MAX / 8];
+} uc_riscv_vreg;
+
 //> RISCV32 CPU
 typedef enum uc_cpu_riscv32 {
     UC_CPU_RISCV32_ANY = 0,
@@ -236,6 +242,49 @@ typedef enum uc_riscv_reg {
     UC_RISCV_REG_PC, // PC register
 
     UC_RISCV_REG_PRIV, // Virtual register for the current privilege level
+
+    //> Vector CSRs
+    UC_RISCV_REG_VSTART,
+    UC_RISCV_REG_VXSAT,
+    UC_RISCV_REG_VXRM,
+    UC_RISCV_REG_VCSR,
+    UC_RISCV_REG_VL,
+    UC_RISCV_REG_VTYPE,
+    UC_RISCV_REG_VLENB,
+
+    //> Vector registers
+    UC_RISCV_REG_V0,
+    UC_RISCV_REG_V1,
+    UC_RISCV_REG_V2,
+    UC_RISCV_REG_V3,
+    UC_RISCV_REG_V4,
+    UC_RISCV_REG_V5,
+    UC_RISCV_REG_V6,
+    UC_RISCV_REG_V7,
+    UC_RISCV_REG_V8,
+    UC_RISCV_REG_V9,
+    UC_RISCV_REG_V10,
+    UC_RISCV_REG_V11,
+    UC_RISCV_REG_V12,
+    UC_RISCV_REG_V13,
+    UC_RISCV_REG_V14,
+    UC_RISCV_REG_V15,
+    UC_RISCV_REG_V16,
+    UC_RISCV_REG_V17,
+    UC_RISCV_REG_V18,
+    UC_RISCV_REG_V19,
+    UC_RISCV_REG_V20,
+    UC_RISCV_REG_V21,
+    UC_RISCV_REG_V22,
+    UC_RISCV_REG_V23,
+    UC_RISCV_REG_V24,
+    UC_RISCV_REG_V25,
+    UC_RISCV_REG_V26,
+    UC_RISCV_REG_V27,
+    UC_RISCV_REG_V28,
+    UC_RISCV_REG_V29,
+    UC_RISCV_REG_V30,
+    UC_RISCV_REG_V31,
 
     UC_RISCV_REG_ENDING, // <-- mark the end of the list or registers
 

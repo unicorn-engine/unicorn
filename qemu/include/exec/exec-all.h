@@ -230,6 +230,19 @@ void tlb_flush_by_mmuidx_all_cpus(CPUState *cpu, uint16_t idxmap);
  * depend on when the guests translation ends the TB.
  */
 void tlb_flush_by_mmuidx_all_cpus_synced(CPUState *cpu, uint16_t idxmap);
+
+/**
+ * tlb_set_page_full:
+ * @cpu: CPU context
+ * @mmu_idx: MMU index of the TLB to modify
+ * @vaddr: virtual address of the entry to add
+ * @full: complete translated-page description
+ *
+ * Add one target page to the TLB. All fields in @full except
+ * xlat_section must be initialized by the caller.
+ */
+void tlb_set_page_full(CPUState *cpu, int mmu_idx, target_ulong vaddr,
+                       CPUTLBEntryFull *full);
 /**
  * tlb_set_page_with_attrs:
  * @cpu: CPU to add this TLB entry for
@@ -266,6 +279,21 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
                   int mmu_idx, target_ulong size);
 void *probe_access(CPUArchState *env, target_ulong addr, int size,
                    MMUAccessType access_type, int mmu_idx, uintptr_t retaddr);
+
+int probe_access_flags(CPUArchState *env, target_ulong addr,
+                       MMUAccessType access_type, int mmu_idx,
+                       bool nonfault, void **phost, uintptr_t retaddr);
+
+/**
+ * probe_access_full:
+ * Like probe_access_flags, except that @pfull also receives the full TLB
+ * entry. The returned pointer is transient and must be consumed or copied
+ * before another access can resize or otherwise change the same TLB.
+ */
+int probe_access_full(CPUArchState *env, target_ulong addr,
+                      MMUAccessType access_type, int mmu_idx,
+                      bool nonfault, void **phost,
+                      CPUTLBEntryFull **pfull, uintptr_t retaddr);
 
 static inline void *probe_write(CPUArchState *env, target_ulong addr, int size,
                                 int mmu_idx, uintptr_t retaddr)
@@ -311,7 +339,7 @@ struct TranslationBlock {
 #define CF_LAST_IO     0x00008000 /* Last insn may be an IO access.  */
 #define CF_NOCACHE     0x00010000 /* To be freed after execution */
 #define CF_USE_ICOUNT  0x00020000
-#define CF_INVALID     0x00040000 /* TB is stale. Set with @jmp_lock held */
+#define CF_INVALID     0x00040000 /* TB is stale; do not chain new jumps */
 #define CF_PARALLEL    0x00080000 /* Generate code for a parallel context */
 #define CF_CLUSTER_MASK 0xff000000 /* Top 8 bits are cluster ID */
 #define CF_CLUSTER_SHIFT 24
@@ -350,15 +378,13 @@ struct TranslationBlock {
      * significant bit (LSB) of the pointers in these lists is used to encode
      * which of the two list entries is to be used in the pointed TB.
      *
-     * List traversals are protected by jmp_lock. The destination TB of each
-     * outgoing jump is kept in jmp_dest[] so that the appropriate jmp_lock
-     * can be acquired from any origin TB.
+     * The destination TB of each outgoing jump is kept in jmp_dest[] so that
+     * an origin TB can remove itself from the appropriate incoming list.
      *
      * jmp_dest[] are tagged pointers as well. The LSB is set when the TB is
      * being invalidated, so that no further outgoing jumps from it can be set.
      *
-     * jmp_lock also protects the CF_INVALID cflag; a jump must not be chained
-     * to a destination TB that has CF_INVALID set.
+     * A jump must not be chained to a destination TB that has CF_INVALID set.
      */
     uintptr_t jmp_list_head;
     uintptr_t jmp_list_next[2];

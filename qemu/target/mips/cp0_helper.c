@@ -347,8 +347,7 @@ target_ulong helper_mftc0_tcschefback(CPUMIPSState *env)
 
 target_ulong helper_mfc0_count(CPUMIPSState *env)
 {
-    // return (int32_t)cpu_mips_get_count(env);
-    return 0;
+    return (int32_t)cpu_mips_get_count(env);
 }
 
 target_ulong helper_mfc0_saar(CPUMIPSState *env)
@@ -881,15 +880,21 @@ void helper_mtc0_memorymapid(CPUMIPSState *env, target_ulong arg1)
     }
 }
 
+static uint32_t compute_pagemask(uint32_t val)
+{
+    uint32_t mask = extract32(val, 13, 16);
+    int maskbits = cto32(mask);
+
+    if ((mask >> maskbits) == 0 && (maskbits % 2) == 0) {
+        return mask << 13;
+    }
+
+    return 0;
+}
+
 void update_pagemask(CPUMIPSState *env, target_ulong arg1, int32_t *pagemask)
 {
-    uint64_t mask = arg1 >> (TARGET_PAGE_BITS + 1);
-    if (!(env->insn_flags & ISA_MIPS32R6) || (arg1 == ~0) ||
-        (mask == 0x0000 || mask == 0x0003 || mask == 0x000F ||
-         mask == 0x003F || mask == 0x00FF || mask == 0x03FF ||
-         mask == 0x0FFF || mask == 0x3FFF || mask == 0xFFFF)) {
-        env->CP0_PageMask = arg1 & (0x1FFFFFFF & (TARGET_PAGE_MASK << 1));
-    }
+    *pagemask = compute_pagemask(arg1);
 }
 
 void helper_mtc0_pagemask(CPUMIPSState *env, target_ulong arg1)
@@ -1074,7 +1079,7 @@ void helper_mtc0_hwrena(CPUMIPSState *env, target_ulong arg1)
 
 void helper_mtc0_count(CPUMIPSState *env, target_ulong arg1)
 {
-    //cpu_mips_store_count(env, arg1);
+    cpu_mips_store_count(env, arg1);
 }
 
 void helper_mtc0_saari(CPUMIPSState *env, target_ulong arg1)
@@ -1163,7 +1168,7 @@ void helper_mttc0_entryhi(CPUMIPSState *env, target_ulong arg1)
 
 void helper_mtc0_compare(CPUMIPSState *env, target_ulong arg1)
 {
-    // cpu_mips_store_compare(env, arg1);
+    cpu_mips_store_compare(env, arg1);
 }
 
 void helper_mtc0_status(CPUMIPSState *env, target_ulong arg1)

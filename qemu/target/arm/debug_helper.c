@@ -219,6 +219,7 @@ static bool check_watchpoints(ARMCPU *cpu)
 static bool check_breakpoints(ARMCPU *cpu)
 {
     CPUARMState *env = &cpu->env;
+    target_ulong pc;
     int n;
 
     /*
@@ -230,12 +231,28 @@ static bool check_breakpoints(ARMCPU *cpu)
         return false;
     }
 
+    /* Single-step exceptions have priority over breakpoint exceptions. */
+    if (arm_singlestep_active(env) && !(env->pstate & PSTATE_SS)) {
+        return false;
+    }
+
+    /* PC alignment faults have priority over breakpoint exceptions. */
+    pc = is_a64(env) ? env->pc : env->regs[15];
+    if ((is_a64(env) || !env->thumb) && (pc & 3) != 0) {
+        return false;
+    }
+
     for (n = 0; n < ARRAY_SIZE(env->cpu_breakpoint); n++) {
         if (bp_wp_matches(cpu, n, false)) {
             return true;
         }
     }
     return false;
+}
+
+bool arm_debug_check_breakpoint(CPUState *cs)
+{
+    return check_breakpoints(ARM_CPU(cs));
 }
 
 void HELPER(check_breakpoints)(CPUARMState *env)

@@ -471,3 +471,86 @@ void HELPER(gvec_vstrc_cc_rt##BITS)(void *v1, const void *v2, const void *v3,  \
 DEF_VSTRC_CC_RT_HELPER(8)
 DEF_VSTRC_CC_RT_HELPER(16)
 DEF_VSTRC_CC_RT_HELPER(32)
+
+static int vstrs(void *v1, const void *v2, const void *v3, const void *v4,
+                 uint8_t es, bool zs)
+{
+    int substr_elen, i, j, k, cc;
+    int nelem = 16 >> es;
+    int str_leftmost_0;
+
+    substr_elen = s390_vec_read_element8(v4, 7) >> es;
+
+    if (zs) {
+        substr_elen = MIN(substr_elen, nelem);
+        for (i = 0; i < substr_elen; i++) {
+            if (s390_vec_read_element(v3, i, es) == 0) {
+                substr_elen = i;
+                break;
+            }
+        }
+    }
+
+    if (substr_elen == 0) {
+        cc = 2;
+        k = 0;
+        goto done;
+    }
+
+    str_leftmost_0 = nelem;
+    if (zs) {
+        for (k = 0; k < nelem; k++) {
+            if (s390_vec_read_element(v2, k, es) == 0) {
+                str_leftmost_0 = k;
+                break;
+            }
+        }
+    }
+
+    cc = str_leftmost_0 == nelem ? 0 : 1;
+    for (k = 0; k < nelem; k++) {
+        i = MIN(nelem, k + substr_elen);
+        for (j = k; j < i; j++) {
+            uint32_t e2 = s390_vec_read_element(v2, j, es);
+            uint32_t e3 = s390_vec_read_element(v3, j - k, es);
+
+            if (e2 != e3) {
+                break;
+            }
+        }
+        if (j == i) {
+            if (k > str_leftmost_0) {
+                cc = 1;
+                k = nelem;
+            } else if (i - k == substr_elen) {
+                cc = 2;
+            } else {
+                cc = 3;
+            }
+            break;
+        }
+    }
+
+done:
+    s390_vec_write_element64(v1, 0, k << es);
+    s390_vec_write_element64(v1, 1, 0);
+    return cc;
+}
+
+#define DEF_VSTRS_HELPER(BITS)                                                \
+void HELPER(gvec_vstrs_##BITS)(void *v1, const void *v2, const void *v3,      \
+                               const void *v4, CPUS390XState *env,            \
+                               uint32_t desc)                                 \
+{                                                                              \
+    env->cc_op = vstrs(v1, v2, v3, v4, MO_##BITS, false);                     \
+}                                                                              \
+void HELPER(gvec_vstrs_zs##BITS)(void *v1, const void *v2, const void *v3,    \
+                                 const void *v4, CPUS390XState *env,          \
+                                 uint32_t desc)                               \
+{                                                                              \
+    env->cc_op = vstrs(v1, v2, v3, v4, MO_##BITS, true);                      \
+}
+
+DEF_VSTRS_HELPER(8)
+DEF_VSTRS_HELPER(16)
+DEF_VSTRS_HELPER(32)

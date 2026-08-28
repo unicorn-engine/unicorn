@@ -250,6 +250,16 @@ TCGv_vec tcg_const_ones_vec_matching(TCGContext *tcg_ctx, TCGv_vec m)
     return tcg_const_ones_vec(tcg_ctx, t->base_type);
 }
 
+TCGv_vec tcg_constant_vec_matching(TCGContext *tcg_ctx, TCGv_vec match,
+                                   unsigned vece, int64_t val)
+{
+    TCGTemp *t = tcgv_vec_temp(tcg_ctx, match);
+    TCGv_vec ret = tcg_temp_new_vec(tcg_ctx, t->base_type);
+
+    do_dupi_vec(tcg_ctx, ret, MO_REG, dup_const(vece, val));
+    return ret;
+}
+
 void tcg_gen_dup64i_vec(TCGContext *tcg_ctx, TCGv_vec r, uint64_t a)
 {
     if (TCG_TARGET_REG_BITS == 32 && a == deposit64(a, 32, 32, a)) {

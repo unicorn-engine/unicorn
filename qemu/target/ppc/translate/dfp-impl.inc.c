@@ -218,6 +218,53 @@ GEN_DFP_T_B_Rc(dcffix)
 GEN_DFP_T_B_Rc(dcffixq)
 GEN_DFP_T_B_Rc(dctfix)
 GEN_DFP_T_B_Rc(dctfixq)
+
+static void gen_dfp_fixqq(DisasContext *ctx)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv_ptr rt;
+    TCGv_ptr rb;
+
+    if (rA(ctx->opcode) == 0) {
+        if (rD(ctx->opcode) & 1) {
+            gen_invalid(ctx);
+            return;
+        }
+    } else if (rA(ctx->opcode) == 1) {
+        if (rB(ctx->opcode) & 1) {
+            gen_invalid(ctx);
+            return;
+        }
+    } else {
+        gen_invalid(ctx);
+        return;
+    }
+
+    if (unlikely(!ctx->fpu_enabled)) {
+        gen_exception(ctx, POWERPC_EXCP_FPU);
+        return;
+    }
+    if (unlikely(!ctx->altivec_enabled)) {
+        gen_exception(ctx, POWERPC_EXCP_VPU);
+        return;
+    }
+
+    gen_update_nip(ctx, ctx->base.pc_next - 4);
+
+    if (rA(ctx->opcode) == 0) {
+        rt = gen_fprp_ptr(tcg_ctx, rD(ctx->opcode));
+        rb = gen_avr_ptr(tcg_ctx, rB(ctx->opcode));
+        gen_helper_DCFFIXQQ(tcg_ctx, tcg_ctx->cpu_env, rt, rb);
+    } else {
+        rt = gen_avr_ptr(tcg_ctx, rD(ctx->opcode));
+        rb = gen_fprp_ptr(tcg_ctx, rB(ctx->opcode));
+        gen_helper_DCTFIXQQ(tcg_ctx, tcg_ctx->cpu_env, rt, rb);
+    }
+
+    tcg_temp_free_ptr(tcg_ctx, rt);
+    tcg_temp_free_ptr(tcg_ctx, rb);
+}
+
 GEN_DFP_T_FPR_I32_Rc(ddedpd, rB, SP)
 GEN_DFP_T_FPR_I32_Rc(ddedpdq, rB, SP)
 GEN_DFP_T_FPR_I32_Rc(denbcd, rB, SP)

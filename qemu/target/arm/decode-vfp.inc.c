@@ -215,6 +215,8 @@ typedef arg_disas_vfp12 arg_VCVT_f32_f16;
 static bool trans_VCVT_f32_f16(DisasContext *ctx, arg_VCVT_f32_f16 *a);
 typedef arg_disas_vfp12 arg_VCVT_f64_f16;
 static bool trans_VCVT_f64_f16(DisasContext *ctx, arg_VCVT_f64_f16 *a);
+typedef arg_disas_vfp12 arg_VCVT_b16_f32;
+static bool trans_VCVT_b16_f32(DisasContext *ctx, arg_VCVT_b16_f32 *a);
 typedef arg_disas_vfp12 arg_VCVT_f16_f32;
 static bool trans_VCVT_f16_f32(DisasContext *ctx, arg_VCVT_f16_f32 *a);
 typedef arg_disas_vfp12 arg_VCVT_f16_f64;
@@ -660,6 +662,16 @@ static bool disas_vfp(DisasContext *ctx, uint32_t insn)
                 if (trans_VLDM_VSTM_dp(ctx, &u.f_disas_vfp9)) return true;
                 return false;
             }
+            return false;
+        }
+        return false;
+    case 0x0e000900:
+        /* ....1110 ........ ....1001 ........ */
+        switch (insn & 0x00bf0050) {
+        case 0x00b30040:
+            /* ....1110 1.110011 ....1001 .1.0.... */
+            disas_vfp_extract_disas_vfp_Fmt_27(ctx, &u.f_disas_vfp12, insn);
+            if (trans_VCVT_b16_f32(ctx, &u.f_disas_vfp12)) return true;
             return false;
         }
         return false;

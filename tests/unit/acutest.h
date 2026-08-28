@@ -270,6 +270,14 @@
 #include <string.h>
 #include <setjmp.h>
 
+#ifdef _MSC_VER
+#include <crtdbg.h>
+#endif
+
+#if defined(_MSC_VER) && defined(_RTC)
+#include <rtcapi.h>
+#endif
+
 #if defined(unix) || defined(__unix__) || defined(__unix) ||                   \
     defined(__APPLE__) || defined(__HAIKU__)
 #define ACUTEST_UNIX_ 1
@@ -330,6 +338,57 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifdef _MSC_VER
+static void acutest_msvc_debug_report_init_(void)
+{
+    static const int report_types[] = {
+        _CRT_WARN, _CRT_ERROR, _CRT_ASSERT,
+    };
+    size_t i;
+
+    for (i = 0; i < sizeof(report_types) / sizeof(report_types[0]); i++) {
+        _CrtSetReportMode(report_types[i], _CRTDBG_MODE_FILE);
+        _CrtSetReportFile(report_types[i], _CRTDBG_FILE_STDERR);
+    }
+}
+#endif
+
+#if defined(_MSC_VER) && defined(_RTC)
+static int __cdecl
+acutest_rtc_error_(int errnum, const char *filename, int lineno,
+                   const char *module, const char *format, ...)
+{
+    va_list args;
+    const char *description = _RTC_GetErrDesc((_RTC_ErrorNumber)errnum);
+
+    fprintf(stderr, "MSVC runtime check failure %d", errnum);
+    if (description != NULL) {
+        fprintf(stderr, " (%s)", description);
+    }
+    if (filename != NULL) {
+        fprintf(stderr, " at %s:%d", filename, lineno);
+    }
+    if (module != NULL) {
+        fprintf(stderr, " in %s", module);
+    }
+    fprintf(stderr, ": ");
+    va_start(args, format);
+    if (format != NULL) {
+        vfprintf(stderr, format, args);
+    }
+    va_end(args);
+    fprintf(stderr, "\n");
+    fflush(stderr);
+    exit(3);
+    return 0;
+}
+
+static void acutest_msvc_runtime_check_init_(void)
+{
+    _RTC_SetErrorFunc(acutest_rtc_error_);
+}
 #endif
 
 #ifdef _MSC_VER
@@ -1772,6 +1831,10 @@ int main(int argc, char **argv)
     SetUnhandledExceptionFilter(acutest_seh_exception_filter_);
 #ifdef _MSC_VER
     _set_abort_behavior(0, _WRITE_ABORT_MSG);
+    acutest_msvc_debug_report_init_();
+#ifdef _RTC
+    acutest_msvc_runtime_check_init_();
+#endif
 #endif
 #endif
 

@@ -24,6 +24,7 @@
 typedef struct AddressSpace AddressSpace;
 typedef struct CPUAddressSpace CPUAddressSpace;
 typedef struct CPUState CPUState;
+typedef struct CPUTLBEntryFull CPUTLBEntryFull;
 typedef struct FlatView FlatView;
 typedef struct IOMMUMemoryRegion IOMMUMemoryRegion;
 typedef struct MemoryListener MemoryListener;

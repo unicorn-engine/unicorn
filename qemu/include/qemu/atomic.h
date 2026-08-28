@@ -304,4 +304,98 @@
 
 #endif /* __ATOMIC_RELAXED */
 
+#ifndef qatomic_read__nocheck
+#define qatomic_read__nocheck atomic_read__nocheck
+#endif
+#ifndef qatomic_read
+#define qatomic_read atomic_read
+#endif
+#ifndef qatomic_set__nocheck
+#define qatomic_set__nocheck atomic_set__nocheck
+#endif
+#ifndef qatomic_set
+#define qatomic_set atomic_set
+#endif
+#ifndef qatomic_rcu_read
+#define qatomic_rcu_read atomic_rcu_read
+#endif
+#ifndef qatomic_rcu_set
+#define qatomic_rcu_set atomic_rcu_set
+#endif
+#ifndef qatomic_xchg__nocheck
+#define qatomic_xchg__nocheck atomic_xchg__nocheck
+#endif
+#ifndef qatomic_xchg
+#define qatomic_xchg atomic_xchg
+#endif
+#ifndef qatomic_cmpxchg__nocheck
+#define qatomic_cmpxchg__nocheck atomic_cmpxchg__nocheck
+#endif
+#ifndef qatomic_cmpxchg
+#define qatomic_cmpxchg atomic_cmpxchg
+#endif
+#ifndef qatomic_fetch_inc
+#define qatomic_fetch_inc atomic_fetch_inc
+#endif
+#ifndef qatomic_fetch_dec
+#define qatomic_fetch_dec atomic_fetch_dec
+#endif
+#ifndef qatomic_fetch_add
+#define qatomic_fetch_add atomic_fetch_add
+#endif
+#ifndef qatomic_fetch_sub
+#define qatomic_fetch_sub atomic_fetch_sub
+#endif
+#ifndef qatomic_fetch_and
+#define qatomic_fetch_and atomic_fetch_and
+#endif
+#ifndef qatomic_fetch_or
+#define qatomic_fetch_or atomic_fetch_or
+#endif
+#ifndef qatomic_fetch_xor
+#define qatomic_fetch_xor atomic_fetch_xor
+#endif
+#ifndef qatomic_inc_fetch
+#define qatomic_inc_fetch atomic_inc_fetch
+#endif
+#ifndef qatomic_dec_fetch
+#define qatomic_dec_fetch atomic_dec_fetch
+#endif
+#ifndef qatomic_add_fetch
+#define qatomic_add_fetch atomic_add_fetch
+#endif
+#ifndef qatomic_sub_fetch
+#define qatomic_sub_fetch atomic_sub_fetch
+#endif
+#ifndef qatomic_and_fetch
+#define qatomic_and_fetch atomic_and_fetch
+#endif
+#ifndef qatomic_or_fetch
+#define qatomic_or_fetch atomic_or_fetch
+#endif
+#ifndef qatomic_xor_fetch
+#define qatomic_xor_fetch atomic_xor_fetch
+#endif
+#ifndef qatomic_inc
+#define qatomic_inc atomic_inc
+#endif
+#ifndef qatomic_dec
+#define qatomic_dec atomic_dec
+#endif
+#ifndef qatomic_add
+#define qatomic_add atomic_add
+#endif
+#ifndef qatomic_sub
+#define qatomic_sub atomic_sub
+#endif
+#ifndef qatomic_and
+#define qatomic_and atomic_and
+#endif
+#ifndef qatomic_or
+#define qatomic_or atomic_or
+#endif
+#ifndef qatomic_xor
+#define qatomic_xor atomic_xor
+#endif
+
 #endif /* QEMU_ATOMIC_H */

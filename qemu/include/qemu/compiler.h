@@ -16,11 +16,30 @@
 #define tostring(s)	#s
 #endif
 
+#ifndef HOST_BIG_ENDIAN
+# if defined(HOST_WORDS_BIGENDIAN)
+#  define HOST_BIG_ENDIAN 1
+# else
+#  define HOST_BIG_ENDIAN 0
+# endif
+#endif
+
+#ifndef HOST_LONG_BITS
+# if UINTPTR_MAX == UINT64_MAX
+#  define HOST_LONG_BITS 64
+# else
+#  define HOST_LONG_BITS 32
+# endif
+#endif
+
 #ifdef _MSC_VER
 // MSVC support
 
 #define inline		__inline
 #define __func__	__FUNCTION__
+#ifndef __attribute__
+#define __attribute__(x)
+#endif
 
 #include <math.h>
 #include <float.h>
@@ -84,10 +103,34 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define likely(x) (x)
 #define unlikely(x) (x)
 
+#ifndef __has_warning
+#define __has_warning(x) 0
+#endif
+
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
+
+#ifndef __has_attribute
+#define __has_attribute(x) 0
+#endif
+
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
 
 #define QEMU_FLATTEN
 #define QEMU_ALWAYS_INLINE  __declspec(inline)
+
+#ifndef G_GNUC_WARN_UNUSED_RESULT
+#define G_GNUC_WARN_UNUSED_RESULT
+#endif
+
+#ifndef G_NORETURN
+#define G_NORETURN __declspec(noreturn)
+#endif
 
 #else  // Unix compilers
 
@@ -112,10 +155,18 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 
 #define QEMU_NORETURN __attribute__ ((__noreturn__))
 
+#ifndef G_NORETURN
+#define G_NORETURN __attribute__((noreturn))
+#endif
+
 #define QEMU_UNUSED_VAR __attribute__((unused))
 #define QEMU_UNUSED_FUNC __attribute__((unused))
 
 #define QEMU_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+
+#ifndef G_GNUC_WARN_UNUSED_RESULT
+#define G_GNUC_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#endif
 
 #define QEMU_SENTINEL __attribute__((sentinel))
 

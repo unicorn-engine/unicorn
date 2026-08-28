@@ -45,7 +45,7 @@ static void arm_release(void *ctx)
     for (i = 0; i < NB_MMU_MODES; i++) {
         desc = &(d[i]);
         fast = &(f[i]);
-        g_free(desc->iotlb);
+        g_free(desc->fulltlb);
         g_free(fast->table);
     }
 
@@ -279,7 +279,11 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             break;
         case UC_ARM_REG_C1_C0_2:
             CHECK_REG_TYPE(int32_t);
-            *(int32_t *)value = env->cp15.cpacr_el1;
+            if (arm_feature(env, ARM_FEATURE_M)) {
+                *(int32_t *)value = env->v7m.cpacr[env->v7m.secure];
+            } else {
+                *(int32_t *)value = env->cp15.cpacr_el1;
+            }
             break;
         case UC_ARM_REG_C13_C0_3:
             CHECK_REG_TYPE(int32_t);
@@ -296,6 +300,18 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         case UC_ARM_REG_FPSID:
             CHECK_REG_TYPE(int32_t);
             *(int32_t *)value = env->vfp.xregs[ARM_VFP_FPSID];
+            break;
+        case UC_ARM_REG_MVFR0:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->vfp.xregs[ARM_VFP_MVFR0];
+            break;
+        case UC_ARM_REG_MVFR1:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->vfp.xregs[ARM_VFP_MVFR1];
+            break;
+        case UC_ARM_REG_MVFR2:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->vfp.xregs[ARM_VFP_MVFR2];
             break;
         case UC_ARM_REG_IPSR:
             CHECK_REG_TYPE(int32_t);
@@ -348,6 +364,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         case UC_ARM_REG_CONTROL:
             CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = helper_v7m_mrs(env, 20);
+            break;
+        case UC_ARM_REG_VPR:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->v7m.vpr;
             break;
         case UC_ARM_REG_CP_REG:
             CHECK_REG_TYPE(uc_arm_cp_reg);
@@ -447,7 +467,11 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             break;
         case UC_ARM_REG_C1_C0_2:
             CHECK_REG_TYPE(int32_t);
-            env->cp15.cpacr_el1 = *(int32_t *)value;
+            if (arm_feature(env, ARM_FEATURE_M)) {
+                env->v7m.cpacr[env->v7m.secure] = *(int32_t *)value;
+            } else {
+                env->cp15.cpacr_el1 = *(int32_t *)value;
+            }
             break;
         case UC_ARM_REG_C13_C0_3:
             CHECK_REG_TYPE(int32_t);
@@ -465,6 +489,18 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             CHECK_REG_TYPE(int32_t);
             env->vfp.xregs[ARM_VFP_FPSID] = *(int32_t *)value;
             break;
+        case UC_ARM_REG_MVFR0:
+            CHECK_REG_TYPE(uint32_t);
+            env->vfp.xregs[ARM_VFP_MVFR0] = *(uint32_t *)value;
+            break;
+        case UC_ARM_REG_MVFR1:
+            CHECK_REG_TYPE(uint32_t);
+            env->vfp.xregs[ARM_VFP_MVFR1] = *(uint32_t *)value;
+            break;
+        case UC_ARM_REG_MVFR2:
+            CHECK_REG_TYPE(uint32_t);
+            env->vfp.xregs[ARM_VFP_MVFR2] = *(uint32_t *)value;
+            break;
         case UC_ARM_REG_IPSR:
             CHECK_REG_TYPE(uint32_t);
             v7m_msr_xpsr(env, 0b1000, 5, *(uint32_t *)value);
@@ -480,6 +516,10 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_ARM_REG_CONTROL:
             CHECK_REG_TYPE(uint32_t);
             helper_v7m_msr(env, 20, *(uint32_t *)value);
+            break;
+        case UC_ARM_REG_VPR:
+            CHECK_REG_TYPE(uint32_t);
+            env->v7m.vpr = *(uint32_t *)value;
             break;
         case UC_ARM_REG_EPSR:
             CHECK_REG_TYPE(uint32_t);

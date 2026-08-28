@@ -26,6 +26,8 @@
 
 //#define DEBUG_UNASSIGNED
 
+#define MTE_TAG_STORAGE_GRANULE 32
+
 void memory_region_transaction_begin(void);
 static void memory_region_transaction_commit(MemoryRegion *mr);
 static void memory_region_destructor_container(MemoryRegion *mr);
@@ -94,6 +96,29 @@ static void make_contained(struct uc_struct *uc, MemoryRegion *current)
     memory_region_add_subregion(uc->system_memory, addr, container);
 }
 
+static void memory_cow_copy_mte_tags(RAMBlock *dst, RAMBlock *src,
+                                     hwaddr src_offset, size_t size)
+{
+    ram_addr_t src_tag_offset, tag_size;
+
+    if (!src->mte_tags) {
+        return;
+    }
+
+    src_tag_offset = src_offset / MTE_TAG_STORAGE_GRANULE;
+    if (src_tag_offset >= src->mte_tags_size) {
+        return;
+    }
+
+    tag_size = DIV_ROUND_UP(size, MTE_TAG_STORAGE_GRANULE);
+    tag_size = MIN(tag_size, src->mte_tags_size - src_tag_offset);
+    dst->mte_tags_size = DIV_ROUND_UP(dst->max_length,
+                                      MTE_TAG_STORAGE_GRANULE);
+    dst->mte_tags = g_malloc0(dst->mte_tags_size);
+    memcpy(dst->mte_tags, src->mte_tags + src_tag_offset,
+           MIN(tag_size, dst->mte_tags_size));
+}
+
 MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *current, hwaddr begin, size_t size)
 {
     hwaddr addr;
@@ -117,6 +142,8 @@ MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *current, hwaddr beg
     }
 
     memcpy(ramblock_ptr(ram->ram_block, 0), ramblock_ptr(current->ram_block, current_offset), size);
+    memory_cow_copy_mte_tags(ram->ram_block, current->ram_block,
+                             current_offset, size);
     memory_region_add_subregion_overlap(current->container, offset, ram, uc->snapshot_level);
 
     if (uc->cpu) {

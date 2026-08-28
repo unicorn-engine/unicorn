@@ -20,7 +20,7 @@ Optimizations/Features:
 
 - add SVM nested paging support
 - add VMX support
-- add AVX support
+- add remaining AVX-512/EVEX support
 - add SSE5 support
 - fxsave/fxrstor AMD extensions
 - improve monitor/mwait support

@@ -18,10 +18,16 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define REQUIRE_M_OR_ZMMUL(ctx) do {       \
+    if (!(ctx)->ext_zmmul &&               \
+        !has_ext(ctx, RVM)) {              \
+        return false;                      \
+    }                                      \
+} while (0)
 
 static bool trans_mul(DisasContext *ctx, arg_mul *a)
 {
-    REQUIRE_EXT(ctx, RVM);
+    REQUIRE_M_OR_ZMMUL(ctx);
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     return gen_arith(tcg_ctx, a, &tcg_gen_mul_tl);
 }
@@ -29,7 +35,7 @@ static bool trans_mul(DisasContext *ctx, arg_mul *a)
 static bool trans_mulh(DisasContext *ctx, arg_mulh *a)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    REQUIRE_EXT(ctx, RVM);
+    REQUIRE_M_OR_ZMMUL(ctx);
     TCGv source1 = tcg_temp_new(tcg_ctx);
     TCGv source2 = tcg_temp_new(tcg_ctx);
     gen_get_gpr(tcg_ctx, source1, a->rs1);
@@ -45,7 +51,7 @@ static bool trans_mulh(DisasContext *ctx, arg_mulh *a)
 
 static bool trans_mulhsu(DisasContext *ctx, arg_mulhsu *a)
 {
-    REQUIRE_EXT(ctx, RVM);
+    REQUIRE_M_OR_ZMMUL(ctx);
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     return gen_arith(tcg_ctx, a, &gen_mulhsu);
 }
@@ -53,7 +59,7 @@ static bool trans_mulhsu(DisasContext *ctx, arg_mulhsu *a)
 static bool trans_mulhu(DisasContext *ctx, arg_mulhu *a)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    REQUIRE_EXT(ctx, RVM);
+    REQUIRE_M_OR_ZMMUL(ctx);
     TCGv source1 = tcg_temp_new(tcg_ctx);
     TCGv source2 = tcg_temp_new(tcg_ctx);
     gen_get_gpr(tcg_ctx, source1, a->rs1);
@@ -98,7 +104,7 @@ static bool trans_remu(DisasContext *ctx, arg_remu *a)
 #ifdef TARGET_RISCV64
 static bool trans_mulw(DisasContext *ctx, arg_mulw *a)
 {
-    REQUIRE_EXT(ctx, RVM);
+    REQUIRE_M_OR_ZMMUL(ctx);
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     return gen_arith(tcg_ctx, a, &gen_mulw);
 }

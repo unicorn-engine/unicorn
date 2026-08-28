@@ -209,10 +209,11 @@ static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 }
 
 static inline void tb_target_set_jmp_target(uintptr_t tc_ptr,
-                                            uintptr_t jmp_addr, uintptr_t addr)
+                                            uintptr_t jmp_rx,
+                                            uintptr_t jmp_rw, uintptr_t addr)
 {
     /* patch the branch destination */
-    *(int32_t *)jmp_addr = addr - (jmp_addr + 4);
+    *(int32_t *)jmp_rw = addr - (jmp_rx + 4);
     /* no need to flush icache explicitly */
 }
 

@@ -99,16 +99,9 @@ static bool trans_hfence_gvma(DisasContext *ctx, arg_sfence_vma *a)
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     if (ctx->priv_ver >= PRIV_VERSION_1_10_0 &&
         has_ext(ctx, RVH)) {
-        /* Hpervisor extensions exist */
-        /*
-         * if (env->priv == PRV_M ||
-         *   (env->priv == PRV_S &&
-         *    !riscv_cpu_virt_enabled(env) &&
-         *    get_field(ctx->mstatus_fs, MSTATUS_TVM))) {
-         */
-            gen_helper_tlb_flush(tcg_ctx, tcg_ctx->cpu_env);
-            return true;
-        /* } */
+        tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
+        gen_helper_hyp_gvma_tlb_flush(tcg_ctx, tcg_ctx->cpu_env);
+        return true;
     }
     return false;
 }
@@ -118,16 +111,9 @@ static bool trans_hfence_bvma(DisasContext *ctx, arg_sfence_vma *a)
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     if (ctx->priv_ver >= PRIV_VERSION_1_10_0 &&
         has_ext(ctx, RVH)) {
-        /* Hpervisor extensions exist */
-        /*
-         * if (env->priv == PRV_M ||
-         *   (env->priv == PRV_S &&
-         *    !riscv_cpu_virt_enabled(env) &&
-         *    get_field(ctx->mstatus_fs, MSTATUS_TVM))) {
-         */
-            gen_helper_tlb_flush(tcg_ctx, tcg_ctx->cpu_env);
-            return true;
-        /* } */
+        tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
+        gen_helper_hyp_tlb_flush(tcg_ctx, tcg_ctx->cpu_env);
+        return true;
     }
     return false;
 }

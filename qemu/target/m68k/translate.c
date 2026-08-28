@@ -309,6 +309,26 @@ static void gen_raise_exception(TCGContext *tcg_ctx, int nr)
     tcg_temp_free_i32(tcg_ctx, tmp);
 }
 
+static void gen_raise_exception_format2(DisasContext *s, int nr,
+                                        target_ulong this_pc)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 addr;
+
+    /*
+     * Pass the address of the insn to the exception handler,
+     * for recording in the Format 2 (6-word) stack frame.
+     * Re-use mmu.ar for the purpose, since that's only valid
+     * after tlb_fill.
+     */
+    addr = tcg_const_i32(tcg_ctx, this_pc);
+    tcg_gen_st_i32(tcg_ctx, addr, tcg_ctx->cpu_env,
+                   offsetof(CPUM68KState, mmu.ar));
+    tcg_temp_free_i32(tcg_ctx, addr);
+    gen_raise_exception(tcg_ctx, nr);
+    s->base.is_jmp = DISAS_NORETURN;
+}
+
 static void gen_exception(DisasContext *s, uint32_t dest, int nr)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -3043,6 +3063,26 @@ DISAS_INSN(rtd)
     gen_jmp(s, tmp);
 }
 
+DISAS_INSN(rtr)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv tmp;
+    TCGv ccr;
+    TCGv sp;
+
+    sp = tcg_temp_new(tcg_ctx);
+    ccr = gen_load(s, OS_WORD, QREG_SP, 0, IS_USER(s));
+    tcg_gen_addi_i32(tcg_ctx, sp, QREG_SP, 2);
+    tmp = gen_load(s, OS_LONG, sp, 0, IS_USER(s));
+    tcg_gen_addi_i32(tcg_ctx, QREG_SP, sp, 4);
+    tcg_temp_free(tcg_ctx, sp);
+
+    gen_set_sr(s, ccr, true);
+    tcg_temp_free(tcg_ctx, ccr);
+
+    gen_jmp(s, tmp);
+}
+
 DISAS_INSN(rts)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -4719,7 +4759,7 @@ DISAS_INSN(move_from_sr)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv sr;
 
-    if (IS_USER(s) && !m68k_feature(env, M68K_FEATURE_M68000)) {
+    if (IS_USER(s) && m68k_feature(env, M68K_FEATURE_MOVEFROMSR_PRIV)) {
         gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
@@ -4986,6 +5026,61 @@ DISAS_INSN(wdebug)
 DISAS_INSN(trap)
 {
     gen_exception(s, s->base.pc_next, EXCP_TRAP0 + (insn & 0xf));
+}
+
+static void do_trapcc(DisasContext *s, DisasCompare *c)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (c->tcond != TCG_COND_NEVER) {
+        TCGLabel *over = NULL;
+
+        update_cc_op(s);
+
+        if (c->tcond != TCG_COND_ALWAYS) {
+            over = gen_new_label(tcg_ctx);
+            tcg_gen_brcond_i32(tcg_ctx, tcg_invert_cond(c->tcond),
+                               c->v1, c->v2, over);
+        }
+
+        tcg_gen_movi_i32(tcg_ctx, QREG_PC, s->pc);
+        gen_raise_exception_format2(s, EXCP_TRAPCC, s->base.pc_next);
+
+        if (over != NULL) {
+            gen_set_label(tcg_ctx, over);
+            s->base.is_jmp = DISAS_NEXT;
+        }
+    }
+    free_cond(tcg_ctx, c);
+}
+
+DISAS_INSN(trapcc)
+{
+    DisasCompare c;
+
+    switch (extract32(insn, 0, 3)) {
+    case 2:
+        (void)read_im16(env, s);
+        break;
+    case 3:
+        (void)read_im32(env, s);
+        break;
+    case 4:
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    gen_cc_cond(&c, s, extract32(insn, 8, 4));
+    do_trapcc(s, &c);
+}
+
+DISAS_INSN(trapv)
+{
+    DisasCompare c;
+
+    gen_cc_cond(&c, s, 9);
+    do_trapcc(s, &c);
 }
 
 static void gen_load_fcr(DisasContext *s, TCGv res, int reg)
@@ -5288,6 +5383,9 @@ DISAS_INSN(fpu)
         break;
     case 0x06: /* flognp1 */
         gen_helper_flognp1(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
+        break;
+    case 0x08: /* fetoxm1 */
+        gen_helper_fetoxm1(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
         break;
     case 0x09: /* ftanh */
         gen_helper_ftanh(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
@@ -5630,6 +5728,32 @@ DISAS_INSN(fscc)
     tcg_temp_free(tcg_ctx, tmp);
 }
 
+DISAS_INSN(ftrapcc)
+{
+    DisasCompare c;
+    uint16_t ext;
+    int cond;
+
+    ext = read_im16(env, s);
+    cond = ext & 0x3f;
+
+    switch (extract32(insn, 0, 3)) {
+    case 2:
+        (void)read_im16(env, s);
+        break;
+    case 3:
+        (void)read_im32(env, s);
+        break;
+    case 4:
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    gen_fcc_cond(&c, s, cond);
+    do_trapcc(s, &c);
+}
+
 DISAS_INSN(frestore)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -5936,8 +6060,8 @@ DISAS_INSN(macsr_to_ccr)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv tmp = tcg_temp_new(tcg_ctx);
-    tcg_gen_andi_i32(tcg_ctx, tmp, QREG_MACSR, 0xf);
-    gen_helper_set_sr(tcg_ctx, tcg_ctx->cpu_env, tmp);
+    tcg_gen_andi_i32(tcg_ctx, tmp, QREG_MACSR, CCF_N | CCF_Z | CCF_V);
+    gen_helper_set_ccr(tcg_ctx, tcg_ctx->cpu_env, tmp);
     tcg_temp_free(tcg_ctx, tmp);
     set_cc_op(s, CC_OP_FLAGS);
 }
@@ -6142,11 +6266,13 @@ void register_m68k_insns (CPUM68KState *env)
     INSN(reset,     4e70, ffff, M68000);
     BASE(stop,      4e72, ffff);
     BASE(rte,       4e73, ffff);
+    INSN(m68k_movec, 4e7a, fffe, MOVEC);
     INSN(cf_movec,  4e7b, ffff, CF_ISA_A);
-    INSN(m68k_movec, 4e7a, fffe, M68000);
     BASE(nop,       4e71, ffff);
     INSN(rtd,       4e74, ffff, RTD);
     BASE(rts,       4e75, ffff);
+    INSN(trapv,     4e76, ffff, M68000);
+    INSN(rtr,       4e77, ffff, M68000);
     BASE(jump,      4e80, ffc0);
     BASE(jump,      4ec0, ffc0);
     INSN(addsubq,   5000, f080, M68000);
@@ -6155,6 +6281,10 @@ void register_m68k_insns (CPUM68KState *env)
     INSN(scc,       50c0, f0c0, M68000);   /* Scc.B <EA> */
     INSN(dbcc,      50c8, f0f8, M68000);
     INSN(tpf,       51f8, fff8, CF_ISA_A);
+    INSN(trapcc,    50fa, f0fe, TRAPCC);   /* opmode 010, 011 */
+    INSN(trapcc,    50fc, f0ff, TRAPCC);   /* opmode 100 */
+    INSN(trapcc,    51fa, fffe, CF_ISA_A); /* TPF opmode 010, 011 */
+    INSN(trapcc,    51fc, ffff, CF_ISA_A); /* TPF opmode 100 */
 
     /* Branch instructions.  */
     BASE(branch,    6000, f000);
@@ -6252,6 +6382,8 @@ void register_m68k_insns (CPUM68KState *env)
     INSN(fbcc,      f280, ffc0, CF_FPU);
     INSN(fpu,       f200, ffc0, FPU);
     INSN(fscc,      f240, ffc0, FPU);
+    INSN(ftrapcc,   f27a, fffe, FPU);       /* opmode 010, 011 */
+    INSN(ftrapcc,   f27c, ffff, FPU);       /* opmode 100 */
     INSN(fbcc,      f280, ff80, FPU);
     INSN(frestore,  f340, ffc0, CF_FPU);
     INSN(fsave,     f300, ffc0, CF_FPU);

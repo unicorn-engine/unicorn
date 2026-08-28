@@ -73,6 +73,7 @@ typedef struct DisasContextBase {
     int num_insns;
     int max_insns;
     bool singlestep_enabled;
+    target_ulong target_page_mask;
 } DisasContextBase;
 
 /**
@@ -142,6 +143,17 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
                      CPUState *cpu, TranslationBlock *tb, int max_insns);
 
 void translator_loop_temp_check(DisasContextBase *db);
+
+static inline bool translator_use_goto_tb(DisasContextBase *db,
+                                          target_ulong dest)
+{
+    return ((db->pc_first ^ dest) & db->target_page_mask) == 0;
+}
+
+static inline bool is_same_page(const DisasContextBase *db, target_ulong addr)
+{
+    return ((addr ^ db->pc_first) & db->target_page_mask) == 0;
+}
 
 /*
  * Translator Load Functions

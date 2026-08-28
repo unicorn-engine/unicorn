@@ -43,7 +43,13 @@ typedef void gen_helper_gvec_flags_4(TCGContext *, TCGv_i32, TCGv_ptr, TCGv_ptr,
 
 typedef void gen_helper_gvec_mem(TCGContext *, TCGv_env, TCGv_ptr, TCGv_i64, TCGv_i32);
 typedef void gen_helper_gvec_mem_scatter(TCGContext *, TCGv_env, TCGv_ptr, TCGv_ptr,
-                                         TCGv_ptr, TCGv_i64, TCGv_i32);
+                                          TCGv_ptr, TCGv_i64, TCGv_i32);
+
+static bool sve_nonstreaming_access_check(DisasContext *s)
+{
+    s->is_nonstreaming = true;
+    return sve_access_check(s);
+}
 
 /*
  * Helpers for extracting complex instruction fields.
@@ -60,13 +66,27 @@ static int tszimm_esz(DisasContext *s, int x)
 
 static int tszimm_shr(DisasContext *s, int x)
 {
-    return (16 << tszimm_esz(s, x)) - x;
+    /*
+     * We won't use the tszimm_shr() value if tszimm_esz() returns -1; the
+     * translator will reject the invalid tsz encoding before using imm.
+     */
+    int esz = tszimm_esz(s, x);
+
+    if (esz < 0) {
+        return esz;
+    }
+    return (16 << esz) - x;
 }
 
 /* See e.g. LSL (immediate, predicated).  */
 static int tszimm_shl(DisasContext *s, int x)
 {
-    return x - (8 << tszimm_esz(s, x));
+    int esz = tszimm_esz(s, x);
+
+    if (esz < 0) {
+        return esz;
+    }
+    return x - (8 << esz);
 }
 
 static inline int plus1(DisasContext *s, int x)
@@ -115,7 +135,17 @@ static inline int pred_full_reg_offset(DisasContext *s, int regno)
 /* Return the byte size of the whole predicate register, VL / 64.  */
 static inline int pred_full_reg_size(DisasContext *s)
 {
-    return s->sve_len >> 3;
+    return (s->pstate_sm ? s->svl : s->sve_len) >> 3;
+}
+
+static inline int streaming_vec_reg_size(DisasContext *s)
+{
+    return s->svl;
+}
+
+static inline int streaming_pred_reg_size(DisasContext *s)
+{
+    return s->svl >> 3;
 }
 
 /* Round up the size of a register to a size allowed by
@@ -298,6 +328,1383 @@ static bool trans_BIC_zzz(DisasContext *s, arg_rrr_esz *a)
     return do_vector3_z(s, tcg_gen_gvec_andc, 0, a->rd, a->rn, a->rm);
 }
 
+static bool do_zzzz_ool(DisasContext *s, arg_rprrr_esz *a,
+                        gen_helper_gvec_4 *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (fn == NULL) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, 0, fn);
+    }
+    return true;
+}
+
+static bool trans_EOR3(DisasContext *s, arg_rprrr_esz *a)
+{
+    return do_zzzz_ool(s, a, gen_helper_sve2_eor3);
+}
+
+static bool trans_BSL(DisasContext *s, arg_rprrr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_bitsel(tcg_ctx, 0, vec_full_reg_offset(s, a->rd),
+                            vec_full_reg_offset(s, a->ra),
+                            vec_full_reg_offset(s, a->rn),
+                            vec_full_reg_offset(s, a->rm), vsz, vsz);
+    }
+    return true;
+}
+
+static bool trans_BCAX(DisasContext *s, arg_rprrr_esz *a)
+{
+    return do_zzzz_ool(s, a, gen_helper_sve2_bcax);
+}
+
+static bool trans_BSL1N(DisasContext *s, arg_rprrr_esz *a)
+{
+    return do_zzzz_ool(s, a, gen_helper_sve2_bsl1n);
+}
+
+static bool trans_BSL2N(DisasContext *s, arg_rprrr_esz *a)
+{
+    return do_zzzz_ool(s, a, gen_helper_sve2_bsl2n);
+}
+
+static bool trans_NBSL(DisasContext *s, arg_rprrr_esz *a)
+{
+    return do_zzzz_ool(s, a, gen_helper_sve2_nbsl);
+}
+
+static bool trans_XAR(DisasContext *s, arg_rrri_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_xar_b,
+        gen_helper_sve2_xar_h,
+        gen_helper_sve2_xar_s,
+        gen_helper_sve2_xar_d,
+    };
+    int esize;
+    int shift;
+
+    if (a->esz < 0) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        esize = 8 << a->esz;
+        shift = a->imm & (esize - 1);
+        if (shift == 0) {
+            tcg_gen_gvec_xor(tcg_ctx, a->esz,
+                             vec_full_reg_offset(s, a->rd),
+                             vec_full_reg_offset(s, a->rn),
+                             vec_full_reg_offset(s, a->rm), vsz, vsz);
+        } else {
+            tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                               vec_full_reg_offset(s, a->rn),
+                               vec_full_reg_offset(s, a->rm),
+                               vsz, vsz, shift, fns[a->esz]);
+        }
+    }
+    return true;
+}
+
+static bool do_pmull(DisasContext *s, arg_rrr_esz *a, int sel)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_gvec_pmull_q, gen_helper_sve2_pmull_h,
+        NULL,                    gen_helper_sve2_pmull_d,
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s) || fns[a->esz] == NULL) {
+        return false;
+    }
+    if (a->esz == 0) {
+        if (!dc_isar_feature(aa64_sve2_pmull128, s)) {
+            return false;
+        }
+        s->is_nonstreaming = true;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, sel, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_PMULLB(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_pmull(s, a, 0);
+}
+
+static bool trans_PMULLT(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_pmull(s, a, 1);
+}
+
+static bool trans_MUL_zzz(DisasContext *s, arg_rrr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_mul(tcg_ctx, a->esz, vec_full_reg_offset(s, a->rd),
+                         vec_full_reg_offset(s, a->rn),
+                         vec_full_reg_offset(s, a->rm), vsz, vsz);
+    }
+    return true;
+}
+
+static bool do_mulh_zzz(DisasContext *s, arg_rrr_esz *a,
+                        gen_helper_gvec_3 * const fns[4])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, 0, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_SMULH_zzz(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_smulh_zzz_b,
+        gen_helper_sve2_smulh_zzz_h,
+        gen_helper_sve2_smulh_zzz_s,
+        gen_helper_sve2_smulh_zzz_d,
+    };
+
+    return do_mulh_zzz(s, a, fns);
+}
+
+static bool trans_UMULH_zzz(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_umulh_zzz_b,
+        gen_helper_sve2_umulh_zzz_h,
+        gen_helper_sve2_umulh_zzz_s,
+        gen_helper_sve2_umulh_zzz_d,
+    };
+
+    return do_mulh_zzz(s, a, fns);
+}
+
+static bool trans_SQDMULH_zzz(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_sqdmulh_b,
+        gen_helper_sve2_sqdmulh_h,
+        gen_helper_sve2_sqdmulh_s,
+        gen_helper_sve2_sqdmulh_d,
+    };
+
+    return do_mulh_zzz(s, a, fns);
+}
+
+static bool trans_SQRDMULH_zzz(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_sqrdmulh_b,
+        gen_helper_sve2_sqrdmulh_h,
+        gen_helper_sve2_sqrdmulh_s,
+        gen_helper_sve2_sqrdmulh_d,
+    };
+
+    return do_mulh_zzz(s, a, fns);
+}
+
+static bool trans_PMUL_zzz(DisasContext *s, arg_rrr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || a->esz != 0) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, 0, gen_helper_gvec_pmul_b);
+    }
+    return true;
+}
+
+static bool do_mul_zzx(DisasContext *s, arg_rrx_esz *a,
+                       gen_helper_gvec_3 * const fns[4])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, a->index, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_MUL_zzx(DisasContext *s, arg_rrx_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_mul_idx_h,
+        gen_helper_sve2_mul_idx_s,
+        gen_helper_sve2_mul_idx_d,
+    };
+
+    return do_mul_zzx(s, a, fns);
+}
+
+static bool trans_SQDMULH_zzx(DisasContext *s, arg_rrx_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_sqdmulh_idx_h,
+        gen_helper_sve2_sqdmulh_idx_s,
+        gen_helper_sve2_sqdmulh_idx_d,
+    };
+
+    return do_mul_zzx(s, a, fns);
+}
+
+static bool trans_SQRDMULH_zzx(DisasContext *s, arg_rrx_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_sqrdmulh_idx_h,
+        gen_helper_sve2_sqrdmulh_idx_s,
+        gen_helper_sve2_sqrdmulh_idx_d,
+    };
+
+    return do_mul_zzx(s, a, fns);
+}
+
+static bool do_sqrdmla_zzx(DisasContext *s, arg_rrxr_esz *a,
+                           gen_helper_gvec_4 * const fns[4])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || fns[a->esz] == NULL) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, a->index, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_SQRDMLAH_zzxz(DisasContext *s, arg_rrxr_esz *a)
+{
+    static gen_helper_gvec_4 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_sqrdmlah_idx_h,
+        gen_helper_sve2_sqrdmlah_idx_s,
+        gen_helper_sve2_sqrdmlah_idx_d,
+    };
+
+    return do_sqrdmla_zzx(s, a, fns);
+}
+
+static bool trans_SQRDMLSH_zzxz(DisasContext *s, arg_rrxr_esz *a)
+{
+    static gen_helper_gvec_4 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_sqrdmlsh_idx_h,
+        gen_helper_sve2_sqrdmlsh_idx_s,
+        gen_helper_sve2_sqrdmlsh_idx_d,
+    };
+
+    return do_sqrdmla_zzx(s, a, fns);
+}
+
+static bool do_widen_mul_zzx(DisasContext *s, arg_rrx_esz *a,
+                             gen_helper_gvec_3 * const fns[4], int top)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || fns[a->esz] == NULL) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, (a->index << 1) | top,
+                           fns[a->esz]);
+    }
+    return true;
+}
+
+#define DO_WIDEN_MUL_ZZX(NAME, helper, TOP)                             \
+static bool trans_##NAME(DisasContext *s, arg_rrx_esz *a)               \
+{                                                                       \
+    static gen_helper_gvec_3 * const fns[4] = {                         \
+        NULL, NULL,                                                     \
+        gen_helper_sve2_##helper##_s,                                   \
+        gen_helper_sve2_##helper##_d,                                   \
+    };                                                                  \
+                                                                        \
+    return do_widen_mul_zzx(s, a, fns, TOP);                            \
+}
+
+DO_WIDEN_MUL_ZZX(SMULLB_zzx, smull_idx, 0)
+DO_WIDEN_MUL_ZZX(SMULLT_zzx, smull_idx, 1)
+DO_WIDEN_MUL_ZZX(UMULLB_zzx, umull_idx, 0)
+DO_WIDEN_MUL_ZZX(UMULLT_zzx, umull_idx, 1)
+DO_WIDEN_MUL_ZZX(SQDMULLB_zzx, sqdmull_idx, 0)
+DO_WIDEN_MUL_ZZX(SQDMULLT_zzx, sqdmull_idx, 1)
+
+#undef DO_WIDEN_MUL_ZZX
+
+static bool do_widen_acc_zzx(DisasContext *s, arg_rrx_esz *a,
+                             gen_helper_gvec_4 * const fns[4], int top)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || fns[a->esz] == NULL) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->rd), vsz, vsz,
+                           (a->index << 1) | top, fns[a->esz]);
+    }
+    return true;
+}
+
+#define DO_WIDEN_ACC_ZZX(NAME, helper, TOP)                             \
+static bool trans_##NAME(DisasContext *s, arg_rrx_esz *a)               \
+{                                                                       \
+    static gen_helper_gvec_4 * const fns[4] = {                         \
+        NULL, NULL,                                                     \
+        gen_helper_sve2_##helper##_s,                                   \
+        gen_helper_sve2_##helper##_d,                                   \
+    };                                                                  \
+                                                                        \
+    return do_widen_acc_zzx(s, a, fns, TOP);                            \
+}
+
+DO_WIDEN_ACC_ZZX(SQDMLALB_zzxw, sqdmlal_idx, 0)
+DO_WIDEN_ACC_ZZX(SQDMLALT_zzxw, sqdmlal_idx, 1)
+DO_WIDEN_ACC_ZZX(SQDMLSLB_zzxw, sqdmlsl_idx, 0)
+DO_WIDEN_ACC_ZZX(SQDMLSLT_zzxw, sqdmlsl_idx, 1)
+DO_WIDEN_ACC_ZZX(SMLALB_zzxw, smlal_idx, 0)
+DO_WIDEN_ACC_ZZX(SMLALT_zzxw, smlal_idx, 1)
+DO_WIDEN_ACC_ZZX(UMLALB_zzxw, umlal_idx, 0)
+DO_WIDEN_ACC_ZZX(UMLALT_zzxw, umlal_idx, 1)
+DO_WIDEN_ACC_ZZX(SMLSLB_zzxw, smlsl_idx, 0)
+DO_WIDEN_ACC_ZZX(SMLSLT_zzxw, smlsl_idx, 1)
+DO_WIDEN_ACC_ZZX(UMLSLB_zzxw, umlsl_idx, 0)
+DO_WIDEN_ACC_ZZX(UMLSLT_zzxw, umlsl_idx, 1)
+
+#undef DO_WIDEN_ACC_ZZX
+
+static bool do_widen_acc_zzzw(DisasContext *s, arg_rprrr_esz *a,
+                              gen_helper_gvec_4 * const fns[4], int data)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || fns[a->esz] == NULL) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra), vsz, vsz,
+                           data, fns[a->esz]);
+    }
+    return true;
+}
+
+#define DO_WIDEN_ACC_ZZZW(NAME, helper, DATA)                           \
+static bool trans_##NAME(DisasContext *s, arg_rprrr_esz *a)             \
+{                                                                       \
+    static gen_helper_gvec_4 * const fns[4] = {                         \
+        NULL,                                                           \
+        gen_helper_sve2_##helper##_h,                                   \
+        gen_helper_sve2_##helper##_s,                                   \
+        gen_helper_sve2_##helper##_d,                                   \
+    };                                                                  \
+                                                                        \
+    return do_widen_acc_zzzw(s, a, fns, DATA);                          \
+}
+
+DO_WIDEN_ACC_ZZZW(SQDMLALB_zzzw, sqdmlal_zzzw, 0)
+DO_WIDEN_ACC_ZZZW(SQDMLALT_zzzw, sqdmlal_zzzw, 3)
+DO_WIDEN_ACC_ZZZW(SQDMLALBT, sqdmlal_zzzw, 2)
+DO_WIDEN_ACC_ZZZW(SQDMLSLB_zzzw, sqdmlsl_zzzw, 0)
+DO_WIDEN_ACC_ZZZW(SQDMLSLT_zzzw, sqdmlsl_zzzw, 3)
+DO_WIDEN_ACC_ZZZW(SQDMLSLBT, sqdmlsl_zzzw, 2)
+DO_WIDEN_ACC_ZZZW(SMLALB_zzzw, smlal_zzzw, 0)
+DO_WIDEN_ACC_ZZZW(SMLALT_zzzw, smlal_zzzw, 3)
+DO_WIDEN_ACC_ZZZW(UMLALB_zzzw, umlal_zzzw, 0)
+DO_WIDEN_ACC_ZZZW(UMLALT_zzzw, umlal_zzzw, 3)
+DO_WIDEN_ACC_ZZZW(SMLSLB_zzzw, smlsl_zzzw, 0)
+DO_WIDEN_ACC_ZZZW(SMLSLT_zzzw, smlsl_zzzw, 3)
+DO_WIDEN_ACC_ZZZW(UMLSLB_zzzw, umlsl_zzzw, 0)
+DO_WIDEN_ACC_ZZZW(UMLSLT_zzzw, umlsl_zzzw, 3)
+DO_WIDEN_ACC_ZZZW(SABALB, sabal, 0)
+DO_WIDEN_ACC_ZZZW(SABALT, sabal, 3)
+DO_WIDEN_ACC_ZZZW(UABALB, uabal, 0)
+DO_WIDEN_ACC_ZZZW(UABALT, uabal, 3)
+
+#undef DO_WIDEN_ACC_ZZZW
+
+static bool do_sqrdmla_zzzz(DisasContext *s, arg_rprrr_esz *a,
+                            gen_helper_gvec_4 * const fns[4])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, 0, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_SQRDMLAH_zzzz(DisasContext *s, arg_rprrr_esz *a)
+{
+    static gen_helper_gvec_4 * const fns[4] = {
+        gen_helper_sve2_sqrdmlah_b,
+        gen_helper_sve2_sqrdmlah_h,
+        gen_helper_sve2_sqrdmlah_s,
+        gen_helper_sve2_sqrdmlah_d,
+    };
+
+    return do_sqrdmla_zzzz(s, a, fns);
+}
+
+static bool trans_SQRDMLSH_zzzz(DisasContext *s, arg_rprrr_esz *a)
+{
+    static gen_helper_gvec_4 * const fns[4] = {
+        gen_helper_sve2_sqrdmlsh_b,
+        gen_helper_sve2_sqrdmlsh_h,
+        gen_helper_sve2_sqrdmlsh_s,
+        gen_helper_sve2_sqrdmlsh_d,
+    };
+
+    return do_sqrdmla_zzzz(s, a, fns);
+}
+
+static bool do_sve2_zzzz_rot(DisasContext *s, arg_rprrr_rot_esz *a,
+                             gen_helper_gvec_4 * const fns[4])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || fns[a->esz] == NULL) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, a->rot, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_CMLA_zzzz(DisasContext *s, arg_rprrr_rot_esz *a)
+{
+    static gen_helper_gvec_4 * const fns[4] = {
+        gen_helper_sve2_cmla_zzzz_b,
+        gen_helper_sve2_cmla_zzzz_h,
+        gen_helper_sve2_cmla_zzzz_s,
+        gen_helper_sve2_cmla_zzzz_d,
+    };
+
+    return do_sve2_zzzz_rot(s, a, fns);
+}
+
+static bool trans_CDOT_zzzz(DisasContext *s, arg_rprrr_rot_esz *a)
+{
+    static gen_helper_gvec_4 * const fns[4] = {
+        NULL,
+        NULL,
+        gen_helper_sve2_cdot_zzzz_s,
+        gen_helper_sve2_cdot_zzzz_d,
+    };
+
+    return do_sve2_zzzz_rot(s, a, fns);
+}
+
+static bool trans_SQRDCMLAH_zzzz(DisasContext *s, arg_rprrr_rot_esz *a)
+{
+    static gen_helper_gvec_4 * const fns[4] = {
+        gen_helper_sve2_sqrdcmlah_zzzz_b,
+        gen_helper_sve2_sqrdcmlah_zzzz_h,
+        gen_helper_sve2_sqrdcmlah_zzzz_s,
+        gen_helper_sve2_sqrdcmlah_zzzz_d,
+    };
+
+    return do_sve2_zzzz_rot(s, a, fns);
+}
+
+static bool do_sve2_rrxr_rot(DisasContext *s, arg_disas_sve43 *a,
+                             gen_helper_gvec_4 *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || fn == NULL) {
+        return false;
+    }
+    tcg_debug_assert(a->rd == a->ra);
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, (a->index << 2) | a->rot, fn);
+    }
+    return true;
+}
+
+static bool trans_CMLA_zzxz_h(DisasContext *s, arg_disas_sve43 *a)
+{
+    return do_sve2_rrxr_rot(s, a, gen_helper_sve2_cmla_idx_h);
+}
+
+static bool trans_CMLA_zzxz_s(DisasContext *s, arg_disas_sve43 *a)
+{
+    return do_sve2_rrxr_rot(s, a, gen_helper_sve2_cmla_idx_s);
+}
+
+static bool trans_SQRDCMLAH_zzxz_h(DisasContext *s, arg_disas_sve43 *a)
+{
+    return do_sve2_rrxr_rot(s, a, gen_helper_sve2_sqrdcmlah_idx_h);
+}
+
+static bool trans_SQRDCMLAH_zzxz_s(DisasContext *s, arg_disas_sve43 *a)
+{
+    return do_sve2_rrxr_rot(s, a, gen_helper_sve2_sqrdcmlah_idx_s);
+}
+
+static bool trans_CDOT_zzxw_s(DisasContext *s, arg_disas_sve43 *a)
+{
+    return do_sve2_rrxr_rot(s, a, gen_helper_sve2_cdot_idx_s);
+}
+
+static bool trans_CDOT_zzxw_d(DisasContext *s, arg_disas_sve43 *a)
+{
+    return do_sve2_rrxr_rot(s, a, gen_helper_sve2_cdot_idx_d);
+}
+
+static bool do_sve2_aba(DisasContext *s, arg_rrr_esz *a,
+                        gen_helper_gvec_3 * const fns[4])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, 0, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_SABA(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_gvec_saba_b,
+        gen_helper_gvec_saba_h,
+        gen_helper_gvec_saba_s,
+        gen_helper_gvec_saba_d,
+    };
+
+    return do_sve2_aba(s, a, fns);
+}
+
+static bool trans_UABA(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_gvec_uaba_b,
+        gen_helper_gvec_uaba_h,
+        gen_helper_gvec_uaba_s,
+        gen_helper_gvec_uaba_d,
+    };
+
+    return do_sve2_aba(s, a, fns);
+}
+
+static bool do_widen_zzz(DisasContext *s, arg_rrr_esz *a,
+                         gen_helper_gvec_3 * const fns[4], int data)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || fns[a->esz] == NULL) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, data, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_SADDLB(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_saddl_h,
+        gen_helper_sve2_saddl_s,
+        gen_helper_sve2_saddl_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 0);
+}
+
+static bool trans_SADDLT(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_saddl_h,
+        gen_helper_sve2_saddl_s,
+        gen_helper_sve2_saddl_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 3);
+}
+
+static bool trans_UADDLB(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_uaddl_h,
+        gen_helper_sve2_uaddl_s,
+        gen_helper_sve2_uaddl_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 0);
+}
+
+static bool trans_UADDLT(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_uaddl_h,
+        gen_helper_sve2_uaddl_s,
+        gen_helper_sve2_uaddl_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 3);
+}
+
+static bool trans_SSUBLB(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_ssubl_h,
+        gen_helper_sve2_ssubl_s,
+        gen_helper_sve2_ssubl_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 0);
+}
+
+static bool trans_SSUBLT(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_ssubl_h,
+        gen_helper_sve2_ssubl_s,
+        gen_helper_sve2_ssubl_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 3);
+}
+
+static bool trans_USUBLB(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_usubl_h,
+        gen_helper_sve2_usubl_s,
+        gen_helper_sve2_usubl_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 0);
+}
+
+static bool trans_USUBLT(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_usubl_h,
+        gen_helper_sve2_usubl_s,
+        gen_helper_sve2_usubl_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 3);
+}
+
+#define DO_WIDEN_ZZZ_TRANS(NAME, helper, DATA)                          \
+static bool trans_##NAME(DisasContext *s, arg_rrr_esz *a)               \
+{                                                                       \
+    static gen_helper_gvec_3 * const fns[4] = {                         \
+        NULL,                                                           \
+        gen_helper_sve2_##helper##_h,                                   \
+        gen_helper_sve2_##helper##_s,                                   \
+        gen_helper_sve2_##helper##_d,                                   \
+    };                                                                  \
+                                                                        \
+    return do_widen_zzz(s, a, fns, DATA);                               \
+}
+
+DO_WIDEN_ZZZ_TRANS(SADDLBT, saddl, 2)
+DO_WIDEN_ZZZ_TRANS(SSUBLBT, ssubl, 2)
+DO_WIDEN_ZZZ_TRANS(SSUBLTB, ssubl, 1)
+DO_WIDEN_ZZZ_TRANS(SABDLB, sabdl, 0)
+DO_WIDEN_ZZZ_TRANS(SABDLT, sabdl, 3)
+DO_WIDEN_ZZZ_TRANS(UABDLB, uabdl, 0)
+DO_WIDEN_ZZZ_TRANS(UABDLT, uabdl, 3)
+DO_WIDEN_ZZZ_TRANS(SMULLB_zzz, smull_zzz, 0)
+DO_WIDEN_ZZZ_TRANS(SMULLT_zzz, smull_zzz, 3)
+DO_WIDEN_ZZZ_TRANS(UMULLB_zzz, umull_zzz, 0)
+DO_WIDEN_ZZZ_TRANS(UMULLT_zzz, umull_zzz, 3)
+DO_WIDEN_ZZZ_TRANS(SQDMULLB_zzz, sqdmull_zzz, 0)
+DO_WIDEN_ZZZ_TRANS(SQDMULLT_zzz, sqdmull_zzz, 3)
+
+#undef DO_WIDEN_ZZZ_TRANS
+
+static bool trans_SADDWB(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_saddw_h,
+        gen_helper_sve2_saddw_s,
+        gen_helper_sve2_saddw_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 0);
+}
+
+static bool trans_SADDWT(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_saddw_h,
+        gen_helper_sve2_saddw_s,
+        gen_helper_sve2_saddw_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 1);
+}
+
+static bool trans_UADDWB(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_uaddw_h,
+        gen_helper_sve2_uaddw_s,
+        gen_helper_sve2_uaddw_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 0);
+}
+
+static bool trans_UADDWT(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_uaddw_h,
+        gen_helper_sve2_uaddw_s,
+        gen_helper_sve2_uaddw_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 1);
+}
+
+static bool trans_SSUBWB(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_ssubw_h,
+        gen_helper_sve2_ssubw_s,
+        gen_helper_sve2_ssubw_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 0);
+}
+
+static bool trans_SSUBWT(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_ssubw_h,
+        gen_helper_sve2_ssubw_s,
+        gen_helper_sve2_ssubw_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 1);
+}
+
+static bool trans_USUBWB(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_usubw_h,
+        gen_helper_sve2_usubw_s,
+        gen_helper_sve2_usubw_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 0);
+}
+
+static bool trans_USUBWT(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_usubw_h,
+        gen_helper_sve2_usubw_s,
+        gen_helper_sve2_usubw_d,
+    };
+
+    return do_widen_zzz(s, a, fns, 1);
+}
+
+static bool do_shll(DisasContext *s, arg_rri_esz *a,
+                    gen_helper_gvec_2 * const fns[3], int sel)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || a->esz < 0 || a->esz > 2) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_2_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn), vsz, vsz,
+                           (a->imm << 1) | sel, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_SSHLLB(DisasContext *s, arg_rri_esz *a)
+{
+    static gen_helper_gvec_2 * const fns[3] = {
+        gen_helper_sve2_sshll_h,
+        gen_helper_sve2_sshll_s,
+        gen_helper_sve2_sshll_d,
+    };
+
+    return do_shll(s, a, fns, 0);
+}
+
+static bool trans_SSHLLT(DisasContext *s, arg_rri_esz *a)
+{
+    static gen_helper_gvec_2 * const fns[3] = {
+        gen_helper_sve2_sshll_h,
+        gen_helper_sve2_sshll_s,
+        gen_helper_sve2_sshll_d,
+    };
+
+    return do_shll(s, a, fns, 1);
+}
+
+static bool trans_USHLLB(DisasContext *s, arg_rri_esz *a)
+{
+    static gen_helper_gvec_2 * const fns[3] = {
+        gen_helper_sve2_ushll_h,
+        gen_helper_sve2_ushll_s,
+        gen_helper_sve2_ushll_d,
+    };
+
+    return do_shll(s, a, fns, 0);
+}
+
+static bool trans_USHLLT(DisasContext *s, arg_rri_esz *a)
+{
+    static gen_helper_gvec_2 * const fns[3] = {
+        gen_helper_sve2_ushll_h,
+        gen_helper_sve2_ushll_s,
+        gen_helper_sve2_ushll_d,
+    };
+
+    return do_shll(s, a, fns, 1);
+}
+
+static bool do_narrow_zzz(DisasContext *s, arg_rrr_esz *a,
+                          gen_helper_gvec_3 * const fns[4])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || fns[a->esz] == NULL) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, 0, fns[a->esz]);
+    }
+    return true;
+}
+
+#define DO_SVE2_NARROW(NAME, name)                                      \
+static bool trans_##NAME(DisasContext *s, arg_rrr_esz *a)               \
+{                                                                       \
+    static gen_helper_gvec_3 * const fns[4] = {                         \
+        NULL,                                                           \
+        gen_helper_sve2_##name##_h,                                     \
+        gen_helper_sve2_##name##_s,                                     \
+        gen_helper_sve2_##name##_d,                                     \
+    };                                                                  \
+                                                                        \
+    return do_narrow_zzz(s, a, fns);                                    \
+}
+
+DO_SVE2_NARROW(ADDHNB, addhnb)
+DO_SVE2_NARROW(ADDHNT, addhnt)
+DO_SVE2_NARROW(RADDHNB, raddhnb)
+DO_SVE2_NARROW(RADDHNT, raddhnt)
+DO_SVE2_NARROW(SUBHNB, subhnb)
+DO_SVE2_NARROW(SUBHNT, subhnt)
+DO_SVE2_NARROW(RSUBHNB, rsubhnb)
+DO_SVE2_NARROW(RSUBHNT, rsubhnt)
+
+#undef DO_SVE2_NARROW
+
+static bool do_xtn(DisasContext *s, arg_rri_esz *a,
+                   gen_helper_gvec_2 * const fns[3])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) ||
+        a->esz < 0 || a->esz > 2 || a->imm != 0) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_2_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vsz, vsz, 0, fns[a->esz]);
+    }
+    return true;
+}
+
+#define DO_XTN_TRANS(NAME, name)                                        \
+static bool trans_##NAME(DisasContext *s, arg_rri_esz *a)               \
+{                                                                       \
+    static gen_helper_gvec_2 * const fns[3] = {                         \
+        gen_helper_sve2_##name##_h,                                     \
+        gen_helper_sve2_##name##_s,                                     \
+        gen_helper_sve2_##name##_d,                                     \
+    };                                                                  \
+                                                                        \
+    return do_xtn(s, a, fns);                                           \
+}
+
+DO_XTN_TRANS(SQXTNB, sqxtnb)
+DO_XTN_TRANS(SQXTNT, sqxtnt)
+DO_XTN_TRANS(UQXTNB, uqxtnb)
+DO_XTN_TRANS(UQXTNT, uqxtnt)
+DO_XTN_TRANS(SQXTUNB, sqxtunb)
+DO_XTN_TRANS(SQXTUNT, sqxtunt)
+
+#undef DO_XTN_TRANS
+
+static bool do_shr_narrow(DisasContext *s, arg_rri_esz *a,
+                          gen_helper_gvec_2 * const fns[3])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || a->esz < 0 || a->esz > 2) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_2_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vsz, vsz, a->imm, fns[a->esz]);
+    }
+    return true;
+}
+
+#define DO_SHR_NARROW_TRANS(NAME, name)                                 \
+static bool trans_##NAME(DisasContext *s, arg_rri_esz *a)               \
+{                                                                       \
+    static gen_helper_gvec_2 * const fns[3] = {                         \
+        gen_helper_sve2_##name##_h,                                     \
+        gen_helper_sve2_##name##_s,                                     \
+        gen_helper_sve2_##name##_d,                                     \
+    };                                                                  \
+                                                                        \
+    return do_shr_narrow(s, a, fns);                                    \
+}
+
+DO_SHR_NARROW_TRANS(SQSHRUNB, sqshrunb)
+DO_SHR_NARROW_TRANS(SQSHRUNT, sqshrunt)
+DO_SHR_NARROW_TRANS(SQRSHRUNB, sqrshrunb)
+DO_SHR_NARROW_TRANS(SQRSHRUNT, sqrshrunt)
+DO_SHR_NARROW_TRANS(SHRNB, shrnb)
+DO_SHR_NARROW_TRANS(SHRNT, shrnt)
+DO_SHR_NARROW_TRANS(RSHRNB, rshrnb)
+DO_SHR_NARROW_TRANS(RSHRNT, rshrnt)
+DO_SHR_NARROW_TRANS(SQSHRNB, sqshrnb)
+DO_SHR_NARROW_TRANS(SQSHRNT, sqshrnt)
+DO_SHR_NARROW_TRANS(SQRSHRNB, sqrshrnb)
+DO_SHR_NARROW_TRANS(SQRSHRNT, sqrshrnt)
+DO_SHR_NARROW_TRANS(UQSHRNB, uqshrnb)
+DO_SHR_NARROW_TRANS(UQSHRNT, uqshrnt)
+DO_SHR_NARROW_TRANS(UQRSHRNB, uqrshrnb)
+DO_SHR_NARROW_TRANS(UQRSHRNT, uqrshrnt)
+
+#undef DO_SHR_NARROW_TRANS
+
+static bool do_sra_zzi(DisasContext *s, arg_rri_esz *a,
+                       gen_helper_gvec_2 * const fns[4])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || a->esz < 0 || a->esz > 3) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_2_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vsz, vsz, a->imm, fns[a->esz]);
+    }
+    return true;
+}
+
+#define DO_SRA_ZZI_TRANS(NAME, name)                                    \
+static bool trans_##NAME(DisasContext *s, arg_rri_esz *a)               \
+{                                                                       \
+    static gen_helper_gvec_2 * const fns[4] = {                         \
+        gen_helper_sve2_##name##_b,                                     \
+        gen_helper_sve2_##name##_h,                                     \
+        gen_helper_sve2_##name##_s,                                     \
+        gen_helper_sve2_##name##_d,                                     \
+    };                                                                  \
+                                                                        \
+    return do_sra_zzi(s, a, fns);                                      \
+}
+
+DO_SRA_ZZI_TRANS(SSRA, ssra)
+DO_SRA_ZZI_TRANS(USRA, usra)
+DO_SRA_ZZI_TRANS(SRSRA, srsra)
+DO_SRA_ZZI_TRANS(URSRA, ursra)
+
+#undef DO_SRA_ZZI_TRANS
+
+static bool do_shift_insert_zzi(DisasContext *s, arg_rri_esz *a,
+                                gen_helper_gvec_2 * const fns[4],
+                                bool insert_left)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || a->esz < 0 || a->esz > 3) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned bits = 8u << a->esz;
+        unsigned vsz = vec_full_reg_size(s);
+        uint32_t rd_ofs = vec_full_reg_offset(s, a->rd);
+        uint32_t rn_ofs = vec_full_reg_offset(s, a->rn);
+
+        if (insert_left && a->imm == 0) {
+            tcg_gen_gvec_mov(tcg_ctx, a->esz, rd_ofs, rn_ofs, vsz, vsz);
+        } else if (!insert_left && a->imm == bits) {
+            return true;
+        } else {
+            tcg_gen_gvec_2_ool(tcg_ctx, rd_ofs, rn_ofs, vsz, vsz,
+                               a->imm, fns[a->esz]);
+        }
+    }
+    return true;
+}
+
+#define DO_SHIFT_INSERT_TRANS(NAME, name, LEFT)                         \
+static bool trans_##NAME(DisasContext *s, arg_rri_esz *a)               \
+{                                                                       \
+    static gen_helper_gvec_2 * const fns[4] = {                         \
+        gen_helper_sve2_##name##_b,                                     \
+        gen_helper_sve2_##name##_h,                                     \
+        gen_helper_sve2_##name##_s,                                     \
+        gen_helper_sve2_##name##_d,                                     \
+    };                                                                  \
+                                                                        \
+    return do_shift_insert_zzi(s, a, fns, LEFT);                       \
+}
+
+DO_SHIFT_INSERT_TRANS(SRI, sri, false)
+DO_SHIFT_INSERT_TRANS(SLI, sli, true)
+
+#undef DO_SHIFT_INSERT_TRANS
+
+static bool do_eoril(DisasContext *s, arg_rrr_esz *a, int data)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_eoril_b,
+        gen_helper_sve2_eoril_h,
+        gen_helper_sve2_eoril_s,
+        gen_helper_sve2_eoril_d,
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, data, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_EORBT(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_eoril(s, a, 2);
+}
+
+static bool trans_EORTB(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_eoril(s, a, 1);
+}
+
+static bool do_bitperm(DisasContext *s, arg_rrr_esz *a,
+                       gen_helper_gvec_3 * const fns[4])
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2_bitperm, s)) {
+        return false;
+    }
+    if (sve_nonstreaming_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, 0, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_BEXT(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_bext_b,
+        gen_helper_sve2_bext_h,
+        gen_helper_sve2_bext_s,
+        gen_helper_sve2_bext_d,
+    };
+
+    return do_bitperm(s, a, fns);
+}
+
+static bool trans_BDEP(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_bdep_b,
+        gen_helper_sve2_bdep_h,
+        gen_helper_sve2_bdep_s,
+        gen_helper_sve2_bdep_d,
+    };
+
+    return do_bitperm(s, a, fns);
+}
+
+static bool trans_BGRP(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_bgrp_b,
+        gen_helper_sve2_bgrp_h,
+        gen_helper_sve2_bgrp_s,
+        gen_helper_sve2_bgrp_d,
+    };
+
+    return do_bitperm(s, a, fns);
+}
+
+static bool do_cadd(DisasContext *s, arg_rrr_esz *a,
+                    gen_helper_gvec_3 * const fns[4], int data)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, data, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_CADD_rot90(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_cadd_b,
+        gen_helper_sve2_cadd_h,
+        gen_helper_sve2_cadd_s,
+        gen_helper_sve2_cadd_d,
+    };
+
+    return do_cadd(s, a, fns, 0);
+}
+
+static bool trans_CADD_rot270(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_cadd_b,
+        gen_helper_sve2_cadd_h,
+        gen_helper_sve2_cadd_s,
+        gen_helper_sve2_cadd_d,
+    };
+
+    return do_cadd(s, a, fns, 1);
+}
+
+static bool trans_SQCADD_rot90(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_sqcadd_b,
+        gen_helper_sve2_sqcadd_h,
+        gen_helper_sve2_sqcadd_s,
+        gen_helper_sve2_sqcadd_d,
+    };
+
+    return do_cadd(s, a, fns, 0);
+}
+
+static bool trans_SQCADD_rot270(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_sqcadd_b,
+        gen_helper_sve2_sqcadd_h,
+        gen_helper_sve2_sqcadd_s,
+        gen_helper_sve2_sqcadd_d,
+    };
+
+    return do_cadd(s, a, fns, 1);
+}
+
+static bool do_adcl(DisasContext *s, arg_rprrr_esz *a, int sel)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    static gen_helper_gvec_4 * const fns[2] = {
+        gen_helper_sve2_adcl_s,
+        gen_helper_sve2_adcl_d,
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+        int data = (a->esz & 2) | sel;
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, data, fns[a->esz & 1]);
+    }
+    return true;
+}
+
+static bool trans_ADCLB(DisasContext *s, arg_rprrr_esz *a)
+{
+    return do_adcl(s, a, 0);
+}
+
+static bool trans_ADCLT(DisasContext *s, arg_rprrr_esz *a)
+{
+    return do_adcl(s, a, 1);
+}
+
 /*
  *** SVE Integer Arithmetic - Unpredicated Group
  */
@@ -396,6 +1803,76 @@ DO_ZPZZ(UMIN, umin)
 DO_ZPZZ(SABD, sabd)
 DO_ZPZZ(UABD, uabd)
 
+static bool trans_SADALP_zpzz(DisasContext *s, arg_rprr_esz *a)
+{
+    static gen_helper_gvec_4 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_sadalp_zpzz_h,
+        gen_helper_sve2_sadalp_zpzz_s,
+        gen_helper_sve2_sadalp_zpzz_d,
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpzz_ool(s, a, fns[a->esz]);
+}
+
+static bool trans_UADALP_zpzz(DisasContext *s, arg_rprr_esz *a)
+{
+    static gen_helper_gvec_4 * const fns[4] = {
+        NULL,
+        gen_helper_sve2_uadalp_zpzz_h,
+        gen_helper_sve2_uadalp_zpzz_s,
+        gen_helper_sve2_uadalp_zpzz_d,
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpzz_ool(s, a, fns[a->esz]);
+}
+
+#define DO_ZPZZ_SVE2(NAME, name)                                        \
+static bool trans_##NAME(DisasContext *s, arg_rprr_esz *a)              \
+{                                                                       \
+    static gen_helper_gvec_4 * const fns[4] = {                         \
+        gen_helper_sve2_##name##_zpzz_b,                                \
+        gen_helper_sve2_##name##_zpzz_h,                                \
+        gen_helper_sve2_##name##_zpzz_s,                                \
+        gen_helper_sve2_##name##_zpzz_d,                                \
+    };                                                                  \
+                                                                        \
+    if (!dc_isar_feature(aa64_sve2, s)) {                               \
+        return false;                                                   \
+    }                                                                   \
+    return do_zpzz_ool(s, a, fns[a->esz]);                              \
+}
+
+DO_ZPZZ_SVE2(SHADD, shadd)
+DO_ZPZZ_SVE2(UHADD, uhadd)
+DO_ZPZZ_SVE2(SHSUB, shsub)
+DO_ZPZZ_SVE2(UHSUB, uhsub)
+DO_ZPZZ_SVE2(SRHADD, srhadd)
+DO_ZPZZ_SVE2(URHADD, urhadd)
+DO_ZPZZ_SVE2(ADDP, addp)
+DO_ZPZZ_SVE2(SMAXP, smaxp)
+DO_ZPZZ_SVE2(UMAXP, umaxp)
+DO_ZPZZ_SVE2(SMINP, sminp)
+DO_ZPZZ_SVE2(UMINP, uminp)
+DO_ZPZZ_SVE2(SRSHL, srshl)
+DO_ZPZZ_SVE2(URSHL, urshl)
+DO_ZPZZ_SVE2(SQSHL, sqshl)
+DO_ZPZZ_SVE2(UQSHL, uqshl)
+DO_ZPZZ_SVE2(SQRSHL, sqrshl)
+DO_ZPZZ_SVE2(UQRSHL, uqrshl)
+DO_ZPZZ_SVE2(SQADD_zpzz, sqadd)
+DO_ZPZZ_SVE2(UQADD_zpzz, uqadd)
+DO_ZPZZ_SVE2(SQSUB_zpzz, sqsub)
+DO_ZPZZ_SVE2(UQSUB_zpzz, uqsub)
+DO_ZPZZ_SVE2(SUQADD, suqadd)
+DO_ZPZZ_SVE2(USQADD, usqadd)
+
 DO_ZPZZ(MUL, mul)
 DO_ZPZZ(SMULH, smulh)
 DO_ZPZZ(UMULH, umulh)
@@ -429,6 +1906,7 @@ static bool trans_SEL_zpzz(DisasContext *s, arg_rprr_esz *a)
 }
 
 #undef DO_ZPZZ
+#undef DO_ZPZZ_SVE2
 
 /*
  *** SVE Integer Arithmetic - Unary Predicated Group
@@ -467,6 +1945,52 @@ DO_ZPZ(CNOT, cnot)
 DO_ZPZ(NOT_zpz, not_zpz)
 DO_ZPZ(ABS, abs)
 DO_ZPZ(NEG, neg)
+
+static bool trans_SQABS(DisasContext *s, arg_rpr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_sqabs_b,
+        gen_helper_sve2_sqabs_h,
+        gen_helper_sve2_sqabs_s,
+        gen_helper_sve2_sqabs_d,
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpz_ool(s, a, fns[a->esz]);
+}
+
+static bool trans_SQNEG(DisasContext *s, arg_rpr_esz *a)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_sqneg_b,
+        gen_helper_sve2_sqneg_h,
+        gen_helper_sve2_sqneg_s,
+        gen_helper_sve2_sqneg_d,
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpz_ool(s, a, fns[a->esz]);
+}
+
+static bool trans_URECPE(DisasContext *s, arg_rpr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpz_ool(s, a, a->esz == 2 ? gen_helper_sve2_urecpe_s : NULL);
+}
+
+static bool trans_URSQRTE(DisasContext *s, arg_rpr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpz_ool(s, a, a->esz == 2 ? gen_helper_sve2_ursqrte_s : NULL);
+}
 
 static bool trans_FABS(DisasContext *s, arg_rpr_esz *a)
 {
@@ -971,6 +2495,23 @@ static bool trans_ADDVL(DisasContext *s, arg_ADDVL *a)
     return true;
 }
 
+static bool trans_ADDSVL(DisasContext *s, arg_ADDSVL *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sme, s)) {
+        return false;
+    }
+    if (sme_enabled_check(s)) {
+        TCGv_i64 rd = cpu_reg_sp(s, a->rd);
+        TCGv_i64 rn = cpu_reg_sp(s, a->rn);
+
+        tcg_gen_addi_i64(tcg_ctx, rd, rn,
+                         a->imm * streaming_vec_reg_size(s));
+    }
+    return true;
+}
+
 static bool trans_ADDPL(DisasContext *s, arg_ADDPL *a)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -978,6 +2519,23 @@ static bool trans_ADDPL(DisasContext *s, arg_ADDPL *a)
         TCGv_i64 rd = cpu_reg_sp(s, a->rd);
         TCGv_i64 rn = cpu_reg_sp(s, a->rn);
         tcg_gen_addi_i64(tcg_ctx, rd, rn, a->imm * pred_full_reg_size(s));
+    }
+    return true;
+}
+
+static bool trans_ADDSPL(DisasContext *s, arg_ADDSPL *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sme, s)) {
+        return false;
+    }
+    if (sme_enabled_check(s)) {
+        TCGv_i64 rd = cpu_reg_sp(s, a->rd);
+        TCGv_i64 rn = cpu_reg_sp(s, a->rn);
+
+        tcg_gen_addi_i64(tcg_ctx, rd, rn,
+                         a->imm * streaming_pred_reg_size(s));
     }
     return true;
 }
@@ -992,6 +2550,22 @@ static bool trans_RDVL(DisasContext *s, arg_RDVL *a)
     return true;
 }
 
+static bool trans_RDSVL(DisasContext *s, arg_RDSVL *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sme, s)) {
+        return false;
+    }
+    if (sme_enabled_check(s)) {
+        TCGv_i64 reg = cpu_reg(s, a->rd);
+
+        tcg_gen_movi_i64(tcg_ctx, reg,
+                         a->imm * streaming_vec_reg_size(s));
+    }
+    return true;
+}
+
 /*
  *** SVE Compute Vector Address Group
  */
@@ -999,7 +2573,7 @@ static bool trans_RDVL(DisasContext *s, arg_RDVL *a)
 static bool do_adr(DisasContext *s, arg_rrri *a, gen_helper_gvec_3 *fn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    if (sve_access_check(s)) {
+    if (sve_nonstreaming_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
                            vec_full_reg_offset(s, a->rn),
@@ -1045,7 +2619,7 @@ static bool trans_FEXPA(DisasContext *s, arg_rr_esz *a)
     if (a->esz == 0) {
         return false;
     }
-    if (sve_access_check(s)) {
+    if (sve_nonstreaming_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         tcg_gen_gvec_2_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
                            vec_full_reg_offset(s, a->rn),
@@ -1066,7 +2640,7 @@ static bool trans_FTSSEL(DisasContext *s, arg_rrr_esz *a)
     if (a->esz == 0) {
         return false;
     }
-    if (sve_access_check(s)) {
+    if (sve_nonstreaming_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
                            vec_full_reg_offset(s, a->rn),
@@ -1526,6 +3100,7 @@ static bool trans_PTRUE(DisasContext *s, arg_PTRUE *a)
 static bool trans_SETFFR(DisasContext *s, arg_SETFFR *a)
 {
     /* Note pat == 31 is #all, to set all elements.  */
+    s->is_nonstreaming = true;
     return do_predset(s, 0, FFR_PRED_NUM, 31, false);
 }
 
@@ -1544,16 +3119,19 @@ static bool trans_RDFFR_p(DisasContext *s, arg_RDFFR_p *a)
         .rd = a->rd, .pg = a->pg, .s = a->s,
         .rn = FFR_PRED_NUM, .rm = FFR_PRED_NUM,
     };
+    s->is_nonstreaming = true;
     return trans_AND_pppp(s, &alt_a);
 }
 
 static bool trans_RDFFR(DisasContext *s, arg_RDFFR *a)
 {
+    s->is_nonstreaming = true;
     return do_mov_p(s, a->rd, FFR_PRED_NUM);
 }
 
 static bool trans_WRFFR(DisasContext *s, arg_WRFFR *a)
 {
+    s->is_nonstreaming = true;
     return do_mov_p(s, FFR_PRED_NUM, a->rn);
 }
 
@@ -1595,6 +3173,60 @@ static bool trans_PFIRST(DisasContext *s, arg_rr_esz *a)
 static bool trans_PNEXT(DisasContext *s, arg_rr_esz *a)
 {
     return do_pfirst_pnext(s, a, gen_helper_sve_pnext);
+}
+
+static bool trans_PSEL(DisasContext *s, arg_PSEL *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int vl = vec_full_reg_size(s);
+    int pl = pred_gvec_reg_size(s);
+    int elements = vl >> a->esz;
+    TCGv_i64 tmp, didx, dbit;
+    TCGv_ptr ptr;
+
+    if (!dc_isar_feature(aa64_sme, s)) {
+        return false;
+    }
+    if (!sve_access_check(s)) {
+        return true;
+    }
+
+    tmp = tcg_temp_new_i64(tcg_ctx);
+    dbit = tcg_temp_new_i64(tcg_ctx);
+    didx = tcg_temp_new_i64(tcg_ctx);
+    ptr = tcg_temp_new_ptr(tcg_ctx);
+
+    tcg_gen_addi_i64(tcg_ctx, tmp, cpu_reg(s, a->rv), a->imm);
+    if (is_power_of_2(elements)) {
+        tcg_gen_andi_i64(tcg_ctx, tmp, tmp, elements - 1);
+    } else {
+        tcg_gen_remu_i64(tcg_ctx, tmp, tmp,
+                         tcg_constant_i64(tcg_ctx, elements));
+    }
+
+    tcg_gen_shli_i64(tcg_ctx, tmp, tmp, a->esz);
+    tcg_gen_andi_i64(tcg_ctx, dbit, tmp, 7);
+    tcg_gen_shri_i64(tcg_ctx, didx, tmp, 3);
+#ifdef HOST_WORDS_BIGENDIAN
+    tcg_gen_xori_i64(tcg_ctx, didx, didx, 7);
+#endif
+
+    tcg_gen_trunc_i64_ptr(tcg_ctx, ptr, didx);
+    tcg_gen_add_ptr(tcg_ctx, ptr, ptr, tcg_ctx->cpu_env);
+    tcg_gen_ld8u_i64(tcg_ctx, tmp, ptr, pred_full_reg_offset(s, a->pm));
+
+    tcg_gen_shr_i64(tcg_ctx, tmp, tmp, dbit);
+    tcg_gen_andi_i64(tcg_ctx, tmp, tmp, 1);
+    tcg_gen_neg_i64(tcg_ctx, tmp, tmp);
+
+    tcg_gen_gvec_ands(tcg_ctx, MO_64, pred_full_reg_offset(s, a->pd),
+                      pred_full_reg_offset(s, a->pn), tmp, pl, pl);
+
+    tcg_temp_free_i64(tcg_ctx, tmp);
+    tcg_temp_free_i64(tcg_ctx, dbit);
+    tcg_temp_free_i64(tcg_ctx, didx);
+    tcg_temp_free_ptr(tcg_ctx, ptr);
+    return true;
 }
 
 /*
@@ -2024,7 +3656,7 @@ static bool trans_CPY_z_i(DisasContext *s, arg_CPY_z_i *a)
  *** SVE Permute Extract Group
  */
 
-static bool trans_EXT(DisasContext *s, arg_EXT *a)
+static bool do_ext(DisasContext *s, int rd, int rn, int rm, int imm)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (!sve_access_check(s)) {
@@ -2032,11 +3664,11 @@ static bool trans_EXT(DisasContext *s, arg_EXT *a)
     }
 
     unsigned vsz = vec_full_reg_size(s);
-    unsigned n_ofs = a->imm >= vsz ? 0 : a->imm;
+    unsigned n_ofs = imm >= vsz ? 0 : imm;
     unsigned n_siz = vsz - n_ofs;
-    unsigned d = vec_full_reg_offset(s, a->rd);
-    unsigned n = vec_full_reg_offset(s, a->rn);
-    unsigned m = vec_full_reg_offset(s, a->rm);
+    unsigned d = vec_full_reg_offset(s, rd);
+    unsigned n = vec_full_reg_offset(s, rn);
+    unsigned m = vec_full_reg_offset(s, rm);
 
     /* Use host vector move insns if we have appropriate sizes
      * and no unfortunate overlap.
@@ -2053,6 +3685,16 @@ static bool trans_EXT(DisasContext *s, arg_EXT *a)
         tcg_gen_gvec_3_ool(tcg_ctx, d, n, m, vsz, vsz, n_ofs, gen_helper_sve_ext);
     }
     return true;
+}
+
+static bool trans_EXT(DisasContext *s, arg_EXT *a)
+{
+    return do_ext(s, a->rd, a->rn, a->rm, a->imm);
+}
+
+static bool trans_EXT_sve2(DisasContext *s, arg_EXT_sve2 *a)
+{
+    return do_ext(s, a->rd, a->rn, (a->rn + 1) % 32, a->imm);
 }
 
 /*
@@ -2164,6 +3806,45 @@ static bool trans_TBL(DisasContext *s, arg_rrr_esz *a)
 
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, 0, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_TBL_sve2(DisasContext *s, arg_rrr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    static gen_helper_gvec_4 * const fns[4] = {
+        gen_helper_sve2_tbl_b, gen_helper_sve2_tbl_h,
+        gen_helper_sve2_tbl_s, gen_helper_sve2_tbl_d
+    };
+
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, (a->rn + 1) % 32),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, 0, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_TBX(DisasContext *s, arg_rrr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve2_tbx_b, gen_helper_sve2_tbx_h,
+        gen_helper_sve2_tbx_s, gen_helper_sve2_tbx_d
+    };
+
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
         tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
                            vec_full_reg_offset(s, a->rn),
                            vec_full_reg_offset(s, a->rm),
@@ -2331,11 +4012,10 @@ static bool do_zip(DisasContext *s, arg_rrr_esz *a, bool high)
 
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
-        unsigned high_ofs = high ? vsz / 2 : 0;
         tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
-                           vec_full_reg_offset(s, a->rn) + high_ofs,
-                           vec_full_reg_offset(s, a->rm) + high_ofs,
-                           vsz, vsz, 0, fns[a->esz]);
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, high ? vsz / 2 : 0, fns[a->esz]);
     }
     return true;
 }
@@ -2364,6 +4044,40 @@ static bool trans_ZIP2_z(DisasContext *s, arg_rrr_esz *a)
     return do_zip(s, a, true);
 }
 
+static bool do_interleave_q(DisasContext *s, arg_rrr_esz *a,
+                            gen_helper_gvec_3 *fn, int data)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_f64mm, s)) {
+        return false;
+    }
+    if (sve_nonstreaming_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        if (vsz < 32) {
+            unallocated_encoding(s);
+        } else {
+            tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                               vec_full_reg_offset(s, a->rn),
+                               vec_full_reg_offset(s, a->rm),
+                               vsz, vsz, data, fn);
+        }
+    }
+    return true;
+}
+
+static bool trans_ZIP1_q(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_interleave_q(s, a, gen_helper_sve2_zip_q, 0);
+}
+
+static bool trans_ZIP2_q(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_interleave_q(s, a, gen_helper_sve2_zip_q,
+                           QEMU_ALIGN_DOWN(vec_full_reg_size(s), 32) / 2);
+}
+
 static gen_helper_gvec_3 * const uzp_fns[4] = {
     gen_helper_sve_uzp_b, gen_helper_sve_uzp_h,
     gen_helper_sve_uzp_s, gen_helper_sve_uzp_d,
@@ -2377,6 +4091,16 @@ static bool trans_UZP1_z(DisasContext *s, arg_rrr_esz *a)
 static bool trans_UZP2_z(DisasContext *s, arg_rrr_esz *a)
 {
     return do_zzz_data_ool(s, a, 1 << a->esz, uzp_fns[a->esz]);
+}
+
+static bool trans_UZP1_q(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_interleave_q(s, a, gen_helper_sve2_uzp_q, 0);
+}
+
+static bool trans_UZP2_q(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_interleave_q(s, a, gen_helper_sve2_uzp_q, 16);
 }
 
 static gen_helper_gvec_3 * const trn_fns[4] = {
@@ -2394,6 +4118,16 @@ static bool trans_TRN2_z(DisasContext *s, arg_rrr_esz *a)
     return do_zzz_data_ool(s, a, 1 << a->esz, trn_fns[a->esz]);
 }
 
+static bool trans_TRN1_q(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_interleave_q(s, a, gen_helper_sve2_trn_q, 0);
+}
+
+static bool trans_TRN2_q(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_interleave_q(s, a, gen_helper_sve2_trn_q, 16);
+}
+
 /*
  *** SVE Permute Vector - Predicated Group
  */
@@ -2403,6 +4137,7 @@ static bool trans_COMPACT(DisasContext *s, arg_rpr_esz *a)
     static gen_helper_gvec_3 * const fns[4] = {
         NULL, NULL, gen_helper_sve_compact_s, gen_helper_sve_compact_d
     };
+    s->is_nonstreaming = true;
     return do_zpz_ool(s, a, fns[a->esz]);
 }
 
@@ -2817,6 +4552,25 @@ static bool trans_SPLICE(DisasContext *s, arg_rprr_esz *a)
     return true;
 }
 
+static bool trans_SPLICE_sve2(DisasContext *s, arg_rpr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, (a->rn + 1) % 32),
+                           pred_full_reg_offset(s, a->pg),
+                           vsz, vsz, a->esz, gen_helper_sve_splice);
+    }
+    return true;
+}
+
 /*
  *** SVE Integer Compare - Vectors Group
  */
@@ -2902,6 +4656,138 @@ DO_PPZW(CMPLO, cmplo)
 DO_PPZW(CMPLS, cmpls)
 
 #undef DO_PPZW
+
+static bool trans_MATCH(DisasContext *s, arg_rprr_esz *a)
+{
+    static gen_helper_gvec_flags_4 * const fns[4] = {
+        gen_helper_sve2_match_ppzz_b,
+        gen_helper_sve2_match_ppzz_h,
+        NULL,
+        NULL,
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    s->is_nonstreaming = true;
+    return do_ppzz_flags(s, a, fns[a->esz]);
+}
+
+static bool trans_NMATCH(DisasContext *s, arg_rprr_esz *a)
+{
+    static gen_helper_gvec_flags_4 * const fns[4] = {
+        gen_helper_sve2_nmatch_ppzz_b,
+        gen_helper_sve2_nmatch_ppzz_h,
+        NULL,
+        NULL,
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    s->is_nonstreaming = true;
+    return do_ppzz_flags(s, a, fns[a->esz]);
+}
+
+static bool trans_HISTCNT(DisasContext *s, arg_rprr_esz *a)
+{
+    static gen_helper_gvec_4 * const fns[4] = {
+        NULL,
+        NULL,
+        gen_helper_sve2_histcnt_s,
+        gen_helper_sve2_histcnt_d,
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    s->is_nonstreaming = true;
+    return do_zpzz_ool(s, a, fns[a->esz]);
+}
+
+static bool trans_HISTSEG(DisasContext *s, arg_rrr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s) || a->esz != 0) {
+        return false;
+    }
+    if (sve_nonstreaming_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, 0, gen_helper_sve2_histseg);
+    }
+    return true;
+}
+
+static bool trans_AESMC(DisasContext *s, arg_rri *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2_aes, s)) {
+        return false;
+    }
+    if (sve_nonstreaming_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_2_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rd),
+                           vsz, vsz, a->imm, gen_helper_crypto_sve_aesmc);
+    }
+    return true;
+}
+
+static bool do_sve2_crypto_zzz(DisasContext *s, arg_rrr_esz *a,
+                               gen_helper_gvec_3 *fn, int data, bool feature)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!feature || a->esz != 0) {
+        return false;
+    }
+    if (sve_nonstreaming_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, data, fn);
+    }
+    return true;
+}
+
+static bool trans_AESE(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_sve2_crypto_zzz(s, a, gen_helper_crypto_sve_aese, 0,
+                              dc_isar_feature(aa64_sve2_aes, s));
+}
+
+static bool trans_AESD(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_sve2_crypto_zzz(s, a, gen_helper_crypto_sve_aese, 1,
+                              dc_isar_feature(aa64_sve2_aes, s));
+}
+
+static bool trans_SM4E(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_sve2_crypto_zzz(s, a, gen_helper_crypto_sve_sm4e, 0,
+                              dc_isar_feature(aa64_sve2_sm4, s));
+}
+
+static bool trans_SM4EKEY(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_sve2_crypto_zzz(s, a, gen_helper_crypto_sve_sm4ekey, 0,
+                              dc_isar_feature(aa64_sve2_sm4, s));
+}
+
+static bool trans_RAX1(DisasContext *s, arg_rrr_esz *a)
+{
+    return do_sve2_crypto_zzz(s, a, gen_helper_crypto_rax1, 0,
+                              dc_isar_feature(aa64_sve2_sha3, s));
+}
 
 /*
  *** SVE Integer Compare - Immediate Groups
@@ -3507,16 +5393,17 @@ DO_ZZI(UMIN, umin)
 static bool trans_DOT_zzz(DisasContext *s, arg_DOT_zzz *a)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    static gen_helper_gvec_3 * const fns[2][2] = {
+    static gen_helper_gvec_4 * const fns[2][2] = {
         { gen_helper_gvec_sdot_b, gen_helper_gvec_sdot_h },
         { gen_helper_gvec_udot_b, gen_helper_gvec_udot_h }
     };
 
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
-        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
                            vec_full_reg_offset(s, a->rn),
                            vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
                            vsz, vsz, 0, fns[a->u][a->sz]);
     }
     return true;
@@ -3525,19 +5412,343 @@ static bool trans_DOT_zzz(DisasContext *s, arg_DOT_zzz *a)
 static bool trans_DOT_zzx(DisasContext *s, arg_DOT_zzx *a)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    static gen_helper_gvec_3 * const fns[2][2] = {
+    static gen_helper_gvec_4 * const fns[2][2] = {
         { gen_helper_gvec_sdot_idx_b, gen_helper_gvec_sdot_idx_h },
         { gen_helper_gvec_udot_idx_b, gen_helper_gvec_udot_idx_h }
     };
 
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
-        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
                            vec_full_reg_offset(s, a->rn),
                            vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
                            vsz, vsz, a->index, fns[a->u][a->sz]);
     }
     return true;
+}
+
+static bool trans_USDOT_zzzz(DisasContext *s, arg_rprrr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_i8mm, s) || a->esz != 2) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, 0, gen_helper_gvec_usdot_b);
+    }
+    return true;
+}
+
+static bool do_i8mm_dot_zzxw(DisasContext *s, arg_rrxr_esz *a,
+                             gen_helper_gvec_4 *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_i8mm, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, a->index, fn);
+    }
+    return true;
+}
+
+static bool trans_USDOT_zzxw_s(DisasContext *s, arg_rrxr_esz *a)
+{
+    return do_i8mm_dot_zzxw(s, a, gen_helper_gvec_usdot_idx_b);
+}
+
+static bool trans_SUDOT_zzxw_s(DisasContext *s, arg_rrxr_esz *a)
+{
+    return do_i8mm_dot_zzxw(s, a, gen_helper_gvec_sudot_idx_b);
+}
+
+static bool do_i8mm_mmla(DisasContext *s, arg_rprrr_esz *a,
+                         gen_helper_gvec_4 *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_i8mm, s)) {
+        return false;
+    }
+    if (sve_nonstreaming_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, 0, fn);
+    }
+    return true;
+}
+
+static bool trans_SMMLA(DisasContext *s, arg_rprrr_esz *a)
+{
+    return do_i8mm_mmla(s, a, gen_helper_gvec_smmla_b);
+}
+
+static bool trans_USMMLA(DisasContext *s, arg_rprrr_esz *a)
+{
+    return do_i8mm_mmla(s, a, gen_helper_gvec_usmmla_b);
+}
+
+static bool trans_UMMLA(DisasContext *s, arg_rprrr_esz *a)
+{
+    return do_i8mm_mmla(s, a, gen_helper_gvec_ummla_b);
+}
+
+static bool trans_BFDOT_zzzz(DisasContext *s, arg_rprrr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_bf16, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, 0, gen_helper_gvec_bfdot);
+    }
+    return true;
+}
+
+static bool trans_BFDOT_zzxz(DisasContext *s, arg_rrxr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_bf16, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, a->index, gen_helper_gvec_bfdot_idx);
+    }
+    return true;
+}
+
+static bool trans_BFMMLA(DisasContext *s, arg_rprrr_esz *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_bf16, s)) {
+        return false;
+    }
+    if (sve_nonstreaming_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           vsz, vsz, 0, gen_helper_gvec_bfmmla);
+    }
+    return true;
+}
+
+static bool do_FMMLA(DisasContext *s, arg_rprrr_esz *a,
+                     gen_helper_gvec_4_ptr *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (sve_nonstreaming_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+        TCGv_ptr status = get_fpstatus_ptr(tcg_ctx, false);
+
+        tcg_gen_gvec_4_ptr(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra), status,
+                           vsz, vsz, 0, fn);
+        tcg_temp_free_ptr(tcg_ctx, status);
+    }
+    return true;
+}
+
+static bool trans_FMMLA_s(DisasContext *s, arg_rprrr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve_f32mm, s)) {
+        return false;
+    }
+    return do_FMMLA(s, a, gen_helper_fmmla_s);
+}
+
+static bool trans_FMMLA_d(DisasContext *s, arg_rprrr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve_f64mm, s)) {
+        return false;
+    }
+    return do_FMMLA(s, a, gen_helper_fmmla_d);
+}
+
+static bool do_BFMLAL_zzzw(DisasContext *s, arg_rprrr_esz *a, bool sel)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_bf16, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+        TCGv_ptr status = get_fpstatus_ptr(tcg_ctx, false);
+
+        tcg_gen_gvec_4_ptr(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra), status,
+                           vsz, vsz, sel, gen_helper_gvec_bfmlal);
+        tcg_temp_free_ptr(tcg_ctx, status);
+    }
+    return true;
+}
+
+static bool trans_BFMLALB_zzzw(DisasContext *s, arg_BFMLALB_zzzw *a)
+{
+    return do_BFMLAL_zzzw(s, a, false);
+}
+
+static bool trans_BFMLALT_zzzw(DisasContext *s, arg_BFMLALT_zzzw *a)
+{
+    return do_BFMLAL_zzzw(s, a, true);
+}
+
+static bool do_BFMLAL_zzxw(DisasContext *s, arg_rrxr_esz *a, bool sel)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_bf16, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+        TCGv_ptr status = get_fpstatus_ptr(tcg_ctx, false);
+
+        tcg_gen_gvec_4_ptr(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra), status,
+                           vsz, vsz, (a->index << 1) | sel,
+                           gen_helper_gvec_bfmlal_idx);
+        tcg_temp_free_ptr(tcg_ctx, status);
+    }
+    return true;
+}
+
+static bool trans_BFMLALB_zzxw(DisasContext *s, arg_BFMLALB_zzxw *a)
+{
+    return do_BFMLAL_zzxw(s, a, false);
+}
+
+static bool trans_BFMLALT_zzxw(DisasContext *s, arg_BFMLALT_zzxw *a)
+{
+    return do_BFMLAL_zzxw(s, a, true);
+}
+
+static bool do_FMLAL_zzzw(DisasContext *s, arg_rprrr_esz *a,
+                          bool sub, bool sel)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ptr(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           tcg_ctx->cpu_env, vsz, vsz,
+                           (sel << 1) | sub,
+                           gen_helper_sve2_fmlal_zzzw_s);
+    }
+    return true;
+}
+
+static bool trans_FMLALB_zzzw(DisasContext *s, arg_FMLALB_zzzw *a)
+{
+    return do_FMLAL_zzzw(s, a, false, false);
+}
+
+static bool trans_FMLALT_zzzw(DisasContext *s, arg_FMLALT_zzzw *a)
+{
+    return do_FMLAL_zzzw(s, a, false, true);
+}
+
+static bool trans_FMLSLB_zzzw(DisasContext *s, arg_FMLSLB_zzzw *a)
+{
+    return do_FMLAL_zzzw(s, a, true, false);
+}
+
+static bool trans_FMLSLT_zzzw(DisasContext *s, arg_FMLSLT_zzzw *a)
+{
+    return do_FMLAL_zzzw(s, a, true, true);
+}
+
+static bool do_FMLAL_zzxw(DisasContext *s, arg_rrxr_esz *a,
+                          bool sub, bool sel)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        unsigned vsz = vec_full_reg_size(s);
+
+        tcg_gen_gvec_4_ptr(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vec_full_reg_offset(s, a->ra),
+                           tcg_ctx->cpu_env, vsz, vsz,
+                           (a->index << 2) | (sel << 1) | sub,
+                           gen_helper_sve2_fmlal_zzxw_s);
+    }
+    return true;
+}
+
+static bool trans_FMLALB_zzxw(DisasContext *s, arg_FMLALB_zzxw *a)
+{
+    return do_FMLAL_zzxw(s, a, false, false);
+}
+
+static bool trans_FMLALT_zzxw(DisasContext *s, arg_FMLALT_zzxw *a)
+{
+    return do_FMLAL_zzxw(s, a, false, true);
+}
+
+static bool trans_FMLSLB_zzxw(DisasContext *s, arg_FMLSLB_zzxw *a)
+{
+    return do_FMLAL_zzxw(s, a, true, false);
+}
+
+static bool trans_FMLSLT_zzxw(DisasContext *s, arg_FMLSLT_zzxw *a)
+{
+    return do_FMLAL_zzxw(s, a, true, true);
 }
 
 
@@ -3759,7 +5970,7 @@ static bool trans_FTMAD(DisasContext *s, arg_FTMAD *a)
     if (a->esz == 0) {
         return false;
     }
-    if (sve_access_check(s)) {
+    if (sve_nonstreaming_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         TCGv_ptr status = get_fpstatus_ptr(tcg_ctx, a->esz == MO_16);
         tcg_gen_gvec_3_ptr(tcg_ctx, vec_full_reg_offset(s, a->rd),
@@ -3793,7 +6004,7 @@ static bool trans_FADDA(DisasContext *s, arg_rprr_esz *a)
     if (a->esz == 0) {
         return false;
     }
-    if (!sve_access_check(s)) {
+    if (!sve_nonstreaming_access_check(s)) {
         return true;
     }
 
@@ -3854,11 +6065,24 @@ static bool trans_##NAME(DisasContext *s, arg_rrr_esz *a)           \
 DO_FP3(FADD_zzz, fadd)
 DO_FP3(FSUB_zzz, fsub)
 DO_FP3(FMUL_zzz, fmul)
-DO_FP3(FTSMUL, ftsmul)
 DO_FP3(FRECPS, recps)
 DO_FP3(FRSQRTS, rsqrts)
 
 #undef DO_FP3
+
+static bool trans_FTSMUL(DisasContext *s, arg_rrr_esz *a)
+{
+    static gen_helper_gvec_3_ptr * const fns[4] = {
+        NULL, gen_helper_gvec_ftsmul_h,
+        gen_helper_gvec_ftsmul_s, gen_helper_gvec_ftsmul_d,
+    };
+
+    if (fns[a->esz] == NULL) {
+        return false;
+    }
+    s->is_nonstreaming = true;
+    return do_zzz_fp(s, a, fns[a->esz]);
+}
 
 /*
  *** SVE Floating Point Arithmetic - Predicated Group
@@ -3907,6 +6131,27 @@ DO_FP3(FDIV, fdiv)
 DO_FP3(FMULX, fmulx)
 
 #undef DO_FP3
+
+#define DO_SVE2_FP_PAIR(NAME, name)                                    \
+static bool trans_##NAME(DisasContext *s, arg_rprr_esz *a)             \
+{                                                                      \
+    static gen_helper_gvec_4_ptr * const fns[4] = {                    \
+        NULL, gen_helper_sve2_##name##_h,                              \
+        gen_helper_sve2_##name##_s, gen_helper_sve2_##name##_d         \
+    };                                                                 \
+    if (!dc_isar_feature(aa64_sve2, s)) {                              \
+        return false;                                                  \
+    }                                                                  \
+    return do_zpzz_fp(s, a, fns[a->esz]);                              \
+}
+
+DO_SVE2_FP_PAIR(FADDP, faddp_zpzz)
+DO_SVE2_FP_PAIR(FMAXNMP, fmaxnmp_zpzz)
+DO_SVE2_FP_PAIR(FMINNMP, fminnmp_zpzz)
+DO_SVE2_FP_PAIR(FMAXP, fmaxp_zpzz)
+DO_SVE2_FP_PAIR(FMINP, fminp_zpzz)
+
+#undef DO_SVE2_FP_PAIR
 
 typedef void gen_helper_sve_fp2scalar(TCGContext *, TCGv_ptr, TCGv_ptr, TCGv_ptr,
                                       TCGv_i64, TCGv_ptr, TCGv_i32);
@@ -4209,6 +6454,72 @@ static bool trans_FCVT_sd(DisasContext *s, arg_rpr_esz *a)
     return do_zpz_ptr(s, a->rd, a->rn, a->pg, false, gen_helper_sve_fcvt_sd);
 }
 
+static bool trans_BFCVT(DisasContext *s, arg_rpr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve_bf16, s)) {
+        return false;
+    }
+    return do_zpz_ptr(s, a->rd, a->rn, a->pg, false, gen_helper_sve_bfcvt);
+}
+
+static bool trans_FCVTNT_sh(DisasContext *s, arg_rpr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpz_ptr(s, a->rd, a->rn, a->pg, false,
+                      gen_helper_sve2_fcvtnt_sh);
+}
+
+static bool trans_FCVTNT_ds(DisasContext *s, arg_rpr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpz_ptr(s, a->rd, a->rn, a->pg, false,
+                      gen_helper_sve2_fcvtnt_ds);
+}
+
+static bool trans_BFCVTNT(DisasContext *s, arg_rpr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve_bf16, s)) {
+        return false;
+    }
+    return do_zpz_ptr(s, a->rd, a->rn, a->pg, false,
+                      gen_helper_sve_bfcvtnt);
+}
+
+static bool trans_FCVTLT_hs(DisasContext *s, arg_rpr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpz_ptr(s, a->rd, a->rn, a->pg, false,
+                      gen_helper_sve2_fcvtlt_hs);
+}
+
+static bool trans_FCVTLT_sd(DisasContext *s, arg_rpr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpz_ptr(s, a->rd, a->rn, a->pg, false,
+                      gen_helper_sve2_fcvtlt_sd);
+}
+
+static bool trans_FLOGB(DisasContext *s, arg_rpr_esz *a)
+{
+    static gen_helper_gvec_3_ptr * const fns[4] = {
+        NULL, gen_helper_flogb_h, gen_helper_flogb_s, gen_helper_flogb_d
+    };
+
+    if (!dc_isar_feature(aa64_sve2, s) || a->esz == 0) {
+        return false;
+    }
+    return do_zpz_ptr(s, a->rd, a->rn, a->pg, a->esz == MO_16,
+                      fns[a->esz]);
+}
+
 static bool trans_FCVTZS_hh(DisasContext *s, arg_rpr_esz *a)
 {
     return do_zpz_ptr(s, a->rd, a->rn, a->pg, true, gen_helper_sve_fcvtzs_hh);
@@ -4307,29 +6618,39 @@ static bool trans_FRINTX(DisasContext *s, arg_rpr_esz *a)
     return do_zpz_ptr(s, a->rd, a->rn, a->pg, a->esz == MO_16, fns[a->esz - 1]);
 }
 
-static bool do_frint_mode(DisasContext *s, arg_rpr_esz *a, int mode)
+static bool do_zpz_fp_rmode(DisasContext *s, arg_rpr_esz *a, int mode,
+                            bool is_fp16, gen_helper_gvec_3_ptr *fn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    if (a->esz == 0) {
+    if (fn == NULL) {
         return false;
     }
     if (sve_access_check(s)) {
         unsigned vsz = vec_full_reg_size(s);
         TCGv_i32 tmode = tcg_const_i32(tcg_ctx, mode);
-        TCGv_ptr status = get_fpstatus_ptr(tcg_ctx, a->esz == MO_16);
+        TCGv_ptr status = get_fpstatus_ptr(tcg_ctx, is_fp16);
 
         gen_helper_set_rmode(tcg_ctx, tmode, tmode, status);
 
         tcg_gen_gvec_3_ptr(tcg_ctx, vec_full_reg_offset(s, a->rd),
                            vec_full_reg_offset(s, a->rn),
                            pred_full_reg_offset(s, a->pg),
-                           status, vsz, vsz, 0, frint_fns[a->esz - 1]);
+                           status, vsz, vsz, 0, fn);
 
         gen_helper_set_rmode(tcg_ctx, tmode, tmode, status);
         tcg_temp_free_i32(tcg_ctx, tmode);
         tcg_temp_free_ptr(tcg_ctx, status);
     }
     return true;
+}
+
+static bool do_frint_mode(DisasContext *s, arg_rpr_esz *a, int mode)
+{
+    if (a->esz == 0) {
+        return false;
+    }
+    return do_zpz_fp_rmode(s, a, mode, a->esz == MO_16,
+                           frint_fns[a->esz - 1]);
 }
 
 static bool trans_FRINTN(DisasContext *s, arg_rpr_esz *a)
@@ -4355,6 +6676,24 @@ static bool trans_FRINTZ(DisasContext *s, arg_rpr_esz *a)
 static bool trans_FRINTA(DisasContext *s, arg_rpr_esz *a)
 {
     return do_frint_mode(s, a, float_round_ties_away);
+}
+
+static bool trans_FCVTX_ds(DisasContext *s, arg_rpr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpz_fp_rmode(s, a, float_round_to_odd, false,
+                           gen_helper_sve_fcvt_ds);
+}
+
+static bool trans_FCVTXNT_ds(DisasContext *s, arg_rpr_esz *a)
+{
+    if (!dc_isar_feature(aa64_sve2, s)) {
+        return false;
+    }
+    return do_zpz_fp_rmode(s, a, float_round_to_odd, false,
+                           gen_helper_sve2_fcvtnt_ds);
 }
 
 static bool trans_FRECPX(DisasContext *s, arg_rpr_esz *a)
@@ -4457,20 +6796,34 @@ static bool trans_UCVTF_dd(DisasContext *s, arg_rpr_esz *a)
  *** SVE Memory - 32-bit Gather and Unsized Contiguous Group
  */
 
-/* Subroutine loading a vector register at VOFS of LEN bytes.
+static void gen_mov_ptr(TCGContext *tcg_ctx, TCGv_ptr ret, TCGv_ptr arg)
+{
+#if UINTPTR_MAX == UINT32_MAX
+    tcg_gen_mov_i32(tcg_ctx, (TCGv_i32)ret, (TCGv_i32)arg);
+#else
+    tcg_gen_mov_i64(tcg_ctx, (TCGv_i64)ret, (TCGv_i64)arg);
+#endif
+}
+
+/* Subroutine loading a vector register at BASE + VOFS of LEN bytes.
  * The load should begin at the address Rn + IMM.
  */
 
-static void do_ldr(DisasContext *s, uint32_t vofs, int len, int rn, int imm)
+void gen_sve_ldr(DisasContext *s, TCGv_ptr base, int vofs,
+                 int len, int rn, int imm)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int len_align = QEMU_ALIGN_DOWN(len, 8);
     int len_remain = len % 8;
     int nparts = len / 8 + ctpop8(len_remain);
     int midx = get_mem_index(s);
-    TCGv_i64 addr, t0, t1;
+    TCGv_i64 dirty_addr, clean_addr, t0, t1;
+    TCGv_ptr base_local = NULL;
 
-    addr = tcg_temp_new_i64(tcg_ctx);
+    dirty_addr = tcg_temp_new_i64(tcg_ctx);
+    tcg_gen_addi_i64(tcg_ctx, dirty_addr, cpu_reg_sp(s, rn), imm);
+    clean_addr = gen_mte_checkN(s, dirty_addr, false, rn != 31, len);
+    tcg_temp_free_i64(tcg_ctx, dirty_addr);
     t0 = tcg_temp_new_i64(tcg_ctx);
 
     /* Note that unpredicated load/store of vector/predicate registers
@@ -4485,13 +6838,23 @@ static void do_ldr(DisasContext *s, uint32_t vofs, int len, int rn, int imm)
         int i;
 
         for (i = 0; i < len_align; i += 8) {
-            tcg_gen_addi_i64(tcg_ctx, addr, cpu_reg_sp(s, rn), imm + i);
-            tcg_gen_qemu_ld_i64(tcg_ctx, t0, addr, midx, MO_LEQ);
-            tcg_gen_st_i64(tcg_ctx, t0, tcg_ctx->cpu_env, vofs + i);
+            tcg_gen_qemu_ld_i64(tcg_ctx, t0, clean_addr, midx, MO_LEQ);
+            tcg_gen_st_i64(tcg_ctx, t0, base, vofs + i);
+            tcg_gen_addi_i64(tcg_ctx, clean_addr, clean_addr, 8);
         }
     } else {
         TCGLabel *loop = gen_new_label(tcg_ctx);
         TCGv_ptr tp, i = tcg_const_local_ptr(tcg_ctx, 0);
+        TCGv_i64 clean_addr_local = tcg_temp_local_new_i64(tcg_ctx);
+
+        tcg_gen_mov_i64(tcg_ctx, clean_addr_local, clean_addr);
+        clean_addr = clean_addr_local;
+
+        if (base != tcg_ctx->cpu_env) {
+            base_local = tcg_temp_local_new_ptr(tcg_ctx);
+            gen_mov_ptr(tcg_ctx, base_local, base);
+            base = base_local;
+        }
 
         gen_set_label(tcg_ctx, loop);
 
@@ -4499,14 +6862,11 @@ static void do_ldr(DisasContext *s, uint32_t vofs, int len, int rn, int imm)
          * the stack each iteration.  Instead, re-compute values other
          * than the loop counter.
          */
+        tcg_gen_qemu_ld_i64(tcg_ctx, t0, clean_addr, midx, MO_LEQ);
+        tcg_gen_addi_i64(tcg_ctx, clean_addr, clean_addr, 8);
+
         tp = tcg_temp_new_ptr(tcg_ctx);
-        tcg_gen_addi_ptr(tcg_ctx, tp, i, imm);
-        tcg_gen_extu_ptr_i64(tcg_ctx, addr, tp);
-        tcg_gen_add_i64(tcg_ctx, addr, addr, cpu_reg_sp(s, rn));
-
-        tcg_gen_qemu_ld_i64(tcg_ctx, t0, addr, midx, MO_LEQ);
-
-        tcg_gen_add_ptr(tcg_ctx, tp, tcg_ctx->cpu_env, i);
+        tcg_gen_add_ptr(tcg_ctx, tp, base, i);
         tcg_gen_addi_ptr(tcg_ctx, i, i, 8);
         tcg_gen_st_i64(tcg_ctx, t0, tp, vofs);
         tcg_temp_free_ptr(tcg_ctx, tp);
@@ -4519,20 +6879,19 @@ static void do_ldr(DisasContext *s, uint32_t vofs, int len, int rn, int imm)
      * Note that we still store the entire 64-bit unit into cpu_env.
      */
     if (len_remain) {
-        tcg_gen_addi_i64(tcg_ctx, addr, cpu_reg_sp(s, rn), imm + len_align);
-
         switch (len_remain) {
         case 2:
         case 4:
         case 8:
-            tcg_gen_qemu_ld_i64(tcg_ctx, t0, addr, midx, MO_LE | ctz32(len_remain));
+            tcg_gen_qemu_ld_i64(tcg_ctx, t0, clean_addr, midx,
+                                MO_LE | ctz32(len_remain));
             break;
 
         case 6:
             t1 = tcg_temp_new_i64(tcg_ctx);
-            tcg_gen_qemu_ld_i64(tcg_ctx, t0, addr, midx, MO_LEUL);
-            tcg_gen_addi_i64(tcg_ctx, addr, addr, 4);
-            tcg_gen_qemu_ld_i64(tcg_ctx, t1, addr, midx, MO_LEUW);
+            tcg_gen_qemu_ld_i64(tcg_ctx, t0, clean_addr, midx, MO_LEUL);
+            tcg_gen_addi_i64(tcg_ctx, clean_addr, clean_addr, 4);
+            tcg_gen_qemu_ld_i64(tcg_ctx, t1, clean_addr, midx, MO_LEUW);
             tcg_gen_deposit_i64(tcg_ctx, t0, t0, t1, 32, 32);
             tcg_temp_free_i64(tcg_ctx, t1);
             break;
@@ -4540,23 +6899,30 @@ static void do_ldr(DisasContext *s, uint32_t vofs, int len, int rn, int imm)
         default:
             g_assert_not_reached();
         }
-        tcg_gen_st_i64(tcg_ctx, t0, tcg_ctx->cpu_env, vofs + len_align);
+        tcg_gen_st_i64(tcg_ctx, t0, base, vofs + len_align);
     }
-    tcg_temp_free_i64(tcg_ctx, addr);
+    if (base_local != NULL) {
+        tcg_temp_free_ptr(tcg_ctx, base_local);
+    }
     tcg_temp_free_i64(tcg_ctx, t0);
 }
 
 /* Similarly for stores.  */
-static void do_str(DisasContext *s, uint32_t vofs, int len, int rn, int imm)
+void gen_sve_str(DisasContext *s, TCGv_ptr base, int vofs,
+                 int len, int rn, int imm)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int len_align = QEMU_ALIGN_DOWN(len, 8);
     int len_remain = len % 8;
     int nparts = len / 8 + ctpop8(len_remain);
     int midx = get_mem_index(s);
-    TCGv_i64 addr, t0;
+    TCGv_i64 dirty_addr, clean_addr, t0;
+    TCGv_ptr base_local = NULL;
 
-    addr = tcg_temp_new_i64(tcg_ctx);
+    dirty_addr = tcg_temp_new_i64(tcg_ctx);
+    tcg_gen_addi_i64(tcg_ctx, dirty_addr, cpu_reg_sp(s, rn), imm);
+    clean_addr = gen_mte_checkN(s, dirty_addr, false, rn != 31, len);
+    tcg_temp_free_i64(tcg_ctx, dirty_addr);
     t0 = tcg_temp_new_i64(tcg_ctx);
 
     /* Note that unpredicated load/store of vector/predicate registers
@@ -4571,30 +6937,38 @@ static void do_str(DisasContext *s, uint32_t vofs, int len, int rn, int imm)
         int i;
 
         for (i = 0; i < len_align; i += 8) {
-            tcg_gen_ld_i64(tcg_ctx, t0, tcg_ctx->cpu_env, vofs + i);
-            tcg_gen_addi_i64(tcg_ctx, addr, cpu_reg_sp(s, rn), imm + i);
-            tcg_gen_qemu_st_i64(tcg_ctx, t0, addr, midx, MO_LEQ);
+            tcg_gen_ld_i64(tcg_ctx, t0, base, vofs + i);
+            tcg_gen_qemu_st_i64(tcg_ctx, t0, clean_addr, midx, MO_LEQ);
+            tcg_gen_addi_i64(tcg_ctx, clean_addr, clean_addr, 8);
         }
     } else {
         TCGLabel *loop = gen_new_label(tcg_ctx);
         TCGv_ptr t2, i = tcg_const_local_ptr(tcg_ctx, 0);
+        TCGv_i64 clean_addr_local = tcg_temp_local_new_i64(tcg_ctx);
+
+        tcg_gen_mov_i64(tcg_ctx, clean_addr_local, clean_addr);
+        clean_addr = clean_addr_local;
+
+        if (base != tcg_ctx->cpu_env) {
+            base_local = tcg_temp_local_new_ptr(tcg_ctx);
+            gen_mov_ptr(tcg_ctx, base_local, base);
+            base = base_local;
+        }
 
         gen_set_label(tcg_ctx, loop);
 
         t2 = tcg_temp_new_ptr(tcg_ctx);
-        tcg_gen_add_ptr(tcg_ctx, t2, tcg_ctx->cpu_env, i);
+        tcg_gen_add_ptr(tcg_ctx, t2, base, i);
         tcg_gen_ld_i64(tcg_ctx, t0, t2, vofs);
 
         /* Minimize the number of local temps that must be re-read from
          * the stack each iteration.  Instead, re-compute values other
          * than the loop counter.
          */
-        tcg_gen_addi_ptr(tcg_ctx, t2, i, imm);
-        tcg_gen_extu_ptr_i64(tcg_ctx, addr, t2);
-        tcg_gen_add_i64(tcg_ctx, addr, addr, cpu_reg_sp(s, rn));
         tcg_temp_free_ptr(tcg_ctx, t2);
 
-        tcg_gen_qemu_st_i64(tcg_ctx, t0, addr, midx, MO_LEQ);
+        tcg_gen_qemu_st_i64(tcg_ctx, t0, clean_addr, midx, MO_LEQ);
+        tcg_gen_addi_i64(tcg_ctx, clean_addr, clean_addr, 8);
 
         tcg_gen_addi_ptr(tcg_ctx, i, i, 8);
 
@@ -4604,28 +6978,30 @@ static void do_str(DisasContext *s, uint32_t vofs, int len, int rn, int imm)
 
     /* Predicate register stores can be any multiple of 2.  */
     if (len_remain) {
-        tcg_gen_ld_i64(tcg_ctx, t0, tcg_ctx->cpu_env, vofs + len_align);
-        tcg_gen_addi_i64(tcg_ctx, addr, cpu_reg_sp(s, rn), imm + len_align);
+        tcg_gen_ld_i64(tcg_ctx, t0, base, vofs + len_align);
 
         switch (len_remain) {
         case 2:
         case 4:
         case 8:
-            tcg_gen_qemu_st_i64(tcg_ctx, t0, addr, midx, MO_LE | ctz32(len_remain));
+            tcg_gen_qemu_st_i64(tcg_ctx, t0, clean_addr, midx,
+                                MO_LE | ctz32(len_remain));
             break;
 
         case 6:
-            tcg_gen_qemu_st_i64(tcg_ctx, t0, addr, midx, MO_LEUL);
-            tcg_gen_addi_i64(tcg_ctx, addr, addr, 4);
+            tcg_gen_qemu_st_i64(tcg_ctx, t0, clean_addr, midx, MO_LEUL);
+            tcg_gen_addi_i64(tcg_ctx, clean_addr, clean_addr, 4);
             tcg_gen_shri_i64(tcg_ctx, t0, t0, 32);
-            tcg_gen_qemu_st_i64(tcg_ctx, t0, addr, midx, MO_LEUW);
+            tcg_gen_qemu_st_i64(tcg_ctx, t0, clean_addr, midx, MO_LEUW);
             break;
 
         default:
             g_assert_not_reached();
         }
     }
-    tcg_temp_free_i64(tcg_ctx, addr);
+    if (base_local != NULL) {
+        tcg_temp_free_ptr(tcg_ctx, base_local);
+    }
     tcg_temp_free_i64(tcg_ctx, t0);
 }
 
@@ -4634,7 +7010,8 @@ static bool trans_LDR_zri(DisasContext *s, arg_rri *a)
     if (sve_access_check(s)) {
         int size = vec_full_reg_size(s);
         int off = vec_full_reg_offset(s, a->rd);
-        do_ldr(s, off, size, a->rn, a->imm * size);
+        gen_sve_ldr(s, s->uc->tcg_ctx->cpu_env, off, size, a->rn,
+                    a->imm * size);
     }
     return true;
 }
@@ -4644,7 +7021,8 @@ static bool trans_LDR_pri(DisasContext *s, arg_rri *a)
     if (sve_access_check(s)) {
         int size = pred_full_reg_size(s);
         int off = pred_full_reg_offset(s, a->rd);
-        do_ldr(s, off, size, a->rn, a->imm * size);
+        gen_sve_ldr(s, s->uc->tcg_ctx->cpu_env, off, size, a->rn,
+                    a->imm * size);
     }
     return true;
 }
@@ -4654,7 +7032,8 @@ static bool trans_STR_zri(DisasContext *s, arg_rri *a)
     if (sve_access_check(s)) {
         int size = vec_full_reg_size(s);
         int off = vec_full_reg_offset(s, a->rd);
-        do_str(s, off, size, a->rn, a->imm * size);
+        gen_sve_str(s, s->uc->tcg_ctx->cpu_env, off, size, a->rn,
+                    a->imm * size);
     }
     return true;
 }
@@ -4664,7 +7043,8 @@ static bool trans_STR_pri(DisasContext *s, arg_rri *a)
     if (sve_access_check(s)) {
         int size = pred_full_reg_size(s);
         int off = pred_full_reg_offset(s, a->rd);
-        do_str(s, off, size, a->rn, a->imm * size);
+        gen_sve_str(s, s->uc->tcg_ctx->cpu_env, off, size, a->rn,
+                    a->imm * size);
     }
     return true;
 }
@@ -4696,8 +7076,33 @@ static TCGMemOpIdx sve_memopidx(DisasContext *s, int dtype)
     return make_memop_idx(s->be_data | dtype_mop[dtype], get_mem_index(s));
 }
 
+static TCGv_i64 sve_clean_data_tbi(DisasContext *s, TCGv_i64 addr)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i64 clean = new_tmp_a64(s);
+
+    if (s->tbid == 0) {
+        tcg_gen_mov_i64(tcg_ctx, clean, addr);
+    } else if (!regime_has_2_ranges(s->mmu_idx)) {
+        tcg_gen_extract_i64(tcg_ctx, clean, addr, 0, 56);
+    } else {
+        tcg_gen_sextract_i64(tcg_ctx, clean, addr, 0, 56);
+
+        if (s->tbid != 3) {
+            TCGv_i64 tcg_zero = tcg_const_i64(tcg_ctx, 0);
+
+            tcg_gen_movcond_i64(tcg_ctx,
+                                s->tbid == 1 ? TCG_COND_GE : TCG_COND_LT,
+                                clean, clean, tcg_zero, clean, addr);
+            tcg_temp_free_i64(tcg_ctx, tcg_zero);
+        }
+    }
+
+    return clean;
+}
+
 static void do_mem_zpa(DisasContext *s, int zt, int pg, TCGv_i64 addr,
-                       int dtype, gen_helper_gvec_mem *fn)
+                       int dtype, bool mte, gen_helper_gvec_mem *fn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     unsigned vsz = vec_full_reg_size(s);
@@ -4714,6 +7119,10 @@ static void do_mem_zpa(DisasContext *s, int zt, int pg, TCGv_i64 addr,
     desc = simd_desc(vsz, vsz, desc);
     t_desc = tcg_const_i32(tcg_ctx, desc);
     t_pg = tcg_temp_new_ptr(tcg_ctx);
+
+    if (!mte) {
+        addr = sve_clean_data_tbi(s, addr);
+    }
 
     tcg_gen_addi_ptr(tcg_ctx, t_pg, tcg_ctx->cpu_env, pred_full_reg_offset(s, pg));
     fn(tcg_ctx, tcg_ctx->cpu_env, t_pg, addr, t_desc);
@@ -4776,13 +7185,82 @@ static void do_ld_zpa(DisasContext *s, int zt, int pg,
           { gen_helper_sve_ld1dd_be_r, gen_helper_sve_ld2dd_be_r,
             gen_helper_sve_ld3dd_be_r, gen_helper_sve_ld4dd_be_r } }
     };
-    gen_helper_gvec_mem *fn = fns[s->be_data == MO_BE][dtype][nreg];
+    static gen_helper_gvec_mem * const mte_fns[2][16][4] = {
+        /* Little-endian */
+        { { gen_helper_sve_ld1bb_r_mte, gen_helper_sve_ld2bb_r_mte,
+            gen_helper_sve_ld3bb_r_mte, gen_helper_sve_ld4bb_r_mte },
+          { gen_helper_sve_ld1bhu_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1bsu_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1bdu_r_mte, NULL, NULL, NULL },
+
+          { gen_helper_sve_ld1sds_le_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1hh_le_r_mte,
+            gen_helper_sve_ld2hh_le_r_mte,
+            gen_helper_sve_ld3hh_le_r_mte,
+            gen_helper_sve_ld4hh_le_r_mte },
+          { gen_helper_sve_ld1hsu_le_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1hdu_le_r_mte, NULL, NULL, NULL },
+
+          { gen_helper_sve_ld1hds_le_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1hss_le_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1ss_le_r_mte,
+            gen_helper_sve_ld2ss_le_r_mte,
+            gen_helper_sve_ld3ss_le_r_mte,
+            gen_helper_sve_ld4ss_le_r_mte },
+          { gen_helper_sve_ld1sdu_le_r_mte, NULL, NULL, NULL },
+
+          { gen_helper_sve_ld1bds_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1bss_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1bhs_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1dd_le_r_mte,
+            gen_helper_sve_ld2dd_le_r_mte,
+            gen_helper_sve_ld3dd_le_r_mte,
+            gen_helper_sve_ld4dd_le_r_mte } },
+
+        /* Big-endian */
+        { { gen_helper_sve_ld1bb_r_mte, gen_helper_sve_ld2bb_r_mte,
+            gen_helper_sve_ld3bb_r_mte, gen_helper_sve_ld4bb_r_mte },
+          { gen_helper_sve_ld1bhu_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1bsu_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1bdu_r_mte, NULL, NULL, NULL },
+
+          { gen_helper_sve_ld1sds_be_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1hh_be_r_mte,
+            gen_helper_sve_ld2hh_be_r_mte,
+            gen_helper_sve_ld3hh_be_r_mte,
+            gen_helper_sve_ld4hh_be_r_mte },
+          { gen_helper_sve_ld1hsu_be_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1hdu_be_r_mte, NULL, NULL, NULL },
+
+          { gen_helper_sve_ld1hds_be_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1hss_be_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1ss_be_r_mte,
+            gen_helper_sve_ld2ss_be_r_mte,
+            gen_helper_sve_ld3ss_be_r_mte,
+            gen_helper_sve_ld4ss_be_r_mte },
+          { gen_helper_sve_ld1sdu_be_r_mte, NULL, NULL, NULL },
+
+          { gen_helper_sve_ld1bds_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1bss_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1bhs_r_mte, NULL, NULL, NULL },
+          { gen_helper_sve_ld1dd_be_r_mte,
+            gen_helper_sve_ld2dd_be_r_mte,
+            gen_helper_sve_ld3dd_be_r_mte,
+            gen_helper_sve_ld4dd_be_r_mte } }
+    };
+    gen_helper_gvec_mem *fn;
+
+    if (s->mte_active[0]) {
+        fn = mte_fns[s->be_data == MO_BE][dtype][nreg];
+    } else {
+        fn = fns[s->be_data == MO_BE][dtype][nreg];
+    }
 
     /* While there are holes in the table, they are not
      * accessible via the instruction encoding.
      */
     assert(fn != NULL);
-    do_mem_zpa(s, zt, pg, addr, dtype, fn);
+    do_mem_zpa(s, zt, pg, addr, dtype, s->mte_active[0], fn);
 }
 
 static bool trans_LD_zprr(DisasContext *s, arg_rprr_load *a)
@@ -4862,13 +7340,61 @@ static bool trans_LDFF1_zprr(DisasContext *s, arg_rprr_load *a)
           gen_helper_sve_ldff1bhs_r,
           gen_helper_sve_ldff1dd_be_r },
     };
+    static gen_helper_gvec_mem * const mte_fns[2][16] = {
+        /* Little-endian */
+        { gen_helper_sve_ldff1bb_r_mte,
+          gen_helper_sve_ldff1bhu_r_mte,
+          gen_helper_sve_ldff1bsu_r_mte,
+          gen_helper_sve_ldff1bdu_r_mte,
 
-    if (sve_access_check(s)) {
+          gen_helper_sve_ldff1sds_le_r_mte,
+          gen_helper_sve_ldff1hh_le_r_mte,
+          gen_helper_sve_ldff1hsu_le_r_mte,
+          gen_helper_sve_ldff1hdu_le_r_mte,
+
+          gen_helper_sve_ldff1hds_le_r_mte,
+          gen_helper_sve_ldff1hss_le_r_mte,
+          gen_helper_sve_ldff1ss_le_r_mte,
+          gen_helper_sve_ldff1sdu_le_r_mte,
+
+          gen_helper_sve_ldff1bds_r_mte,
+          gen_helper_sve_ldff1bss_r_mte,
+          gen_helper_sve_ldff1bhs_r_mte,
+          gen_helper_sve_ldff1dd_le_r_mte },
+
+        /* Big-endian */
+        { gen_helper_sve_ldff1bb_r_mte,
+          gen_helper_sve_ldff1bhu_r_mte,
+          gen_helper_sve_ldff1bsu_r_mte,
+          gen_helper_sve_ldff1bdu_r_mte,
+
+          gen_helper_sve_ldff1sds_be_r_mte,
+          gen_helper_sve_ldff1hh_be_r_mte,
+          gen_helper_sve_ldff1hsu_be_r_mte,
+          gen_helper_sve_ldff1hdu_be_r_mte,
+
+          gen_helper_sve_ldff1hds_be_r_mte,
+          gen_helper_sve_ldff1hss_be_r_mte,
+          gen_helper_sve_ldff1ss_be_r_mte,
+          gen_helper_sve_ldff1sdu_be_r_mte,
+
+          gen_helper_sve_ldff1bds_r_mte,
+          gen_helper_sve_ldff1bss_r_mte,
+          gen_helper_sve_ldff1bhs_r_mte,
+          gen_helper_sve_ldff1dd_be_r_mte },
+    };
+    gen_helper_gvec_mem *fn;
+
+    if (sve_nonstreaming_access_check(s)) {
         TCGv_i64 addr = new_tmp_a64(s);
         tcg_gen_shli_i64(tcg_ctx, addr, cpu_reg(s, a->rm), dtype_msz(a->dtype));
         tcg_gen_add_i64(tcg_ctx, addr, addr, cpu_reg_sp(s, a->rn));
-        do_mem_zpa(s, a->rd, a->pg, addr, a->dtype,
-                   fns[s->be_data == MO_BE][a->dtype]);
+        if (s->mte_active[0]) {
+            fn = mte_fns[s->be_data == MO_BE][a->dtype];
+        } else {
+            fn = fns[s->be_data == MO_BE][a->dtype];
+        }
+        do_mem_zpa(s, a->rd, a->pg, addr, a->dtype, s->mte_active[0], fn);
     }
     return true;
 }
@@ -4919,16 +7445,64 @@ static bool trans_LDNF1_zpri(DisasContext *s, arg_rpri_load *a)
           gen_helper_sve_ldnf1bhs_r,
           gen_helper_sve_ldnf1dd_be_r },
     };
+    static gen_helper_gvec_mem * const mte_fns[2][16] = {
+        /* Little-endian */
+        { gen_helper_sve_ldnf1bb_r_mte,
+          gen_helper_sve_ldnf1bhu_r_mte,
+          gen_helper_sve_ldnf1bsu_r_mte,
+          gen_helper_sve_ldnf1bdu_r_mte,
 
-    if (sve_access_check(s)) {
+          gen_helper_sve_ldnf1sds_le_r_mte,
+          gen_helper_sve_ldnf1hh_le_r_mte,
+          gen_helper_sve_ldnf1hsu_le_r_mte,
+          gen_helper_sve_ldnf1hdu_le_r_mte,
+
+          gen_helper_sve_ldnf1hds_le_r_mte,
+          gen_helper_sve_ldnf1hss_le_r_mte,
+          gen_helper_sve_ldnf1ss_le_r_mte,
+          gen_helper_sve_ldnf1sdu_le_r_mte,
+
+          gen_helper_sve_ldnf1bds_r_mte,
+          gen_helper_sve_ldnf1bss_r_mte,
+          gen_helper_sve_ldnf1bhs_r_mte,
+          gen_helper_sve_ldnf1dd_le_r_mte },
+
+        /* Big-endian */
+        { gen_helper_sve_ldnf1bb_r_mte,
+          gen_helper_sve_ldnf1bhu_r_mte,
+          gen_helper_sve_ldnf1bsu_r_mte,
+          gen_helper_sve_ldnf1bdu_r_mte,
+
+          gen_helper_sve_ldnf1sds_be_r_mte,
+          gen_helper_sve_ldnf1hh_be_r_mte,
+          gen_helper_sve_ldnf1hsu_be_r_mte,
+          gen_helper_sve_ldnf1hdu_be_r_mte,
+
+          gen_helper_sve_ldnf1hds_be_r_mte,
+          gen_helper_sve_ldnf1hss_be_r_mte,
+          gen_helper_sve_ldnf1ss_be_r_mte,
+          gen_helper_sve_ldnf1sdu_be_r_mte,
+
+          gen_helper_sve_ldnf1bds_r_mte,
+          gen_helper_sve_ldnf1bss_r_mte,
+          gen_helper_sve_ldnf1bhs_r_mte,
+          gen_helper_sve_ldnf1dd_be_r_mte },
+    };
+    gen_helper_gvec_mem *fn;
+
+    if (sve_nonstreaming_access_check(s)) {
         int vsz = vec_full_reg_size(s);
         int elements = vsz >> dtype_esz[a->dtype];
         int off = (a->imm * elements) << dtype_msz(a->dtype);
         TCGv_i64 addr = new_tmp_a64(s);
 
         tcg_gen_addi_i64(tcg_ctx, addr, cpu_reg_sp(s, a->rn), off);
-        do_mem_zpa(s, a->rd, a->pg, addr, a->dtype,
-                   fns[s->be_data == MO_BE][a->dtype]);
+        if (s->mte_active[0]) {
+            fn = mte_fns[s->be_data == MO_BE][a->dtype];
+        } else {
+            fn = fns[s->be_data == MO_BE][a->dtype];
+        }
+        do_mem_zpa(s, a->rd, a->pg, addr, a->dtype, s->mte_active[0], fn);
     }
     return true;
 }
@@ -5010,6 +7584,118 @@ static bool trans_LD1RQ_zpri(DisasContext *s, arg_rpri_load *a)
         TCGv_i64 addr = new_tmp_a64(s);
         tcg_gen_addi_i64(tcg_ctx, addr, cpu_reg_sp(s, a->rn), a->imm * 16);
         do_ldrq(s, a->rd, a->pg, addr, dtype_msz(a->dtype));
+    }
+    return true;
+}
+
+static void do_ldro(DisasContext *s, int zt, int pg, TCGv_i64 addr, int dtype)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    static gen_helper_gvec_mem * const fns[2][4] = {
+        { gen_helper_sve_ld1bb_r,    gen_helper_sve_ld1hh_le_r,
+          gen_helper_sve_ld1ss_le_r, gen_helper_sve_ld1dd_le_r },
+        { gen_helper_sve_ld1bb_r,    gen_helper_sve_ld1hh_be_r,
+          gen_helper_sve_ld1ss_be_r, gen_helper_sve_ld1dd_be_r },
+    };
+    static gen_helper_gvec_mem * const mte_fns[2][4] = {
+        { gen_helper_sve_ld1bb_r_mte,    gen_helper_sve_ld1hh_le_r_mte,
+          gen_helper_sve_ld1ss_le_r_mte, gen_helper_sve_ld1dd_le_r_mte },
+        { gen_helper_sve_ld1bb_r_mte,    gen_helper_sve_ld1hh_be_r_mte,
+          gen_helper_sve_ld1ss_be_r_mte, gen_helper_sve_ld1dd_be_r_mte },
+    };
+    unsigned vsz = vec_full_reg_size(s);
+    unsigned vsz_r32;
+    TCGv_ptr t_pg;
+    TCGv_i32 t_desc;
+    gen_helper_gvec_mem *fn;
+    int desc, poff;
+    unsigned dofs;
+
+    if (vsz < 32) {
+        unallocated_encoding(s);
+        return;
+    }
+
+    desc = sve_memopidx(s, dtype);
+    desc |= zt << MEMOPIDX_SHIFT;
+    desc = simd_desc(32, 32, desc);
+    t_desc = tcg_const_i32(tcg_ctx, desc);
+
+    poff = pred_full_reg_offset(s, pg);
+    if (vsz > 32) {
+        TCGv_i64 tmp = tcg_temp_new_i64(tcg_ctx);
+
+#ifdef HOST_WORDS_BIGENDIAN
+        poff += 4;
+#endif
+        tcg_gen_ld32u_i64(tcg_ctx, tmp, tcg_ctx->cpu_env, poff);
+
+        poff = offsetof(CPUARMState, vfp.preg_tmp);
+        tcg_gen_st_i64(tcg_ctx, tmp, tcg_ctx->cpu_env, poff);
+        tcg_temp_free_i64(tcg_ctx, tmp);
+    }
+
+    t_pg = tcg_temp_new_ptr(tcg_ctx);
+    if (s->mte_active[0]) {
+        fn = mte_fns[s->be_data == MO_BE][dtype_msz(dtype)];
+    } else {
+        addr = sve_clean_data_tbi(s, addr);
+        fn = fns[s->be_data == MO_BE][dtype_msz(dtype)];
+    }
+    tcg_gen_addi_ptr(tcg_ctx, t_pg, tcg_ctx->cpu_env, poff);
+    fn(tcg_ctx, tcg_ctx->cpu_env, t_pg, addr, t_desc);
+
+    tcg_temp_free_ptr(tcg_ctx, t_pg);
+    tcg_temp_free_i32(tcg_ctx, t_desc);
+
+    dofs = vec_full_reg_offset(s, zt);
+    vsz_r32 = QEMU_ALIGN_DOWN(vsz, 32);
+    if (vsz >= 64) {
+        unsigned off;
+
+        for (off = 32; off < vsz_r32; off += 32) {
+            tcg_gen_gvec_dup_mem(tcg_ctx, 4, dofs + off, dofs, 16, 16);
+            tcg_gen_gvec_dup_mem(tcg_ctx, 4, dofs + off + 16, dofs + 16,
+                                 16, 16);
+        }
+    }
+    vsz -= vsz_r32;
+    if (vsz) {
+        tcg_gen_gvec_dup_imm(tcg_ctx, MO_64, dofs + vsz_r32, vsz, vsz, 0);
+    }
+}
+
+static bool trans_LD1RO_zprr(DisasContext *s, arg_rprr_load *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_f64mm, s)) {
+        return false;
+    }
+    if (a->rm == 31) {
+        return false;
+    }
+    if (sve_nonstreaming_access_check(s)) {
+        TCGv_i64 addr = new_tmp_a64(s);
+        tcg_gen_shli_i64(tcg_ctx, addr, cpu_reg(s, a->rm),
+                         dtype_msz(a->dtype));
+        tcg_gen_add_i64(tcg_ctx, addr, addr, cpu_reg_sp(s, a->rn));
+        do_ldro(s, a->rd, a->pg, addr, a->dtype);
+    }
+    return true;
+}
+
+static bool trans_LD1RO_zpri(DisasContext *s, arg_rpri_load *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!dc_isar_feature(aa64_sve_f64mm, s)) {
+        return false;
+    }
+    if (sve_nonstreaming_access_check(s)) {
+        TCGv_i64 addr = new_tmp_a64(s);
+        tcg_gen_addi_i64(tcg_ctx, addr, cpu_reg_sp(s, a->rn), a->imm * 32);
+        do_ldro(s, a->rd, a->pg, addr, a->dtype);
     }
     return true;
 }
@@ -5121,19 +7807,81 @@ static void do_st_zpa(DisasContext *s, int zt, int pg, TCGv_i64 addr,
             gen_helper_sve_st4ss_be_r,
             gen_helper_sve_st4dd_be_r } },
     };
+    static gen_helper_gvec_mem * const mte_fn_single[2][4][4] = {
+        { { gen_helper_sve_st1bb_r_mte,
+            gen_helper_sve_st1bh_r_mte,
+            gen_helper_sve_st1bs_r_mte,
+            gen_helper_sve_st1bd_r_mte },
+          { NULL,
+            gen_helper_sve_st1hh_le_r_mte,
+            gen_helper_sve_st1hs_le_r_mte,
+            gen_helper_sve_st1hd_le_r_mte },
+          { NULL, NULL,
+            gen_helper_sve_st1ss_le_r_mte,
+            gen_helper_sve_st1sd_le_r_mte },
+          { NULL, NULL, NULL,
+            gen_helper_sve_st1dd_le_r_mte } },
+        { { gen_helper_sve_st1bb_r_mte,
+            gen_helper_sve_st1bh_r_mte,
+            gen_helper_sve_st1bs_r_mte,
+            gen_helper_sve_st1bd_r_mte },
+          { NULL,
+            gen_helper_sve_st1hh_be_r_mte,
+            gen_helper_sve_st1hs_be_r_mte,
+            gen_helper_sve_st1hd_be_r_mte },
+          { NULL, NULL,
+            gen_helper_sve_st1ss_be_r_mte,
+            gen_helper_sve_st1sd_be_r_mte },
+          { NULL, NULL, NULL,
+            gen_helper_sve_st1dd_be_r_mte } },
+    };
+    static gen_helper_gvec_mem * const mte_fn_multiple[2][3][4] = {
+        { { gen_helper_sve_st2bb_r_mte,
+            gen_helper_sve_st2hh_le_r_mte,
+            gen_helper_sve_st2ss_le_r_mte,
+            gen_helper_sve_st2dd_le_r_mte },
+          { gen_helper_sve_st3bb_r_mte,
+            gen_helper_sve_st3hh_le_r_mte,
+            gen_helper_sve_st3ss_le_r_mte,
+            gen_helper_sve_st3dd_le_r_mte },
+          { gen_helper_sve_st4bb_r_mte,
+            gen_helper_sve_st4hh_le_r_mte,
+            gen_helper_sve_st4ss_le_r_mte,
+            gen_helper_sve_st4dd_le_r_mte } },
+        { { gen_helper_sve_st2bb_r_mte,
+            gen_helper_sve_st2hh_be_r_mte,
+            gen_helper_sve_st2ss_be_r_mte,
+            gen_helper_sve_st2dd_be_r_mte },
+          { gen_helper_sve_st3bb_r_mte,
+            gen_helper_sve_st3hh_be_r_mte,
+            gen_helper_sve_st3ss_be_r_mte,
+            gen_helper_sve_st3dd_be_r_mte },
+          { gen_helper_sve_st4bb_r_mte,
+            gen_helper_sve_st4hh_be_r_mte,
+            gen_helper_sve_st4ss_be_r_mte,
+            gen_helper_sve_st4dd_be_r_mte } },
+    };
     gen_helper_gvec_mem *fn;
     int be = s->be_data == MO_BE;
 
     if (nreg == 0) {
         /* ST1 */
-        fn = fn_single[be][msz][esz];
+        if (s->mte_active[0]) {
+            fn = mte_fn_single[be][msz][esz];
+        } else {
+            fn = fn_single[be][msz][esz];
+        }
     } else {
         /* ST2, ST3, ST4 -- msz == esz, enforced by encoding */
         assert(msz == esz);
-        fn = fn_multiple[be][nreg - 1][msz];
+        if (s->mte_active[0]) {
+            fn = mte_fn_multiple[be][nreg - 1][msz];
+        } else {
+            fn = fn_multiple[be][nreg - 1][msz];
+        }
     }
     assert(fn != NULL);
-    do_mem_zpa(s, zt, pg, addr, msz_dtype(s, msz), fn);
+    do_mem_zpa(s, zt, pg, addr, msz_dtype(s, msz), s->mte_active[0], fn);
 }
 
 static bool trans_ST_zprr(DisasContext *s, arg_rprr_store *a)
@@ -5367,21 +8115,207 @@ static gen_helper_gvec_mem_scatter * const gather_load_fn64[2][2][3][2][4] = {
             gen_helper_sve_ldffdd_be_zd, } } } },
 };
 
+/* Indexed by [be][xs][u][msz].  */
+static gen_helper_gvec_mem_scatter * const
+gather_ld_mte_fn32[2][2][2][3] = {
+    /* Little-endian */
+    { { { gen_helper_sve_ldbss_zsu_mte,
+          gen_helper_sve_ldhss_le_zsu_mte,
+          NULL, },
+        { gen_helper_sve_ldbsu_zsu_mte,
+          gen_helper_sve_ldhsu_le_zsu_mte,
+          gen_helper_sve_ldss_le_zsu_mte, } },
+      { { gen_helper_sve_ldbss_zss_mte,
+          gen_helper_sve_ldhss_le_zss_mte,
+          NULL, },
+        { gen_helper_sve_ldbsu_zss_mte,
+          gen_helper_sve_ldhsu_le_zss_mte,
+          gen_helper_sve_ldss_le_zss_mte, } } },
+
+    /* Big-endian */
+    { { { gen_helper_sve_ldbss_zsu_mte,
+          gen_helper_sve_ldhss_be_zsu_mte,
+          NULL, },
+        { gen_helper_sve_ldbsu_zsu_mte,
+          gen_helper_sve_ldhsu_be_zsu_mte,
+          gen_helper_sve_ldss_be_zsu_mte, } },
+      { { gen_helper_sve_ldbss_zss_mte,
+          gen_helper_sve_ldhss_be_zss_mte,
+          NULL, },
+        { gen_helper_sve_ldbsu_zss_mte,
+          gen_helper_sve_ldhsu_be_zss_mte,
+          gen_helper_sve_ldss_be_zss_mte, } } },
+};
+
+/* Indexed by [be][xs][u][msz].  */
+static gen_helper_gvec_mem_scatter * const
+gather_ld_mte_fn64[2][3][2][4] = {
+    /* Little-endian */
+    { { { gen_helper_sve_ldbds_zsu_mte,
+          gen_helper_sve_ldhds_le_zsu_mte,
+          gen_helper_sve_ldsds_le_zsu_mte,
+          NULL, },
+        { gen_helper_sve_ldbdu_zsu_mte,
+          gen_helper_sve_ldhdu_le_zsu_mte,
+          gen_helper_sve_ldsdu_le_zsu_mte,
+          gen_helper_sve_lddd_le_zsu_mte, } },
+      { { gen_helper_sve_ldbds_zss_mte,
+          gen_helper_sve_ldhds_le_zss_mte,
+          gen_helper_sve_ldsds_le_zss_mte,
+          NULL, },
+        { gen_helper_sve_ldbdu_zss_mte,
+          gen_helper_sve_ldhdu_le_zss_mte,
+          gen_helper_sve_ldsdu_le_zss_mte,
+          gen_helper_sve_lddd_le_zss_mte, } },
+      { { gen_helper_sve_ldbds_zd_mte,
+          gen_helper_sve_ldhds_le_zd_mte,
+          gen_helper_sve_ldsds_le_zd_mte,
+          NULL, },
+        { gen_helper_sve_ldbdu_zd_mte,
+          gen_helper_sve_ldhdu_le_zd_mte,
+          gen_helper_sve_ldsdu_le_zd_mte,
+          gen_helper_sve_lddd_le_zd_mte, } } },
+
+    /* Big-endian */
+    { { { gen_helper_sve_ldbds_zsu_mte,
+          gen_helper_sve_ldhds_be_zsu_mte,
+          gen_helper_sve_ldsds_be_zsu_mte,
+          NULL, },
+        { gen_helper_sve_ldbdu_zsu_mte,
+          gen_helper_sve_ldhdu_be_zsu_mte,
+          gen_helper_sve_ldsdu_be_zsu_mte,
+          gen_helper_sve_lddd_be_zsu_mte, } },
+      { { gen_helper_sve_ldbds_zss_mte,
+          gen_helper_sve_ldhds_be_zss_mte,
+          gen_helper_sve_ldsds_be_zss_mte,
+          NULL, },
+        { gen_helper_sve_ldbdu_zss_mte,
+          gen_helper_sve_ldhdu_be_zss_mte,
+          gen_helper_sve_ldsdu_be_zss_mte,
+          gen_helper_sve_lddd_be_zss_mte, } },
+      { { gen_helper_sve_ldbds_zd_mte,
+          gen_helper_sve_ldhds_be_zd_mte,
+          gen_helper_sve_ldsds_be_zd_mte,
+          NULL, },
+        { gen_helper_sve_ldbdu_zd_mte,
+          gen_helper_sve_ldhdu_be_zd_mte,
+          gen_helper_sve_ldsdu_be_zd_mte,
+          gen_helper_sve_lddd_be_zd_mte, } } },
+};
+
+/* Indexed by [be][xs][u][msz].  */
+static gen_helper_gvec_mem_scatter * const
+gather_ldff_mte_fn32[2][2][2][3] = {
+    /* Little-endian */
+    { { { gen_helper_sve_ldffbss_zsu_mte,
+          gen_helper_sve_ldffhss_le_zsu_mte,
+          NULL, },
+        { gen_helper_sve_ldffbsu_zsu_mte,
+          gen_helper_sve_ldffhsu_le_zsu_mte,
+          gen_helper_sve_ldffss_le_zsu_mte, } },
+      { { gen_helper_sve_ldffbss_zss_mte,
+          gen_helper_sve_ldffhss_le_zss_mte,
+          NULL, },
+        { gen_helper_sve_ldffbsu_zss_mte,
+          gen_helper_sve_ldffhsu_le_zss_mte,
+          gen_helper_sve_ldffss_le_zss_mte, } } },
+
+    /* Big-endian */
+    { { { gen_helper_sve_ldffbss_zsu_mte,
+          gen_helper_sve_ldffhss_be_zsu_mte,
+          NULL, },
+        { gen_helper_sve_ldffbsu_zsu_mte,
+          gen_helper_sve_ldffhsu_be_zsu_mte,
+          gen_helper_sve_ldffss_be_zsu_mte, } },
+      { { gen_helper_sve_ldffbss_zss_mte,
+          gen_helper_sve_ldffhss_be_zss_mte,
+          NULL, },
+        { gen_helper_sve_ldffbsu_zss_mte,
+          gen_helper_sve_ldffhsu_be_zss_mte,
+          gen_helper_sve_ldffss_be_zss_mte, } } },
+};
+
+/* Indexed by [be][xs][u][msz].  */
+static gen_helper_gvec_mem_scatter * const
+gather_ldff_mte_fn64[2][3][2][4] = {
+    /* Little-endian */
+    { { { gen_helper_sve_ldffbds_zsu_mte,
+          gen_helper_sve_ldffhds_le_zsu_mte,
+          gen_helper_sve_ldffsds_le_zsu_mte,
+          NULL, },
+        { gen_helper_sve_ldffbdu_zsu_mte,
+          gen_helper_sve_ldffhdu_le_zsu_mte,
+          gen_helper_sve_ldffsdu_le_zsu_mte,
+          gen_helper_sve_ldffdd_le_zsu_mte, } },
+      { { gen_helper_sve_ldffbds_zss_mte,
+          gen_helper_sve_ldffhds_le_zss_mte,
+          gen_helper_sve_ldffsds_le_zss_mte,
+          NULL, },
+        { gen_helper_sve_ldffbdu_zss_mte,
+          gen_helper_sve_ldffhdu_le_zss_mte,
+          gen_helper_sve_ldffsdu_le_zss_mte,
+          gen_helper_sve_ldffdd_le_zss_mte, } },
+      { { gen_helper_sve_ldffbds_zd_mte,
+          gen_helper_sve_ldffhds_le_zd_mte,
+          gen_helper_sve_ldffsds_le_zd_mte,
+          NULL, },
+        { gen_helper_sve_ldffbdu_zd_mte,
+          gen_helper_sve_ldffhdu_le_zd_mte,
+          gen_helper_sve_ldffsdu_le_zd_mte,
+          gen_helper_sve_ldffdd_le_zd_mte, } } },
+
+    /* Big-endian */
+    { { { gen_helper_sve_ldffbds_zsu_mte,
+          gen_helper_sve_ldffhds_be_zsu_mte,
+          gen_helper_sve_ldffsds_be_zsu_mte,
+          NULL, },
+        { gen_helper_sve_ldffbdu_zsu_mte,
+          gen_helper_sve_ldffhdu_be_zsu_mte,
+          gen_helper_sve_ldffsdu_be_zsu_mte,
+          gen_helper_sve_ldffdd_be_zsu_mte, } },
+      { { gen_helper_sve_ldffbds_zss_mte,
+          gen_helper_sve_ldffhds_be_zss_mte,
+          gen_helper_sve_ldffsds_be_zss_mte,
+          NULL, },
+        { gen_helper_sve_ldffbdu_zss_mte,
+          gen_helper_sve_ldffhdu_be_zss_mte,
+          gen_helper_sve_ldffsdu_be_zss_mte,
+          gen_helper_sve_ldffdd_be_zss_mte, } },
+      { { gen_helper_sve_ldffbds_zd_mte,
+          gen_helper_sve_ldffhds_be_zd_mte,
+          gen_helper_sve_ldffsds_be_zd_mte,
+          NULL, },
+        { gen_helper_sve_ldffbdu_zd_mte,
+          gen_helper_sve_ldffhdu_be_zd_mte,
+          gen_helper_sve_ldffsdu_be_zd_mte,
+          gen_helper_sve_ldffdd_be_zd_mte, } } },
+};
+
 static bool trans_LD1_zprz(DisasContext *s, arg_LD1_zprz *a)
 {
     gen_helper_gvec_mem_scatter *fn = NULL;
     int be = s->be_data == MO_BE;
 
-    if (!sve_access_check(s)) {
+    if (!sve_nonstreaming_access_check(s)) {
         return true;
     }
 
     switch (a->esz) {
     case MO_32:
-        fn = gather_load_fn32[be][a->ff][a->xs][a->u][a->msz];
+        if (s->mte_active[0]) {
+            fn = a->ff ? gather_ldff_mte_fn32[be][a->xs][a->u][a->msz]
+                       : gather_ld_mte_fn32[be][a->xs][a->u][a->msz];
+        } else {
+            fn = gather_load_fn32[be][a->ff][a->xs][a->u][a->msz];
+        }
         break;
     case MO_64:
-        fn = gather_load_fn64[be][a->ff][a->xs][a->u][a->msz];
+        if (s->mte_active[0]) {
+            fn = a->ff ? gather_ldff_mte_fn64[be][a->xs][a->u][a->msz]
+                       : gather_ld_mte_fn64[be][a->xs][a->u][a->msz];
+        } else {
+            fn = gather_load_fn64[be][a->ff][a->xs][a->u][a->msz];
+        }
         break;
     }
     assert(fn != NULL);
@@ -5401,16 +8335,26 @@ static bool trans_LD1_zpiz(DisasContext *s, arg_LD1_zpiz *a)
     if (a->esz < a->msz || (a->esz == a->msz && !a->u)) {
         return false;
     }
-    if (!sve_access_check(s)) {
+    if (!sve_nonstreaming_access_check(s)) {
         return true;
     }
 
     switch (a->esz) {
     case MO_32:
-        fn = gather_load_fn32[be][a->ff][0][a->u][a->msz];
+        if (s->mte_active[0]) {
+            fn = a->ff ? gather_ldff_mte_fn32[be][0][a->u][a->msz]
+                       : gather_ld_mte_fn32[be][0][a->u][a->msz];
+        } else {
+            fn = gather_load_fn32[be][a->ff][0][a->u][a->msz];
+        }
         break;
     case MO_64:
-        fn = gather_load_fn64[be][a->ff][2][a->u][a->msz];
+        if (s->mte_active[0]) {
+            fn = a->ff ? gather_ldff_mte_fn64[be][2][a->u][a->msz]
+                       : gather_ld_mte_fn64[be][2][a->u][a->msz];
+        } else {
+            fn = gather_load_fn64[be][a->ff][2][a->u][a->msz];
+        }
         break;
     }
     assert(fn != NULL);
@@ -5421,6 +8365,41 @@ static bool trans_LD1_zpiz(DisasContext *s, arg_LD1_zpiz *a)
     imm = tcg_const_i64(tcg_ctx, a->imm << a->msz);
     do_mem_zpz(s, a->rd, a->pg, a->rn, 0, imm, a->msz, fn);
     tcg_temp_free_i64(tcg_ctx, imm);
+    return true;
+}
+
+static bool trans_LDNT1_zprz(DisasContext *s, arg_LD1_zprz *a)
+{
+    gen_helper_gvec_mem_scatter *fn = NULL;
+    int be = s->be_data == MO_BE;
+
+    if (a->esz < a->msz + !a->u) {
+        return false;
+    }
+    if (!sve_nonstreaming_access_check(s)) {
+        return true;
+    }
+
+    switch (a->esz) {
+    case MO_32:
+        if (s->mte_active[0]) {
+            fn = gather_ld_mte_fn32[be][0][a->u][a->msz];
+        } else {
+            fn = gather_load_fn32[be][0][0][a->u][a->msz];
+        }
+        break;
+    case MO_64:
+        if (s->mte_active[0]) {
+            fn = gather_ld_mte_fn64[be][2][a->u][a->msz];
+        } else {
+            fn = gather_load_fn64[be][0][2][a->u][a->msz];
+        }
+        break;
+    }
+    assert(fn != NULL);
+
+    do_mem_zpz(s, a->rd, a->pg, a->rn, 0,
+               cpu_reg(s, a->rm), a->msz, fn);
     return true;
 }
 
@@ -5440,6 +8419,24 @@ static gen_helper_gvec_mem_scatter * const scatter_store_fn32[2][2][3] = {
       { gen_helper_sve_stbs_zss,
         gen_helper_sve_sths_be_zss,
         gen_helper_sve_stss_be_zss, } },
+};
+
+/* Indexed by [be][xs][msz].  */
+static gen_helper_gvec_mem_scatter * const scatter_store_mte_fn32[2][2][3] = {
+    /* Little-endian */
+    { { gen_helper_sve_stbs_zsu_mte,
+        gen_helper_sve_sths_le_zsu_mte,
+        gen_helper_sve_stss_le_zsu_mte, },
+      { gen_helper_sve_stbs_zss_mte,
+        gen_helper_sve_sths_le_zss_mte,
+        gen_helper_sve_stss_le_zss_mte, } },
+    /* Big-endian */
+    { { gen_helper_sve_stbs_zsu_mte,
+        gen_helper_sve_sths_be_zsu_mte,
+        gen_helper_sve_stss_be_zsu_mte, },
+      { gen_helper_sve_stbs_zss_mte,
+        gen_helper_sve_sths_be_zss_mte,
+        gen_helper_sve_stss_be_zss_mte, } },
 };
 
 /* Note that we overload xs=2 to indicate 64-bit offset.  */
@@ -5472,6 +8469,36 @@ static gen_helper_gvec_mem_scatter * const scatter_store_fn64[2][3][4] = {
         gen_helper_sve_stdd_be_zd, } },
 };
 
+/* Note that we overload xs=2 to indicate 64-bit offset.  */
+static gen_helper_gvec_mem_scatter * const scatter_store_mte_fn64[2][3][4] = {
+    /* Little-endian */
+    { { gen_helper_sve_stbd_zsu_mte,
+        gen_helper_sve_sthd_le_zsu_mte,
+        gen_helper_sve_stsd_le_zsu_mte,
+        gen_helper_sve_stdd_le_zsu_mte, },
+      { gen_helper_sve_stbd_zss_mte,
+        gen_helper_sve_sthd_le_zss_mte,
+        gen_helper_sve_stsd_le_zss_mte,
+        gen_helper_sve_stdd_le_zss_mte, },
+      { gen_helper_sve_stbd_zd_mte,
+        gen_helper_sve_sthd_le_zd_mte,
+        gen_helper_sve_stsd_le_zd_mte,
+        gen_helper_sve_stdd_le_zd_mte, } },
+    /* Big-endian */
+    { { gen_helper_sve_stbd_zsu_mte,
+        gen_helper_sve_sthd_be_zsu_mte,
+        gen_helper_sve_stsd_be_zsu_mte,
+        gen_helper_sve_stdd_be_zsu_mte, },
+      { gen_helper_sve_stbd_zss_mte,
+        gen_helper_sve_sthd_be_zss_mte,
+        gen_helper_sve_stsd_be_zss_mte,
+        gen_helper_sve_stdd_be_zss_mte, },
+      { gen_helper_sve_stbd_zd_mte,
+        gen_helper_sve_sthd_be_zd_mte,
+        gen_helper_sve_stsd_be_zd_mte,
+        gen_helper_sve_stdd_be_zd_mte, } },
+};
+
 static bool trans_ST1_zprz(DisasContext *s, arg_ST1_zprz *a)
 {
     gen_helper_gvec_mem_scatter *fn = NULL;
@@ -5480,15 +8507,23 @@ static bool trans_ST1_zprz(DisasContext *s, arg_ST1_zprz *a)
     if (a->esz < a->msz || (a->msz == 0 && a->scale)) {
         return false;
     }
-    if (!sve_access_check(s)) {
+    if (!sve_nonstreaming_access_check(s)) {
         return true;
     }
     switch (a->esz) {
     case MO_32:
-        fn = scatter_store_fn32[be][a->xs][a->msz];
+        if (s->mte_active[0]) {
+            fn = scatter_store_mte_fn32[be][a->xs][a->msz];
+        } else {
+            fn = scatter_store_fn32[be][a->xs][a->msz];
+        }
         break;
     case MO_64:
-        fn = scatter_store_fn64[be][a->xs][a->msz];
+        if (s->mte_active[0]) {
+            fn = scatter_store_mte_fn64[be][a->xs][a->msz];
+        } else {
+            fn = scatter_store_fn64[be][a->xs][a->msz];
+        }
         break;
     default:
         g_assert_not_reached();
@@ -5508,16 +8543,24 @@ static bool trans_ST1_zpiz(DisasContext *s, arg_ST1_zpiz *a)
     if (a->esz < a->msz) {
         return false;
     }
-    if (!sve_access_check(s)) {
+    if (!sve_nonstreaming_access_check(s)) {
         return true;
     }
 
     switch (a->esz) {
     case MO_32:
-        fn = scatter_store_fn32[be][0][a->msz];
+        if (s->mte_active[0]) {
+            fn = scatter_store_mte_fn32[be][0][a->msz];
+        } else {
+            fn = scatter_store_fn32[be][0][a->msz];
+        }
         break;
     case MO_64:
-        fn = scatter_store_fn64[be][2][a->msz];
+        if (s->mte_active[0]) {
+            fn = scatter_store_mte_fn64[be][2][a->msz];
+        } else {
+            fn = scatter_store_fn64[be][2][a->msz];
+        }
         break;
     }
     assert(fn != NULL);
@@ -5531,13 +8574,71 @@ static bool trans_ST1_zpiz(DisasContext *s, arg_ST1_zpiz *a)
     return true;
 }
 
+static bool trans_STNT1_zprz(DisasContext *s, arg_ST1_zprz *a)
+{
+    gen_helper_gvec_mem_scatter *fn = NULL;
+    int be = s->be_data == MO_BE;
+
+    if (a->esz < a->msz) {
+        return false;
+    }
+    if (!sve_nonstreaming_access_check(s)) {
+        return true;
+    }
+
+    switch (a->esz) {
+    case MO_32:
+        if (s->mte_active[0]) {
+            fn = scatter_store_mte_fn32[be][0][a->msz];
+        } else {
+            fn = scatter_store_fn32[be][0][a->msz];
+        }
+        break;
+    case MO_64:
+        if (s->mte_active[0]) {
+            fn = scatter_store_mte_fn64[be][2][a->msz];
+        } else {
+            fn = scatter_store_fn64[be][2][a->msz];
+        }
+        break;
+    default:
+        g_assert_not_reached();
+    }
+    assert(fn != NULL);
+
+    do_mem_zpz(s, a->rd, a->pg, a->rn, 0,
+               cpu_reg(s, a->rm), a->msz, fn);
+    return true;
+}
+
 /*
  * Prefetches
  */
 
+static bool sve_prf_is_nonstreaming(uint32_t insn)
+{
+    uint32_t op = extract32(insn, 25, 7);
+    bool scalar_offsets;
+    bool vector_imm;
+
+    if (op != 0x42 && op != 0x62) {
+        return false;
+    }
+
+    scalar_offsets = extract32(insn, 23, 2) == 0 &&
+                     extract32(insn, 21, 1);
+    vector_imm = extract32(insn, 21, 2) == 0 &&
+                 extract32(insn, 13, 3) == 7;
+
+    return scalar_offsets || vector_imm;
+}
+
 static bool trans_PRF(DisasContext *s, arg_PRF *a)
 {
     /* Prefetch is a nop within QEMU.  */
+    if (sve_prf_is_nonstreaming(s->insn)) {
+        s->is_nonstreaming = true;
+    }
     (void)sve_access_check(s);
     return true;
 }

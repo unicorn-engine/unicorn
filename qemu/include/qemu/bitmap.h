@@ -69,6 +69,14 @@
 #define DECLARE_BITMAP(name,bits)                  \
         unsigned long name[BITS_TO_LONGS(bits)]
 
+/*
+ * This is for use with the bit32 versions of set_bit() etc;
+ * we don't currently support the full range of bitmap operations
+ * on bitmaps backed by an array of uint32_t.
+ */
+#define DECLARE_BITMAP32(name, bits)            \
+        uint32_t name[BITS_TO_U32S(bits)]
+
 #define small_nbits(nbits)                      \
         ((nbits) <= BITS_PER_LONG)
 
@@ -253,6 +261,7 @@ void qemu_bitmap_set(unsigned long *map, long i, long len);
 void bitmap_set_atomic(unsigned long *map, long i, long len);
 void qemu_bitmap_clear(unsigned long *map, long start, long nr);
 bool bitmap_test_and_clear_atomic(unsigned long *map, long start, long nr);
+bool bitmap_test_and_clear(unsigned long *map, long start, long nr);
 void bitmap_copy_and_clear_atomic(unsigned long *dst, unsigned long *src,
                                   long nr);
 unsigned long bitmap_find_next_zero_area(unsigned long *map,

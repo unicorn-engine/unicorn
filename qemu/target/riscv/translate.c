@@ -26,6 +26,7 @@
 #include "exec/helper-gen.h"
 
 #include "exec/translator.h"
+#include "tcg/tcg-gvec-desc.h"
 
 #include "instmap.h"
 
@@ -33,6 +34,10 @@
 #include "uc_priv.h"
 
 #include "exec/gen-icount.h"
+
+#define RISCV_FRM_RTZ 1
+#define RISCV_FRM_DYN 7
+#define RISCV_FRM_ROD 8
 
 /*
  * Unicorn: Special disas state for exiting in the middle of tb.
@@ -46,9 +51,12 @@ typedef struct DisasContext {
     target_ulong priv_ver;
     bool virt_enabled;
     uint32_t opcode;
+    TCGOp *insn_start;
     uint32_t mstatus_fs;
+    uint32_t mstatus_vs;
     uint32_t misa;
     uint32_t mem_idx;
+    bool hlsx;
     /* Remember the rounding mode encoded in the previous fp instruction,
        which we have already installed into env->fp_status.  Or -1 for
        no previous fp instruction.  Note that we exit the TB when writing
@@ -56,6 +64,35 @@ typedef struct DisasContext {
        to reset this known value.  */
     int frm;
     bool ext_ifencei;
+    bool ext_zihintpause;
+    bool ext_zba;
+    bool ext_zbb;
+    bool ext_zbc;
+    bool ext_zbkb;
+    bool ext_zbkc;
+    bool ext_zbkx;
+    bool ext_zbs;
+    bool ext_zfh;
+    bool ext_zfhmin;
+    bool ext_zknd;
+    bool ext_zkne;
+    bool ext_zknh;
+    bool ext_zksed;
+    bool ext_zksh;
+    bool ext_svinval;
+    bool ext_xventanacondops;
+    bool ext_zmmul;
+    bool ext_zve32f;
+    bool ext_zve64f;
+    bool vill;
+    int8_t lmul;
+    uint8_t sew;
+    uint8_t vta;
+    uint8_t vma;
+    bool rvv_ta_all_1s;
+    bool rvv_ma_all_1s;
+    uint16_t vlen;
+    uint16_t elen;
 
     // Unicorn
     struct uc_struct *uc;
@@ -77,6 +114,9 @@ static const int tcg_memop_lookup[8] = {
 };
 #endif
 
+static TCGv cpu_vl;
+static TCGv cpu_vstart;
+
 #ifdef TARGET_RISCV64
 #define CASE_OP_32_64(X) case X: case glue(X, W)
 #else
@@ -88,6 +128,12 @@ static inline bool has_ext(DisasContext *ctx, uint32_t ext)
     return ctx->misa & ext;
 }
 
+static void decode_save_opc(DisasContext *ctx)
+{
+    tcg_set_insn_start_param(ctx->insn_start, 1, ctx->opcode);
+    ctx->insn_start = NULL;
+}
+
 static void generate_exception(DisasContext *ctx, int excp)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -97,6 +143,16 @@ static void generate_exception(DisasContext *ctx, int excp)
     gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, helper_tmp);
     tcg_temp_free_i32(tcg_ctx, helper_tmp);
     ctx->base.is_jmp = DISAS_NORETURN;
+}
+
+static void gen_store_binst(DisasContext *ctx)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv opcode = tcg_const_tl(tcg_ctx, ctx->opcode);
+
+    tcg_gen_st_tl(tcg_ctx, opcode, tcg_ctx->cpu_env,
+                  offsetof(CPURISCVState, bins));
+    tcg_temp_free(tcg_ctx, opcode);
 }
 
 static void generate_exception_mbadaddr(DisasContext *ctx, int excp)
@@ -144,7 +200,14 @@ static void lookup_and_goto_ptr(DisasContext *ctx)
 
 static void gen_exception_illegal(DisasContext *ctx)
 {
+    gen_store_binst(ctx);
     generate_exception(ctx, RISCV_EXCP_ILLEGAL_INST);
+}
+
+static void gen_exception_virtual_instruction(DisasContext *ctx)
+{
+    gen_store_binst(ctx);
+    generate_exception(ctx, RISCV_EXCP_VIRT_INSTRUCTION_FAULT);
 }
 
 static void gen_exception_inst_addr_mis(DisasContext *ctx)
@@ -421,6 +484,34 @@ static void mark_fs_dirty(DisasContext *ctx)
     tcg_temp_free(tcg_ctx, tmp);
 }
 
+static void mark_vs_dirty(DisasContext *ctx)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv tmp;
+
+    if (ctx->mstatus_vs == MSTATUS_VS) {
+        return;
+    }
+
+    ctx->mstatus_vs = MSTATUS_VS;
+
+    tmp = tcg_temp_new(tcg_ctx);
+    tcg_gen_ld_tl(tcg_ctx, tmp, tcg_ctx->cpu_env,
+                  offsetof(CPURISCVState, mstatus));
+    tcg_gen_ori_tl(tcg_ctx, tmp, tmp, MSTATUS_VS | MSTATUS_SD);
+    tcg_gen_st_tl(tcg_ctx, tmp, tcg_ctx->cpu_env,
+                  offsetof(CPURISCVState, mstatus));
+
+    if (ctx->virt_enabled) {
+        tcg_gen_ld_tl(tcg_ctx, tmp, tcg_ctx->cpu_env,
+                      offsetof(CPURISCVState, mstatus_hs));
+        tcg_gen_ori_tl(tcg_ctx, tmp, tmp, MSTATUS_VS | MSTATUS_SD);
+        tcg_gen_st_tl(tcg_ctx, tmp, tcg_ctx->cpu_env,
+                      offsetof(CPURISCVState, mstatus_hs));
+    }
+    tcg_temp_free(tcg_ctx, tmp);
+}
+
 #if !defined(TARGET_RISCV64)
 static void gen_fp_load(DisasContext *ctx, uint32_t opc, int rd,
         int rs1, target_long imm)
@@ -509,6 +600,10 @@ static void gen_set_rm(DisasContext *ctx, int rm)
         return;
     }
     ctx->frm = rm;
+    if (rm == RISCV_FRM_ROD) {
+        gen_helper_set_rod_rounding_mode(tcg_ctx, tcg_ctx->cpu_env);
+        return;
+    }
     t0 = tcg_const_i32(tcg_ctx, rm);
     gen_helper_set_rounding_mode(tcg_ctx, tcg_ctx->cpu_env, t0);
     tcg_temp_free_i32(tcg_ctx, t0);
@@ -733,7 +828,14 @@ static bool gen_shift(DisasContext *ctx, arg_r *a,
 #include "insn_trans/trans_rva.inc.c"
 #include "insn_trans/trans_rvf.inc.c"
 #include "insn_trans/trans_rvd.inc.c"
+#include "insn_trans/trans_rvzfh.inc.c"
+#include "insn_trans/trans_rvb.inc.c"
+#include "insn_trans/trans_rvk.inc.c"
+#include "insn_trans/trans_rvv.inc.c"
+#include "insn_trans/trans_rvh.inc.c"
 #include "insn_trans/trans_privileged.inc.c"
+#include "insn_trans/trans_svinval.inc.c"
+#include "insn_trans/trans_xventanacondops.inc.c"
 
 /* Include the auto-generated decoder for 16 bit insn */
 #ifdef TARGET_RISCV32
@@ -746,8 +848,11 @@ static void decode_opc(CPURISCVState *env, DisasContext *ctx, uint16_t opcode)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 
+    ctx->opcode = opcode;
+
     /* check for compressed insn */
     if (extract16(opcode, 0, 2) != 3) {
+        decode_save_opc(ctx);
         if (!has_ext(ctx, RVC)) {
             gen_exception_illegal(ctx);
         } else {
@@ -767,8 +872,12 @@ static void decode_opc(CPURISCVState *env, DisasContext *ctx, uint16_t opcode)
         uint32_t opcode32 = opcode;
         opcode32 = deposit32(opcode32, 16, 16,
                              translator_lduw(tcg_ctx, env, ctx->base.pc_next + 2));
+        ctx->opcode = opcode32;
+        decode_save_opc(ctx);
         ctx->pc_succ_insn = ctx->base.pc_next + 4;
-        if (!decode_insn32(ctx, opcode32)) {
+        if (!decode_rvh(ctx, opcode32) &&
+            !decode_rvv(ctx, opcode32) &&
+            !decode_insn32(ctx, opcode32)) {
             gen_exception_illegal(ctx);
         }
     }
@@ -786,27 +895,55 @@ static void riscv_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
     ctx->pc_succ_insn = ctx->base.pc_first;
     ctx->mem_idx = ctx->base.tb->flags & TB_FLAGS_MMU_MASK;
     ctx->mstatus_fs = ctx->base.tb->flags & TB_FLAGS_MSTATUS_FS;
+    ctx->mstatus_vs = ctx->base.tb->flags & TB_FLAGS_MSTATUS_VS;
     ctx->priv_ver = env->priv_ver;
 
     if (riscv_has_ext(env, RVH)) {
         ctx->virt_enabled = riscv_cpu_virt_enabled(env);
-        if (env->priv_ver == PRV_M &&
+        ctx->hlsx = FIELD_EX32(ctx->base.tb->flags, TB_FLAGS, HLSX);
+        if (env->priv == PRV_M &&
             get_field(env->mstatus, MSTATUS_MPRV) &&
             MSTATUS_MPV_ISSET(env)) {
-            ctx->virt_enabled = true;
-        } else if (env->priv == PRV_S &&
-                   !riscv_cpu_virt_enabled(env) &&
-                   get_field(env->hstatus, HSTATUS_SPRV) &&
-                   get_field(env->hstatus, HSTATUS_SPV)) {
             ctx->virt_enabled = true;
         }
     } else {
         ctx->virt_enabled = false;
+        ctx->hlsx = false;
     }
 
     ctx->misa = env->misa;
     ctx->frm = -1;  /* unknown rounding mode */
     ctx->ext_ifencei = cpu->cfg.ext_ifencei;
+    ctx->ext_zihintpause = cpu->cfg.ext_zihintpause;
+    ctx->ext_zba = cpu->cfg.ext_zba;
+    ctx->ext_zbb = cpu->cfg.ext_zbb;
+    ctx->ext_zbc = cpu->cfg.ext_zbc;
+    ctx->ext_zbkb = cpu->cfg.ext_zbkb;
+    ctx->ext_zbkc = cpu->cfg.ext_zbkc;
+    ctx->ext_zbkx = cpu->cfg.ext_zbkx;
+    ctx->ext_zbs = cpu->cfg.ext_zbs;
+    ctx->ext_zfh = cpu->cfg.ext_zfh;
+    ctx->ext_zfhmin = cpu->cfg.ext_zfhmin;
+    ctx->ext_zknd = cpu->cfg.ext_zknd;
+    ctx->ext_zkne = cpu->cfg.ext_zkne;
+    ctx->ext_zknh = cpu->cfg.ext_zknh;
+    ctx->ext_zksed = cpu->cfg.ext_zksed;
+    ctx->ext_zksh = cpu->cfg.ext_zksh;
+    ctx->ext_svinval = cpu->cfg.ext_svinval;
+    ctx->ext_xventanacondops = cpu->cfg.ext_xventanacondops;
+    ctx->ext_zmmul = cpu->cfg.ext_zmmul;
+    ctx->ext_zve32f = cpu->cfg.ext_zve32f;
+    ctx->ext_zve64f = cpu->cfg.ext_zve64f;
+    ctx->vill = FIELD_EX32(ctx->base.tb->flags, TB_FLAGS, VILL);
+    ctx->lmul = sextract32(FIELD_EX32(ctx->base.tb->flags, TB_FLAGS, LMUL),
+                           0, 3);
+    ctx->sew = FIELD_EX32(ctx->base.tb->flags, TB_FLAGS, SEW);
+    ctx->vta = FIELD_EX32(ctx->base.tb->flags, TB_FLAGS, VTA);
+    ctx->vma = FIELD_EX32(ctx->base.tb->flags, TB_FLAGS, VMA);
+    ctx->rvv_ta_all_1s = cpu->cfg.rvv_ta_all_1s;
+    ctx->rvv_ma_all_1s = cpu->cfg.rvv_ma_all_1s;
+    ctx->vlen = cpu->cfg.vlen;
+    ctx->elen = cpu->cfg.elen;
 }
 
 static void riscv_tr_tb_start(DisasContextBase *db, CPUState *cpu)
@@ -818,7 +955,8 @@ static void riscv_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
     DisasContext *ctx = container_of(dcbase, DisasContext, base);
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 
-    tcg_gen_insn_start(tcg_ctx, ctx->base.pc_next);
+    tcg_gen_insn_start(tcg_ctx, ctx->base.pc_next, 0);
+    ctx->insn_start = tcg_last_op(tcg_ctx);
 }
 
 static bool riscv_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cpu,
@@ -966,6 +1104,11 @@ void riscv_translate_init(struct uc_struct *uc)
             offsetof(CPURISCVState, fpr[i]), riscv_fpr_regnames[i]);
     }
 
+    cpu_vl = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+                                offsetof(CPURISCVState, vl), "vl");
+    cpu_vstart = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+                                    offsetof(CPURISCVState, vstart),
+                                    "vstart");
     tcg_ctx->cpu_pc = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPURISCVState, pc), "pc");
     tcg_ctx->load_res = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPURISCVState, load_res),
                              "load_res");

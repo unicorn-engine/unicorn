@@ -92,8 +92,11 @@ static inline long vfp_f16_offset(unsigned reg, bool top)
  * The ignore_vfp_enabled argument specifies that we should ignore
  * whether VFP is enabled via FPEXC[EN]: this should be true for FMXR/FMRX
  * accesses to FPSID, FPEXC, MVFR0, MVFR1, MVFR2, and false for all other insns.
+ * skip_context_update is M-profile only and skips the ownership/new-context
+ * parts of ExecuteFPCheck() after PreserveFPState().
  */
-static bool full_vfp_access_check(DisasContext *s, bool ignore_vfp_enabled)
+static bool full_vfp_access_check(DisasContext *s, bool ignore_vfp_enabled,
+                                  bool skip_context_update)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
@@ -137,6 +140,14 @@ static bool full_vfp_access_check(DisasContext *s, bool ignore_vfp_enabled)
              * any further FP insns in this TB.
              */
             s->v7m_lspact = false;
+            if (skip_context_update || !s->v7m_new_fp_ctxt_needed) {
+                s->mve_no_pred = false;
+                s->base.is_jmp = DISAS_UPDATE;
+            }
+        }
+
+        if (skip_context_update) {
+            return true;
         }
 
         /* Update ownership of FP context: set FPCCR.S to match current state */
@@ -165,6 +176,12 @@ static bool full_vfp_access_check(DisasContext *s, bool ignore_vfp_enabled)
             fpscr = load_cpu_field(tcg_ctx, v7m.fpdscr[s->v8m_secure]);
             gen_helper_vfp_set_fpscr(tcg_ctx, tcg_ctx->cpu_env, fpscr);
             tcg_temp_free_i32(tcg_ctx, fpscr);
+            if (dc_isar_feature(aa32_mve, s)) {
+                TCGv_i32 vpr = tcg_const_i32(tcg_ctx, 0);
+
+                store_cpu_field(tcg_ctx, vpr, v7m.vpr);
+                s->mve_no_pred = true;
+            }
             /*
              * We don't need to arrange to end the TB, because the only
              * parts of FPSCR which we cache in the TB flags are the VECLEN
@@ -191,7 +208,150 @@ static bool full_vfp_access_check(DisasContext *s, bool ignore_vfp_enabled)
  */
 static bool vfp_access_check(DisasContext *s)
 {
-    return full_vfp_access_check(s, false);
+    return full_vfp_access_check(s, false, false);
+}
+
+static bool m_profile_vfp_access_check(DisasContext *s,
+                                       bool skip_context_update)
+{
+    return full_vfp_access_check(s, false, skip_context_update);
+}
+
+static void m_profile_fp_inactive_ns_branch(DisasContext *s,
+                                            bool branch_if_inactive,
+                                            TCGLabel *label)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 aspen;
+    TCGv_i32 fpca;
+
+    aspen = load_cpu_field(tcg_ctx, v7m.fpccr[M_REG_NS]);
+    fpca = load_cpu_field(tcg_ctx, v7m.control[M_REG_S]);
+    tcg_gen_andi_i32(tcg_ctx, aspen, aspen, R_V7M_FPCCR_ASPEN_MASK);
+    tcg_gen_xori_i32(tcg_ctx, aspen, aspen, R_V7M_FPCCR_ASPEN_MASK);
+    tcg_gen_andi_i32(tcg_ctx, fpca, fpca, R_V7M_CONTROL_FPCA_MASK);
+    tcg_gen_or_i32(tcg_ctx, fpca, fpca, aspen);
+    tcg_gen_brcondi_i32(tcg_ctx, branch_if_inactive ? TCG_COND_EQ :
+                        TCG_COND_NE, fpca, 0, label);
+    tcg_temp_free_i32(tcg_ctx, aspen);
+    tcg_temp_free_i32(tcg_ctx, fpca);
+}
+
+static TCGv_i32 m_profile_fpcxt_value(DisasContext *s)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 control;
+    TCGv_i32 sfpa;
+    TCGv_i32 value;
+
+    value = tcg_temp_new_i32(tcg_ctx);
+    sfpa = tcg_temp_new_i32(tcg_ctx);
+    gen_helper_vfp_get_fpscr(tcg_ctx, value, tcg_ctx->cpu_env);
+    tcg_gen_andi_i32(tcg_ctx, value, value, ~FPCR_NZCV_MASK);
+    control = load_cpu_field(tcg_ctx, v7m.control[M_REG_S]);
+    tcg_gen_andi_i32(tcg_ctx, sfpa, control, R_V7M_CONTROL_SFPA_MASK);
+    tcg_gen_shli_i32(tcg_ctx, sfpa, sfpa,
+                     31 - R_V7M_CONTROL_SFPA_SHIFT);
+    tcg_gen_or_i32(tcg_ctx, value, value, sfpa);
+    tcg_temp_free_i32(tcg_ctx, control);
+    tcg_temp_free_i32(tcg_ctx, sfpa);
+    return value;
+}
+
+static void m_profile_fpcxt_write_value(DisasContext *s, TCGv_i32 value)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 control;
+    TCGv_i32 sfpa;
+
+    sfpa = tcg_temp_new_i32(tcg_ctx);
+    tcg_gen_shri_i32(tcg_ctx, sfpa, value, 31);
+    control = load_cpu_field(tcg_ctx, v7m.control[M_REG_S]);
+    tcg_gen_deposit_i32(tcg_ctx, control, control, sfpa,
+                        R_V7M_CONTROL_SFPA_SHIFT, 1);
+    store_cpu_field(tcg_ctx, control, v7m.control[M_REG_S]);
+    tcg_gen_andi_i32(tcg_ctx, value, value, ~FPCR_NZCV_MASK);
+    gen_helper_vfp_set_fpscr(tcg_ctx, tcg_ctx->cpu_env, value);
+    tcg_temp_free_i32(tcg_ctx, value);
+    tcg_temp_free_i32(tcg_ctx, sfpa);
+    s->base.is_jmp = DISAS_UPDATE;
+}
+
+static void m_profile_fpcxt_s_read_side_effect(DisasContext *s)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 control;
+    TCGv_i32 fpscr;
+
+    control = load_cpu_field(tcg_ctx, v7m.control[M_REG_S]);
+    tcg_gen_andi_i32(tcg_ctx, control, control, ~R_V7M_CONTROL_SFPA_MASK);
+    store_cpu_field(tcg_ctx, control, v7m.control[M_REG_S]);
+    fpscr = load_cpu_field(tcg_ctx, v7m.fpdscr[M_REG_NS]);
+    gen_helper_vfp_set_fpscr(tcg_ctx, tcg_ctx->cpu_env, fpscr);
+    tcg_temp_free_i32(tcg_ctx, fpscr);
+    s->base.is_jmp = DISAS_UPDATE;
+}
+
+static void m_profile_fpcxt_ns_read_active_side_effect(DisasContext *s)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 control;
+    TCGv_i32 sfpa;
+    TCGv_i32 fpscr;
+    TCGv_i32 fpdscr;
+    TCGv_i32 zero;
+
+    control = load_cpu_field(tcg_ctx, v7m.control[M_REG_S]);
+    sfpa = tcg_temp_new_i32(tcg_ctx);
+    fpscr = tcg_temp_new_i32(tcg_ctx);
+    zero = tcg_const_i32(tcg_ctx, 0);
+    gen_helper_vfp_get_fpscr(tcg_ctx, fpscr, tcg_ctx->cpu_env);
+    tcg_gen_andi_i32(tcg_ctx, sfpa, control, R_V7M_CONTROL_SFPA_MASK);
+    fpdscr = load_cpu_field(tcg_ctx, v7m.fpdscr[M_REG_NS]);
+    tcg_gen_movcond_i32(tcg_ctx, TCG_COND_EQ, fpscr, sfpa, zero,
+                        fpdscr, fpscr);
+    gen_helper_vfp_set_fpscr(tcg_ctx, tcg_ctx->cpu_env, fpscr);
+    tcg_temp_free_i32(tcg_ctx, control);
+    tcg_temp_free_i32(tcg_ctx, sfpa);
+    tcg_temp_free_i32(tcg_ctx, fpscr);
+    tcg_temp_free_i32(tcg_ctx, fpdscr);
+    tcg_temp_free_i32(tcg_ctx, zero);
+}
+
+static bool m_profile_fpcxt_ns_gpr(DisasContext *s, arg_VMSR_VMRS *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGLabel *lab_active = gen_new_label(tcg_ctx);
+    TCGLabel *lab_end = gen_new_label(tcg_ctx);
+    TCGv_i32 value;
+
+    m_profile_fp_inactive_ns_branch(s, false, lab_active);
+    if (a->l) {
+        value = load_cpu_field(tcg_ctx, v7m.fpdscr[M_REG_NS]);
+        store_reg(s, a->rt, value);
+        tcg_gen_br(tcg_ctx, lab_end);
+    } else {
+        tcg_gen_br(tcg_ctx, lab_end);
+    }
+
+    gen_set_label(tcg_ctx, lab_active);
+    if (!m_profile_vfp_access_check(s, true)) {
+        s->base.is_jmp = DISAS_NEXT;
+        gen_set_label(tcg_ctx, lab_end);
+        return true;
+    }
+    if (a->l) {
+        value = m_profile_fpcxt_value(s);
+        store_reg(s, a->rt, value);
+        m_profile_fpcxt_ns_read_active_side_effect(s);
+    } else {
+        value = load_reg(s, a->rt);
+        m_profile_fpcxt_write_value(s, value);
+    }
+
+    gen_set_label(tcg_ctx, lab_end);
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
 }
 
 static bool trans_VSEL(DisasContext *s, arg_VSEL *a)
@@ -643,17 +803,38 @@ static bool trans_VMSR_VMRS(DisasContext *s, arg_VMSR_VMRS *a)
     TCGv_i32 tmp = 0;
     bool ignore_vfp_enabled = false;
 
-    if (!dc_isar_feature(aa32_fpsp_v2, s)) {
+    if (!dc_isar_feature(aa32_fpsp_v2, s) &&
+        !dc_isar_feature(aa32_mve, s)) {
         return false;
     }
 
     if (arm_dc_feature(s, ARM_FEATURE_M)) {
-        /*
-         * The only M-profile VFP vmrs/vmsr sysreg is FPSCR.
-         * Accesses to R15 are UNPREDICTABLE; we choose to undef.
-         * (FPSCR -> r15 is a special case which writes to the PSR flags.)
-         */
+        /* Accesses to R15 are UNPREDICTABLE, except FPSCR -> APSR.NZCV. */
         if (a->rt == 15 && (!a->l || a->reg != ARM_VFP_FPSCR)) {
+            return false;
+        }
+        switch (a->reg) {
+        case ARM_VFP_FPSCR:
+            break;
+        case ARM_VFP_FPSCR_NZCVQC:
+            if (!arm_dc_feature(s, ARM_FEATURE_V8_1M)) {
+                return false;
+            }
+            break;
+        case ARM_VFP_VPR:
+        case ARM_VFP_P0:
+            if (!dc_isar_feature(aa32_mve, s)) {
+                unallocated_encoding(s);
+                return true;
+            }
+            break;
+        case ARM_VFP_FPCXT_NS:
+        case ARM_VFP_FPCXT_S:
+            if (!arm_dc_feature(s, ARM_FEATURE_V8_1M) || !s->v8m_secure) {
+                return false;
+            }
+            break;
+        default:
             return false;
         }
     }
@@ -684,6 +865,26 @@ static bool trans_VMSR_VMRS(DisasContext *s, arg_VMSR_VMRS *a)
         break;
     case ARM_VFP_FPSCR:
         break;
+    case ARM_VFP_FPSCR_NZCVQC:
+        if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+            !arm_dc_feature(s, ARM_FEATURE_V8_1M)) {
+            return false;
+        }
+        break;
+    case ARM_VFP_VPR:
+    case ARM_VFP_P0:
+        if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+            !dc_isar_feature(aa32_mve, s)) {
+            return false;
+        }
+        break;
+    case ARM_VFP_FPCXT_NS:
+    case ARM_VFP_FPCXT_S:
+        if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+            !arm_dc_feature(s, ARM_FEATURE_V8_1M) || !s->v8m_secure) {
+            return false;
+        }
+        break;
     case ARM_VFP_FPEXC:
         if (IS_USER(s)) {
             return false;
@@ -701,7 +902,11 @@ static bool trans_VMSR_VMRS(DisasContext *s, arg_VMSR_VMRS *a)
         return false;
     }
 
-    if (!full_vfp_access_check(s, ignore_vfp_enabled)) {
+    if (arm_dc_feature(s, ARM_FEATURE_M) && a->reg == ARM_VFP_FPCXT_NS) {
+        return m_profile_fpcxt_ns_gpr(s, a);
+    }
+
+    if (!full_vfp_access_check(s, ignore_vfp_enabled, false)) {
         return true;
     }
 
@@ -738,6 +943,25 @@ static bool trans_VMSR_VMRS(DisasContext *s, arg_VMSR_VMRS *a)
                 gen_helper_vfp_get_fpscr(tcg_ctx, tmp, tcg_ctx->cpu_env);
             }
             break;
+        case ARM_VFP_FPSCR_NZCVQC:
+            tmp = tcg_temp_new_i32(tcg_ctx);
+            gen_helper_vfp_get_fpscr(tcg_ctx, tmp, tcg_ctx->cpu_env);
+            tcg_gen_andi_i32(tcg_ctx, tmp, tmp,
+                             dc_isar_feature(aa32_mve, s) ?
+                             FPCR_NZCVQC_MASK : FPCR_NZCV_MASK);
+            break;
+        case ARM_VFP_VPR:
+            tmp = load_cpu_field(tcg_ctx, v7m.vpr);
+            break;
+        case ARM_VFP_P0:
+            tmp = load_cpu_field(tcg_ctx, v7m.vpr);
+            tcg_gen_extract_i32(tcg_ctx, tmp, tmp,
+                                R_V7M_VPR_P0_SHIFT,
+                                R_V7M_VPR_P0_LENGTH);
+            break;
+        case ARM_VFP_FPCXT_S:
+            tmp = m_profile_fpcxt_value(s);
+            break;
         default:
             g_assert_not_reached();
         }
@@ -748,6 +972,9 @@ static bool trans_VMSR_VMRS(DisasContext *s, arg_VMSR_VMRS *a)
             tcg_temp_free_i32(tcg_ctx, tmp);
         } else {
             store_reg(s, a->rt, tmp);
+        }
+        if (a->reg == ARM_VFP_FPCXT_S) {
+            m_profile_fpcxt_s_read_side_effect(s);
         }
     } else {
         /* VMSR, move gp register to VFP special register */
@@ -763,6 +990,51 @@ static bool trans_VMSR_VMRS(DisasContext *s, arg_VMSR_VMRS *a)
             gen_helper_vfp_set_fpscr(tcg_ctx, tcg_ctx->cpu_env, tmp);
             tcg_temp_free_i32(tcg_ctx, tmp);
             gen_lookup_tb(s);
+            break;
+        case ARM_VFP_FPSCR_NZCVQC:
+        {
+            TCGv_i32 fpscr;
+
+            tmp = load_reg(s, a->rt);
+            if (dc_isar_feature(aa32_mve, s)) {
+                TCGv_i32 qc = tcg_temp_new_i32(tcg_ctx);
+
+                tcg_gen_andi_i32(tcg_ctx, qc, tmp, FPCR_QC);
+                tcg_gen_gvec_dup_i32(tcg_ctx, MO_32,
+                                      offsetof(CPUARMState, vfp.qc),
+                                      16, 16, qc);
+                tcg_temp_free_i32(tcg_ctx, qc);
+            }
+            tcg_gen_andi_i32(tcg_ctx, tmp, tmp, FPCR_NZCV_MASK);
+            fpscr = load_cpu_field(tcg_ctx, vfp.xregs[ARM_VFP_FPSCR]);
+            tcg_gen_andi_i32(tcg_ctx, fpscr, fpscr, ~FPCR_NZCV_MASK);
+            tcg_gen_or_i32(tcg_ctx, fpscr, fpscr, tmp);
+            store_cpu_field(tcg_ctx, fpscr, vfp.xregs[ARM_VFP_FPSCR]);
+            tcg_temp_free_i32(tcg_ctx, tmp);
+            break;
+        }
+        case ARM_VFP_VPR:
+            tmp = load_reg(s, a->rt);
+            store_cpu_field(tcg_ctx, tmp, v7m.vpr);
+            gen_lookup_tb(s);
+            break;
+        case ARM_VFP_P0:
+        {
+            TCGv_i32 vpr;
+
+            tmp = load_reg(s, a->rt);
+            vpr = load_cpu_field(tcg_ctx, v7m.vpr);
+            tcg_gen_deposit_i32(tcg_ctx, vpr, vpr, tmp,
+                                R_V7M_VPR_P0_SHIFT,
+                                R_V7M_VPR_P0_LENGTH);
+            store_cpu_field(tcg_ctx, vpr, v7m.vpr);
+            tcg_temp_free_i32(tcg_ctx, tmp);
+            gen_lookup_tb(s);
+            break;
+        }
+        case ARM_VFP_FPCXT_S:
+            tmp = load_reg(s, a->rt);
+            m_profile_fpcxt_write_value(s, tmp);
             break;
         case ARM_VFP_FPEXC:
             /*
@@ -782,6 +1054,482 @@ static bool trans_VMSR_VMRS(DisasContext *s, arg_VMSR_VMRS *a)
         default:
             g_assert_not_reached();
         }
+    }
+
+    return true;
+}
+
+static void m_profile_clear_eci_state(DisasContext *s)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 zero;
+
+    if (s->eci) {
+        zero = tcg_const_i32(tcg_ctx, 0);
+        store_cpu_field(tcg_ctx, zero, condexec_bits);
+        s->eci = 0;
+    }
+}
+
+static bool trans_m_profile_vlldm_vlstm(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 fptr;
+    int rn;
+    bool is_load;
+    bool t2;
+
+    if ((insn & 0xffe0ff7f) != 0xec200a00) {
+        return false;
+    }
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !arm_dc_feature(s, ARM_FEATURE_V8)) {
+        return false;
+    }
+
+    is_load = extract32(insn, 20, 1);
+    rn = extract32(insn, 16, 4);
+    t2 = extract32(insn, 7, 1);
+
+    if (t2) {
+        if (!arm_dc_feature(s, ARM_FEATURE_V8_1M)) {
+            unallocated_encoding(s);
+            return true;
+        }
+    } else if (dc_isar_feature(aa32_simd_r32, s)) {
+        unallocated_encoding(s);
+        return true;
+    }
+
+    if (!s->v8m_secure) {
+        unallocated_encoding(s);
+        return true;
+    }
+
+    s->eci_handled = true;
+
+    if (!dc_isar_feature(aa32_vfp, s)) {
+        m_profile_clear_eci_state(s);
+        return true;
+    }
+
+    fptr = load_reg(s, rn);
+    if (is_load) {
+        gen_helper_v7m_vlldm(tcg_ctx, tcg_ctx->cpu_env, fptr);
+    } else {
+        gen_helper_v7m_vlstm(tcg_ctx, tcg_ctx->cpu_env, fptr);
+    }
+    tcg_temp_free_i32(tcg_ctx, fptr);
+
+    m_profile_clear_eci_state(s);
+
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_m_profile_vscclrm(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 aspen;
+    TCGv_i32 sfpa;
+    TCGv_i32 zero;
+    int btmreg;
+    int topreg;
+    int vd;
+    int imm;
+    bool dp;
+
+    if ((insn & 0xffbf0f01) == 0xec9f0b00) {
+        dp = true;
+        vd = (extract32(insn, 22, 1) << 4) | extract32(insn, 12, 4);
+        imm = extract32(insn, 1, 7);
+    } else if ((insn & 0xffbf0f00) == 0xec9f0a00) {
+        dp = false;
+        vd = (extract32(insn, 12, 4) << 1) | extract32(insn, 22, 1);
+        imm = extract32(insn, 0, 8);
+    } else {
+        return false;
+    }
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M)) {
+        return false;
+    }
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M_SECURITY) ||
+        !arm_dc_feature(s, ARM_FEATURE_V8_1M)) {
+        unallocated_encoding(s);
+        return true;
+    }
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M_MAIN) || !s->v8m_secure) {
+        unallocated_encoding(s);
+        return true;
+    }
+
+    s->eci_handled = true;
+
+    if (!dc_isar_feature(aa32_vfp_simd, s)) {
+        m_profile_clear_eci_state(s);
+        return true;
+    }
+
+    aspen = load_cpu_field(tcg_ctx, v7m.fpccr[M_REG_S]);
+    sfpa = load_cpu_field(tcg_ctx, v7m.control[M_REG_S]);
+    tcg_gen_andi_i32(tcg_ctx, aspen, aspen, R_V7M_FPCCR_ASPEN_MASK);
+    tcg_gen_xori_i32(tcg_ctx, aspen, aspen, R_V7M_FPCCR_ASPEN_MASK);
+    tcg_gen_andi_i32(tcg_ctx, sfpa, sfpa, R_V7M_CONTROL_SFPA_MASK);
+    tcg_gen_or_i32(tcg_ctx, sfpa, sfpa, aspen);
+    tcg_temp_free_i32(tcg_ctx, aspen);
+    arm_gen_condlabel(s);
+    tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_EQ, sfpa, 0, s->condlabel);
+    tcg_temp_free_i32(tcg_ctx, sfpa);
+
+    if (s->fp_excp_el != 0) {
+        gen_exception_insn(s, s->pc_curr, EXCP_NOCP, syn_uncategorized(),
+                           s->fp_excp_el);
+        return true;
+    }
+
+    btmreg = vd;
+    topreg = vd + imm - 1;
+    if (dp) {
+        btmreg *= 2;
+        topreg = topreg * 2 + 1;
+    }
+
+    if (topreg > 63 || (topreg > 31 && !(topreg & 1))) {
+        unallocated_encoding(s);
+        return true;
+    }
+
+    if (topreg > 31 && !dc_isar_feature(aa32_simd_r32, s)) {
+        topreg = 31;
+    }
+
+    if (!vfp_access_check(s)) {
+        return true;
+    }
+
+    zero = tcg_const_i32(tcg_ctx, 0);
+    for (; btmreg <= topreg; btmreg++) {
+        neon_store_reg32(tcg_ctx, zero, btmreg);
+    }
+    tcg_temp_free_i32(tcg_ctx, zero);
+
+    if (dc_isar_feature(aa32_mve, s)) {
+        zero = tcg_const_i32(tcg_ctx, 0);
+        store_cpu_field(tcg_ctx, zero, v7m.vpr);
+    }
+
+    m_profile_clear_eci_state(s);
+    return true;
+}
+
+static bool m_profile_fp_sysreg_check(DisasContext *s, int reg)
+{
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !arm_dc_feature(s, ARM_FEATURE_V8_1M) ||
+        (!dc_isar_feature(aa32_fpsp_v2, s) &&
+         !dc_isar_feature(aa32_mve, s))) {
+        return false;
+    }
+
+    switch (reg) {
+    case ARM_VFP_FPSCR:
+        return true;
+    case ARM_VFP_FPSCR_NZCVQC:
+        return true;
+    case ARM_VFP_VPR:
+    case ARM_VFP_P0:
+        return dc_isar_feature(aa32_mve, s);
+    case ARM_VFP_FPCXT_NS:
+    case ARM_VFP_FPCXT_S:
+        return s->v8m_secure;
+    default:
+        return false;
+    }
+}
+
+static TCGv_i32 m_profile_fp_sysreg_read(DisasContext *s, int reg)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 tmp;
+
+    switch (reg) {
+    case ARM_VFP_FPSCR:
+        tmp = tcg_temp_new_i32(tcg_ctx);
+        gen_helper_vfp_get_fpscr(tcg_ctx, tmp, tcg_ctx->cpu_env);
+        return tmp;
+    case ARM_VFP_FPSCR_NZCVQC:
+        tmp = tcg_temp_new_i32(tcg_ctx);
+        gen_helper_vfp_get_fpscr(tcg_ctx, tmp, tcg_ctx->cpu_env);
+        tcg_gen_andi_i32(tcg_ctx, tmp, tmp,
+                         dc_isar_feature(aa32_mve, s) ?
+                         FPCR_NZCVQC_MASK : FPCR_NZCV_MASK);
+        return tmp;
+    case ARM_VFP_VPR:
+        return load_cpu_field(tcg_ctx, v7m.vpr);
+    case ARM_VFP_P0:
+        tmp = load_cpu_field(tcg_ctx, v7m.vpr);
+        tcg_gen_extract_i32(tcg_ctx, tmp, tmp,
+                            R_V7M_VPR_P0_SHIFT, R_V7M_VPR_P0_LENGTH);
+        return tmp;
+    case ARM_VFP_FPCXT_NS:
+    case ARM_VFP_FPCXT_S:
+        return m_profile_fpcxt_value(s);
+    default:
+        g_assert_not_reached();
+    }
+
+    return NULL;
+}
+
+static void m_profile_fp_sysreg_write(DisasContext *s, int reg, TCGv_i32 tmp)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    switch (reg) {
+    case ARM_VFP_FPSCR:
+        gen_helper_vfp_set_fpscr(tcg_ctx, tcg_ctx->cpu_env, tmp);
+        tcg_temp_free_i32(tcg_ctx, tmp);
+        gen_lookup_tb(s);
+        break;
+    case ARM_VFP_FPSCR_NZCVQC:
+    {
+        TCGv_i32 fpscr;
+
+        if (dc_isar_feature(aa32_mve, s)) {
+            TCGv_i32 qc = tcg_temp_new_i32(tcg_ctx);
+
+            tcg_gen_andi_i32(tcg_ctx, qc, tmp, FPCR_QC);
+            tcg_gen_gvec_dup_i32(tcg_ctx, MO_32,
+                                  offsetof(CPUARMState, vfp.qc),
+                                  16, 16, qc);
+            tcg_temp_free_i32(tcg_ctx, qc);
+        }
+        tcg_gen_andi_i32(tcg_ctx, tmp, tmp, FPCR_NZCV_MASK);
+        fpscr = load_cpu_field(tcg_ctx, vfp.xregs[ARM_VFP_FPSCR]);
+        tcg_gen_andi_i32(tcg_ctx, fpscr, fpscr, ~FPCR_NZCV_MASK);
+        tcg_gen_or_i32(tcg_ctx, fpscr, fpscr, tmp);
+        store_cpu_field(tcg_ctx, fpscr, vfp.xregs[ARM_VFP_FPSCR]);
+        tcg_temp_free_i32(tcg_ctx, tmp);
+        break;
+    }
+    case ARM_VFP_VPR:
+        store_cpu_field(tcg_ctx, tmp, v7m.vpr);
+        gen_lookup_tb(s);
+        break;
+    case ARM_VFP_P0:
+    {
+        TCGv_i32 vpr;
+
+        vpr = load_cpu_field(tcg_ctx, v7m.vpr);
+        tcg_gen_deposit_i32(tcg_ctx, vpr, vpr, tmp,
+                            R_V7M_VPR_P0_SHIFT, R_V7M_VPR_P0_LENGTH);
+        store_cpu_field(tcg_ctx, vpr, v7m.vpr);
+        tcg_temp_free_i32(tcg_ctx, tmp);
+        gen_lookup_tb(s);
+        break;
+    }
+    case ARM_VFP_FPCXT_NS:
+    case ARM_VFP_FPCXT_S:
+        m_profile_fpcxt_write_value(s, tmp);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+}
+
+static void m_profile_sysreg_mem_writeback(DisasContext *s, int rn,
+                                           int32_t offset)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 wb;
+
+    wb = load_reg(s, rn);
+    if (offset) {
+        tcg_gen_addi_i32(tcg_ctx, wb, wb, offset);
+    }
+    store_reg(s, rn, wb);
+}
+
+static TCGv_i32 m_profile_sysreg_mem_addr(DisasContext *s, int rn,
+                                          int32_t offset, bool p, bool w)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 addr;
+
+    addr = load_reg(s, rn);
+    if (p) {
+        tcg_gen_addi_i32(tcg_ctx, addr, addr, offset);
+    }
+
+    if (s->v8m_stackcheck && rn == 13 && w) {
+        gen_helper_v8m_stackcheck(tcg_ctx, tcg_ctx->cpu_env, addr);
+    }
+
+    return addr;
+}
+
+static bool trans_m_profile_fpcxt_ns_mem(DisasContext *s, int rn,
+                                         int32_t offset, bool p, bool w,
+                                         bool load)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGLabel *lab_active = gen_new_label(tcg_ctx);
+    TCGLabel *lab_end = gen_new_label(tcg_ctx);
+    TCGv_i32 addr;
+    TCGv_i32 value;
+
+    m_profile_fp_inactive_ns_branch(s, false, lab_active);
+    if (load) {
+        if (w) {
+            addr = m_profile_sysreg_mem_addr(s, rn, offset, p, w);
+            m_profile_sysreg_mem_writeback(s, rn, offset);
+            tcg_temp_free_i32(tcg_ctx, addr);
+        }
+    } else {
+        addr = m_profile_sysreg_mem_addr(s, rn, offset, p, w);
+        value = load_cpu_field(tcg_ctx, v7m.fpdscr[M_REG_NS]);
+        gen_aa32_st_i32(s, value, addr, get_mem_index(s),
+                        MO_UL | MO_ALIGN | s->be_data);
+        tcg_temp_free_i32(tcg_ctx, value);
+        if (w) {
+            m_profile_sysreg_mem_writeback(s, rn, offset);
+        }
+        tcg_temp_free_i32(tcg_ctx, addr);
+    }
+    tcg_gen_br(tcg_ctx, lab_end);
+
+    gen_set_label(tcg_ctx, lab_active);
+    if (!m_profile_vfp_access_check(s, true)) {
+        s->base.is_jmp = DISAS_NEXT;
+        gen_set_label(tcg_ctx, lab_end);
+        return true;
+    }
+
+    addr = m_profile_sysreg_mem_addr(s, rn, offset, p, w);
+    if (load) {
+        value = tcg_temp_new_i32(tcg_ctx);
+        gen_aa32_ld_i32(s, value, addr, get_mem_index(s),
+                        MO_UL | MO_ALIGN | s->be_data);
+        if (w) {
+            m_profile_sysreg_mem_writeback(s, rn, offset);
+        }
+        m_profile_fpcxt_write_value(s, value);
+    } else {
+        value = m_profile_fpcxt_value(s);
+        gen_aa32_st_i32(s, value, addr, get_mem_index(s),
+                        MO_UL | MO_ALIGN | s->be_data);
+        tcg_temp_free_i32(tcg_ctx, value);
+        if (w) {
+            m_profile_sysreg_mem_writeback(s, rn, offset);
+        }
+        m_profile_fpcxt_ns_read_active_side_effect(s);
+    }
+    tcg_temp_free_i32(tcg_ctx, addr);
+
+    gen_set_label(tcg_ctx, lab_end);
+    s->base.is_jmp = DISAS_UPDATE;
+    return true;
+}
+
+static bool trans_m_profile_sysreg_mem(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 addr;
+    TCGv_i32 value = NULL;
+    int32_t offset;
+    int reg;
+    int rn;
+    bool p;
+    bool w;
+    bool load;
+    bool do_access;
+
+    if ((insn & 0xff101f80) == 0xed000f80 ||
+        (insn & 0xff101f80) == 0xed100f80) {
+        p = true;
+        w = extract32(insn, 21, 1);
+    } else if ((insn & 0xff301f80) == 0xec200f80 ||
+               (insn & 0xff301f80) == 0xec300f80) {
+        p = false;
+        w = true;
+    } else {
+        return false;
+    }
+
+    if (!arm_dc_feature(s, ARM_FEATURE_M) ||
+        !arm_dc_feature(s, ARM_FEATURE_V8_1M)) {
+        return false;
+    }
+
+    rn = extract32(insn, 16, 4);
+    if (rn == 15) {
+        return false;
+    }
+
+    reg = (extract32(insn, 22, 1) << 3) | extract32(insn, 13, 3);
+    if (!m_profile_fp_sysreg_check(s, reg)) {
+        return false;
+    }
+
+    offset = extract32(insn, 0, 7) << 2;
+    if (!extract32(insn, 23, 1)) {
+        offset = -offset;
+    }
+    load = extract32(insn, 20, 1);
+
+    if (reg == ARM_VFP_FPCXT_NS) {
+        return trans_m_profile_fpcxt_ns_mem(s, rn, offset, p, w, load);
+    }
+
+    if (!vfp_access_check(s)) {
+        return true;
+    }
+
+    do_access = !(reg == ARM_VFP_VPR && IS_USER(s));
+    if (!do_access && !w) {
+        return true;
+    }
+
+    addr = load_reg(s, rn);
+    if (p) {
+        tcg_gen_addi_i32(tcg_ctx, addr, addr, offset);
+    }
+
+    if (s->v8m_stackcheck && rn == 13 && w) {
+        gen_helper_v8m_stackcheck(tcg_ctx, tcg_ctx->cpu_env, addr);
+    }
+
+    if (do_access) {
+        if (load) {
+            value = tcg_temp_new_i32(tcg_ctx);
+            gen_aa32_ld_i32(s, value, addr, get_mem_index(s),
+                            MO_UL | MO_ALIGN | s->be_data);
+        } else {
+            value = m_profile_fp_sysreg_read(s, reg);
+            gen_aa32_st_i32(s, value, addr, get_mem_index(s),
+                            MO_UL | MO_ALIGN | s->be_data);
+            tcg_temp_free_i32(tcg_ctx, value);
+            value = NULL;
+        }
+    }
+
+    if (w) {
+        if (!p) {
+            tcg_gen_addi_i32(tcg_ctx, addr, addr, offset);
+        }
+        store_reg(s, rn, addr);
+    } else {
+        tcg_temp_free_i32(tcg_ctx, addr);
+    }
+
+    if (load && do_access) {
+        m_profile_fp_sysreg_write(s, reg, value);
+    } else if (!load && do_access && reg == ARM_VFP_FPCXT_S) {
+        m_profile_fpcxt_s_read_side_effect(s);
     }
 
     return true;
@@ -2301,6 +3049,32 @@ static bool trans_VCVT_f16_f32(DisasContext *s, arg_VCVT_f16_f32 *a)
     gen_helper_vfp_fcvt_f32_to_f16(tcg_ctx, tmp, tmp, fpst, ahp_mode);
     tcg_gen_st16_i32(tcg_ctx, tmp, tcg_ctx->cpu_env, vfp_f16_offset(a->vd, a->t));
     tcg_temp_free_i32(tcg_ctx, ahp_mode);
+    tcg_temp_free_ptr(tcg_ctx, fpst);
+    tcg_temp_free_i32(tcg_ctx, tmp);
+    return true;
+}
+
+static bool trans_VCVT_b16_f32(DisasContext *s, arg_VCVT_b16_f32 *a)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr fpst;
+    TCGv_i32 tmp;
+
+    if (!dc_isar_feature(aa32_bf16, s)) {
+        return false;
+    }
+
+    if (!vfp_access_check(s)) {
+        return true;
+    }
+
+    fpst = get_fpstatus_ptr(tcg_ctx, false);
+    tmp = tcg_temp_new_i32(tcg_ctx);
+
+    neon_load_reg32(tcg_ctx, tmp, a->vm);
+    gen_helper_bfcvt(tcg_ctx, tmp, tmp, fpst);
+    tcg_gen_st16_i32(tcg_ctx, tmp, tcg_ctx->cpu_env,
+                     vfp_f16_offset(a->vd, a->t));
     tcg_temp_free_ptr(tcg_ctx, fpst);
     tcg_temp_free_i32(tcg_ctx, tmp);
     return true;

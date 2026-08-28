@@ -200,11 +200,41 @@ static void arm_cpu_reset(CPUState *dev)
     }
     env->daif = PSTATE_D | PSTATE_A | PSTATE_I | PSTATE_F;
 
+#ifdef TARGET_AARCH64
+    if (cpu_isar_feature(aa64_sme, cpu)) {
+        uint32_t vq = cpu->sme_default_vq ? cpu->sme_default_vq : 1;
+        uint64_t smcr = vq - 1;
+
+        if (cpu_isar_feature(aa64_sme_fa64, cpu)) {
+            FIELD_DP64(smcr, SMCR, FA64, 1, smcr);
+        }
+        env->vfp.smcr_el[1] = smcr;
+        if (arm_feature(env, ARM_FEATURE_EL2)) {
+            env->vfp.smcr_el[2] = smcr;
+        }
+        if (arm_feature(env, ARM_FEATURE_EL3)) {
+            env->vfp.smcr_el[3] = smcr;
+            FIELD_DP64(env->cp15.cptr_el[3], CPTR_EL3, ESM, 1,
+                       env->cp15.cptr_el[3]);
+        }
+        FIELD_DP64(env->cp15.cpacr_el1, CPACR_EL1, SMEN, 3,
+                   env->cp15.cpacr_el1);
+        FIELD_DP64(env->cp15.cptr_el[2], CPTR_EL2, SMEN, 3,
+                   env->cp15.cptr_el[2]);
+    }
+#endif
+
     if (arm_feature(env, ARM_FEATURE_M)) {
         uint32_t initial_msp; /* Loaded from 0x0 */
         uint32_t initial_pc; /* Loaded from 0x4 */
         // uint8_t *rom;
         uint32_t vecbase;
+
+        if (arm_feature(env, ARM_FEATURE_V8_1M)) {
+            env->v7m.ltpsize = 4;
+            env->v7m.fpdscr[M_REG_NS] = 4 << FPCR_LTPSIZE_SHIFT;
+            env->v7m.fpdscr[M_REG_S] = 4 << FPCR_LTPSIZE_SHIFT;
+        }
 
         if (arm_feature(env, ARM_FEATURE_M_SECURITY)) {
             env->v7m.secure = true;
@@ -348,12 +378,15 @@ static void arm_cpu_reset(CPUState *dev)
     set_flush_to_zero(1, &env->vfp.standard_fp_status);
     set_flush_inputs_to_zero(1, &env->vfp.standard_fp_status);
     set_default_nan_mode(1, &env->vfp.standard_fp_status);
+    set_default_nan_mode(1, &env->vfp.standard_fp_status_f16);
     set_float_detect_tininess(float_tininess_before_rounding,
                               &env->vfp.fp_status);
     set_float_detect_tininess(float_tininess_before_rounding,
                               &env->vfp.standard_fp_status);
     set_float_detect_tininess(float_tininess_before_rounding,
                               &env->vfp.fp_status_f16);
+    set_float_detect_tininess(float_tininess_before_rounding,
+                              &env->vfp.standard_fp_status_f16);
 
     hw_breakpoint_update_all(cpu);
     hw_watchpoint_update_all(cpu);
@@ -812,6 +845,7 @@ void arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 
         u = cpu->isar.id_isar6;
         FIELD_DP32(u, ID_ISAR6, JSCVT, 0, u);
+        FIELD_DP32(u, ID_ISAR6, BF16, 0, u);
         cpu->isar.id_isar6 = u;
 
         u = cpu->isar.mvfr0;
@@ -861,18 +895,21 @@ void arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
         u = cpu->isar.id_isar6;
         FIELD_DP32(u, ID_ISAR6, DP, 0, u);
         FIELD_DP32(u, ID_ISAR6, FHM, 0, u);
+        FIELD_DP32(u, ID_ISAR6, BF16, 0, u);
         cpu->isar.id_isar6 = u;
 
-        u = cpu->isar.mvfr1;
-        FIELD_DP32(u, MVFR1, SIMDLS, 0, u);
-        FIELD_DP32(u, MVFR1, SIMDINT, 0, u);
-        FIELD_DP32(u, MVFR1, SIMDSP, 0, u);
-        FIELD_DP32(u, MVFR1, SIMDHP, 0, u);
-        cpu->isar.mvfr1 = u;
+        if (!arm_feature(env, ARM_FEATURE_M)) {
+            u = cpu->isar.mvfr1;
+            FIELD_DP32(u, MVFR1, SIMDLS, 0, u);
+            FIELD_DP32(u, MVFR1, SIMDINT, 0, u);
+            FIELD_DP32(u, MVFR1, SIMDSP, 0, u);
+            FIELD_DP32(u, MVFR1, SIMDHP, 0, u);
+            cpu->isar.mvfr1 = u;
 
-        u = cpu->isar.mvfr2;
-        FIELD_DP32(u, MVFR2, SIMDMISC, 0, u);
-        cpu->isar.mvfr2 = u;
+            u = cpu->isar.mvfr2;
+            FIELD_DP32(u, MVFR2, SIMDMISC, 0, u);
+            cpu->isar.mvfr2 = u;
+        }
     }
 
     if (!cpu->has_neon && !cpu->has_vfp) {
@@ -1508,6 +1545,42 @@ static void cortex_m33_initfn(struct uc_struct *uc, CPUState *obj)
     cpu->ctr = 0x8000c000;
 }
 
+static void cortex_m55_initfn(struct uc_struct *uc, CPUState *obj)
+{
+    ARMCPU *cpu = ARM_CPU(obj);
+
+    set_feature(&cpu->env, ARM_FEATURE_V8);
+    set_feature(&cpu->env, ARM_FEATURE_V8_1M);
+    set_feature(&cpu->env, ARM_FEATURE_M);
+    set_feature(&cpu->env, ARM_FEATURE_M_MAIN);
+    set_feature(&cpu->env, ARM_FEATURE_M_SECURITY);
+    set_feature(&cpu->env, ARM_FEATURE_THUMB_DSP);
+    cpu->midr = 0x410fd221; /* r0p1 */
+    cpu->revidr = 0;
+    cpu->pmsav7_dregion = 16;
+    cpu->sau_sregion = 8;
+    cpu->isar.mvfr0 = 0x10110221;
+    cpu->isar.mvfr1 = 0x12100211;
+    cpu->isar.mvfr2 = 0x00000040;
+    cpu->id_pfr0 = 0x20000030;
+    cpu->id_pfr1 = 0x00000230;
+    cpu->isar.id_dfr0 = 0x10200000;
+    cpu->id_afr0 = 0x00000000;
+    cpu->isar.id_mmfr0 = 0x00111040;
+    cpu->isar.id_mmfr1 = 0x00000000;
+    cpu->isar.id_mmfr2 = 0x01000000;
+    cpu->isar.id_mmfr3 = 0x00000011;
+    cpu->isar.id_isar0 = 0x01103110;
+    cpu->isar.id_isar1 = 0x02212000;
+    cpu->isar.id_isar2 = 0x20232232;
+    cpu->isar.id_isar3 = 0x01111131;
+    cpu->isar.id_isar4 = 0x01310132;
+    cpu->isar.id_isar5 = 0x00000000;
+    cpu->isar.id_isar6 = 0x00000000;
+    cpu->clidr = 0x00000000;
+    cpu->ctr = 0x8303c003;
+}
+
 static void arm_v7m_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
 {
     ARMCPUClass *acc = ARM_CPU_CLASS(oc);
@@ -1987,6 +2060,8 @@ static void arm_max_initfn(struct uc_struct *uc, CPUState *obj)
             FIELD_DP32(t, ID_ISAR6, FHM, 1, t);
             FIELD_DP32(t, ID_ISAR6, SB, 1, t);
             FIELD_DP32(t, ID_ISAR6, SPECRES, 1, t);
+            FIELD_DP32(t, ID_ISAR6, BF16, 1, t);
+            FIELD_DP32(t, ID_ISAR6, I8MM, 1, t);
             cpu->isar.id_isar6 = t;
 
             t = cpu->isar.mvfr1;
@@ -2061,8 +2136,24 @@ static struct ARMCPUInfo arm_cpus[] = {
     { "pxa270-b1",   pxa270b1_initfn },
     { "pxa270-c0",   pxa270c0_initfn },
     { "pxa270-c5",   pxa270c5_initfn },
+    { "cortex-m55",  cortex_m55_initfn, arm_v7m_class_init },
     { "max", arm_max_initfn },
 };
+
+static bool arm_cpu_model_is_mprofile(int cpu_model)
+{
+    switch (cpu_model) {
+    case UC_CPU_ARM_CORTEX_M0:
+    case UC_CPU_ARM_CORTEX_M3:
+    case UC_CPU_ARM_CORTEX_M4:
+    case UC_CPU_ARM_CORTEX_M7:
+    case UC_CPU_ARM_CORTEX_M33:
+    case UC_CPU_ARM_CORTEX_M55:
+        return true;
+    default:
+        return false;
+    }
+}
 #endif
 
 void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
@@ -2085,7 +2176,11 @@ void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
     cc->tcg_initialize = arm_translate_init;
     cc->tlb_fill_cpu = arm_cpu_tlb_fill;
     cc->debug_excp_handler = arm_debug_excp_handler;
+    cc->debug_check_breakpoint = arm_debug_check_breakpoint;
+    cc->debug_check_watchpoint = arm_debug_check_watchpoint;
+    cc->adjust_watchpoint_address = arm_adjust_watchpoint_address;
     cc->do_unaligned_access = arm_cpu_do_unaligned_access;
+    cc->do_transaction_failed = arm_cpu_do_transaction_failed;
 }
 
 static void arm_cpu_instance_init(CPUState *obj)
@@ -2113,7 +2208,9 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
     memset((void*)cpu, 0, sizeof(*cpu));
 
 #if !defined(TARGET_AARCH64)
-    if (uc->mode & UC_MODE_MCLASS) {
+    if ((uc->mode & UC_MODE_MCLASS) &&
+        (uc->cpu_model == INT_MAX ||
+         !arm_cpu_model_is_mprofile(uc->cpu_model))) {
         uc->cpu_model = UC_CPU_ARM_CORTEX_M33;
     } else if (uc->mode & UC_MODE_ARM926) {
         uc->cpu_model = UC_CPU_ARM_926;
