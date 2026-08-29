@@ -55,6 +55,22 @@ static void test_riscv64_nop(void)
     OK(uc_close(uc));
 }
 
+static void test_riscv64_fsgnj_d_cpu_feature(void)
+{
+    uc_engine *uc;
+    const char code[] = "\xd3\x81\x10\x22"; // fmv.d f3, f1
+
+    OK(uc_open(UC_ARCH_RISCV, UC_MODE_RISCV64, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_RISCV64_SIFIVE_E51));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+
+    uc_assert_err(UC_ERR_EXCEPTION,
+                  uc_emu_start(uc, code_start,
+                                code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_close(uc));
+}
+
 static void test_riscv32_until_pc_update(void)
 {
     uc_engine *uc;
@@ -250,9 +266,11 @@ static void test_riscv32_fp_move(void)
 
     uint64_t r_f1 = 0x123456781a2b3c4dULL;
     uint64_t r_f3 = 0x56780246aaaabbbbULL;
+    uint32_t mstatus = 0x6000;
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
                     sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_RISCV_REG_MSTATUS, &mstatus));
 
     // initialize machine registers
     uc_reg_write(uc, UC_RISCV_REG_F1, &r_f1);
@@ -277,9 +295,11 @@ static void test_riscv64_fp_move(void)
 
     uint64_t r_f1 = 0x123456781a2b3c4dULL;
     uint64_t r_f3 = 0x56780246aaaabbbbULL;
+    uint64_t mstatus = 0x6000;
 
     uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
                     sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_RISCV_REG_MSTATUS, &mstatus));
 
     // initialize machine registers
     OK(uc_reg_write(uc, UC_RISCV_REG_F1, &r_f1));
@@ -911,6 +931,7 @@ static void test_riscv_priv(void)
 TEST_LIST = {
     {"test_riscv32_nop", test_riscv32_nop},
     {"test_riscv64_nop", test_riscv64_nop},
+    {"test_riscv64_fsgnj_d_cpu_feature", test_riscv64_fsgnj_d_cpu_feature},
     {"test_riscv32_3steps_pc_update", test_riscv32_3steps_pc_update},
     {"test_riscv64_3steps_pc_update", test_riscv64_3steps_pc_update},
     {"test_riscv64_until_at_page_end", test_riscv64_until_at_page_end},

@@ -168,6 +168,8 @@ static bool trans_fsqrt_d(DisasContext *ctx, arg_fsqrt_d *a)
 
 static bool trans_fsgnj_d(DisasContext *ctx, arg_fsgnj_d *a)
 {
+    REQUIRE_FPU;
+    REQUIRE_EXT(ctx, RVD);
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     if (a->rs1 == a->rs2) { /* FMOV */
         tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_fpr[a->rd], tcg_ctx->cpu_fpr[a->rs1]);
