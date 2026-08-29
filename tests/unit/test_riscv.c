@@ -55,6 +55,25 @@ static void test_riscv64_nop(void)
     OK(uc_close(uc));
 }
 
+static void test_riscv64_mcounteren(void)
+{
+    uc_engine *uc;
+    const char code[] = "\x73\x25\x30\xb0"; // csrr a0, hpmcounter3
+    uint64_t mcounteren = 0;
+    uint64_t priv = 0;
+
+    OK(uc_open(UC_ARCH_RISCV, UC_MODE_RISCV64, &uc));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    OK(uc_reg_write(uc, UC_RISCV_REG_MCOUNTEREN, &mcounteren));
+    OK(uc_reg_write(uc, UC_RISCV_REG_PRIV, &priv));
+
+    uc_assert_err(UC_ERR_EXCEPTION,
+                  uc_emu_start(uc, code_start,
+                                code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_close(uc));
+}
+
 static void test_riscv32_until_pc_update(void)
 {
     uc_engine *uc;
@@ -911,6 +930,7 @@ static void test_riscv_priv(void)
 TEST_LIST = {
     {"test_riscv32_nop", test_riscv32_nop},
     {"test_riscv64_nop", test_riscv64_nop},
+    {"test_riscv64_mcounteren", test_riscv64_mcounteren},
     {"test_riscv32_3steps_pc_update", test_riscv32_3steps_pc_update},
     {"test_riscv64_3steps_pc_update", test_riscv64_3steps_pc_update},
     {"test_riscv64_until_at_page_end", test_riscv64_until_at_page_end},

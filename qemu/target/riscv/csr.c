@@ -458,15 +458,6 @@ static int ctr(CPURISCVState *env, int csrno)
         return -1;
     }
 
-    /*
-     * The counters are always enabled at run time on newer priv specs, as the
-     * CSR has changed from controlling that the counters can be read to
-     * controlling that the counters increment.
-     */
-    if (env->priv_ver > PRIV_VERSION_1_09_1) {
-        return 0;
-    }
-
     if (env->priv < PRV_M) {
         ctr_en &= env->mcounteren;
     }
