@@ -849,7 +849,13 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     bool insn_hook = false;
 
     // Unicorn: end address tells us to stop emulation
-    if (uc_addr_is_exit(uc, ctx->base.pc_next)) {
+    if (ctx->base.pc_next & 1) {
+        /*
+         * IALIGN=16: an odd instruction address is always misaligned,
+         * even with the C extension.
+         */
+        gen_exception_inst_addr_mis(ctx);
+    } else if (uc_addr_is_exit(uc, ctx->base.pc_next)) {
         // Unicorn: We have to exit current execution here.
         dcbase->is_jmp = DISAS_UC_EXIT;
     } else {

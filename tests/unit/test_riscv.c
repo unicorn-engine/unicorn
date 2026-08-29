@@ -55,6 +55,19 @@ static void test_riscv64_nop(void)
     OK(uc_close(uc));
 }
 
+static void test_riscv64_odd_pc(void)
+{
+    uc_engine *uc;
+    const char code[] = "\x13\x00\x00\x00"; // nop
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
+    uc_assert_err(UC_ERR_EXCEPTION,
+                  uc_emu_start(uc, code_start + 1,
+                                code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_close(uc));
+}
+
 static void test_riscv32_until_pc_update(void)
 {
     uc_engine *uc;
@@ -911,6 +924,7 @@ static void test_riscv_priv(void)
 TEST_LIST = {
     {"test_riscv32_nop", test_riscv32_nop},
     {"test_riscv64_nop", test_riscv64_nop},
+    {"test_riscv64_odd_pc", test_riscv64_odd_pc},
     {"test_riscv32_3steps_pc_update", test_riscv32_3steps_pc_update},
     {"test_riscv64_3steps_pc_update", test_riscv64_3steps_pc_update},
     {"test_riscv64_until_at_page_end", test_riscv64_until_at_page_end},
