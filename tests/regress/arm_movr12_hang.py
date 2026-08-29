@@ -26,7 +26,7 @@ class MovHang(regress.RegressTest):
         # svc stops emulation in-band instead. The timeout is only a hang guard,
         # with headroom for a scheduler stall on a loaded machine.
         uc.ctl_request_cache(0x1000)
-        uc.emu_start(0x1000, 0x1008, timeout=10_000)
+        uc.emu_start(0x1000, 0x1008, timeout=10000)
 
         self.assertEqual(0x0, uc.reg_read(UC_ARM_REG_R12))
         self.assertEqual(uc.count, 1)
