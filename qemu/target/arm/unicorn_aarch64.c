@@ -383,6 +383,7 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_ARM64_REG_PSTATE:
             CHECK_REG_TYPE(uint32_t);
             pstate_write(env, *(uint32_t *)value);
+            arm_rebuild_hflags(env);
             break;
         case UC_ARM64_REG_TTBR0_EL1:
             CHECK_REG_TYPE(uint64_t);
