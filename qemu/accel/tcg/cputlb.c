@@ -1797,6 +1797,22 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
 
             if (handled) {
                 uc->invalid_error = UC_ERR_OK;
+                mr = uc->memory_mapping(uc, paddr);
+                if (mr == NULL || !(mr->perms & UC_PROT_EXEC)) {
+                    uc->invalid_addr = paddr;
+                    uc->invalid_error = mr == NULL ? UC_ERR_MAP : UC_ERR_FETCH_PROT;
+                    if (uc->nested_level > 0 && !uc->cpu->stopped) {
+                        cpu_exit(uc->cpu);
+                        cpu_loop_exit_restore(uc->cpu, retaddr);
+                    }
+                    return 0;
+                }
+                tlb_fill(env_cpu(env), addr, size,
+                         access_type, mmu_idx, retaddr);
+                index = tlb_index(env, mmu_idx, addr);
+                entry = tlb_entry(env, mmu_idx, addr);
+                tlb_addr = entry->addr_code;
+                tlb_addr &= ~TLB_INVALID_MASK;
                 tlb_hook_state_restore(env, &hook_state);
             } else {
                 uc->invalid_addr = paddr;

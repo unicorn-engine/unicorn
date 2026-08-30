@@ -1691,6 +1691,53 @@ static void test_x86_lazy_mapping(void)
     OK(uc_close(uc));
 }
 
+static bool test_x86_fetch_prot_mem_protect_callback(uc_engine *uc,
+                                                     uc_mem_type type,
+                                                     uint64_t address, int size,
+                                                     int64_t value,
+                                                     void *user_data)
+{
+    int *hook_count = (int *)user_data;
+    (*hook_count)++;
+
+    TEST_CHECK(type == UC_MEM_FETCH_PROT);
+    TEST_CHECK(address == 0x200000);
+    OK(uc_mem_protect(uc, 0x200000, 0x1000, UC_PROT_ALL));
+
+    return true;
+}
+
+static void test_x86_fetch_prot_mem_protect(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    int hook_count = 0;
+    uint64_t rip = 0;
+    uint64_t rsp = 0x300800;
+    char code[] = "\x48\xb8\x00\x00\x20\x00\x00\x00\x00\x00\xff\xe0";
+    char target[] = "\x90\x90\x90\xf4"; // nop; nop; nop; hlt
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0x100000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x200000, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+    OK(uc_mem_map(uc, 0x300000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x100000, code, sizeof(code) - 1));
+    OK(uc_mem_write(uc, 0x200000, target, sizeof(target) - 1));
+    OK(uc_mem_protect(uc, 0x200000, 0x1000, UC_PROT_READ));
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &rsp));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_FETCH_PROT,
+                   test_x86_fetch_prot_mem_protect_callback, &hook_count, 1,
+                   0));
+
+    OK(uc_emu_start(uc, 0x100000, 0, 0, 100));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &rip));
+    TEST_CHECK(hook_count == 1);
+    TEST_CHECK(rip == 0x200004);
+
+    OK(uc_hook_del(uc, hook));
+    OK(uc_close(uc));
+}
+
 static void test_x86_16_incorrect_ip_cb(uc_engine *uc, uint64_t address,
                                         uint32_t size, void *data)
 {
@@ -2787,6 +2834,7 @@ TEST_LIST = {
 
 #endif
     {"test_x86_lazy_mapping", test_x86_lazy_mapping},
+    {"test_x86_fetch_prot_mem_protect", test_x86_fetch_prot_mem_protect},
     {"test_x86_16_incorrect_ip", test_x86_16_incorrect_ip},
     {"test_x86_mmu", test_x86_mmu},
     {"test_x86_read_virtual", test_x86_read_virtual},
