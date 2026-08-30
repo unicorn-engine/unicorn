@@ -944,6 +944,31 @@ static void test_arm64_pauth_ctl(void)
     OK(uc_close(uc));
 }
 
+static void test_arm64_context(void)
+{
+    for (int model = 0; model < UC_CPU_ARM64_ENDING; model++) {
+        uc_engine *uc;
+        uc_engine *uc2;
+        uc_context *ctx;
+
+        OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
+        OK(uc_ctl_set_cpu_model(uc, model));
+
+        OK(uc_context_alloc(uc, &ctx));
+        OK(uc_context_save(uc, ctx));
+
+        OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc2));
+        OK(uc_ctl_set_cpu_model(uc2, model));
+
+        OK(uc_context_restore(uc2, ctx));
+
+        // One of these will abort on a double-free for bug-afflicted CPU models.
+        OK(uc_context_free(ctx));
+        OK(uc_close(uc));
+        OK(uc_close(uc2));
+    }
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -965,4 +990,5 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_pc_guarantee", test_arm64_pc_guarantee},
              {"test_arm64_pauth_vanilla", test_arm64_pauth_vanilla},
              {"test_arm64_pauth_ctl", test_arm64_pauth_ctl},
+             {"test_arm64_context", test_arm64_context},
              {NULL, NULL}};

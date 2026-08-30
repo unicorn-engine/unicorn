@@ -533,6 +533,11 @@ void uc_init(struct uc_struct *uc)
     uc->release = arm64_release;
     uc->cpus_init = arm64_cpus_init;
     uc->insn_hook_validate = arm64_insn_hook_validate;
+    // n.b. The following results in memcpy of pointers from CPUARMState to
+    // context buffers and vice versa.  That is currently safe for AArch64
+    // because none of the pointer fields of CPUARMState are allocated for any
+    // of the AArch64 CPUs, and none of reg_read/reg_write, when called on a
+    // context, accesses fields including and beyond cpu_watchpoint.
     uc->cpu_context_size = offsetof(CPUARMState, cpu_watchpoint);
     uc->pauth_sign = arm64_pauth_sign;
     uc->pauth_strip = arm64_pauth_strip;
