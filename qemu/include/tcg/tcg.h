@@ -818,6 +818,9 @@ struct TCGContext {
 
     // loongarch 
     bool use_lsx_instructions;
+
+    /* Exit to translator on overflow. */
+    sigjmp_buf jmp_trans;
 };
 
 static inline size_t temp_idx(TCGContext *tcg_ctx, TCGTemp *ts)
