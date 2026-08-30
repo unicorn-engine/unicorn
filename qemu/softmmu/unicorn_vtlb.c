@@ -67,7 +67,26 @@ bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
     struct hook *hook;
     HOOK_FOREACH_VAR_DECLARE;
 
-    cpu_restore_state(cs, retaddr, false);
+    /*
+     * Unicorn: Do NOT unconditionally restore CPU state here.
+     *
+     * cpu_restore_state() rolls env back to the instruction boundary of the
+     * faulting access (it calls the target restore_state_to_opc()). On a
+     * successful fill the faulting access is then resumed in place inside the
+     * same TB, so any env mutation done here leaks into the continued
+     * execution. On MIPS this is fatal: restore_state_to_opc() re-applies the
+     * branch-delay hflags (MIPS_HFLAG_B / MIPS_HFLAG_BDS32 etc.) that were
+     * saved for a delay-slot instruction. Those bits are normally never present
+     * in the runtime hflags (they live only in the per-insn start data), so
+     * nothing ever clears them again, and the next TB (the branch target) is
+     * then translated as if it were sitting in a delay slot, raising a spurious
+     * EXCP_RI ("branch in delay / forbidden slot").
+     *
+     * The CPU own tlb_fill handlers (e.g. mips_cpu_tlb_fill) only restore
+     * state on the exception path. We mirror that: the exception path below
+     * restores via cpu_loop_exit_restore(), and the TLB_FILL hooks only need
+     * the faulting address (passed explicitly), not rolled-back register state.
+     */
 
     HOOK_FOREACH(uc, hook, UC_HOOK_TLB_FILL) {
         if (hook->to_delete) {
