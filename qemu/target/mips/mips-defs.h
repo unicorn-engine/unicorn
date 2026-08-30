@@ -53,6 +53,7 @@
 #define INSN_LOONGSON2F   0x0002000000000000ULL
 #define INSN_VR54XX       0x0004000000000000ULL
 #define INSN_R5900        0x0008000000000000ULL
+#define INSN_OCTEON       0x0010000000000000ULL
 /*
  *   bits 56-63: vendor-specific ASEs
  */
@@ -78,6 +79,9 @@
 /* MIPS Technologies "Release 2" */
 #define CPU_MIPS32R2    (CPU_MIPS32 | ISA_MIPS32R2)
 #define CPU_MIPS64R2    (CPU_MIPS64 | CPU_MIPS32R2 | ISA_MIPS64R2)
+
+/* Cavium Octeon (cnMIPS) — MIPS64R2 plus Octeon-specific ISA extensions. */
+#define CPU_OCTEON      (CPU_MIPS64R2 | INSN_OCTEON)
 
 /* MIPS Technologies "Release 3" */
 #define CPU_MIPS32R3    (CPU_MIPS32R2 | ISA_MIPS32R3)

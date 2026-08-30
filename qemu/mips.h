@@ -2380,6 +2380,7 @@
 #define helper_rdhwr_cpunum helper_rdhwr_cpunum_mips
 #define helper_rdhwr_synci_step helper_rdhwr_synci_step_mips
 #define helper_rdhwr_cc helper_rdhwr_cc_mips
+#define helper_rdhwr_cvmcount helper_rdhwr_cvmcount_mips
 #define helper_rdhwr_ccres helper_rdhwr_ccres_mips
 #define helper_rdhwr_performance helper_rdhwr_performance_mips
 #define helper_rdhwr_xnp helper_rdhwr_xnp_mips

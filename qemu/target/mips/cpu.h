@@ -739,6 +739,12 @@ struct CPUMIPSState {
  * CP0 Register 9
  */
     int32_t CP0_Count;
+    /*
+     * Octeon CvmCount: a 64-bit free-running core-cycle counter read by
+     * rdhwr rt, $31. No CP0 cycle timer runs in this configuration, so it is
+     * advanced monotonically on each read (see helper_rdhwr_cvmcount).
+     */
+    uint64_t CvmCount;
     uint32_t CP0_SAARI;
 #define CP0SAARI_TARGET 0    /*  5..0  */
     uint64_t CP0_SAAR[2];

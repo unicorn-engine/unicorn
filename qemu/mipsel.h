@@ -2380,6 +2380,7 @@
 #define helper_rdhwr_cpunum helper_rdhwr_cpunum_mipsel
 #define helper_rdhwr_synci_step helper_rdhwr_synci_step_mipsel
 #define helper_rdhwr_cc helper_rdhwr_cc_mipsel
+#define helper_rdhwr_cvmcount helper_rdhwr_cvmcount_mipsel
 #define helper_rdhwr_ccres helper_rdhwr_ccres_mipsel
 #define helper_rdhwr_performance helper_rdhwr_performance_mipsel
 #define helper_rdhwr_xnp helper_rdhwr_xnp_mipsel
