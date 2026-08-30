@@ -2632,6 +2632,19 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     va_start(args, control);
 
     switch (type) {
+    case UC_CTL_UC_ARCHITECTURAL_EXCEPTIONS: {
+        if (uc->arch != UC_ARCH_RISCV) {
+            err = UC_ERR_ARCH;
+        } else if (rw == UC_CTL_IO_READ) {
+            int *enabled = va_arg(args, int *);
+            *enabled = uc->architectural_exceptions;
+        } else if (rw == UC_CTL_IO_WRITE) {
+            uc->architectural_exceptions = !!va_arg(args, int);
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
     case UC_CTL_UC_MODE: {
         if (rw == UC_CTL_IO_READ) {
             int *pmode = va_arg(args, int *);

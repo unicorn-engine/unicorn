@@ -605,6 +605,11 @@ typedef enum uc_control_type {
     // controle if context_save/restore should work with snapshots
     // Write: @args = (int)
     UC_CTL_CONTEXT_MODE,
+    // Let the target CPU perform architectural exception entry before
+    // UC_HOOK_INTR is invoked. Disabled by default for compatibility.
+    // Write: @args = (int)
+    // Read: @args = (int*)
+    UC_CTL_UC_ARCHITECTURAL_EXCEPTIONS,
 } uc_control_type;
 
 /*
@@ -688,6 +693,10 @@ See sample_ctl.c for a detailed example.
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TCG_BUFFER_SIZE, 1), (size))
 #define uc_ctl_context_mode(uc, mode)                                          \
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_CONTEXT_MODE, 1), (mode))
+#define uc_ctl_get_architectural_exceptions(uc, enabled)                       \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_ARCHITECTURAL_EXCEPTIONS, 1), (enabled))
+#define uc_ctl_set_architectural_exceptions(uc, enabled)                       \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_ARCHITECTURAL_EXCEPTIONS, 1), (enabled))
 
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
