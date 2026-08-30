@@ -1080,9 +1080,9 @@ static void tcg_out_movi(TCGContext *s, TCGType type, TCGReg rd,
         opc = I3405_MOVZ;
     }
     s0 = ctz64(t0) & (63 & -16);
-    t1 = t0 & ~(0xffffUL << s0);
+    t1 = t0 & ~(0xffffULL << s0);
     s1 = ctz64(t1) & (63 & -16);
-    t2 = t1 & ~(0xffffUL << s1);
+    t2 = t1 & ~(0xffffULL << s1);
     if (t2 == 0) {
         tcg_out_insn_3405(s, opc, type, rd, t0 >> s0, s0);
         if (t1 != 0) {
@@ -1503,14 +1503,22 @@ static inline void tcg_out_addsub2(TCGContext *s, TCGType ext, TCGReg rl,
 
 static inline void tcg_out_mb(TCGContext *s, TCGArg a0)
 {
-    static const uint32_t sync[] = {
-        [0 ... TCG_MO_ALL]            = DMB_ISH | DMB_LD | DMB_ST,
-        [TCG_MO_ST_ST]                = DMB_ISH | DMB_ST,
-        [TCG_MO_LD_LD]                = DMB_ISH | DMB_LD,
-        [TCG_MO_LD_ST]                = DMB_ISH | DMB_LD,
-        [TCG_MO_LD_ST | TCG_MO_LD_LD] = DMB_ISH | DMB_LD,
-    };
-    tcg_out32(s, sync[a0 & TCG_MO_ALL]);
+    /* Use switch instead of array range initializers for MSVC compatibility */
+    uint32_t sync_val;
+    switch (a0 & TCG_MO_ALL) {
+    case TCG_MO_ST_ST:
+        sync_val = DMB_ISH | DMB_ST;
+        break;
+    case TCG_MO_LD_LD:
+    case TCG_MO_LD_ST:
+    case TCG_MO_LD_ST | TCG_MO_LD_LD:
+        sync_val = DMB_ISH | DMB_LD;
+        break;
+    default:
+        sync_val = DMB_ISH | DMB_LD | DMB_ST;
+        break;
+    }
+    tcg_out32(s, sync_val);
 }
 
 static void tcg_out_cltz(TCGContext *s, TCGType ext, TCGReg d,
@@ -2895,6 +2903,9 @@ typedef struct {
     uint8_t fde_reg_ofs[24];
 } DebugFrame;
 
+#if !defined(__ELF__)
+    /* Host machine without ELF. */
+#else
 #define ELF_HOST_MACHINE EM_AARCH64
 
 static const DebugFrame debug_frame = {
@@ -2933,3 +2944,4 @@ void tcg_register_jit(TCGContext *s, void *buf, size_t buf_size)
 {
     tcg_register_jit_int(s, buf, buf_size, &debug_frame, sizeof(debug_frame));
 }
+#endif /* __ELF__ */

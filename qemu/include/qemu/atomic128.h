@@ -108,8 +108,8 @@ static inline void atomic16_set(Int128 *ptr, Int128 val)
 }
 
 # define HAVE_ATOMIC128 1
-#elif defined(__aarch64__)
-/* We can do better than cmpxchg for AArch64.  */
+#elif defined(__aarch64__) && !defined(_MSC_VER)
+/* We can do better than cmpxchg for AArch64 (GCC/Clang only - uses inline asm).  */
 static inline Int128 atomic16_read(Int128 *ptr)
 {
     uint64_t l, h;

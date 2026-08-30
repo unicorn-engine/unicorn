@@ -117,7 +117,7 @@ DEF(nor_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_nor_i32))
 DEF(clz_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_clz_i32))
 DEF(ctz_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_ctz_i32))
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(_M_ARM64)
 DEF(ctpop_i32, 1, 1, 0, 0)
 #else
 DEF(ctpop_i32, 1, 1, 0, IMPL(TCG_TARGET_HAS_ctpop_i32))
@@ -199,7 +199,7 @@ DEF(nor_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_nor_i64))
 DEF(clz_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_clz_i64))
 DEF(ctz_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_ctz_i64))
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(_M_ARM64)
 DEF(ctpop_i64, 1, 1, 0, IMPL64)
 #else
 DEF(ctpop_i64, 1, 1, 0, IMPL64 | IMPL(TCG_TARGET_HAS_ctpop_i64))

@@ -258,6 +258,69 @@ jobs:
           path: ./${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
 
+  Windows-ARM64:
+    runs-on: windows-11-arm
+    name: ${{ matrix.config.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+            name: 'windows-arm64 MSVC shared',
+            shared: 'yes',
+            artifact: 'windows-msvc-arm64-shared.7z',
+            archiver: '7z a',
+            generators: 'Ninja'
+          }
+          - {
+            name: 'windows-arm64 MSVC static',
+            shared: 'no',
+            artifact: 'windows-msvc-arm64-static.7z',
+            archiver: '7z a',
+            generators: 'Ninja'
+          }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: '🛠️ Win ARM64 MSVC setup'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+
+      - name: '🚧 Win ARM64 build'
+        shell: bash
+        run: |
+          choco install ninja
+          ninja --version
+          cmake --version
+          mkdir build
+          mkdir instdir
+          cmake \
+            -S . \
+            -B . \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+            -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
+          cmake --build . --config ${{ env.BUILD_TYPE }}
+          cmake --install . --strip --config ${{ env.BUILD_TYPE }}
+          ctest -VV -C ${{ env.BUILD_TYPE }}
+
+      - name: '📦 Pack artifact'
+        if: always()
+        shell: bash
+        working-directory: instdir
+        run: |
+          ls -laR
+          ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} . ../test*
+
+      - name: '📤 Upload artifact'
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./${{ matrix.config.artifact }}
+          name: ${{ matrix.config.artifact }}
+
   Macos:
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.name }} - ${{ matrix.compiler }}
