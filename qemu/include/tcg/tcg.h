@@ -720,7 +720,7 @@ struct TCGContext {
     void *tb_ret_addr;
 
     /* target/riscv/translate.c */
-    TCGv cpu_gpr[32], cpu_pc; // also target/mips/translate.c
+    TCGv cpu_gpr[32], cpu_pc; // also target/mips/translate.c, target/ppc/translate.c
     TCGv_i64 cpu_fpr[32]; /* assume F and D extensions */
     TCGv load_res;
     TCGv load_val;
@@ -803,6 +803,22 @@ struct TCGContext {
     // Used to store the start of current instrution.
     uint64_t pc_start;
 
+    // target/ppc/translate.c
+    TCGv cpu_gprh[32];
+    TCGv_i32 cpu_crf[8];
+    TCGv cpu_nip;
+    TCGv cpu_msr;
+    TCGv cpu_ctr;
+    TCGv cpu_lr;
+#if defined(TARGET_PPC64)
+    TCGv cpu_cfar;
+#endif
+    TCGv cpu_xer, cpu_so, cpu_ov, cpu_ca, cpu_ov32, cpu_ca32;
+    TCGv cpu_reserve;
+    TCGv cpu_reserve_val;
+    TCGv cpu_fpscr;
+    TCGv_i32 cpu_access_type;
+
     // target/s390x/translate.c
     TCGv_i64 psw_addr;
     TCGv_i64 psw_mask;
@@ -813,6 +829,9 @@ struct TCGContext {
     TCGv_i64 cc_dst;
     TCGv_i64 cc_vr;
 
+    char ppc_cpu_reg_names[10 * 3 + 22 * 4   /* GPR */
+                           + 10 * 4 + 22 * 5 /* SPE GPRh */
+                           + 8 * 5           /* CRF */];
     char s390x_cpu_reg_names[16][4]; // renamed from original cpu_reg_names[][] to avoid name clash with m68k
     TCGv_i64 regs[16];
 
