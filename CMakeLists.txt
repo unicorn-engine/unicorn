@@ -1508,7 +1508,7 @@ if(UNICORN_BUILD_TESTS)
         )
         endforeach()
 
-        foreach(TEST_FILE ${UNICORN_TEST_FILE})
+    foreach(TEST_FILE ${UNICORN_TEST_FILE})
         add_executable(${TEST_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/${TEST_FILE}.c
         )
@@ -1538,6 +1538,20 @@ if(UNICORN_BUILD_TESTS)
             target_compile_definitions(${TEST_FILE} PRIVATE TARGET_READ_INLINED)
         endif()
     endforeach()
+    if(NOT ANDROID_ABI)
+        include(ProcessorCount)
+        ProcessorCount(UNICORN_CTEST_PARALLEL_LEVEL)
+        if(UNICORN_CTEST_PARALLEL_LEVEL EQUAL 0)
+            set(UNICORN_CTEST_PARALLEL_LEVEL 1)
+        endif()
+        add_custom_target(test_parallel
+            COMMAND ${CMAKE_CTEST_COMMAND}
+                --parallel ${UNICORN_CTEST_PARALLEL_LEVEL}
+                --output-on-failure
+            USES_TERMINAL
+        )
+        add_dependencies(test_parallel ${UNICORN_TEST_FILE})
+    endif()
 endif()
 
 
