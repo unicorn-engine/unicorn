@@ -1496,6 +1496,8 @@ if(UNICORN_FUZZ)
 endif()
 
 if(UNICORN_BUILD_TESTS)
+    include(cmake/Acutest.cmake)
+
     enable_testing()
     foreach(SAMPLE_FILE ${UNICORN_SAMPLE_FILE})
         add_executable(${SAMPLE_FILE}
@@ -1506,7 +1508,7 @@ if(UNICORN_BUILD_TESTS)
         )
         endforeach()
 
-        foreach(TEST_FILE ${UNICORN_TEST_FILE})
+    foreach(TEST_FILE ${UNICORN_TEST_FILE})
         add_executable(${TEST_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/${TEST_FILE}.c
         )
@@ -1516,16 +1518,40 @@ if(UNICORN_BUILD_TESTS)
         target_link_libraries(${TEST_FILE} PRIVATE
             ${SAMPLES_LIB}
         )
-        add_test(${TEST_FILE} ${TEST_FILE})
         if(ANDROID_ABI)
             file(APPEND ${CMAKE_BINARY_DIR}/adb.sh "adb push ${TEST_FILE} /data/local/tmp/build/\n")
             file(APPEND ${CMAKE_BINARY_DIR}/adb.sh "adb shell \"chmod +x /data/local/tmp/build/${TEST_FILE}\"\n")
             file(APPEND ${CMAKE_BINARY_DIR}/adb.sh "adb shell \'LD_LIBRARY_PATH=/data/local/tmp/build:$LD_LIBRARY_PATH /data/local/tmp/build/${TEST_FILE}\' || exit -1\n")
         endif()
+        string(REGEX REPLACE "^test_" "" TEST_ARCHITECTURE "${TEST_FILE}")
+        set(TEST_ALLOW_EMPTY FALSE)
+        if(TEST_FILE STREQUAL "test_tricore")
+            set(TEST_ALLOW_EMPTY TRUE)
+        endif()
+        unicorn_discover_acutest(
+            ${TEST_FILE}
+            900
+            "unit;${TEST_ARCHITECTURE}"
+            ${TEST_ALLOW_EMPTY}
+        )
         if (UNICORN_TARGET_ARCH STREQUAL "aarch64" OR UNICORN_TARGET_ARCH STREQUAL "ppc")
             target_compile_definitions(${TEST_FILE} PRIVATE TARGET_READ_INLINED)
         endif()
     endforeach()
+    if(NOT ANDROID_ABI)
+        include(ProcessorCount)
+        ProcessorCount(UNICORN_CTEST_PARALLEL_LEVEL)
+        if(UNICORN_CTEST_PARALLEL_LEVEL EQUAL 0)
+            set(UNICORN_CTEST_PARALLEL_LEVEL 1)
+        endif()
+        add_custom_target(test_parallel
+            COMMAND ${CMAKE_CTEST_COMMAND}
+                --parallel ${UNICORN_CTEST_PARALLEL_LEVEL}
+                --output-on-failure
+            USES_TERMINAL
+        )
+        add_dependencies(test_parallel ${UNICORN_TEST_FILE})
+    endif()
 endif()
 
 
