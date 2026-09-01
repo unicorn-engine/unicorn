@@ -465,6 +465,126 @@ static void test_uc_emu_stop_set_ip(void)
     OK(uc_close(uc));
 }
 
+typedef enum TestPcWriteMethod {
+    TEST_PC_WRITE_SINGLE,
+    TEST_PC_WRITE_BATCH,
+    TEST_PC_WRITE_BATCH2,
+    TEST_PC_WRITE_SIZED,
+    TEST_PC_WRITE_METHOD_COUNT,
+} TestPcWriteMethod;
+
+typedef struct TestPcWriteData {
+    TestPcWriteMethod method;
+    uint32_t count;
+} TestPcWriteData;
+
+static void test_uc_set_ip_callback(uc_engine *uc, uint64_t address,
+                                   uint32_t size, void *user_data)
+{
+    TestPcWriteData *data = (TestPcWriteData *)user_data;
+    uint64_t rip = code_start + 0xb;
+    int regs[] = { UC_X86_REG_RIP };
+    void *values[] = { &rip };
+    const void *const_values[] = { &rip };
+    size_t sizes[] = { sizeof(rip) };
+
+    if (address != code_start + 0x7) {
+        return;
+    }
+    data->count++;
+    switch (data->method) {
+    case TEST_PC_WRITE_SINGLE:
+        OK(uc_reg_write(uc, UC_X86_REG_RIP, &rip));
+        break;
+    case TEST_PC_WRITE_BATCH:
+        OK(uc_reg_write_batch(uc, regs, values, 1));
+        break;
+    case TEST_PC_WRITE_BATCH2:
+        OK(uc_reg_write_batch2(uc, regs, const_values, sizes, 1));
+        break;
+    case TEST_PC_WRITE_SIZED:
+        OK(uc_reg_write2(uc, UC_X86_REG_RIP, &rip, sizes));
+        break;
+    default:
+        TEST_CHECK(false);
+        break;
+    }
+}
+
+static void test_uc_set_ip_write_apis(void)
+{
+    const char code[] =
+        "\x48\x31\xc0" /* xor rax, rax */
+        "\x90"         /* nop */
+        "\x48\xff\xc0" /* inc rax */
+        "\x90"         /* callback changes RIP */
+        "\x48\xff\xc0" /* must not execute */
+        "\x90";        /* destination */
+    TestPcWriteMethod method;
+
+    for (method = TEST_PC_WRITE_SINGLE;
+         method < TEST_PC_WRITE_METHOD_COUNT; method++) {
+        TestPcWriteData data = { .method = method };
+        uc_engine *uc;
+        uc_hook hook;
+        uint64_t rax;
+        uint64_t rip;
+
+        uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code,
+                         sizeof(code) - 1);
+        OK(uc_hook_add(uc, &hook, UC_HOOK_CODE,
+                       test_uc_set_ip_callback, &data, 1, 0));
+        OK(uc_emu_start(uc, code_start, code_start + 0xb, 0, 0));
+        OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+        OK(uc_reg_read(uc, UC_X86_REG_RIP, &rip));
+        TEST_CHECK(rax == 1);
+        TEST_CHECK(rip == code_start + 0xb);
+        TEST_CHECK(data.count == 1);
+        OK(uc_close(uc));
+    }
+}
+
+typedef struct TestContextRestoreData {
+    uc_context *context;
+    uint32_t count;
+} TestContextRestoreData;
+
+static void test_context_nested_callback(uc_engine *uc, uint64_t address,
+                                        uint32_t size, void *user_data)
+{
+    TestContextRestoreData *data = user_data;
+
+    data->count++;
+    if (data->count == 1) {
+        OK(uc_context_save(uc, data->context));
+        OK(uc_emu_start(uc, code_start + 2, code_start + 3, 0, 0));
+        OK(uc_context_restore(uc, data->context));
+    }
+}
+
+static void test_context_nested_restore(void)
+{
+    const char code[] = { 0x40, 0x90, 0x43 };
+    TestContextRestoreData data = { 0 };
+    uc_engine *uc;
+    uc_hook hook;
+    uint32_t eax;
+    uint32_t ebx;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code));
+    OK(uc_context_alloc(uc, &data.context));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_CODE, test_context_nested_callback,
+                   &data, code_start, code_start));
+    OK(uc_emu_start(uc, code_start, code_start + 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &ebx));
+    TEST_CHECK(data.count == 1);
+    TEST_CHECK(eax == 1);
+    TEST_CHECK(ebx == 0);
+    OK(uc_context_free(data.context));
+    OK(uc_close(uc));
+}
+
 static bool test_tlb_clear_tlb(uc_engine *uc, uint64_t addr, uc_mem_type type,
                                uc_tlb_entry *result, void *user_data)
 {
@@ -647,6 +767,8 @@ TEST_LIST = {
 #endif
     {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
     {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
+    {"test_uc_set_ip_write_apis", test_uc_set_ip_write_apis},
+    {"test_context_nested_restore", test_context_nested_restore},
     {"test_tlb_clear", test_tlb_clear},
     {"test_noexec", test_noexec},
     {"test_add_block_hook", test_add_block_hook},
