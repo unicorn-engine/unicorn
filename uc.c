@@ -1924,8 +1924,14 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 {
     int ret = UC_ERR_OK;
     int i = 0;
+    const unsigned int valid_hook_types = (1U << UC_HOOK_MAX) - 1;
 
     UC_INIT(uc);
+
+    if (type <= 0 || ((unsigned int)type & ~valid_hook_types) != 0) {
+        restore_jit_state(uc);
+        return UC_ERR_HOOK;
+    }
 
     int block_type = type & (UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT);
     if (block_type == (UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT)) {
