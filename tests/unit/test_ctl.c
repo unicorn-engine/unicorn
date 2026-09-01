@@ -209,6 +209,138 @@ static void test_uc_ctl_exits_boundaries(void)
     OK(uc_close(uc));
 }
 
+static void test_uc_register_api_batches(void)
+{
+    const int regs[] = {
+        UC_X86_REG_RAX,
+        UC_X86_REG_XMM0,
+        UC_X86_REG_RIP,
+    };
+    uint64_t rax = UINT64_C(0x0123456789abcdef);
+    uint64_t xmm[2] = {
+        UINT64_C(0x1111222233334444),
+        UINT64_C(0x5555666677778888),
+    };
+    uint64_t rip = code_start + 0x20;
+    void *values[] = { &rax, xmm, &rip };
+    const void *const_values[] = { &rax, xmm, &rip };
+    uint64_t read_rax = 0;
+    uint64_t read_xmm[2] = { 0 };
+    uint64_t read_rip = 0;
+    void *read_values[] = { &read_rax, read_xmm, &read_rip };
+    size_t sizes[] = { sizeof(rax), sizeof(xmm), sizeof(rip) };
+    size_t read_sizes[] = {
+        sizeof(read_rax),
+        sizeof(read_xmm),
+        sizeof(read_rip),
+    };
+    uc_context *context;
+    uc_engine *uc;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+
+    OK(uc_reg_write2(uc, UC_X86_REG_XMM0, xmm, &sizes[1]));
+    read_sizes[1] = sizeof(read_xmm);
+    OK(uc_reg_read2(uc, UC_X86_REG_XMM0, read_xmm, &read_sizes[1]));
+    TEST_CHECK(read_sizes[1] == sizeof(read_xmm));
+    TEST_CHECK(memcmp(read_xmm, xmm, sizeof(xmm)) == 0);
+    read_sizes[1] = sizeof(read_xmm) - 1;
+    read_xmm[0] = UINT64_MAX;
+    read_xmm[1] = UINT64_MAX;
+    uc_assert_err(UC_ERR_OVERFLOW,
+                  uc_reg_read2(uc, UC_X86_REG_XMM0, read_xmm,
+                               &read_sizes[1]));
+    TEST_CHECK(read_xmm[0] == UINT64_MAX && read_xmm[1] == UINT64_MAX);
+
+    OK(uc_reg_write_batch(uc, regs, values, 3));
+    OK(uc_reg_read_batch(uc, regs, read_values, 3));
+    TEST_CHECK(read_rax == rax);
+    TEST_CHECK(memcmp(read_xmm, xmm, sizeof(xmm)) == 0);
+    TEST_CHECK(read_rip == rip);
+
+    rax = UINT64_C(0x8877665544332211);
+    xmm[0] = UINT64_C(0x9999aaaabbbbcccc);
+    xmm[1] = UINT64_C(0xddddeeeeffff0000);
+    rip = code_start + 0x40;
+    sizes[0] = sizeof(rax);
+    sizes[1] = sizeof(xmm);
+    sizes[2] = sizeof(rip);
+    OK(uc_reg_write_batch2(uc, regs, const_values, sizes, 3));
+    memset(read_values[0], 0, sizeof(read_rax));
+    memset(read_values[1], 0, sizeof(read_xmm));
+    memset(read_values[2], 0, sizeof(read_rip));
+    read_sizes[0] = sizeof(read_rax);
+    read_sizes[1] = sizeof(read_xmm);
+    read_sizes[2] = sizeof(read_rip);
+    OK(uc_reg_read_batch2(uc, regs, read_values, read_sizes, 3));
+    TEST_CHECK(read_rax == rax);
+    TEST_CHECK(memcmp(read_xmm, xmm, sizeof(xmm)) == 0);
+    TEST_CHECK(read_rip == rip);
+
+    OK(uc_context_alloc(uc, &context));
+    OK(uc_context_save(uc, context));
+    rax = UINT64_C(0x1020304050607080);
+    xmm[0] = UINT64_C(0x0f1e2d3c4b5a6978);
+    xmm[1] = UINT64_C(0x8796a5b4c3d2e1f0);
+    rip = code_start + 0x60;
+    OK(uc_context_reg_write(context, UC_X86_REG_RAX, &rax));
+    OK(uc_context_reg_read(context, UC_X86_REG_RAX, &read_rax));
+    TEST_CHECK(read_rax == rax);
+    sizes[1] = sizeof(xmm);
+    OK(uc_context_reg_write2(context, UC_X86_REG_XMM0, xmm, &sizes[1]));
+    read_sizes[1] = sizeof(read_xmm);
+    OK(uc_context_reg_read2(context, UC_X86_REG_XMM0, read_xmm,
+                            &read_sizes[1]));
+    TEST_CHECK(memcmp(read_xmm, xmm, sizeof(xmm)) == 0);
+
+    rax = UINT64_C(0x2131415161718191);
+    xmm[0] = UINT64_C(0x123456789abcdef0);
+    xmm[1] = UINT64_C(0xfedcba9876543210);
+    rip = code_start + 0x80;
+
+    OK(uc_context_reg_write_batch(context, regs, values, 3));
+    read_rax = 0;
+    memset(read_xmm, 0, sizeof(read_xmm));
+    read_rip = 0;
+
+    OK(uc_context_reg_read_batch(context, regs, read_values, 3));
+    TEST_CHECK(read_rax == rax);
+    TEST_CHECK(memcmp(read_xmm, xmm, sizeof(xmm)) == 0);
+    TEST_CHECK(read_rip == rip);
+
+    rax = UINT64_C(0x31415161718191a1);
+    xmm[0] = UINT64_C(0xa1b2c3d4e5f60718);
+    xmm[1] = UINT64_C(0x81706f5e4d3c2b1a);
+    rip = code_start + 0xa0;
+    sizes[0] = sizeof(rax);
+    sizes[1] = sizeof(xmm);
+    sizes[2] = sizeof(rip);
+
+    OK(uc_context_reg_write_batch2(context, regs, const_values, sizes, 3));
+    read_rax = 0;
+    memset(read_xmm, 0, sizeof(read_xmm));
+    read_rip = 0;
+    read_sizes[0] = sizeof(read_rax);
+    read_sizes[1] = sizeof(read_xmm);
+    read_sizes[2] = sizeof(read_rip);
+
+    OK(uc_context_reg_read_batch2(context, regs, read_values, read_sizes, 3));
+    TEST_CHECK(read_rax == rax);
+    TEST_CHECK(memcmp(read_xmm, xmm, sizeof(xmm)) == 0);
+    TEST_CHECK(read_rip == rip);
+
+    OK(uc_context_restore(uc, context));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &read_rax));
+    OK(uc_reg_read(uc, UC_X86_REG_XMM0, read_xmm));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &read_rip));
+    TEST_CHECK(read_rax == rax);
+    TEST_CHECK(memcmp(read_xmm, xmm, sizeof(xmm)) == 0);
+    TEST_CHECK(read_rip == rip);
+
+    OK(uc_context_free(context));
+    OK(uc_close(uc));
+}
+
 double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
 {
     int64_t t1, t2;
@@ -755,6 +887,7 @@ TEST_LIST = {
     {"test_uc_ctl_exits", test_uc_ctl_exits},
     {"test_uc_invalid_hook_types", test_uc_invalid_hook_types},
     {"test_uc_ctl_exits_boundaries", test_uc_ctl_exits_boundaries},
+    {"test_uc_register_api_batches", test_uc_register_api_batches},
     {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
     {"test_uc_ctl_tb_cache_at_zero", test_uc_ctl_tb_cache_at_zero},
 #ifdef UNICORN_HAS_ARM
