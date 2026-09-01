@@ -2804,6 +2804,10 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     case UC_CTL_UC_USE_EXITS: {
         if (rw == UC_CTL_IO_WRITE) {
             int use_exits = va_arg(args, int);
+
+            if (!use_exits && uc->ctl_exits != NULL) {
+                g_tree_remove_all(uc->ctl_exits);
+            }
             uc->use_exits = use_exits;
         } else {
             err = UC_ERR_ARG;
