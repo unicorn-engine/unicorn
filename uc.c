@@ -1732,6 +1732,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, uint64_t size,
     uint64_t pc;
     uint64_t count, len;
     bool remove_exec = false;
+    bool add_exec = false;
 
     UC_INIT(uc);
 
@@ -1792,6 +1793,13 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, uint64_t size,
                 ((perms & UC_PROT_EXEC) == 0)) {
                 remove_exec = true;
             }
+
+            // will this add EXEC permission?
+            if (((mr->perms & UC_PROT_EXEC) == 0) &&
+                ((perms & UC_PROT_EXEC) != 0)) {
+                add_exec = true;
+            }
+
             mr->perms = perms;
             uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
 
@@ -1807,6 +1815,16 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, uint64_t size,
 
         count += len;
         addr += len;
+    }
+
+    // If EXEC permission is added, the TLB may hold stale write entries for
+    // this range that were filled while the page was non-executable. Those
+    // entries lack the TLB_NOTDIRTY flag (which is only set for executable
+    // pages), so a write to now-executable code would take the fast path and
+    // fail to invalidate any TBs translated from it. Flush the TLB to force
+    // those entries to be re-filled with TLB_NOTDIRTY set.
+    if (add_exec) {
+        uc->tcg_flush_tlb(uc);
     }
 
     // if EXEC permission is removed, then quit TB and continue at the same
