@@ -681,6 +681,602 @@ static void test_tlbdirty_exec(void)
     OK(uc_close(uc));
 }
 
+/*
+ * Memory protection hooks, see
+ * https://github.com/unicorn-engine/unicorn/issues/2368
+ *
+ * Returning true from a UC_HOOK_MEM_*_PROT callback lets the access go ahead,
+ * whether or not the callback changed the page permissions. Returning false
+ * stops emulation with the matching UC_ERR_*_PROT error.
+ */
+#define PROT_CODE_ADDR 0x1000
+#define PROT_DATA_ADDR 0x2000
+
+typedef struct {
+    int count;
+    uc_mem_type type;
+    uint64_t address;
+    // When non-zero, the callback applies these permissions to the page
+    uint32_t new_perms;
+    // When true, the callback unmaps the page
+    bool unmap;
+    // When true, the callback maps the page with UC_PROT_ALL
+    bool map;
+    bool ret;
+} mem_prot_hook_ctx;
+
+static bool test_mem_prot_hook_cb(uc_engine *uc, uc_mem_type type,
+                                  uint64_t address, int size, int64_t value,
+                                  void *user_data)
+{
+    mem_prot_hook_ctx *ctx = (mem_prot_hook_ctx *)user_data;
+
+    // Fetches report once per byte, keep the first fault
+    if (ctx->count++ == 0) {
+        ctx->type = type;
+        ctx->address = address;
+    }
+    if (ctx->unmap) {
+        OK(uc_mem_unmap(uc, address & ~0xfffULL, 0x1000));
+    } else if (ctx->map) {
+        OK(uc_mem_map(uc, address & ~0xfffULL, 0x1000, UC_PROT_ALL));
+    } else if (ctx->new_perms) {
+        OK(uc_mem_protect(uc, address & ~0xfffULL, 0x1000, ctx->new_perms));
+    }
+    return ctx->ret;
+}
+
+// Runs x86-32 code at PROT_CODE_ADDR with a data page at PROT_DATA_ADDR
+// mapped with data_perms and filled with data. The engine is returned open
+// so the caller can inspect it.
+static uc_err test_mem_prot_run(uc_engine **uc, const char *code,
+                                size_t code_len, uint32_t data_perms,
+                                const char *data, size_t data_len,
+                                uint64_t until, int hook_type,
+                                mem_prot_hook_ctx *ctx)
+{
+    uc_hook hook;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, uc));
+    OK(uc_mem_map(*uc, PROT_CODE_ADDR, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(*uc, PROT_DATA_ADDR, 0x1000, data_perms));
+    OK(uc_mem_write(*uc, PROT_CODE_ADDR, code, code_len));
+    if (data_len) {
+        OK(uc_mem_write(*uc, PROT_DATA_ADDR, data, data_len));
+    }
+    if (hook_type) {
+        OK(uc_hook_add(*uc, &hook, hook_type, test_mem_prot_hook_cb, ctx, 1,
+                       0));
+    }
+    return uc_emu_start(*uc, PROT_CODE_ADDR, until, 0, 0);
+}
+
+// mov eax, [0x2000]
+static const char prot_read_code[] = "\xa1\x00\x20\x00\x00";
+// mov dword [0x2000], 0x12345678
+static const char prot_write_code[] =
+    "\xc7\x05\x00\x20\x00\x00\x78\x56\x34\x12";
+// mov eax, 0x2000; jmp eax
+static const char prot_fetch_code[] = "\xb8\x00\x20\x00\x00\xff\xe0";
+// mov ebx, 0x42
+static const char prot_fetch_target[] = "\xbb\x42\x00\x00\x00";
+static const char prot_data[] = "\x78\x56\x34\x12";
+
+static void test_mem_read_prot_hook(uint32_t new_perms, bool ret,
+                                    uc_err expected_err)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+    uint32_t eax = 0;
+
+    ctx.new_perms = new_perms;
+    ctx.ret = ret;
+    uc_assert_err(expected_err,
+                  test_mem_prot_run(&uc, prot_read_code,
+                                    sizeof(prot_read_code) - 1, UC_PROT_NONE,
+                                    prot_data, sizeof(prot_data) - 1,
+                                    PROT_CODE_ADDR + sizeof(prot_read_code) - 1,
+                                    UC_HOOK_MEM_READ_PROT, &ctx));
+    TEST_CHECK(ctx.count == 1);
+    TEST_CHECK(ctx.type == UC_MEM_READ_PROT);
+    TEST_CHECK(ctx.address == PROT_DATA_ADDR);
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == (expected_err == UC_ERR_OK ? 0x12345678 : 0));
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_write_prot_hook(uint32_t new_perms, bool ret,
+                                     uc_err expected_err)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+    uint32_t value = 0;
+
+    ctx.new_perms = new_perms;
+    ctx.ret = ret;
+    uc_assert_err(expected_err,
+                  test_mem_prot_run(
+                      &uc, prot_write_code, sizeof(prot_write_code) - 1,
+                      UC_PROT_READ, NULL, 0,
+                      PROT_CODE_ADDR + sizeof(prot_write_code) - 1,
+                      UC_HOOK_MEM_WRITE_PROT, &ctx));
+    TEST_CHECK(ctx.count == 1);
+    TEST_CHECK(ctx.type == UC_MEM_WRITE_PROT);
+    TEST_CHECK(ctx.address == PROT_DATA_ADDR);
+
+    OK(uc_mem_read(uc, PROT_DATA_ADDR, &value, sizeof(value)));
+    TEST_CHECK(value == (expected_err == UC_ERR_OK ? 0x12345678 : 0));
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_fetch_prot_hook(uint32_t new_perms, bool ret,
+                                     uc_err expected_err)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+    uint32_t ebx = 0;
+
+    ctx.new_perms = new_perms;
+    ctx.ret = ret;
+    uc_assert_err(expected_err,
+                  test_mem_prot_run(
+                      &uc, prot_fetch_code, sizeof(prot_fetch_code) - 1,
+                      UC_PROT_READ, prot_fetch_target,
+                      sizeof(prot_fetch_target) - 1,
+                      PROT_DATA_ADDR + sizeof(prot_fetch_target) - 1,
+                      UC_HOOK_MEM_FETCH_PROT, &ctx));
+    TEST_CHECK(ctx.count >= 1);
+    TEST_CHECK(ctx.type == UC_MEM_FETCH_PROT);
+    TEST_CHECK(ctx.address == PROT_DATA_ADDR);
+
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &ebx));
+    TEST_CHECK(ebx == (expected_err == UC_ERR_OK ? 0x42 : 0));
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_read_prot_hook_allow(void)
+{
+    test_mem_read_prot_hook(0, true, UC_ERR_OK);
+}
+
+static void test_mem_read_prot_hook_grant(void)
+{
+    test_mem_read_prot_hook(UC_PROT_READ | UC_PROT_WRITE, true, UC_ERR_OK);
+}
+
+static void test_mem_read_prot_hook_deny(void)
+{
+    test_mem_read_prot_hook(0, false, UC_ERR_READ_PROT);
+}
+
+static void test_mem_write_prot_hook_allow(void)
+{
+    test_mem_write_prot_hook(0, true, UC_ERR_OK);
+}
+
+static void test_mem_write_prot_hook_grant(void)
+{
+    test_mem_write_prot_hook(UC_PROT_READ | UC_PROT_WRITE, true, UC_ERR_OK);
+}
+
+static void test_mem_write_prot_hook_deny(void)
+{
+    test_mem_write_prot_hook(0, false, UC_ERR_WRITE_PROT);
+}
+
+static void test_mem_fetch_prot_hook_allow(void)
+{
+    test_mem_fetch_prot_hook(0, true, UC_ERR_OK);
+}
+
+static void test_mem_fetch_prot_hook_grant(void)
+{
+    test_mem_fetch_prot_hook(UC_PROT_ALL, true, UC_ERR_OK);
+}
+
+static void test_mem_fetch_prot_hook_deny(void)
+{
+    test_mem_fetch_prot_hook(0, false, UC_ERR_FETCH_PROT);
+}
+
+// Without a hook, every protection fault stops emulation.
+static void test_mem_prot_no_hook(void)
+{
+    uc_engine *uc;
+    uint32_t value = 0;
+
+    uc_assert_err(UC_ERR_READ_PROT,
+                  test_mem_prot_run(&uc, prot_read_code,
+                                    sizeof(prot_read_code) - 1, UC_PROT_NONE,
+                                    prot_data, sizeof(prot_data) - 1,
+                                    PROT_CODE_ADDR + sizeof(prot_read_code) - 1,
+                                    0, NULL));
+    OK(uc_close(uc));
+
+    uc_assert_err(UC_ERR_WRITE_PROT,
+                  test_mem_prot_run(
+                      &uc, prot_write_code, sizeof(prot_write_code) - 1,
+                      UC_PROT_READ, NULL, 0,
+                      PROT_CODE_ADDR + sizeof(prot_write_code) - 1, 0, NULL));
+    OK(uc_mem_read(uc, PROT_DATA_ADDR, &value, sizeof(value)));
+    TEST_CHECK(value == 0);
+    OK(uc_close(uc));
+
+    uc_assert_err(UC_ERR_FETCH_PROT,
+                  test_mem_prot_run(
+                      &uc, prot_fetch_code, sizeof(prot_fetch_code) - 1,
+                      UC_PROT_READ, prot_fetch_target,
+                      sizeof(prot_fetch_target) - 1,
+                      PROT_DATA_ADDR + sizeof(prot_fetch_target) - 1, 0, NULL));
+    OK(uc_close(uc));
+}
+
+// A write accepted by the hook must drop code translated from the page.
+static void test_mem_write_prot_hook_smc(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    mem_prot_hook_ctx ctx = {0};
+    uint32_t eax = 0;
+
+    const char code[] = "\x40"                         // 00: inc eax
+                        "\xc3"                         // 01: ret
+                        "\xe8\xf9\xff\xff\xff"         // 02: call 0x00
+                        "\xc6\x05\x00\x10\x00\x00\x48" // 07: mov [0x1000], 0x48
+                        "\xe8\xed\xff\xff\xff";        // 0e: call 0x00
+    uint32_t esp = PROT_DATA_ADDR + 0x1000;
+
+    ctx.ret = true;
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, PROT_CODE_ADDR, 0x1000, UC_PROT_READ | UC_PROT_EXEC));
+    OK(uc_mem_map(uc, PROT_DATA_ADDR, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+    OK(uc_mem_write(uc, PROT_CODE_ADDR, code, sizeof(code) - 1));
+    OK(uc_reg_write(uc, UC_X86_REG_ESP, &esp));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE_PROT, test_mem_prot_hook_cb,
+                   &ctx, 1, 0));
+    OK(uc_emu_start(uc, PROT_CODE_ADDR + 2, PROT_CODE_ADDR + sizeof(code) - 1,
+                    0, 0));
+
+    // The store turns "inc eax" into "dec eax", so the second call undoes the
+    // first one only if the stale translation was dropped.
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(ctx.count == 1);
+    TEST_CHECK(eax == 0);
+
+    OK(uc_close(uc));
+}
+
+// A hook that unmaps the page and returns true cannot let the access through.
+static void test_mem_read_prot_hook_unmap(void)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+
+    ctx.unmap = true;
+    ctx.ret = true;
+    uc_assert_err(UC_ERR_MAP,
+                  test_mem_prot_run(&uc, prot_read_code,
+                                    sizeof(prot_read_code) - 1, UC_PROT_NONE,
+                                    prot_data, sizeof(prot_data) - 1,
+                                    PROT_CODE_ADDR + sizeof(prot_read_code) - 1,
+                                    UC_HOOK_MEM_READ_PROT, &ctx));
+    TEST_CHECK(ctx.count == 1);
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_write_prot_hook_unmap(void)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+
+    ctx.unmap = true;
+    ctx.ret = true;
+    uc_assert_err(UC_ERR_MAP,
+                  test_mem_prot_run(
+                      &uc, prot_write_code, sizeof(prot_write_code) - 1,
+                      UC_PROT_READ, NULL, 0,
+                      PROT_CODE_ADDR + sizeof(prot_write_code) - 1,
+                      UC_HOOK_MEM_WRITE_PROT, &ctx));
+    TEST_CHECK(ctx.count == 1);
+
+    OK(uc_close(uc));
+}
+
+// The hook may unmap the page it was called for during a fetch too.
+static void test_mem_fetch_prot_hook_unmap(void)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+
+    ctx.unmap = true;
+    ctx.ret = true;
+    uc_assert_err(UC_ERR_MAP,
+                  test_mem_prot_run(
+                      &uc, prot_fetch_code, sizeof(prot_fetch_code) - 1,
+                      UC_PROT_READ, prot_fetch_target,
+                      sizeof(prot_fetch_target) - 1,
+                      PROT_DATA_ADDR + sizeof(prot_fetch_target) - 1,
+                      UC_HOOK_MEM_FETCH_PROT, &ctx));
+    TEST_CHECK(ctx.count == 1);
+
+    OK(uc_close(uc));
+}
+
+// An unaligned store to a read-only page is split into byte stores. The hook
+// runs once and all bytes are written.
+static void test_mem_write_prot_hook_unaligned(void)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+    uint32_t value = 0;
+    // mov dword [0x2001], 0x12345678
+    const char code[] = "\xc7\x05\x01\x20\x00\x00\x78\x56\x34\x12";
+
+    ctx.ret = true;
+    OK(test_mem_prot_run(&uc, code, sizeof(code) - 1, UC_PROT_READ, NULL, 0,
+                         PROT_CODE_ADDR + sizeof(code) - 1,
+                         UC_HOOK_MEM_WRITE_PROT, &ctx));
+    TEST_CHECK(ctx.count == 1);
+    TEST_CHECK(ctx.address == PROT_DATA_ADDR + 1);
+
+    OK(uc_mem_read(uc, PROT_DATA_ADDR + 1, &value, sizeof(value)));
+    TEST_CHECK(value == 0x12345678);
+
+    OK(uc_close(uc));
+}
+
+/*
+ * Accesses to the 4 bytes at 0x2ffe cross from a read-write page into the
+ * page at PROT_PAGE2_ADDR. The hook must run for the second page too, and
+ * only once.
+ */
+#define PROT_PAGE2_ADDR 0x3000
+
+static uc_err test_mem_prot_run_cross_page(uc_engine **uc, const char *code,
+                                           size_t code_len,
+                                           uint32_t page2_perms,
+                                           int hook_type,
+                                           mem_prot_hook_ctx *ctx)
+{
+    uc_hook hook;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, uc));
+    OK(uc_mem_map(*uc, PROT_CODE_ADDR, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(*uc, PROT_DATA_ADDR, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+    OK(uc_mem_map(*uc, PROT_PAGE2_ADDR, 0x1000, page2_perms));
+    OK(uc_mem_write(*uc, PROT_CODE_ADDR, code, code_len));
+    OK(uc_mem_write(*uc, PROT_PAGE2_ADDR - 2, prot_data,
+                    sizeof(prot_data) - 1));
+    if (hook_type) {
+        OK(uc_hook_add(*uc, &hook, hook_type, test_mem_prot_hook_cb, ctx, 1,
+                       0));
+    }
+    return uc_emu_start(*uc, PROT_CODE_ADDR, PROT_CODE_ADDR + code_len, 0, 0);
+}
+
+// mov eax, [0x2ffe]
+static const char prot_read_cross_code[] = "\xa1\xfe\x2f\x00\x00";
+// mov dword [0x2ffe], 0x87654321
+static const char prot_write_cross_code[] =
+    "\xc7\x05\xfe\x2f\x00\x00\x21\x43\x65\x87";
+
+static void test_mem_read_prot_hook_cross_page(bool ret, uc_err expected_err)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+    uint32_t eax = 0;
+
+    ctx.ret = ret;
+    uc_assert_err(expected_err,
+                  test_mem_prot_run_cross_page(
+                      &uc, prot_read_cross_code,
+                      sizeof(prot_read_cross_code) - 1, UC_PROT_NONE,
+                      UC_HOOK_MEM_READ_PROT, &ctx));
+    TEST_CHECK(ctx.count == 1);
+    TEST_CHECK(ctx.type == UC_MEM_READ_PROT);
+    TEST_CHECK(ctx.address == PROT_PAGE2_ADDR);
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == (expected_err == UC_ERR_OK ? 0x12345678 : 0));
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_write_prot_hook_cross_page(bool ret, uc_err expected_err)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+    uint32_t value = 0;
+
+    ctx.ret = ret;
+    uc_assert_err(expected_err,
+                  test_mem_prot_run_cross_page(
+                      &uc, prot_write_cross_code,
+                      sizeof(prot_write_cross_code) - 1, UC_PROT_READ,
+                      UC_HOOK_MEM_WRITE_PROT, &ctx));
+    TEST_CHECK(ctx.count == 1);
+    TEST_CHECK(ctx.type == UC_MEM_WRITE_PROT);
+    TEST_CHECK(ctx.address == PROT_PAGE2_ADDR);
+
+    if (expected_err == UC_ERR_OK) {
+        OK(uc_mem_read(uc, PROT_PAGE2_ADDR - 2, &value, sizeof(value)));
+        TEST_CHECK(value == 0x87654321);
+    }
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_read_prot_hook_cross_page_allow(void)
+{
+    test_mem_read_prot_hook_cross_page(true, UC_ERR_OK);
+}
+
+static void test_mem_read_prot_hook_cross_page_deny(void)
+{
+    test_mem_read_prot_hook_cross_page(false, UC_ERR_READ_PROT);
+}
+
+static void test_mem_write_prot_hook_cross_page_allow(void)
+{
+    test_mem_write_prot_hook_cross_page(true, UC_ERR_OK);
+}
+
+static void test_mem_write_prot_hook_cross_page_deny(void)
+{
+    test_mem_write_prot_hook_cross_page(false, UC_ERR_WRITE_PROT);
+}
+
+// Without a hook, a load that crosses into a non-readable page fails.
+static void test_mem_read_prot_cross_page_no_hook(void)
+{
+    uc_engine *uc;
+
+    uc_assert_err(UC_ERR_READ_PROT,
+                  test_mem_prot_run_cross_page(
+                      &uc, prot_read_cross_code,
+                      sizeof(prot_read_cross_code) - 1, UC_PROT_NONE, 0,
+                      NULL));
+    OK(uc_close(uc));
+}
+
+// A write accepted on a read-only page is undone by restoring a snapshot.
+static void test_mem_write_prot_hook_snapshot(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uc_context *ctx0;
+    mem_prot_hook_ctx ctx = {0};
+    uint32_t value = 0;
+
+    ctx.ret = true;
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY));
+    OK(uc_mem_map(uc, PROT_CODE_ADDR, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, PROT_DATA_ADDR, 0x1000, UC_PROT_READ));
+    OK(uc_mem_write(uc, PROT_CODE_ADDR, prot_write_code,
+                    sizeof(prot_write_code) - 1));
+    OK(uc_mem_write(uc, PROT_DATA_ADDR, "\x11\x11\x11\x11", 4));
+    OK(uc_context_alloc(uc, &ctx0));
+    OK(uc_context_save(uc, ctx0));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE_PROT, test_mem_prot_hook_cb,
+                   &ctx, 1, 0));
+
+    OK(uc_emu_start(uc, PROT_CODE_ADDR,
+                    PROT_CODE_ADDR + sizeof(prot_write_code) - 1, 0, 0));
+    TEST_CHECK(ctx.count == 1);
+    OK(uc_mem_read(uc, PROT_DATA_ADDR, &value, sizeof(value)));
+    TEST_CHECK(value == 0x12345678);
+
+    OK(uc_context_restore(uc, ctx0));
+    OK(uc_mem_read(uc, PROT_DATA_ADDR, &value, sizeof(value)));
+    TEST_CHECK(value == 0x11111111);
+
+    OK(uc_context_free(ctx0));
+    OK(uc_close(uc));
+}
+
+/*
+ * UC_HOOK_MEM_*_UNMAPPED callbacks. Only the code page is mapped, so the
+ * access to PROT_DATA_ADDR is unmapped. If the hook returns true without
+ * mapping the page, emulation stops with UC_ERR_MAP and UC_CTL_INVALID_ADDR
+ * reports the address.
+ */
+static uc_err test_mem_unmapped_run(uc_engine **uc, const char *code,
+                                    size_t code_len, int hook_type,
+                                    mem_prot_hook_ctx *ctx)
+{
+    uc_hook hook;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, uc));
+    OK(uc_mem_map(*uc, PROT_CODE_ADDR, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(*uc, PROT_CODE_ADDR, code, code_len));
+    OK(uc_hook_add(*uc, &hook, hook_type, test_mem_prot_hook_cb, ctx, 1, 0));
+    return uc_emu_start(*uc, PROT_CODE_ADDR, PROT_CODE_ADDR + code_len, 0, 0);
+}
+
+static void test_mem_unmapped_hook_no_map(const char *code, size_t code_len,
+                                          int hook_type, uc_mem_type type)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+    uint64_t invalid_addr = 0;
+
+    ctx.ret = true;
+    uc_assert_err(UC_ERR_MAP,
+                  test_mem_unmapped_run(&uc, code, code_len, hook_type, &ctx));
+    TEST_CHECK(ctx.count == 1);
+    TEST_CHECK(ctx.type == type);
+    TEST_CHECK(ctx.address == PROT_DATA_ADDR);
+
+    OK(uc_ctl_get_invalid_addr(uc, &invalid_addr));
+    TEST_CHECK(invalid_addr == PROT_DATA_ADDR);
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_read_unmapped_hook_no_map(void)
+{
+    test_mem_unmapped_hook_no_map(prot_read_code, sizeof(prot_read_code) - 1,
+                                  UC_HOOK_MEM_READ_UNMAPPED,
+                                  UC_MEM_READ_UNMAPPED);
+}
+
+static void test_mem_write_unmapped_hook_no_map(void)
+{
+    test_mem_unmapped_hook_no_map(prot_write_code, sizeof(prot_write_code) - 1,
+                                  UC_HOOK_MEM_WRITE_UNMAPPED,
+                                  UC_MEM_WRITE_UNMAPPED);
+}
+
+static void test_mem_fetch_unmapped_hook_no_map(void)
+{
+    test_mem_unmapped_hook_no_map(prot_fetch_code, sizeof(prot_fetch_code) - 1,
+                                  UC_HOOK_MEM_FETCH_UNMAPPED,
+                                  UC_MEM_FETCH_UNMAPPED);
+}
+
+// A hook that maps the page lets the access go ahead.
+static void test_mem_read_unmapped_hook_map(void)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+    uint32_t eax = 0xffffffff;
+
+    ctx.map = true;
+    ctx.ret = true;
+    OK(test_mem_unmapped_run(&uc, prot_read_code, sizeof(prot_read_code) - 1,
+                             UC_HOOK_MEM_READ_UNMAPPED, &ctx));
+    TEST_CHECK(ctx.count == 1);
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == 0);
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_write_unmapped_hook_map(void)
+{
+    uc_engine *uc;
+    mem_prot_hook_ctx ctx = {0};
+    uint32_t value = 0;
+
+    ctx.map = true;
+    ctx.ret = true;
+    OK(test_mem_unmapped_run(&uc, prot_write_code, sizeof(prot_write_code) - 1,
+                             UC_HOOK_MEM_WRITE_UNMAPPED, &ctx));
+    TEST_CHECK(ctx.count == 1);
+
+    OK(uc_mem_read(uc, PROT_DATA_ADDR, &value, sizeof(value)));
+    TEST_CHECK(value == 0x12345678);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -703,4 +1299,42 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_mem_addr_size_wraparound", test_mem_addr_size_wraparound},
              {"test_smc", test_smc},
              {"test_tlbdirty_exec", test_tlbdirty_exec},
+             {"test_mem_read_prot_hook_allow", test_mem_read_prot_hook_allow},
+             {"test_mem_read_prot_hook_grant", test_mem_read_prot_hook_grant},
+             {"test_mem_read_prot_hook_deny", test_mem_read_prot_hook_deny},
+             {"test_mem_write_prot_hook_allow", test_mem_write_prot_hook_allow},
+             {"test_mem_write_prot_hook_grant", test_mem_write_prot_hook_grant},
+             {"test_mem_write_prot_hook_deny", test_mem_write_prot_hook_deny},
+             {"test_mem_fetch_prot_hook_allow", test_mem_fetch_prot_hook_allow},
+             {"test_mem_fetch_prot_hook_grant", test_mem_fetch_prot_hook_grant},
+             {"test_mem_fetch_prot_hook_deny", test_mem_fetch_prot_hook_deny},
+             {"test_mem_prot_no_hook", test_mem_prot_no_hook},
+             {"test_mem_write_prot_hook_smc", test_mem_write_prot_hook_smc},
+             {"test_mem_read_prot_hook_unmap", test_mem_read_prot_hook_unmap},
+             {"test_mem_write_prot_hook_unmap", test_mem_write_prot_hook_unmap},
+             {"test_mem_fetch_prot_hook_unmap", test_mem_fetch_prot_hook_unmap},
+             {"test_mem_write_prot_hook_unaligned",
+              test_mem_write_prot_hook_unaligned},
+             {"test_mem_read_prot_hook_cross_page_allow",
+              test_mem_read_prot_hook_cross_page_allow},
+             {"test_mem_read_prot_hook_cross_page_deny",
+              test_mem_read_prot_hook_cross_page_deny},
+             {"test_mem_write_prot_hook_cross_page_allow",
+              test_mem_write_prot_hook_cross_page_allow},
+             {"test_mem_write_prot_hook_cross_page_deny",
+              test_mem_write_prot_hook_cross_page_deny},
+             {"test_mem_read_prot_cross_page_no_hook",
+              test_mem_read_prot_cross_page_no_hook},
+             {"test_mem_write_prot_hook_snapshot",
+              test_mem_write_prot_hook_snapshot},
+             {"test_mem_read_unmapped_hook_no_map",
+              test_mem_read_unmapped_hook_no_map},
+             {"test_mem_write_unmapped_hook_no_map",
+              test_mem_write_unmapped_hook_no_map},
+             {"test_mem_fetch_unmapped_hook_no_map",
+              test_mem_fetch_unmapped_hook_no_map},
+             {"test_mem_read_unmapped_hook_map",
+              test_mem_read_unmapped_hook_map},
+             {"test_mem_write_unmapped_hook_map",
+              test_mem_write_unmapped_hook_map},
              {NULL, NULL}};

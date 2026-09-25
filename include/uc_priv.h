@@ -379,6 +379,8 @@ struct uc_struct {
     size_t emu_count;   // save counter of uc_emu_start()
 
     int size_recur_mem; // size for mem access when in a recursive call
+    uint64_t size_recur_prot_page; // page a *_PROT hook already accepted for
+                                   // the access split up by the recursion
 
     bool init_tcg;       // already initialized local TCGv variables?
     bool stop_request;   // request to immediately stop emulation - for

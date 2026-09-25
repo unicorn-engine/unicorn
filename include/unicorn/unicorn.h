@@ -467,9 +467,25 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
   @user_data: user data passed to tracing APIs
 
   @return: return true to continue, or false to stop program (due to invalid
-  memory). NOTE: returning true to continue execution will only work if the
-  accessed memory is made accessible with the correct permissions during the
-  hook.
+  memory). NOTE: for UNMAPPED events, returning true to continue execution will
+  only work if the accessed memory is mapped during the hook.
+
+           In the event of a UC_MEM_READ_PROT, UC_MEM_WRITE_PROT or
+  UC_MEM_FETCH_PROT callback, returning true performs the access once, whether
+  or not the hook changed the permissions of the page. Use uc_mem_protect() in
+  the hook to stop further accesses from triggering the hook again. If the hook
+  unmaps the page, emulation stops with UC_ERR_MAP. An access that the engine
+  splits up (for example an unaligned access or one that crosses a page
+  boundary) calls the hook at most once for each page it touches.
+
+           Returning true from a UC_MEM_WRITE_PROT callback writes the data
+  into the read-only page. Older versions dropped the write instead, so a hook
+  that returned true to ignore writes to ROM now lets them change the ROM.
+
+           For UC_MEM_FETCH_PROT, the code translated after the hook returned
+  true is cached. Running the same code again uses the cached translation, so
+  the hook is not called again even if the page is still not executable. Call
+  uc_ctl_remove_cache() on the page to drop the translation.
 
            In the event of a UC_MEM_READ_UNMAPPED or UC_MEM_WRITE_UNMAPPED
   callback, the memory should be uc_mem_map()-ed with the correct permissions,
