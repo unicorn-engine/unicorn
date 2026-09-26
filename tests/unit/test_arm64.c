@@ -944,6 +944,71 @@ static void test_arm64_pauth_ctl(void)
     OK(uc_close(uc));
 }
 
+#if defined(__APPLE__) && defined(__aarch64__)
+#include <libkern/OSCacheControl.h>
+#include <pthread.h>
+#include <sys/mman.h>
+
+typedef int (*foreign_jit_code)(void);
+
+static void test_arm64_hook_in_foreign_jit_runtime_cb(uc_engine *uc,
+                                                      uint32_t intno,
+                                                      void *user_data)
+{
+    foreign_jit_code code = (foreign_jit_code)user_data;
+
+    // The hook belongs to a runtime with its own JIT (e.g. a JVM), which toggles
+    // the per-thread MAP_JIT protection itself and runs in execute mode.
+    pthread_jit_write_protect_np(1);
+
+    // Invalidates translated code from within the hook.
+    OK(uc_ctl_remove_cache(uc, 0x20000, 0x20004));
+
+    // The runtime must be able to run its own code once unicorn returns.
+    TEST_CHECK(code() == 42);
+}
+
+static void test_arm64_hook_in_foreign_jit_runtime(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    // bl 0x20000 ; svc #0 ; bl 0x20000
+    char code[] = "\x00\x40\x00\x94\x01\x00\x00\xd4\xfe\x3f\x00\x94";
+    // add x1, x1, #1 ; ret
+    char func[] = "\x21\x04\x00\x91\xc0\x03\x5f\xd6";
+    uint64_t x1;
+
+    if (!pthread_jit_write_protect_supported_np()) {
+        return;
+    }
+
+    // The foreign runtime's own JIT code: mov w0, #42 ; ret
+    uint32_t *jit = mmap(NULL, 0x4000, PROT_READ | PROT_WRITE | PROT_EXEC,
+                         MAP_PRIVATE | MAP_ANON | MAP_JIT, -1, 0);
+    TEST_ASSERT(jit != MAP_FAILED);
+    pthread_jit_write_protect_np(0);
+    jit[0] = 0x52800540;
+    jit[1] = 0xd65f03c0;
+    pthread_jit_write_protect_np(1);
+    sys_icache_invalidate(jit, 8);
+
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
+    OK(uc_mem_map(uc, 0x10000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x20000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x10000, code, sizeof(code) - 1));
+    OK(uc_mem_write(uc, 0x20000, func, sizeof(func) - 1));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INTR,
+                   test_arm64_hook_in_foreign_jit_runtime_cb, jit, 1, 0));
+
+    OK(uc_emu_start(uc, 0x10000, 0x10000 + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X1, &x1));
+    TEST_CHECK(x1 == 2);
+
+    OK(uc_close(uc));
+    munmap(jit, 0x4000);
+}
+#endif
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -965,4 +1030,8 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_pc_guarantee", test_arm64_pc_guarantee},
              {"test_arm64_pauth_vanilla", test_arm64_pauth_vanilla},
              {"test_arm64_pauth_ctl", test_arm64_pauth_ctl},
+#if defined(__APPLE__) && defined(__aarch64__)
+             {"test_arm64_hook_in_foreign_jit_runtime",
+              test_arm64_hook_in_foreign_jit_runtime},
+#endif
              {NULL, NULL}};
