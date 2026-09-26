@@ -50,16 +50,11 @@ static void save_jit_state(uc_engine *uc)
 static void restore_jit_state(uc_engine *uc)
 {
     assert(uc->nested > 0);
-    if (uc->nested == 1) {
-        assert_executable(uc->current_executable);
-        if (uc->current_executable != uc->thread_executable_entry) {
-            if (uc->thread_executable_entry) {
-                jit_write_protect(true);
-            } else {
-                jit_write_protect(false);
-            }
-        }
-    }
+    // Hand the thread back in the state it entered with on every level, not only the
+    // outermost one: a nested call is made from a hook, and the hook may run in a runtime
+    // (e.g. a JVM) that toggles the same per-thread state and relies on getting it back.
+    jit_write_protect(uc->thread_executable_entry);
+    uc->current_executable = uc->thread_executable_entry;
     uc->nested -= 1;
 }
 #else
@@ -1100,15 +1095,14 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     uc->timed_out = false;
     uc->first_tb = true;
 
-    // Avoid nested uc_emu_start saves wrong jit states.
-    if (uc->nested_level == 0) {
-        UC_INIT(uc);
-    }
+    // Nested calls come from hooks and must restore the jit state on return as well.
+    UC_INIT(uc);
 
     // Advance the nested levels. We must decrease the level count by one when
     // we return from uc_emu_start.
     if (uc->nested_level >= UC_MAX_NESTED_LEVEL) {
         // We can't support so many nested levels.
+        restore_jit_state(uc);
         return UC_ERR_RESOURCE;
     }
     uc->nested_level++;
@@ -1225,6 +1219,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         uc->hook_insert = 0;
         if (err != UC_ERR_OK) {
             uc->nested_level--;
+            restore_jit_state(uc);
             return err;
         }
     }
@@ -1251,9 +1246,9 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         // remove hooks to delete
         // make sure we delete all hooks at the first level.
         clear_deleted_hooks(uc);
-
-        restore_jit_state(uc);
     }
+
+    restore_jit_state(uc);
 
     if (timeout) {
         // wait for the timer to finish
