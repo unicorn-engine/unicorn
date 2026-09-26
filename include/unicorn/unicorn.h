@@ -448,6 +448,10 @@ typedef enum uc_hook_type {
   @size: size of data being read or written
   @value: value of data being written to memory, or irrelevant if type = READ.
   @user_data: user data passed to tracing APIs
+
+  If a UC_HOOK_MEM_READ or UC_HOOK_MEM_WRITE callback unmaps the page, the
+  access goes to the UC_HOOK_MEM_READ_UNMAPPED or UC_HOOK_MEM_WRITE_UNMAPPED
+  hooks.
 */
 typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
                                 uint64_t address, int size, int64_t value,
@@ -467,9 +471,43 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
   @user_data: user data passed to tracing APIs
 
   @return: return true to continue, or false to stop program (due to invalid
-  memory). NOTE: returning true to continue execution will only work if the
-  accessed memory is made accessible with the correct permissions during the
-  hook.
+  memory). NOTE: for UNMAPPED events, returning true to continue execution will
+  only work if the accessed memory is mapped during the hook.
+
+           In the event of a UC_MEM_READ_PROT, UC_MEM_WRITE_PROT or
+  UC_MEM_FETCH_PROT callback, returning true lets that access go ahead, whether
+  or not the hook changed the permissions of the page. Use uc_mem_protect() in
+  the hook to stop further accesses from triggering the hook again. If the hook
+  unmaps the page, emulation stops with UC_ERR_MAP. An access that the engine
+  splits up (for example an unaligned access or one that crosses a page
+  boundary) calls the hook at most once for each page it touches. If the
+  engine restarts the instruction, the hook is called again for the repeated
+  access, as UC_HOOK_MEM_READ and UC_HOOK_MEM_WRITE hooks are. One case is a
+  store that changes code of the translated block that is running.
+
+           An access that crosses into a second page runs the UNMAPPED and
+  PROT checks and hooks for both pages before it reads or writes either of
+  them, so an access that fails on the second page leaves the first page
+  unchanged. The callback for the first page gets the address and size of the
+  whole access. The callback for the second page gets the start of that page,
+  the number of bytes the access covers there and, for a write, the value of
+  those bytes.
+
+           Returning true from a UC_MEM_WRITE_PROT callback writes the data
+  into the read-only page. Unicorn 2.1.4 and older dropped the write instead,
+  so a hook that returned true to ignore writes to ROM now lets them change
+  the ROM. The exception is a page mapped with uc_mem_map_ptr(): its memory
+  belongs to the host, which may have mapped it read-only, so the write is
+  dropped unless the hook makes the page writable.
+
+           For UC_MEM_FETCH_PROT, the translator reads code in small pieces
+  (often one byte at a time on x86), and each read is a separate access that
+  calls the hook, so one instruction can call it several times. The code
+  translated after the hook returned true is cached. Running the same code
+  again uses the cached translation, so the hook is not called again even if
+  the page is still not executable. Writes to a writable page without
+  UC_PROT_EXEC do not drop that translation, so call uc_ctl_remove_cache() on
+  the page after changing code there.
 
            In the event of a UC_MEM_READ_UNMAPPED or UC_MEM_WRITE_UNMAPPED
   callback, the memory should be uc_mem_map()-ed with the correct permissions,

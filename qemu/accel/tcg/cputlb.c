@@ -1191,6 +1191,16 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
     return get_page_addr_code_hostp(env, addr, NULL);
 }
 
+/* Drop the translated code that covers the size bytes at ram_addr.  */
+static void tb_invalidate_written(struct uc_struct *uc, ram_addr_t ram_addr,
+                                  unsigned size, uintptr_t retaddr)
+{
+    struct page_collection *pages
+        = page_collection_lock(uc, ram_addr, ram_addr + size);
+    tb_invalidate_phys_page_fast(uc, pages, ram_addr, size, retaddr);
+    page_collection_unlock(pages);
+}
+
 static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
                            CPUIOTLBEntry *iotlbentry, uintptr_t retaddr,
                            CPUTLBEntry *tlbe)
@@ -1202,10 +1212,7 @@ static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
     MemoryRegion *mr = cpu->uc->memory_mapping(cpu->uc, tlbe->paddr | (mem_vaddr & ~TARGET_PAGE_MASK));
 
     if (mr && (mr->perms & UC_PROT_EXEC) != 0) {
-        struct page_collection *pages
-            = page_collection_lock(cpu->uc, ram_addr, ram_addr + size);
-        tb_invalidate_phys_page_fast(cpu->uc, pages, ram_addr, size, retaddr);
-        page_collection_unlock(pages);
+        tb_invalidate_written(cpu->uc, ram_addr, size, retaddr);
     }
 
     /* For exec pages, this is cleared in tb_gen_code. */
@@ -1535,6 +1542,293 @@ static inline void tlb_hook_state_restore(CPUArchState *env,
 #endif
 }
 
+/*
+ * Unicorn: the TLB entry, physical address and memory region of the guest
+ * page that load_helper or store_helper is working on.
+ */
+typedef struct UcPage {
+    uintptr_t index;
+    CPUTLBEntry *entry;
+    target_ulong tlb_addr;
+    hwaddr paddr;
+    MemoryRegion *mr;
+    size_t flush_gen; // tlb_flush_gen() when mr was looked up
+} UcPage;
+
+/*
+ * Unicorn: counts TLB flushes. Every change to the memory map flushes the
+ * whole TLB, so while this stays the same a MemoryRegion looked up earlier
+ * is still valid.
+ */
+static inline size_t tlb_flush_gen(CPUArchState *env)
+{
+    return env_tlb(env)->c.full_flush_count + env_tlb(env)->c.part_flush_count;
+}
+
+/*
+ * Unicorn: find the TLB entry for addr, filling it on a miss, and the memory
+ * region it maps to. mr is NULL if addr is not mapped.
+ */
+static inline void uc_page_lookup(CPUArchState *env, target_ulong addr,
+                                  int size, MMUAccessType access_type,
+                                  int mmu_idx, uintptr_t retaddr,
+                                  size_t tlb_off, UcPage *pg)
+{
+    struct uc_struct *uc = env->uc;
+
+    pg->index = tlb_index(env, mmu_idx, addr);
+    pg->entry = tlb_entry(env, mmu_idx, addr);
+    pg->tlb_addr = tlb_read_ofs(pg->entry, tlb_off);
+    /* If the TLB entry is for a different page, reload and try again.  */
+    if (!tlb_hit(uc, pg->tlb_addr, addr)) {
+        if (!victim_tlb_hit(env, mmu_idx, pg->index, tlb_off,
+                            addr & TARGET_PAGE_MASK)) {
+            tlb_fill(env_cpu(env), addr, size, access_type, mmu_idx, retaddr);
+            pg->index = tlb_index(env, mmu_idx, addr);
+            pg->entry = tlb_entry(env, mmu_idx, addr);
+        }
+        pg->tlb_addr = tlb_read_ofs(pg->entry, tlb_off) & ~TLB_INVALID_MASK;
+    }
+
+    pg->paddr = pg->entry->paddr | (addr & ~TARGET_PAGE_MASK);
+    pg->mr = uc->memory_mapping(uc, pg->paddr);
+    pg->flush_gen = tlb_flush_gen(env);
+}
+
+/*
+ * Unicorn: a hook may have changed mappings or permissions, which flushes
+ * (and may resize) the TLB and can free the MemoryRegion. If the TLB was not
+ * flushed and the entry still maps addr, everything in pg is still valid and
+ * only tlb_addr is read again. Callers read mr->perms again either way,
+ * because uc_mem_protect() can change them without a flush. Otherwise look
+ * the page up again.
+ */
+static inline void tlb_reload_after_hook(CPUArchState *env, target_ulong addr,
+                                         int size, MMUAccessType access_type,
+                                         int mmu_idx, uintptr_t retaddr,
+                                         size_t tlb_off, UcPage *pg)
+{
+    if (pg->flush_gen == tlb_flush_gen(env)) {
+        target_ulong tlb_addr = tlb_read_ofs(pg->entry, tlb_off);
+
+        if (tlb_hit(env->uc, tlb_addr, addr)) {
+            pg->tlb_addr = tlb_addr;
+            return;
+        }
+    }
+    uc_page_lookup(env, addr, size, access_type, mmu_idx, retaddr, tlb_off,
+                   pg);
+}
+
+/*
+ * Unicorn: call the uc_cb_eventmem_t callbacks in hook list idx that cover
+ * paddr until one of them returns true. Returns whether one did.
+ */
+static bool uc_run_event_hooks(CPUArchState *env, int idx, uc_mem_type type,
+                               hwaddr paddr, int size, int64_t value,
+                               uintptr_t retaddr, CPUTLBHookState *hook_state)
+{
+    struct uc_struct *uc = env->uc;
+    struct list_item *cur;
+    struct hook *hook;
+    bool handled = false;
+
+    for (cur = uc->hook[idx].head;
+         cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, paddr))
+            continue;
+        tlb_hook_state_sync(env, retaddr, hook_state);
+        JIT_CALLBACK_GUARD_VAR(handled,
+                               ((uc_cb_eventmem_t)hook->callback)(uc, type, paddr, size, value, hook->user_data));
+        if (handled)
+            break;
+
+        // the last callback may already asked to stop emulation
+        if (uc->stop_request)
+            break;
+    }
+    return handled;
+}
+
+/*
+ * Unicorn: record that a load or fetch failed and stop emulation.
+ */
+static void uc_load_fail(struct uc_struct *uc, hwaddr paddr, int error,
+                         uintptr_t retaddr)
+{
+    uc->invalid_addr = paddr;
+    uc->invalid_error = error;
+    if (uc->nested_level > 0 && !uc->cpu->stopped) {
+        cpu_exit(uc->cpu);
+        // XXX(@lazymio): We have to exit early so that the target register won't be overwritten
+        //                because qemu might generate tcg code like:
+        //                       qemu_ld_i64 x0,x1,leq,8  sync: 0  dead: 0 1
+        //                where we don't have a change to recover x0 value
+        cpu_loop_exit_restore(uc->cpu, retaddr);
+    }
+}
+
+/*
+ * Unicorn: record that a store failed and stop emulation.
+ */
+static void uc_store_fail(struct uc_struct *uc, hwaddr paddr, int error)
+{
+    uc->invalid_addr = paddr;
+    uc->invalid_error = error;
+    cpu_exit(uc->cpu);
+}
+
+/*
+ * Unicorn: if the page of a load at addr is not mapped, run the
+ * UC_HOOK_MEM_READ_UNMAPPED or UC_HOOK_MEM_FETCH_UNMAPPED hooks. Returns
+ * false if the load must not go ahead, after recording the error.
+ */
+static bool load_check_mapped(CPUArchState *env, target_ulong addr, int size,
+                              int mmu_idx, uintptr_t retaddr, bool code_read,
+                              CPUTLBHookState *hook_state, UcPage *pg)
+{
+    struct uc_struct *uc = env->uc;
+    const size_t tlb_off = code_read ?
+        offsetof(CPUTLBEntry, addr_code) : offsetof(CPUTLBEntry, addr_read);
+    const MMUAccessType access_type =
+        code_read ? MMU_INST_FETCH : MMU_DATA_LOAD;
+    bool handled = false;
+    int error_code;
+
+    if (pg->mr != NULL) {
+        return true;
+    }
+
+    // if there is already an unhandled eror, skip callbacks.
+    if (uc->invalid_error == UC_ERR_OK) {
+        if (code_read) {
+            // code fetching
+            error_code = UC_ERR_FETCH_UNMAPPED;
+            handled = uc_run_event_hooks(env, UC_HOOK_MEM_FETCH_UNMAPPED_IDX,
+                                         UC_MEM_FETCH_UNMAPPED, pg->paddr,
+                                         size, 0, retaddr, hook_state);
+        } else {
+            // data reading
+            error_code = UC_ERR_READ_UNMAPPED;
+            handled = uc_run_event_hooks(env, UC_HOOK_MEM_READ_UNMAPPED_IDX,
+                                         UC_MEM_READ_UNMAPPED, pg->paddr,
+                                         size, 0, retaddr, hook_state);
+        }
+    } else {
+        error_code = uc->invalid_error;
+    }
+
+    if (!handled) {
+        uc_load_fail(uc, pg->paddr, error_code, retaddr);
+        return false;
+    }
+
+    uc->invalid_error = UC_ERR_OK;
+    tlb_reload_after_hook(env, addr, size, access_type, mmu_idx, retaddr,
+                          tlb_off, pg);
+    if (pg->mr == NULL) {
+        uc_load_fail(uc, pg->paddr, UC_ERR_MAP, retaddr);
+        return false;
+    }
+    tlb_hook_state_restore(env, hook_state);
+    return true;
+}
+
+/*
+ * Unicorn: if the page of a load at addr is not readable (or, for a fetch,
+ * not executable), run the UC_HOOK_MEM_READ_PROT or UC_HOOK_MEM_FETCH_PROT
+ * hooks. A hook that returns true lets the load go ahead even if the page
+ * still lacks the permission, unless the hook unmapped it. Returns false if
+ * the load must not go ahead, after recording the error.
+ */
+static bool load_check_prot(CPUArchState *env, target_ulong addr, int size,
+                            int mmu_idx, uintptr_t retaddr, bool code_read,
+                            CPUTLBHookState *hook_state, UcPage *pg)
+{
+    struct uc_struct *uc = env->uc;
+    const size_t tlb_off = code_read ?
+        offsetof(CPUTLBEntry, addr_code) : offsetof(CPUTLBEntry, addr_read);
+    const MMUAccessType access_type =
+        code_read ? MMU_INST_FETCH : MMU_DATA_LOAD;
+    bool handled;
+
+    if (pg->mr->perms & (code_read ? UC_PROT_EXEC : UC_PROT_READ)) {
+        return true;
+    }
+
+    if (code_read) {
+        handled = uc_run_event_hooks(env, UC_HOOK_MEM_FETCH_PROT_IDX,
+                                     UC_MEM_FETCH_PROT, pg->paddr, size, 0,
+                                     retaddr, hook_state);
+    } else {
+        handled = uc_run_event_hooks(env, UC_HOOK_MEM_READ_PROT_IDX,
+                                     UC_MEM_READ_PROT, pg->paddr, size, 0,
+                                     retaddr, hook_state);
+    }
+
+    if (!handled) {
+        uc_load_fail(uc, pg->paddr,
+                     code_read ? UC_ERR_FETCH_PROT : UC_ERR_READ_PROT,
+                     retaddr);
+        return false;
+    }
+
+    uc->invalid_error = UC_ERR_OK;
+    tlb_reload_after_hook(env, addr, size, access_type, mmu_idx, retaddr,
+                          tlb_off, pg);
+    if (pg->mr == NULL) {
+        uc_load_fail(uc, pg->paddr, UC_ERR_MAP, retaddr);
+        return false;
+    }
+    tlb_hook_state_restore(env, hook_state);
+    return true;
+}
+
+/*
+ * Unicorn: a load that crosses into a second page has only been checked for
+ * the page of addr. Run the checks and hooks for the part on the second page
+ * before loading anything, reporting the start of that page and the number
+ * of bytes the load reads there. Those hooks may change the first page, so
+ * look it up again. Returns false if the load must not go ahead, after
+ * recording the error.
+ */
+static bool load_check_page2(CPUArchState *env, target_ulong addr, int size,
+                             int mmu_idx, uintptr_t retaddr, bool code_read,
+                             CPUTLBHookState *hook_state, UcPage *pg)
+{
+    struct uc_struct *uc = env->uc;
+    const size_t tlb_off = code_read ?
+        offsetof(CPUTLBEntry, addr_code) : offsetof(CPUTLBEntry, addr_read);
+    const MMUAccessType access_type =
+        code_read ? MMU_INST_FETCH : MMU_DATA_LOAD;
+    target_ulong page2 = (addr + size - 1) & TARGET_PAGE_MASK;
+    int size2 = addr + size - page2;
+    UcPage pg2;
+
+    if (page2 == (addr & TARGET_PAGE_MASK)) {
+        return true;
+    }
+
+    uc_page_lookup(env, page2, size2, access_type, mmu_idx, retaddr, tlb_off,
+                   &pg2);
+    if (!load_check_mapped(env, page2, size2, mmu_idx, retaddr, code_read,
+                           hook_state, &pg2) ||
+        !load_check_prot(env, page2, size2, mmu_idx, retaddr, code_read,
+                         hook_state, &pg2)) {
+        return false;
+    }
+
+    tlb_reload_after_hook(env, addr, size, access_type, mmu_idx, retaddr,
+                          tlb_off, pg);
+    if (pg->mr == NULL) {
+        uc_load_fail(uc, pg->paddr, UC_ERR_MAP, retaddr);
+        return false;
+    }
+    return true;
+}
+
 static inline uint64_t
 load_memop(const void *haddr, MemOp op)
 {
@@ -1559,16 +1853,15 @@ load_memop(const void *haddr, MemOp op)
     }
 }
 
+/*
+ * Unicorn: uc_checked is set for the pieces of a split load. The load that
+ * split them has already run the checks and hooks for every page it touches.
+ */
 static inline uint64_t
 load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
-            uintptr_t retaddr, MemOp op, bool code_read,
-            FullLoadHelper *full_load)
+            uintptr_t retaddr, MemOp op, bool code_read, bool uc_checked)
 {
     uintptr_t mmu_idx = get_mmuidx(oi);
-    uintptr_t index = tlb_index(env, mmu_idx, addr);
-    CPUTLBEntry *entry = tlb_entry(env, mmu_idx, addr);
-    target_ulong tlb_addr = code_read ? entry->addr_code : entry->addr_read;
-    hwaddr paddr;
     const size_t tlb_off = code_read ?
         offsetof(CPUTLBEntry, addr_code) : offsetof(CPUTLBEntry, addr_read);
     const MMUAccessType access_type =
@@ -1577,13 +1870,11 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
     void *haddr;
     uint64_t res;
     size_t size = memop_size(op);
-    int error_code;
     struct hook *hook;
-    bool handled;
     HOOK_FOREACH_VAR_DECLARE;
     struct uc_struct *uc = env->uc;
-    MemoryRegion *mr;
     CPUTLBHookState hook_state;
+    UcPage pg;
 
     tlb_hook_state_init(env, &hook_state);
 
@@ -1593,254 +1884,84 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                              mmu_idx, retaddr);
     }
 
-    /* If the TLB entry is for a different page, reload and try again.  */
-    if (!tlb_hit(env->uc, tlb_addr, addr)) {
-        if (!victim_tlb_hit(env, mmu_idx, index, tlb_off,
-                            addr & TARGET_PAGE_MASK)) {
-            tlb_fill(env_cpu(env), addr, size,
-                     access_type, mmu_idx, retaddr);
-            index = tlb_index(env, mmu_idx, addr);
-            entry = tlb_entry(env, mmu_idx, addr);
-        }
-        tlb_addr = code_read ? entry->addr_code : entry->addr_read;
-        tlb_addr &= ~TLB_INVALID_MASK;
-    }
+    uc_page_lookup(env, addr, size, access_type, mmu_idx, retaddr, tlb_off,
+                   &pg);
 
-    paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-    mr = uc->memory_mapping(uc, paddr);
-
-    // memory might be still unmapped while reading or fetching
-    if (mr == NULL) {
-        handled = false;
-        // if there is already an unhandled eror, skip callbacks.
-        if (uc->invalid_error == UC_ERR_OK) {
-            if (code_read) {
-                // code fetching  
-                error_code = UC_ERR_FETCH_UNMAPPED;
-                HOOK_FOREACH(uc, hook, UC_HOOK_MEM_FETCH_UNMAPPED) {
-                    if (hook->to_delete)
-                        continue;
-                    if (!HOOK_BOUND_CHECK(hook, paddr))
-                        continue;
-                    tlb_hook_state_sync(env, retaddr, &hook_state);
-                    JIT_CALLBACK_GUARD_VAR(handled,
-                                           ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, paddr, size, 0, hook->user_data));
-                    if (handled)
-                        break;
-
-                    // the last callback may already asked to stop emulation
-                    if (uc->stop_request)
-                        break;
-                }
-            } else {
-                // data reading
-                error_code = UC_ERR_READ_UNMAPPED;
-                HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_UNMAPPED) {
-                    if (hook->to_delete)
-                        continue;
-                    if (!HOOK_BOUND_CHECK(hook, paddr))
-                        continue;
-                    tlb_hook_state_sync(env, retaddr, &hook_state);
-                    JIT_CALLBACK_GUARD_VAR(handled, 
-                                           ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, paddr, size, 0, hook->user_data));
-                    if (handled)
-                        break;
-
-                    // the last callback may already asked to stop emulation
-                    if (uc->stop_request)
-                        break;
-                }
-            }
-        } else {
-            error_code = uc->invalid_error;
+    if (!uc_checked) {
+        // memory might be still unmapped while reading or fetching
+        if (!load_check_mapped(env, addr, size, mmu_idx, retaddr, code_read,
+                               &hook_state, &pg)) {
+            return 0;
         }
 
-        if (handled) {
-            uc->invalid_error = UC_ERR_OK;
-            /* If the TLB entry is for a different page, reload and try again.  */
-            if (!tlb_hit(env->uc, tlb_addr, addr)) {
-                if (!victim_tlb_hit(env, mmu_idx, index, tlb_off,
-                                    addr & TARGET_PAGE_MASK)) {
-                    tlb_fill(env_cpu(env), addr, size,
-                             access_type, mmu_idx, retaddr);
-                    index = tlb_index(env, mmu_idx, addr);
-                    entry = tlb_entry(env, mmu_idx, addr);
-                }
-                tlb_addr = code_read ? entry->addr_code : entry->addr_read;
-                tlb_addr &= ~TLB_INVALID_MASK;
-            }
-            paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-            mr = uc->memory_mapping(uc, paddr);
-            if (mr == NULL) {
-                uc->invalid_error = UC_ERR_MAP;
-                if (uc->nested_level > 0 && !uc->cpu->stopped) {
-                    cpu_exit(uc->cpu);
-                    // XXX(@lazymio): We have to exit early so that the target register won't be overwritten
-                    //                because qemu might generate tcg code like:
-                    //                       qemu_ld_i64 x0,x1,leq,8  sync: 0  dead: 0 1
-                    //                where we don't have a change to recover x0 value
-                    cpu_loop_exit_restore(uc->cpu, retaddr);
-                }
-                return 0;
+        // now it is read on mapped memory
+        // patch issue #1041 multiple UC_HOOK_MEM callbacks for unaligned access
+        if (!code_read) {
+            bool hooked = false;
+
+            // this is date reading
+            HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ) {
+                if (hook->to_delete)
+                    continue;
+                if (!HOOK_BOUND_CHECK(hook, pg.paddr))
+                    continue;
+                hooked = true;
+                tlb_hook_state_sync(env, retaddr, &hook_state);
+                JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, pg.paddr, size, 0, hook->user_data));
+                // the last callback may already asked to stop emulation
+                if (uc->stop_request)
+                    break;
             }
             tlb_hook_state_restore(env, &hook_state);
-        } else {
-            uc->invalid_addr = paddr;
-            uc->invalid_error = error_code;
-            // printf("***** Invalid fetch (unmapped memory) at " TARGET_FMT_lx "\n", addr);
-            if (uc->nested_level > 0 && !uc->cpu->stopped) {
-                cpu_exit(uc->cpu);
-                // See comments above
-                cpu_loop_exit_restore(uc->cpu, retaddr);
+
+            // Unicorn: the callbacks may have changed mappings or
+            // permissions. A page they unmapped goes to the UNMAPPED hooks.
+            if (hooked) {
+                tlb_reload_after_hook(env, addr, size, access_type, mmu_idx,
+                                      retaddr, tlb_off, &pg);
+                if (!load_check_mapped(env, addr, size, mmu_idx, retaddr,
+                                       code_read, &hook_state, &pg)) {
+                    return 0;
+                }
             }
+        }
+
+        // Unicorn: callback on non-readable memory or fetch from NX
+        if (!load_check_prot(env, addr, size, mmu_idx, retaddr, code_read,
+                             &hook_state, &pg)) {
             return 0;
         }
     }
 
-    // now it is read on mapped memory
-    // patch issue #1041 multiple UC_HOOK_MEM callbacks for unaligned access
-    if (!code_read && !uc->size_recur_mem) {
-        // this is date reading
-        HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ) {
-            if (hook->to_delete)
-                continue;
-            if (!HOOK_BOUND_CHECK(hook, paddr))
-                continue;
-            tlb_hook_state_sync(env, retaddr, &hook_state);
-            JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, paddr, size, 0, hook->user_data));
-            // the last callback may already asked to stop emulation
-            if (uc->stop_request)
-                break;
-        }
-        tlb_hook_state_restore(env, &hook_state);
-
-        /* Unicorn: Previous callbacks may invalidate TLB, reload everything.
-                    This may have impact on performance but generally fine.
-                    A better approach is not always invalidating tlb but this
-                    might cause more chaos regarding re-entry (nested uc_emu_start).
-        */
-        if (tlb_entry_is_empty(entry)) {
-            tlb_fill(env_cpu(env), addr, size,
-                        access_type, mmu_idx, retaddr);
-            index = tlb_index(env, mmu_idx, addr);
-            entry = tlb_entry(env, mmu_idx, addr);
-            tlb_addr = code_read ? entry->addr_code : entry->addr_read;
-            tlb_addr &= ~TLB_INVALID_MASK;
-        }
-
-        // callback on non-readable memory
-        if (mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
-            handled = false;
-            HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_PROT) {
-                if (hook->to_delete)
-                    continue;
-                if (!HOOK_BOUND_CHECK(hook, paddr))
-                    continue;
-                tlb_hook_state_sync(env, retaddr, &hook_state);
-                JIT_CALLBACK_GUARD_VAR(handled, 
-                                       ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, paddr, size, 0, hook->user_data));
-                if (handled)
-                    break;
-
-                // the last callback may already asked to stop emulation
-                if (uc->stop_request)
-                    break;
-            }
-
-            if (handled) {
-                uc->invalid_error = UC_ERR_OK;
-                /* If the TLB entry is for a different page, reload and try again.  */
-                if (!tlb_hit(env->uc, tlb_addr, addr)) {
-                    if (!victim_tlb_hit(env, mmu_idx, index, tlb_off,
-                                        addr & TARGET_PAGE_MASK)) {
-                        tlb_fill(env_cpu(env), addr, size,
-                                 access_type, mmu_idx, retaddr);
-                        index = tlb_index(env, mmu_idx, addr);
-                        entry = tlb_entry(env, mmu_idx, addr);
-                    }
-                    tlb_addr = code_read ? entry->addr_code : entry->addr_read;
-                    tlb_addr &= ~TLB_INVALID_MASK;
-                }
-                tlb_hook_state_restore(env, &hook_state);
-            } else {
-                uc->invalid_addr = paddr;
-                uc->invalid_error = UC_ERR_READ_PROT;
-                // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
-                if (uc->nested_level > 0 && !uc->cpu->stopped) {
-                    cpu_exit(uc->cpu);
-                    // See comments above
-                    cpu_loop_exit_restore(uc->cpu, retaddr);
-                }
-                return 0;
-            }
-        }
-    } else if (code_read) {
-        // code fetching
-        // Unicorn: callback on fetch from NX
-        if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  // non-executable
-            handled = false;
-            HOOK_FOREACH(uc, hook, UC_HOOK_MEM_FETCH_PROT) {
-                if (hook->to_delete)
-                    continue;
-                if (!HOOK_BOUND_CHECK(hook, paddr))
-                    continue;
-                tlb_hook_state_sync(env, retaddr, &hook_state);
-                JIT_CALLBACK_GUARD_VAR(handled,
-                                       ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, paddr, size, 0, hook->user_data));
-                if (handled)
-                    break;
-
-                // the last callback may already asked to stop emulation
-                if (uc->stop_request)
-                    break;
-            }
-
-            if (handled) {
-                uc->invalid_error = UC_ERR_OK;
-                tlb_hook_state_restore(env, &hook_state);
-            } else {
-                uc->invalid_addr = paddr;
-                uc->invalid_error = UC_ERR_FETCH_PROT;
-                // printf("***** Invalid fetch (non-executable) at " TARGET_FMT_lx "\n", addr);
-                if (uc->nested_level > 0 && !uc->cpu->stopped) {
-                    cpu_exit(uc->cpu);
-                    // See comments above
-                    cpu_loop_exit_restore(uc->cpu, retaddr);
-                }
-                return 0;
-            }
-        }
-    }
-
     /* Handle anything that isn't just a straight memory access.  */
-    if (unlikely(tlb_addr & ~TARGET_PAGE_MASK)) {
+    if (unlikely(pg.tlb_addr & ~TARGET_PAGE_MASK)) {
         CPUIOTLBEntry *iotlbentry;
         bool need_swap;
 
-        /* For anything that is unaligned, recurse through full_load.  */
+        /* For anything that is unaligned, split it into aligned loads.  */
         if ((addr & (size - 1)) != 0) {
             goto do_unaligned_access;
         }
 
-        iotlbentry = &env_tlb(env)->d[mmu_idx].iotlb[index];
+        iotlbentry = &env_tlb(env)->d[mmu_idx].iotlb[pg.index];
 
         /* Handle watchpoints.  */
-        if (unlikely(tlb_addr & TLB_WATCHPOINT)) {
+        if (unlikely(pg.tlb_addr & TLB_WATCHPOINT)) {
             /* On watchpoint hit, this will longjmp out.  */
             cpu_check_watchpoint(env_cpu(env), addr, size,
                                  iotlbentry->attrs, BP_MEM_READ, retaddr);
         }
 
-        need_swap = size > 1 && (tlb_addr & TLB_BSWAP);
+        need_swap = size > 1 && (pg.tlb_addr & TLB_BSWAP);
 
         /* Handle I/O access.  */
-        if (likely(tlb_addr & TLB_MMIO)) {
+        if (likely(pg.tlb_addr & TLB_MMIO)) {
             res = io_readx(env, iotlbentry, mmu_idx, addr, retaddr,
                             access_type, op ^ (need_swap * MO_BSWAP));
             goto _out;
         }
 
-        haddr = (void *)((uintptr_t)addr + entry->addend);
+        haddr = (void *)((uintptr_t)addr + pg.entry->addend);
 
         /*
          * Keep these two load_memop separate to ensure that the compiler
@@ -1862,15 +1983,16 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
         target_ulong addr1, addr2;
         uint64_t r1, r2;
         unsigned shift;
-        int old_size;
     do_unaligned_access:
+        if (!uc_checked && !load_check_page2(env, addr, size, mmu_idx,
+                                             retaddr, code_read, &hook_state,
+                                             &pg)) {
+            return 0;
+        }
         addr1 = addr & ~((target_ulong)size - 1);
         addr2 = addr1 + size;
-        old_size = uc->size_recur_mem;
-        uc->size_recur_mem = size;
-        r1 = full_load(env, addr1, oi, retaddr);
-        r2 = full_load(env, addr2, oi, retaddr);
-        uc->size_recur_mem = old_size;
+        r1 = load_helper(env, addr1, oi, retaddr, op, code_read, true);
+        r2 = load_helper(env, addr2, oi, retaddr, op, code_read, true);
         shift = (addr & (size - 1)) * 8;
 
         if (memop_big_endian(op)) {
@@ -1884,20 +2006,20 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
         goto _out;
     }
 
-    haddr = (void *)((uintptr_t)addr + entry->addend);
+    haddr = (void *)((uintptr_t)addr + pg.entry->addend);
     res = load_memop(haddr, op);
 
 _out:
     // Unicorn: callback on successful data read
     if (!code_read) {
-        if (!uc->size_recur_mem) { // disabling read callback if in recursive call
+        if (!uc_checked) { // disabling read callback for the pieces of a split load
             HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_AFTER) {
                 if (hook->to_delete)
                     continue;
-                if (!HOOK_BOUND_CHECK(hook, paddr))
+                if (!HOOK_BOUND_CHECK(hook, pg.paddr))
                     continue;
                 tlb_hook_state_sync(env, retaddr, &hook_state);
-                JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ_AFTER, paddr, size, res, hook->user_data));
+                JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ_AFTER, pg.paddr, size, res, hook->user_data));
                 // the last callback may already asked to stop emulation
                 if (uc->stop_request)
                     break;
@@ -1922,7 +2044,7 @@ _out:
 static uint64_t full_ldub_mmu(CPUArchState *env, target_ulong addr,
                               TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_UB, false, full_ldub_mmu);
+    return load_helper(env, addr, oi, retaddr, MO_UB, false, false);
 }
 
 tcg_target_ulong helper_ret_ldub_mmu(CPUArchState *env, target_ulong addr,
@@ -1934,8 +2056,7 @@ tcg_target_ulong helper_ret_ldub_mmu(CPUArchState *env, target_ulong addr,
 static uint64_t full_le_lduw_mmu(CPUArchState *env, target_ulong addr,
                                  TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_LEUW, false,
-                       full_le_lduw_mmu);
+    return load_helper(env, addr, oi, retaddr, MO_LEUW, false, false);
 }
 
 tcg_target_ulong helper_le_lduw_mmu(CPUArchState *env, target_ulong addr,
@@ -1947,8 +2068,7 @@ tcg_target_ulong helper_le_lduw_mmu(CPUArchState *env, target_ulong addr,
 static uint64_t full_be_lduw_mmu(CPUArchState *env, target_ulong addr,
                                  TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_BEUW, false,
-                       full_be_lduw_mmu);
+    return load_helper(env, addr, oi, retaddr, MO_BEUW, false, false);
 }
 
 tcg_target_ulong helper_be_lduw_mmu(CPUArchState *env, target_ulong addr,
@@ -1960,8 +2080,7 @@ tcg_target_ulong helper_be_lduw_mmu(CPUArchState *env, target_ulong addr,
 static uint64_t full_le_ldul_mmu(CPUArchState *env, target_ulong addr,
                                  TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_LEUL, false,
-                       full_le_ldul_mmu);
+    return load_helper(env, addr, oi, retaddr, MO_LEUL, false, false);
 }
 
 tcg_target_ulong helper_le_ldul_mmu(CPUArchState *env, target_ulong addr,
@@ -1973,8 +2092,7 @@ tcg_target_ulong helper_le_ldul_mmu(CPUArchState *env, target_ulong addr,
 static uint64_t full_be_ldul_mmu(CPUArchState *env, target_ulong addr,
                                  TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_BEUL, false,
-                       full_be_ldul_mmu);
+    return load_helper(env, addr, oi, retaddr, MO_BEUL, false, false);
 }
 
 tcg_target_ulong helper_be_ldul_mmu(CPUArchState *env, target_ulong addr,
@@ -1986,15 +2104,13 @@ tcg_target_ulong helper_be_ldul_mmu(CPUArchState *env, target_ulong addr,
 uint64_t helper_le_ldq_mmu(CPUArchState *env, target_ulong addr,
                            TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_LEQ, false,
-                       helper_le_ldq_mmu);
+    return load_helper(env, addr, oi, retaddr, MO_LEQ, false, false);
 }
 
 uint64_t helper_be_ldq_mmu(CPUArchState *env, target_ulong addr,
                            TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_BEQ, false,
-                       helper_be_ldq_mmu);
+    return load_helper(env, addr, oi, retaddr, MO_BEQ, false, false);
 }
 
 /*
@@ -2193,25 +2309,91 @@ store_memop(void *haddr, uint64_t val, MemOp op)
     }
 }
 
-static inline void
+/*
+ * Unicorn: a page mapped with uc_mem_map_ptr() uses host memory the caller
+ * owns, which the host may have mapped read-only.
+ */
+static inline bool uc_mr_is_host_ptr(MemoryRegion *mr)
+{
+    return mr->ram_block && (mr->ram_block->flags & RAM_PREALLOC);
+}
+
+/*
+ * Unicorn: run the UC_HOOK_MEM_WRITE_UNMAPPED hooks if the page of a store
+ * at addr is not mapped and the UC_HOOK_MEM_WRITE_PROT hooks if it is not
+ * writable. Sets *accepted when a UC_HOOK_MEM_WRITE_PROT callback accepted
+ * the store. Returns false if the store must not go ahead, after recording
+ * the error.
+ */
+static bool store_check_page(CPUArchState *env, target_ulong addr, int size,
+                             uint64_t val, int mmu_idx, uintptr_t retaddr,
+                             CPUTLBHookState *hook_state, UcPage *pg,
+                             bool *accepted)
+{
+    struct uc_struct *uc = env->uc;
+    const size_t tlb_off = offsetof(CPUTLBEntry, addr_write);
+
+    // Unicorn: callback on invalid memory
+    if (pg->mr == NULL) {
+        if (!uc_run_event_hooks(env, UC_HOOK_MEM_WRITE_UNMAPPED_IDX,
+                                UC_MEM_WRITE_UNMAPPED, pg->paddr, size, val,
+                                retaddr, hook_state)) {
+            uc_store_fail(uc, pg->paddr, UC_ERR_WRITE_UNMAPPED);
+            return false;
+        }
+        uc->invalid_error = UC_ERR_OK;
+        tlb_reload_after_hook(env, addr, size, MMU_DATA_STORE, mmu_idx,
+                              retaddr, tlb_off, pg);
+        if (pg->mr == NULL) {
+            uc_store_fail(uc, pg->paddr, UC_ERR_MAP);
+            return false;
+        }
+        tlb_hook_state_restore(env, hook_state);
+    }
+
+    // Unicorn: callback on non-writable memory
+    if (!(pg->mr->perms & UC_PROT_WRITE)) {
+        if (!uc_run_event_hooks(env, UC_HOOK_MEM_WRITE_PROT_IDX,
+                                UC_MEM_WRITE_PROT, pg->paddr, size, val,
+                                retaddr, hook_state)) {
+            uc_store_fail(uc, pg->paddr, UC_ERR_WRITE_PROT);
+            return false;
+        }
+        uc->invalid_error = UC_ERR_OK;
+        tlb_reload_after_hook(env, addr, size, MMU_DATA_STORE, mmu_idx,
+                              retaddr, tlb_off, pg);
+        if (pg->mr == NULL) {
+            uc_store_fail(uc, pg->paddr, UC_ERR_MAP);
+            return false;
+        }
+        *accepted = true;
+        tlb_hook_state_restore(env, hook_state);
+    }
+    return true;
+}
+
+/*
+ * Unicorn: uc_checked is set for the byte stores of a split store. The store
+ * that split them has already run the checks and hooks for every page it
+ * touches. Returns false if the store failed.
+ */
+static inline bool
 store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
-             TCGMemOpIdx oi, uintptr_t retaddr, MemOp op)
+             TCGMemOpIdx oi, uintptr_t retaddr, MemOp op, bool uc_checked)
 {
     struct uc_struct *uc = env->uc;
     HOOK_FOREACH_VAR_DECLARE;
     uintptr_t mmu_idx = get_mmuidx(oi);
-    uintptr_t index = tlb_index(env, mmu_idx, addr);
-    CPUTLBEntry *entry = tlb_entry(env, mmu_idx, addr);
-    target_ulong tlb_addr = tlb_addr_write(entry);
-    hwaddr paddr;
     const size_t tlb_off = offsetof(CPUTLBEntry, addr_write);
     unsigned a_bits = get_alignment_bits(get_memop(oi));
     void *haddr;
     size_t size = memop_size(op);
     struct hook *hook;
-    bool handled;
-    MemoryRegion *mr;
+    // Set when a UC_HOOK_MEM_WRITE_PROT callback accepted the store. The
+    // pieces of a split store only reach a read-only page if it did.
+    bool write_accepted = uc_checked;
     CPUTLBHookState hook_state;
+    UcPage pg;
 
     tlb_hook_state_init(env, &hook_state);
 
@@ -2221,149 +2403,68 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                              mmu_idx, retaddr);
     }
 
-    /* If the TLB entry is for a different page, reload and try again.  */
-    if (!tlb_hit(env->uc, tlb_addr, addr)) {
-        if (!victim_tlb_hit(env, mmu_idx, index, tlb_off,
-            addr & TARGET_PAGE_MASK)) {
-            tlb_fill(env_cpu(env), addr, size, MMU_DATA_STORE,
-                     mmu_idx, retaddr);
-            index = tlb_index(env, mmu_idx, addr);
-            entry = tlb_entry(env, mmu_idx, addr);
-        }
-        tlb_addr = tlb_addr_write(entry) & ~TLB_INVALID_MASK;
-    }
+    uc_page_lookup(env, addr, size, MMU_DATA_STORE, mmu_idx, retaddr, tlb_off,
+                   &pg);
 
-    // Load the latest memory mapping.
-    paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-    mr = uc->memory_mapping(uc, paddr);
+    if (!uc_checked) {
+        bool hooked = false;
 
-    if (!uc->size_recur_mem) { // disabling write callback if in recursive call
         // Unicorn: callback on memory write
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE) {
             if (hook->to_delete)
                 continue;
-            if (!HOOK_BOUND_CHECK(hook, paddr))
+            if (!HOOK_BOUND_CHECK(hook, pg.paddr))
                 continue;
+            hooked = true;
             tlb_hook_state_sync(env, retaddr, &hook_state);
-            JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(uc, UC_MEM_WRITE, paddr, size, val, hook->user_data));
+            JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(uc, UC_MEM_WRITE, pg.paddr, size, val, hook->user_data));
             // the last callback may already asked to stop emulation
             if (uc->stop_request)
                 break;
         }
         tlb_hook_state_restore(env, &hook_state);
+
+        // Unicorn: the callbacks may have changed mappings or permissions.
+        // A page they unmapped goes to the UNMAPPED hooks.
+        if (hooked) {
+            tlb_reload_after_hook(env, addr, size, MMU_DATA_STORE, mmu_idx,
+                                  retaddr, tlb_off, &pg);
+        }
+
+        if (!store_check_page(env, addr, size, val, mmu_idx, retaddr,
+                              &hook_state, &pg, &write_accepted)) {
+            return false;
+        }
+    } else if (pg.mr == NULL) {
+        uc_store_fail(uc, pg.paddr, UC_ERR_MAP);
+        return false;
     }
 
-    // Unicorn: callback on invalid memory
-    if (mr == NULL) {
-        handled = false;
-        HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE_UNMAPPED) {
-            if (hook->to_delete)
-                continue;
-            if (!HOOK_BOUND_CHECK(hook, paddr))
-                continue;
-            tlb_hook_state_sync(env, retaddr, &hook_state);
-            JIT_CALLBACK_GUARD_VAR(handled,
-                                   ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_UNMAPPED, paddr, size, val, hook->user_data));
-            if (handled)
-                break;
-
-            // the last callback may already asked to stop emulation
-            if (uc->stop_request)
-                break;
-        }
-
-        if (!handled) {
-            // save error & quit
-            uc->invalid_addr = paddr;
-            uc->invalid_error = UC_ERR_WRITE_UNMAPPED;
-            // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
-            cpu_exit(uc->cpu);
-            return;
-        } else {
-            uc->invalid_error = UC_ERR_OK;
-            /* If the TLB entry is for a different page, reload and try again.  */
-            if (!tlb_hit(env->uc, tlb_addr, addr)) {
-                if (!victim_tlb_hit(env, mmu_idx, index, tlb_off,
-                    addr & TARGET_PAGE_MASK)) {
-                    tlb_fill(env_cpu(env), addr, size, MMU_DATA_STORE,
-                             mmu_idx, retaddr);
-                    index = tlb_index(env, mmu_idx, addr);
-                    entry = tlb_entry(env, mmu_idx, addr);
-                }
-                tlb_addr = tlb_addr_write(entry) & ~TLB_INVALID_MASK;
-            }
-            paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-            mr = uc->memory_mapping(uc, paddr);
-            if (mr == NULL) {
-                uc->invalid_error = UC_ERR_MAP;
-                cpu_exit(uc->cpu);
-                return;
-            }
-            tlb_hook_state_restore(env, &hook_state);
-        }
-    }
-
-    // Unicorn: callback on non-writable memory
-    if (mr != NULL && !(mr->perms & UC_PROT_WRITE)) {  //non-writable
-        // printf("not writable memory???\n");
-        handled = false;
-        HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE_PROT) {
-            if (hook->to_delete)
-                continue;
-            if (!HOOK_BOUND_CHECK(hook, paddr))
-                continue;
-            tlb_hook_state_sync(env, retaddr, &hook_state);
-            JIT_CALLBACK_GUARD_VAR(handled,
-                                   ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, paddr, size, val, hook->user_data));
-            if (handled)
-                break;
-
-            // the last callback may already asked to stop emulation
-            if (uc->stop_request)
-                break;
-        }
-
-        if (handled) {
-            /* If the TLB entry is for a different page, reload and try again.  */
-            if (!tlb_hit(env->uc, tlb_addr, addr)) {
-                if (!victim_tlb_hit(env, mmu_idx, index, tlb_off,
-                    addr & TARGET_PAGE_MASK)) {
-                    tlb_fill(env_cpu(env), addr, size, MMU_DATA_STORE,
-                             mmu_idx, retaddr);
-                    index = tlb_index(env, mmu_idx, addr);
-                    entry = tlb_entry(env, mmu_idx, addr);
-                }
-                tlb_addr = tlb_addr_write(entry) & ~TLB_INVALID_MASK;
-            }
-            uc->invalid_error = UC_ERR_OK;
-            tlb_hook_state_restore(env, &hook_state);
-        } else {
-            uc->invalid_addr = paddr;
-            uc->invalid_error = UC_ERR_WRITE_PROT;
-            // printf("***** Invalid memory write (ro) at " TARGET_FMT_lx "\n", addr);
-            cpu_exit(uc->cpu);
-            return;
-        }
-    }
-
-    if (uc->snapshot_level && mr->ram && mr->priority < uc->snapshot_level) {
-        mr = memory_cow(uc, mr, paddr & TARGET_PAGE_MASK, TARGET_PAGE_SIZE);
-        if (!mr) {
-            uc->invalid_addr = paddr;
-            uc->invalid_error = UC_ERR_NOMEM;
-            cpu_exit(uc->cpu);
-            return;
+    if (uc->snapshot_level && pg.mr->ram && pg.mr->priority < uc->snapshot_level) {
+        pg.mr = memory_cow(uc, pg.mr, pg.paddr & TARGET_PAGE_MASK, TARGET_PAGE_SIZE);
+        if (!pg.mr) {
+            uc_store_fail(uc, pg.paddr, UC_ERR_NOMEM);
+            return false;
         }
         /* refill tlb after CoW */
         tlb_fill(env_cpu(env), addr, size, MMU_DATA_STORE,
                  mmu_idx, retaddr);
-        index = tlb_index(env, mmu_idx, addr);
-        entry = tlb_entry(env, mmu_idx, addr);
-        tlb_addr = tlb_addr_write(entry);
+        pg.index = tlb_index(env, mmu_idx, addr);
+        pg.entry = tlb_entry(env, mmu_idx, addr);
+        pg.tlb_addr = tlb_addr_write(pg.entry);
+    }
+
+    // Unicorn: a page from uc_mem_map_ptr() is host memory, and the host may
+    // have mapped it read-only. Such a page does not get TLB_DISCARD_WRITE,
+    // so drop a store that a UC_HOOK_MEM_WRITE_PROT callback accepted
+    // without making the page writable here, instead of crashing the process.
+    if (write_accepted && !(pg.mr->perms & UC_PROT_WRITE) &&
+        uc_mr_is_host_ptr(pg.mr)) {
+        return true;
     }
 
     /* Handle anything that isn't just a straight memory access.  */
-    if (unlikely(tlb_addr & ~TARGET_PAGE_MASK)) {
+    if (unlikely(pg.tlb_addr & ~TARGET_PAGE_MASK)) {
         CPUIOTLBEntry *iotlbentry;
         bool need_swap;
 
@@ -2372,35 +2473,46 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             goto do_unaligned_access;
         }
 
-        iotlbentry = &env_tlb(env)->d[mmu_idx].iotlb[index];
+        iotlbentry = &env_tlb(env)->d[mmu_idx].iotlb[pg.index];
 
         /* Handle watchpoints.  */
-        if (unlikely(tlb_addr & TLB_WATCHPOINT)) {
+        if (unlikely(pg.tlb_addr & TLB_WATCHPOINT)) {
             /* On watchpoint hit, this will longjmp out.  */
             cpu_check_watchpoint(env_cpu(env), addr, size,
                                  iotlbentry->attrs, BP_MEM_WRITE, retaddr);
         }
 
-        need_swap = size > 1 && (tlb_addr & TLB_BSWAP);
+        need_swap = size > 1 && (pg.tlb_addr & TLB_BSWAP);
 
         /* Handle I/O access.  */
-        if (tlb_addr & TLB_MMIO) {
+        if (pg.tlb_addr & TLB_MMIO) {
             io_writex(env, iotlbentry, mmu_idx, val, addr, retaddr,
                       op ^ (need_swap * MO_BSWAP));
-            return;
+            return true;
         }
 
         /* Ignore writes to ROM.  */
-        if (unlikely(tlb_addr & TLB_DISCARD_WRITE)) {
-            return;
+        if (unlikely(pg.tlb_addr & TLB_DISCARD_WRITE)) {
+            // Unicorn: a page without UC_PROT_WRITE is ROM here. Write to it
+            // anyway if a UC_HOOK_MEM_WRITE_PROT callback accepted the
+            // store.
+            if (!write_accepted) {
+                return true;
+            }
+            // Read-only pages never get TLB_NOTDIRTY, and notdirty_write
+            // skips pages without UC_PROT_EXEC, but code on this page may
+            // have been translated after a UC_HOOK_MEM_FETCH_PROT callback
+            // accepted a fetch. Drop the translations of the bytes written
+            // here.
+            tb_invalidate_written(uc, addr + iotlbentry->addr, size, retaddr);
         }
 
         /* Handle clean RAM pages.  */
-        if (tlb_addr & TLB_NOTDIRTY) {
-            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, entry);
+        if (pg.tlb_addr & TLB_NOTDIRTY) {
+            notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, pg.entry);
         }
 
-        haddr = (void *)((uintptr_t)addr + entry->addend);
+        haddr = (void *)((uintptr_t)addr + pg.entry->addend);
 
         /*
          * Keep these two store_memop separate to ensure that the compiler
@@ -2412,7 +2524,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
         } else {
             store_memop(haddr, val, op);
         }
-        return;
+        return true;
     }
 
     /* Handle slow unaligned access (it spans two pages or IO).  */
@@ -2420,11 +2532,9 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
         && unlikely((addr & ~TARGET_PAGE_MASK) + size - 1
                      >= TARGET_PAGE_SIZE)) {
         int i;
-        uintptr_t index2;
-        CPUTLBEntry *entry2;
-        target_ulong page2, tlb_addr2;
+        UcPage pg2;
+        target_ulong page2;
         size_t size2;
-        int old_size;
 
     do_unaligned_access:
         /*
@@ -2434,31 +2544,51 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
          */
         page2 = (addr + size) & TARGET_PAGE_MASK;
         size2 = (addr + size) & ~TARGET_PAGE_MASK;
-        index2 = tlb_index(env, mmu_idx, page2);
-        entry2 = tlb_entry(env, mmu_idx, page2);
-        tlb_addr2 = tlb_addr_write(entry2);
-        if (!tlb_hit_page(uc, tlb_addr2, page2)) {
-            if (!victim_tlb_hit(env, mmu_idx, index2, tlb_off, page2)) {
-                tlb_fill(env_cpu(env), page2, size2, MMU_DATA_STORE,
-                         mmu_idx, retaddr);
-                index2 = tlb_index(env, mmu_idx, page2);
-                entry2 = tlb_entry(env, mmu_idx, page2);
+        uc_page_lookup(env, page2, size2, MMU_DATA_STORE, mmu_idx, retaddr,
+                       tlb_off, &pg2);
+
+        /*
+         * Unicorn: the store has only been checked for the page of addr.
+         * Run the checks and hooks for the part on the second page before
+         * storing anything, so a failure there leaves memory as it was. The
+         * hooks get the start of that page, the number of bytes stored there
+         * and the value of those bytes. They may change the first page, so
+         * look it up again.
+         */
+        if (!uc_checked && size2 != 0 &&
+            page2 != (addr & TARGET_PAGE_MASK)) {
+            uint64_t val2;
+            bool accepted2 = false;
+
+            if (memop_big_endian(op)) {
+                val2 = val & MAKE_64BIT_MASK(0, size2 * 8);
+            } else {
+                val2 = val >> ((size - size2) * 8);
             }
-            tlb_addr2 = tlb_addr_write(entry2);
+            if (!store_check_page(env, page2, size2, val2, mmu_idx, retaddr,
+                                  &hook_state, &pg2, &accepted2)) {
+                return false;
+            }
+            tlb_reload_after_hook(env, addr, size, MMU_DATA_STORE, mmu_idx,
+                                  retaddr, tlb_off, &pg);
+            if (pg.mr == NULL) {
+                uc_store_fail(uc, pg.paddr, UC_ERR_MAP);
+                return false;
+            }
         }
 
         /*
          * Handle watchpoints.  Since this may trap, all checks
          * must happen before any store.
          */
-        if (unlikely(tlb_addr & TLB_WATCHPOINT)) {
+        if (unlikely(pg.tlb_addr & TLB_WATCHPOINT)) {
             cpu_check_watchpoint(env_cpu(env), addr, size - size2,
-                                 env_tlb(env)->d[mmu_idx].iotlb[index].attrs,
+                                 env_tlb(env)->d[mmu_idx].iotlb[pg.index].attrs,
                                  BP_MEM_WRITE, retaddr);
         }
-        if (unlikely(tlb_addr2 & TLB_WATCHPOINT)) {
+        if (unlikely(pg2.tlb_addr & TLB_WATCHPOINT)) {
             cpu_check_watchpoint(env_cpu(env), page2, size2,
-                                 env_tlb(env)->d[mmu_idx].iotlb[index2].attrs,
+                                 env_tlb(env)->d[mmu_idx].iotlb[pg2.index].attrs,
                                  BP_MEM_WRITE, retaddr);
         }
 
@@ -2467,8 +2597,6 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
          * This loop must go in the forward direction to avoid issues
          * with self-modifying code in Windows 64-bit.
          */
-        old_size = uc->size_recur_mem;
-        uc->size_recur_mem = size;
         for (i = 0; i < size; ++i) {
             uint8_t val8;
             if (memop_big_endian(op)) {
@@ -2478,56 +2606,58 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 /* Little-endian extract.  */
                 val8 = val >> (i * 8);
             }
-            helper_ret_stb_mmu(env, addr + i, val8, oi, retaddr);
+            if (!store_helper(env, addr + i, val8, oi, retaddr, MO_UB, true)) {
+                return false;
+            }
         }
-        uc->size_recur_mem = old_size;
-        return;
+        return true;
     }
 
-    haddr = (void *)((uintptr_t)addr + entry->addend);
+    haddr = (void *)((uintptr_t)addr + pg.entry->addend);
     store_memop(haddr, val, op);
+    return true;
 }
 
 void helper_ret_stb_mmu(CPUArchState *env, target_ulong addr, uint8_t val,
                         TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    store_helper(env, addr, val, oi, retaddr, MO_UB);
+    store_helper(env, addr, val, oi, retaddr, MO_UB, false);
 }
 
 void helper_le_stw_mmu(CPUArchState *env, target_ulong addr, uint16_t val,
                        TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    store_helper(env, addr, val, oi, retaddr, MO_LEUW);
+    store_helper(env, addr, val, oi, retaddr, MO_LEUW, false);
 }
 
 void helper_be_stw_mmu(CPUArchState *env, target_ulong addr, uint16_t val,
                        TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    store_helper(env, addr, val, oi, retaddr, MO_BEUW);
+    store_helper(env, addr, val, oi, retaddr, MO_BEUW, false);
 }
 
 void helper_le_stl_mmu(CPUArchState *env, target_ulong addr, uint32_t val,
                        TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    store_helper(env, addr, val, oi, retaddr, MO_LEUL);
+    store_helper(env, addr, val, oi, retaddr, MO_LEUL, false);
 }
 
 void helper_be_stl_mmu(CPUArchState *env, target_ulong addr, uint32_t val,
                        TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    store_helper(env, addr, val, oi, retaddr, MO_BEUL);
+    store_helper(env, addr, val, oi, retaddr, MO_BEUL, false);
 }
 
 void helper_le_stq_mmu(CPUArchState *env, target_ulong addr, uint64_t val,
                        TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    store_helper(env, addr, val, oi, retaddr, MO_LEQ);
+    store_helper(env, addr, val, oi, retaddr, MO_LEQ, false);
 }
 
 void helper_be_stq_mmu(CPUArchState *env, target_ulong addr, uint64_t val,
                        TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    store_helper(env, addr, val, oi, retaddr, MO_BEQ);
+    store_helper(env, addr, val, oi, retaddr, MO_BEQ, false);
 }
 
 /*
@@ -2541,7 +2671,7 @@ cpu_store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
     TCGMemOpIdx oi;
 
     oi = make_memop_idx(op, mmu_idx);
-    store_helper(env, addr, val, oi, retaddr, op);
+    store_helper(env, addr, val, oi, retaddr, op, false);
 }
 
 void cpu_stb_mmuidx_ra(CPUArchState *env, target_ulong addr, uint32_t val,
@@ -2671,7 +2801,7 @@ void cpu_stq_data(CPUArchState *env, target_ulong ptr, uint64_t val)
 static uint64_t full_ldub_code(CPUArchState *env, target_ulong addr,
                                TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_8, true, full_ldub_code);
+    return load_helper(env, addr, oi, retaddr, MO_8, true, false);
 }
 
 uint32_t cpu_ldub_code(CPUArchState *env, abi_ptr addr)
@@ -2683,7 +2813,7 @@ uint32_t cpu_ldub_code(CPUArchState *env, abi_ptr addr)
 static uint64_t full_lduw_code(CPUArchState *env, target_ulong addr,
                                TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_TEUW, true, full_lduw_code);
+    return load_helper(env, addr, oi, retaddr, MO_TEUW, true, false);
 }
 
 uint32_t cpu_lduw_code(CPUArchState *env, abi_ptr addr)
@@ -2695,7 +2825,7 @@ uint32_t cpu_lduw_code(CPUArchState *env, abi_ptr addr)
 static uint64_t full_ldl_code(CPUArchState *env, target_ulong addr,
                               TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_TEUL, true, full_ldl_code);
+    return load_helper(env, addr, oi, retaddr, MO_TEUL, true, false);
 }
 
 uint32_t cpu_ldl_code(CPUArchState *env, abi_ptr addr)
@@ -2707,7 +2837,7 @@ uint32_t cpu_ldl_code(CPUArchState *env, abi_ptr addr)
 static uint64_t full_ldq_code(CPUArchState *env, target_ulong addr,
                               TCGMemOpIdx oi, uintptr_t retaddr)
 {
-    return load_helper(env, addr, oi, retaddr, MO_TEQ, true, full_ldq_code);
+    return load_helper(env, addr, oi, retaddr, MO_TEQ, true, false);
 }
 
 uint64_t cpu_ldq_code(CPUArchState *env, abi_ptr addr)
