@@ -944,6 +944,60 @@ static void test_arm64_pauth_ctl(void)
     OK(uc_close(uc));
 }
 
+static void test_arm64_ushl_2d(void)
+{
+    uc_engine *uc;
+    char code[] = "\x61\x44\xe1\x6e"  // ushl v1.2d, v3.2d, v1.2d
+                  "\x61\x44\xe2\x6e"; // ushl v1.2d, v3.2d, v2.2d
+    uint64_t input[2] = {UINT64_C(0xadf5ae2a17937311),
+                        UINT64_C(0xadf5ae2a17937311)};
+    uint64_t output[2];
+    const struct {
+        uint64_t shift[2];
+        uint64_t expected[2];
+    } cases[] = {
+        {{UINT64_C(0xffffffffffffffd0), UINT64_C(0xffffffffffffffc8)},
+         {UINT64_C(0x000000000000adf5), UINT64_C(0x00000000000000ad)}},
+        {{UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000001)},
+         {UINT64_C(0xadf5ae2a17937311), UINT64_C(0x5beb5c542f26e622)}},
+        {{UINT64_C(0x0000000000000020), UINT64_C(0x000000000000003f)},
+         {UINT64_C(0x1793731100000000), UINT64_C(0x8000000000000000)}},
+        {{UINT64_C(0xffffffffffffffff), UINT64_C(0xffffffffffffffe0)},
+         {UINT64_C(0x56fad7150bc9b988), UINT64_C(0x00000000adf5ae2a)}},
+        {{UINT64_C(0xffffffffffffffc1), UINT64_C(0xffffffffffffffc0)},
+         {UINT64_C(0x0000000000000001), UINT64_C(0x0000000000000000)}},
+        {{UINT64_C(0x0000000000000040), UINT64_C(0x000000000000007f)},
+         {UINT64_C(0x0000000000000000), UINT64_C(0x0000000000000000)}},
+        {{UINT64_C(0xffffffffffffff80), UINT64_C(0x0000000000000108)},
+         {UINT64_C(0x0000000000000000), UINT64_C(0xf5ae2a1793731100)}},
+    };
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM64_A72);
+
+    for (size_t form = 0; form < 2; form++) {
+        uint64_t start = code_start + 4 * form;
+        int shift_reg = form == 0 ? UC_ARM64_REG_Q1 : UC_ARM64_REG_Q2;
+
+        for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+            OK(uc_reg_write(uc, UC_ARM64_REG_Q3, input));
+            OK(uc_reg_write(uc, shift_reg, cases[i].shift));
+            OK(uc_emu_start(uc, start, start + 4, 0, 1));
+            OK(uc_reg_read(uc, UC_ARM64_REG_Q1, output));
+
+            for (size_t lane = 0; lane < 2; lane++) {
+                TEST_CHECK(output[lane] == cases[i].expected[lane]);
+                TEST_MSG("form=%zu case=%zu lane=%zu: got 0x%016llx, "
+                         "expected 0x%016llx", form, i, lane,
+                         (unsigned long long)output[lane],
+                         (unsigned long long)cases[i].expected[lane]);
+            }
+        }
+    }
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -965,4 +1019,5 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_pc_guarantee", test_arm64_pc_guarantee},
              {"test_arm64_pauth_vanilla", test_arm64_pauth_vanilla},
              {"test_arm64_pauth_ctl", test_arm64_pauth_ctl},
+             {"test_arm64_ushl_2d", test_arm64_ushl_2d},
              {NULL, NULL}};
