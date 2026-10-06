@@ -4799,6 +4799,14 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             sse_fn_eppt(tcg_ctx, tcg_ctx->cpu_env, s->ptr0, s->ptr1, s->A0);
             break;
         default:
+            /* VEX: first source is vvvv, not dst; the helpers work in place, so
+             * load vvvv into dst first (SSE_FOP family only). */
+            if ((s->prefix & PREFIX_VEX) && is_xmm && s->vex_v != reg &&
+                (b == 0x51 || b == 0x58 || b == 0x59 ||
+                 b == 0x5c || b == 0x5d || b == 0x5e || b == 0x5f)) {
+                gen_op_movo(s, op1_offset,
+                            offsetof(CPUX86State, xmm_regs[s->vex_v]));
+            }
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, tcg_ctx->cpu_env, op1_offset);
             tcg_gen_addi_ptr(tcg_ctx, s->ptr1, tcg_ctx->cpu_env, op2_offset);
             sse_fn_epp(tcg_ctx, tcg_ctx->cpu_env, s->ptr0, s->ptr1);
