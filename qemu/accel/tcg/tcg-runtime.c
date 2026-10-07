@@ -165,10 +165,20 @@ void HELPER(exit_atomic)(CPUArchState *env)
     cpu_loop_exit_atomic(env_cpu(env), GETPC());
 }
 
-void HELPER(check_exit_request)(void *p, uint32_t in_delay_slot) {
+void HELPER(check_exit_request)(void *p, uint32_t flags) {
     uc_engine *uc = p;
+    uint32_t in_delay_slot = flags & ~UC_EXIT_CHECK_AFTER_MEM;
 
     if (cpu_loop_exit_requested(uc->cpu) && !in_delay_slot) {
+        // Unicorn:
+        //   An asynchronous uc_emu_stop seen after a guest memory access is
+        //   left pending for the next TB start: restoring the PC here would
+        //   rewind to the start of an instruction whose stores already
+        //   happened, and resuming would replay them.
+        if ((flags & UC_EXIT_CHECK_AFTER_MEM) && uc->async_stop &&
+            uc->invalid_error == UC_ERR_OK && !uc->skip_sync_pc_on_exit) {
+            return;
+        }
         // There are stil something we have to before exiting to be compatible with previous behaviors
 
         // from cpu_tb_exec
