@@ -7,6 +7,7 @@
 #include "sysemu/cpus.h"
 #include "sysemu/tcg.h"
 #include "cpu.h"
+#include "internals.h"
 #include "uc_priv.h"
 #include "unicorn_common.h"
 #include "unicorn.h"
@@ -156,6 +157,33 @@ static void v7m_msr_xpsr(CPUARMState *env, uint32_t mask, uint32_t reg,
     xpsr_write(env, val, xpsrmask);
 }
 
+static uint32_t v7m_mrs_privileged(CPUARMState *env, uint32_t reg)
+{
+    uint32_t *control = &env->v7m.control[env->v7m.secure];
+    uint32_t npriv = *control & R_V7M_CONTROL_NPRIV_MASK;
+    uint32_t value;
+
+    *control &= ~R_V7M_CONTROL_NPRIV_MASK;
+    value = helper_v7m_mrs(env, reg);
+    *control |= npriv;
+    return value;
+}
+
+static void v7m_msr_privileged(CPUARMState *env, uint32_t reg, uint32_t value)
+{
+    uint32_t *control = &env->v7m.control[env->v7m.secure];
+    uint32_t npriv = *control & R_V7M_CONTROL_NPRIV_MASK;
+
+    *control &= ~R_V7M_CONTROL_NPRIV_MASK;
+    helper_v7m_msr(env, reg, value);
+    if (reg != 20 || !arm_feature(env, ARM_FEATURE_M_MAIN)) {
+        *control |= npriv;
+    }
+    if (env->uc) {
+        arm_rebuild_hflags(env);
+    }
+}
+
 static uc_err read_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
 {
     ARMCPU *cpu = ARM_CPU(env->uc->cpu);
@@ -302,11 +330,11 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             break;
         case UC_ARM_REG_MSP:
             CHECK_REG_TYPE(uint32_t);
-            *(uint32_t *)value = helper_v7m_mrs(env, 8);
+            *(uint32_t *)value = v7m_mrs_privileged(env, 8);
             break;
         case UC_ARM_REG_PSP:
             CHECK_REG_TYPE(uint32_t);
-            *(uint32_t *)value = helper_v7m_mrs(env, 9);
+            *(uint32_t *)value = v7m_mrs_privileged(env, 9);
             break;
         case UC_ARM_REG_IAPSR:
             CHECK_REG_TYPE(int32_t);
@@ -330,19 +358,19 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             break;
         case UC_ARM_REG_PRIMASK:
             CHECK_REG_TYPE(uint32_t);
-            *(uint32_t *)value = helper_v7m_mrs(env, 16);
+            *(uint32_t *)value = v7m_mrs_privileged(env, 16);
             break;
         case UC_ARM_REG_BASEPRI:
             CHECK_REG_TYPE(uint32_t);
-            *(uint32_t *)value = helper_v7m_mrs(env, 17);
+            *(uint32_t *)value = v7m_mrs_privileged(env, 17);
             break;
         case UC_ARM_REG_BASEPRI_MAX:
             CHECK_REG_TYPE(uint32_t);
-            *(uint32_t *)value = helper_v7m_mrs(env, 18);
+            *(uint32_t *)value = v7m_mrs_privileged(env, 18);
             break;
         case UC_ARM_REG_FAULTMASK:
             CHECK_REG_TYPE(uint32_t);
-            *(uint32_t *)value = helper_v7m_mrs(env, 19);
+            *(uint32_t *)value = v7m_mrs_privileged(env, 19);
             break;
         case UC_ARM_REG_CONTROL:
             CHECK_REG_TYPE(uint32_t);
@@ -470,15 +498,15 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             break;
         case UC_ARM_REG_MSP:
             CHECK_REG_TYPE(uint32_t);
-            helper_v7m_msr(env, 8, *(uint32_t *)value);
+            v7m_msr_privileged(env, 8, *(uint32_t *)value);
             break;
         case UC_ARM_REG_PSP:
             CHECK_REG_TYPE(uint32_t);
-            helper_v7m_msr(env, 9, *(uint32_t *)value);
+            v7m_msr_privileged(env, 9, *(uint32_t *)value);
             break;
         case UC_ARM_REG_CONTROL:
             CHECK_REG_TYPE(uint32_t);
-            helper_v7m_msr(env, 20, *(uint32_t *)value);
+            v7m_msr_privileged(env, 20, *(uint32_t *)value);
             break;
         case UC_ARM_REG_EPSR:
             CHECK_REG_TYPE(uint32_t);
@@ -490,19 +518,19 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             break;
         case UC_ARM_REG_PRIMASK:
             CHECK_REG_TYPE(uint32_t);
-            helper_v7m_msr(env, 16, *(uint32_t *)value);
+            v7m_msr_privileged(env, 16, *(uint32_t *)value);
             break;
         case UC_ARM_REG_BASEPRI:
             CHECK_REG_TYPE(uint32_t);
-            helper_v7m_msr(env, 17, *(uint32_t *)value);
+            v7m_msr_privileged(env, 17, *(uint32_t *)value);
             break;
         case UC_ARM_REG_BASEPRI_MAX:
             CHECK_REG_TYPE(uint32_t);
-            helper_v7m_msr(env, 18, *(uint32_t *)value);
+            v7m_msr_privileged(env, 18, *(uint32_t *)value);
             break;
         case UC_ARM_REG_FAULTMASK:
             CHECK_REG_TYPE(uint32_t);
-            helper_v7m_msr(env, 19, *(uint32_t *)value);
+            v7m_msr_privileged(env, 19, *(uint32_t *)value);
             break;
         case UC_ARM_REG_APSR_NZCVQ:
             CHECK_REG_TYPE(uint32_t);

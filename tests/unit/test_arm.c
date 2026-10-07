@@ -257,6 +257,75 @@ static void test_arm_m_control(void)
     OK(uc_close(uc));
 }
 
+static void test_arm_m_unprivileged_special_regs(void)
+{
+    uc_engine *uc;
+    uint32_t value;
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, &uc));
+
+    value = 0x1000;
+    OK(uc_reg_write(uc, UC_ARM_REG_MSP, &value));
+    value = 0x2000;
+    OK(uc_reg_write(uc, UC_ARM_REG_PSP, &value));
+    value = 0b11;
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &value));
+    OK(uc_reg_read(uc, UC_ARM_REG_CONTROL, &value));
+    TEST_CHECK(value == 0b11);
+
+    OK(uc_reg_read(uc, UC_ARM_REG_MSP, &value));
+    TEST_CHECK(value == 0x1000);
+    OK(uc_reg_read(uc, UC_ARM_REG_PSP, &value));
+    TEST_CHECK(value == 0x2000);
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &value));
+    TEST_CHECK(value == 0x2000);
+
+    value = 0x3000;
+    OK(uc_reg_write(uc, UC_ARM_REG_MSP, &value));
+    value = 0x4000;
+    OK(uc_reg_write(uc, UC_ARM_REG_PSP, &value));
+    value = 1;
+    OK(uc_reg_write(uc, UC_ARM_REG_PRIMASK, &value));
+    value = 0x40;
+    OK(uc_reg_write(uc, UC_ARM_REG_BASEPRI, &value));
+    value = 1;
+    OK(uc_reg_write(uc, UC_ARM_REG_FAULTMASK, &value));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_MSP, &value));
+    TEST_CHECK(value == 0x3000);
+    OK(uc_reg_read(uc, UC_ARM_REG_PSP, &value));
+    TEST_CHECK(value == 0x4000);
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &value));
+    TEST_CHECK(value == 0x4000);
+    OK(uc_reg_read(uc, UC_ARM_REG_PRIMASK, &value));
+    TEST_CHECK(value == 1);
+    OK(uc_reg_read(uc, UC_ARM_REG_BASEPRI, &value));
+    TEST_CHECK(value == 0x40);
+    OK(uc_reg_read(uc, UC_ARM_REG_FAULTMASK, &value));
+    TEST_CHECK(value == 1);
+    OK(uc_reg_read(uc, UC_ARM_REG_CONTROL, &value));
+    TEST_CHECK(value == 0b11);
+
+    value = 0b10;
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &value));
+    OK(uc_reg_read(uc, UC_ARM_REG_CONTROL, &value));
+    TEST_CHECK(value == 0b10);
+
+    value = 0b11;
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &value));
+    OK(uc_reg_read(uc, UC_ARM_REG_CONTROL, &value));
+    TEST_CHECK(value == 0b11);
+
+    value = 0b01;
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &value));
+    OK(uc_reg_read(uc, UC_ARM_REG_CONTROL, &value));
+    TEST_CHECK(value == 0b01);
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &value));
+    TEST_CHECK(value == 0x3000);
+
+    OK(uc_close(uc));
+}
+
 //
 // Some notes:
 //   Qemu raise a special exception EXCP_EXCEPTION_EXIT to handle the
@@ -1040,6 +1109,8 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_ite", test_arm_thumb_ite},
              {"test_arm_m_thumb_mrs", test_arm_m_thumb_mrs},
              {"test_arm_m_control", test_arm_m_control},
+             {"test_arm_m_unprivileged_special_regs",
+              test_arm_m_unprivileged_special_regs},
              {"test_arm_m_exc_return", test_arm_m_exc_return},
              {"test_arm_und32_to_svc32", test_arm_und32_to_svc32},
              {"test_arm_usr32_to_svc32", test_arm_usr32_to_svc32},
