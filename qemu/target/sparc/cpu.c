@@ -473,6 +473,8 @@ static void sparc_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 #endif
 
     cpu_exec_realizefn(cs);
+
+    cpu_reset(cs);
 }
 
 static void sparc_cpu_initfn(struct uc_struct *uc, CPUState *obj)
