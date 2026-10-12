@@ -1092,6 +1092,12 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 {
     uc_err err;
 
+#ifdef UNICORN_HAS_RISCV
+    if (uc->arch == UC_ARCH_RISCV && (begin & 1)) {
+        return UC_ERR_ARG;
+    }
+#endif
+
     // reset the counter
     uc->emu_counter = 0;
     uc->invalid_error = UC_ERR_OK;
@@ -1104,12 +1110,6 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     if (uc->nested_level == 0) {
         UC_INIT(uc);
     }
-
-#ifdef UNICORN_HAS_RISCV
-    if (uc->arch == UC_ARCH_RISCV && (begin & 1)) {
-        return UC_ERR_ARG;
-    }
-#endif
 
     // Advance the nested levels. We must decrease the level count by one when
     // we return from uc_emu_start.
