@@ -5859,10 +5859,18 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
                 goto illegal_op;
             }
         do_rdrand:
+            gen_update_cc_op(s);
+            gen_jmp_im(s, pc_start - s->cs_base);
             if (tb_cflags(s->base.tb) & CF_USE_ICOUNT) {
                 gen_io_start(tcg_ctx);
             }
-            gen_helper_rdrand(tcg_ctx, s->T0, tcg_ctx->cpu_env);
+            {
+                // Unicorn: let the helper run the hooks of the right insn
+                TCGv_i32 rdseed =
+                    tcg_const_i32(tcg_ctx, ((modrm >> 3) & 7) == 7);
+                gen_helper_rdrand(tcg_ctx, s->T0, tcg_ctx->cpu_env, rdseed);
+                tcg_temp_free_i32(tcg_ctx, rdseed);
+            }
             rm = (modrm & 7) | REX_B(s);
             gen_op_mov_reg_v(s, dflag, rm, s->T0);
             set_cc_op(s, CC_OP_EFLAGS);
