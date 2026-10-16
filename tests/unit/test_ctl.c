@@ -189,7 +189,7 @@ static void test_uc_ctl_tb_cache_at_zero(void)
 
     // There is no @until before uc_emu_start(), so the block at address 0
     // must not be translated as an exit.
-    OK(uc_ctl_request_cache(uc, 0, &tb));
+    OK(uc_ctl_request_cache(uc, (uint64_t)0, &tb));
     TEST_CHECK(tb.icount == 5);
     TEST_CHECK(tb.size == sizeof(code) - 1);
 
