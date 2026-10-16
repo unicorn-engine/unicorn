@@ -222,7 +222,196 @@ static void test_mips_simple_coredump_2137(void)
     OK(uc_close(uc));
 }
 
+// Identity virtual-TLB fill hook: maps every virtual page to the same physical
+// address with full permissions.
+static bool test_mips_vtlb_identity_cb(uc_engine *uc, uint64_t addr,
+                                       uc_mem_type type, uc_tlb_entry *result,
+                                       void *user_data)
+{
+    result->paddr = addr;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+// Under UC_TLB_VIRTUAL, a Load-Linked (ll) from an address above useg (>= 2GB)
+// must succeed via the soft-TLB instead of raising a spurious Address Error
+// (EXCP_AdEL). The ll helper used to call do_translate_address() to populate
+// CP0_LLAddr, which segment-checked the address and rejected anything outside
+// useg even though the soft-TLB maps it and the load itself succeeds.
+static void test_mips_virtual_tlb_ll_high_address(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\xc2\x03\x00\x00"; // ll $v1, 0($s0)
+    const uint64_t lock_addr = 0x120000000; // above useg: requires the vtlb
+    uint64_t r_s0 = lock_addr;
+    uint64_t r_v1 = 0;
+    char lock_val[] = "\x12\x34\xab\xcd"; // value the lock word holds (BE)
+
+    OK(uc_open(UC_ARCH_MIPS, UC_MODE_MIPS64 | UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_mips_vtlb_identity_cb, NULL,
+                   1, 0));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, lock_addr, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, lock_addr, lock_val, sizeof(lock_val) - 1));
+    OK(uc_reg_write(uc, UC_MIPS_REG_S0, &r_s0));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_MIPS_REG_V1, &r_v1));
+    TEST_CHECK(r_v1 == 0x1234abcd);
+
+    OK(uc_close(uc));
+}
+
+// Remapping virtual-TLB fill hook: maps one specific virtual page to a
+// different physical page, everything else identity. Used to verify that a
+// Load-Linked records the hook-mapped *physical* address in CP0_LLAddr, not
+// the virtual address.
+struct vtlb_remap {
+    uint64_t vpage; // page-aligned virtual page that gets remapped
+    uint64_t ppage; // page-aligned physical page it maps to
+};
+
+static bool test_mips_vtlb_remap_cb(uc_engine *uc, uint64_t addr,
+                                    uc_mem_type type, uc_tlb_entry *result,
+                                    void *user_data)
+{
+    struct vtlb_remap *m = (struct vtlb_remap *)user_data;
+
+    // addr is already page-aligned when the hook is invoked.
+    result->paddr = (addr == m->vpage) ? m->ppage : addr;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+// Under UC_TLB_VIRTUAL the fill hook may map a virtual page to an arbitrary
+// physical page (not just identity). CP0_LLAddr must record the hook-mapped
+// *physical* address of the Load-Linked, which a guest can read back via
+// `mfc0 LLAddr`. Recording the raw virtual address (as a naive vtlb fix would)
+// is wrong whenever the hook remaps the page.
+static void test_mips_virtual_tlb_ll_records_mapped_paddr(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    // ll $v1, 0($s0) ; mfc0 $v0, $17 (LLAddr)
+    char code[] = "\xc2\x03\x00\x00\x40\x02\x88\x00";
+    const uint64_t lock_vaddr = 0x120000000; // above useg
+    const uint64_t lock_paddr = 0x6000;      // remapped, != vaddr
+    struct vtlb_remap remap = {lock_vaddr, lock_paddr};
+    uint64_t r_s0 = lock_vaddr;
+    uint64_t r_v0 = 0;
+    uint64_t r_v1 = 0;
+    char lock_val[] = "\x12\x34\xab\xcd"; // value at the physical lock word (BE)
+
+    OK(uc_open(UC_ARCH_MIPS, UC_MODE_MIPS64 | UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_mips_vtlb_remap_cb, &remap,
+                   1, 0));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, lock_paddr, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, lock_paddr, lock_val, sizeof(lock_val) - 1));
+    OK(uc_reg_write(uc, UC_MIPS_REG_S0, &r_s0));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    // ll read the word at the mapped physical address...
+    OK(uc_reg_read(uc, UC_MIPS_REG_V1, &r_v1));
+    TEST_CHECK(r_v1 == 0x1234abcd);
+    // ...and CP0_LLAddr holds that physical address (R4000: shifted right by 4),
+    // not the virtual address (which would read back as 0x12000000).
+    OK(uc_reg_read(uc, UC_MIPS_REG_V0, &r_v0));
+    TEST_CHECK(r_v0 == (lock_paddr >> 4));
+
+    OK(uc_close(uc));
+}
+
+// The ll fix must preserve the alignment check: a misaligned ll, even under
+// UC_TLB_VIRTUAL, must still raise an Address Error.
+static void test_mips_virtual_tlb_ll_unaligned_still_faults(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\xc2\x03\x00\x00";       // ll $v1, 0($s0)
+    const uint64_t lock_addr = 0x120000002; // misaligned (low bits set)
+    uint64_t r_s0 = lock_addr;
+
+    OK(uc_open(UC_ARCH_MIPS, UC_MODE_MIPS64 | UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_mips_vtlb_identity_cb, NULL,
+                   1, 0));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, lock_addr & ~0xfffULL, 0x1000, UC_PROT_ALL));
+    OK(uc_reg_write(uc, UC_MIPS_REG_S0, &r_s0));
+
+    uc_assert_err(
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0),
+        UC_ERR_EXCEPTION);
+
+    OK(uc_close(uc));
+}
+
+// Declining virtual-TLB fill hook: refuses to map the lock page (returns
+// false), leaving every other page unmapped too. Used to verify that a page
+// the hook genuinely declines makes ll raise the proper MMU fault instead of
+// silently recording the raw virtual address in CP0_LLAddr and succeeding.
+static bool test_mips_vtlb_decline_cb(uc_engine *uc, uint64_t addr,
+                                      uc_mem_type type, uc_tlb_entry *result,
+                                      void *user_data)
+{
+    uint64_t code_page = *(uint64_t *)user_data;
+
+    // Let the fetch of the instruction itself through; decline the data load.
+    if ((addr & ~0xfffULL) == code_page) {
+        result->paddr = addr;
+        result->perms = UC_PROT_ALL;
+        return true;
+    }
+    return false;
+}
+
+// Under UC_TLB_VIRTUAL the fill hook is allowed to fail a translation. When it
+// declines the ll target page, ll must raise an MMU fault (as the real MIPS
+// MMU would) rather than swallowing the failure and recording a bogus 1:1
+// mapping in CP0_LLAddr. The fix performs the soft-TLB load first, so a
+// declined page faults through the normal load path before CP0_LLAddr is set.
+static void test_mips_virtual_tlb_ll_unmapped_faults(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\xc2\x03\x00\x00";       // ll $v1, 0($s0)
+    const uint64_t lock_addr = 0x120000000; // above useg, and hook declines it
+    uint64_t r_s0 = lock_addr;
+    uint64_t code_page = code_start & ~0xfffULL;
+
+    OK(uc_open(UC_ARCH_MIPS, UC_MODE_MIPS64 | UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_mips_vtlb_decline_cb,
+                   &code_page, 1, 0));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    OK(uc_reg_write(uc, UC_MIPS_REG_S0, &r_s0));
+
+    uc_assert_err(
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0),
+        UC_ERR_MMU_READ);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
+    {"test_mips_virtual_tlb_ll_high_address",
+     test_mips_virtual_tlb_ll_high_address},
+    {"test_mips_virtual_tlb_ll_unmapped_faults",
+     test_mips_virtual_tlb_ll_unmapped_faults},
+    {"test_mips_virtual_tlb_ll_records_mapped_paddr",
+     test_mips_virtual_tlb_ll_records_mapped_paddr},
+    {"test_mips_virtual_tlb_ll_unaligned_still_faults",
+     test_mips_virtual_tlb_ll_unaligned_still_faults},
     {"test_mips_stop_at_branch", test_mips_stop_at_branch},
     {"test_mips_stop_at_delay_slot", test_mips_stop_at_delay_slot},
     {"test_mips_el_ori", test_mips_el_ori},
