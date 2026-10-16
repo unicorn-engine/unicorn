@@ -108,15 +108,9 @@ static void ppc_release(void *ctx)
         g_free(fast->table);
     }
 
-    for (i = 0; i < 32; i++) {
-        g_free(tcg_ctx->cpu_gpr[i]);
-    }
-    //    g_free(tcg_ctx->cpu_PC);
     g_free(tcg_ctx->btarget);
     g_free(tcg_ctx->bcond);
     g_free(tcg_ctx->cpu_dspctrl);
-
-    //    g_free(tcg_ctx->tb_ctx.tbs);
 
     if (env->nb_tlb != 0) {
         switch (env->tlb_type) {
