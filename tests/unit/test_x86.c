@@ -2732,6 +2732,70 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_group_11_with_rex_r(void)
+{
+    uc_engine *uc;
+
+    char code[] = {
+        // mov eax, 0x84030201
+        0x44, 0xc7, 0xc0, 0x01, 0x02, 0x03, 0x84,
+        // mov cl, 0xab
+        0x44, 0xc6, 0xc1, 0xab,
+        // mov rdx, 0xffffffff84030201
+        0x4c, 0xc7, 0xc2, 0x01, 0x02, 0x03, 0x84,
+    };
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code));
+
+    OK(uc_mem_map(uc, code_start + code_len, 0x1000, UC_PROT_ALL));
+
+    uint64_t rcx = 0xabcdef01;
+    OK(uc_reg_write(uc, UC_X86_REG_RCX, &rcx));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    uint64_t rax = 0;
+    uint64_t rdx = 0;
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_read(uc, UC_X86_REG_RCX, &rcx));
+    OK(uc_reg_read(uc, UC_X86_REG_RDX, &rdx));
+    TEST_CHECK(rax == 0x84030201);
+    TEST_CHECK(rcx == 0xabcdefab);
+    TEST_CHECK(rdx == 0xffffffff84030201);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_group_11_with_modrm_reg_7(void)
+{
+    uc_engine *uc;
+
+    // Assumes that XABORT and XBEGIN are not implemented in Unicorn yet
+    char xbegin_code[] = {
+        // xbegin +0x4030201
+        0xc7, 0xc0 | (7 << 3), 0x01, 0x02, 0x03, 0x04
+    };
+
+    char xabort_code[] = {
+        // xabort byte 0xff
+        0xc6, 0xc0 | (7 << 3), 0xff
+    };
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, xbegin_code, sizeof(xbegin_code));
+
+    uc_assert_err(UC_ERR_INSN_INVALID,
+            uc_emu_start(uc, code_start, code_start + sizeof(xbegin_code), 0, 0));
+
+    OK(uc_close(uc));
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, xabort_code, sizeof(xabort_code));
+
+    uc_assert_err(UC_ERR_INSN_INVALID,
+            uc_emu_start(uc, code_start, code_start + sizeof(xabort_code), 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2814,4 +2878,6 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_group_11_with_rex_r", test_x86_group_11_with_rex_r},
+    {"test_x86_group_11_with_modrm_reg_7", test_x86_group_11_with_modrm_reg_7},
     {NULL, NULL}};
