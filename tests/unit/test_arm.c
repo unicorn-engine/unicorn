@@ -1165,6 +1165,87 @@ static void test_arm_hook_insn_wfi(void)
     OK(uc_close(uc));
 }
 
+static void test_arm_context(void)
+{
+    for (int model = 0; model < UC_CPU_ARM_ENDING; model++) {
+        uc_engine *uc;
+        uc_engine *uc2;
+        uc_context *ctx;
+
+        OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+        OK(uc_ctl_set_cpu_model(uc, model));
+
+        OK(uc_context_alloc(uc, &ctx));
+        OK(uc_context_save(uc, ctx));
+
+        OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc2));
+        OK(uc_ctl_set_cpu_model(uc2, model));
+
+        OK(uc_context_restore(uc2, ctx));
+
+        // One of these will abort on a double-free for bug-afflicted CPU models.
+        OK(uc_context_free(ctx));
+        OK(uc_close(uc));
+        OK(uc_close(uc2));
+    }
+}
+
+static void test_arm_context_hw_breakpoint(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    // mcr p14, 0, r0, c0, c0, 5 ; DBGBCR0 = r0
+    // mcr p14, 0, r1, c0, c0, 5 ; DBGBCR0 = r1
+    // mcr p14, 0, r0, c0, c0, 5 ; DBGBCR0 = r0
+    char code[] = "\xb0\x0e\x00\xee\xb0\x1e\x00\xee\xb0\x0e\x00\xee";
+    // E=1, BAS=0b1111: unlinked address match breakpoint
+    uint32_t r_r0 = 0x1e1;
+    uint32_t r_r1 = 0;
+    uc_arm_cp_reg dbgbcr0 = {14, 0, 0, 0, 0, 0, 5, 0};
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r_r1));
+
+    // The guest enabling the breakpoint allocates it.
+    OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    // Disabling it frees it again, then the restore re-enables it.
+    OK(uc_emu_start(uc, code_start + 4, code_start + 8, 0, 0));
+    OK(uc_context_restore(uc, ctx));
+    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &dbgbcr0));
+    TEST_CHECK(dbgbcr0.val == r_r0);
+
+    // Updating the breakpoint must not touch the freed one.
+    OK(uc_emu_start(uc, code_start + 8, code_start + 12, 0, 0));
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
+static void test_arm_context_cp_reg(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    uc_arm_cp_reg sctlr = {15, 0, 0, 1, 0, 0, 0, 0x1234};
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    // There is no cp_regs table in a context to look the register up in, so
+    // this is handled like an unknown register.
+    uc_context_reg_read(ctx, UC_ARM_REG_CP_REG, &sctlr);
+    TEST_CHECK(sctlr.val == 0x1234);
+    uc_context_reg_write(ctx, UC_ARM_REG_CP_REG, &sctlr);
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -1199,4 +1280,7 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_v7_lpae", test_arm_v7_lpae},
              {"test_arm_svc_hvc_syndrome", test_arm_svc_hvc_syndrome},
              {"test_arm_hook_insn_wfi", test_arm_hook_insn_wfi},
+             {"test_arm_context", test_arm_context},
+             {"test_arm_context_hw_breakpoint", test_arm_context_hw_breakpoint},
+             {"test_arm_context_cp_reg", test_arm_context_cp_reg},
              {NULL, NULL}};
