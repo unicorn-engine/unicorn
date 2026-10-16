@@ -969,6 +969,62 @@ static void test_arm64_context(void)
     }
 }
 
+static void test_arm64_context_hw_breakpoint(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    // msr dbgbcr0_el1, x0
+    // msr dbgbcr0_el1, x1
+    // msr dbgbcr0_el1, x0
+    char code[] = "\xa0\x00\x10\xd5\xa1\x00\x10\xd5\xa0\x00\x10\xd5";
+    // E=1, BAS=0b1111: unlinked address match breakpoint
+    uint64_t r_x0 = 0x1e1;
+    uint64_t r_x1 = 0;
+    uc_arm64_cp_reg dbgbcr0 = {0, 0, 2, 0, 5, 0};
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM64_A72);
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X1, &r_x1));
+
+    // The guest enabling the breakpoint allocates it.
+    OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    // Disabling it frees it again, then the restore re-enables it.
+    OK(uc_emu_start(uc, code_start + 4, code_start + 8, 0, 0));
+    OK(uc_context_restore(uc, ctx));
+    OK(uc_reg_read(uc, UC_ARM64_REG_CP_REG, &dbgbcr0));
+    TEST_CHECK(dbgbcr0.val == r_x0);
+
+    // Updating the breakpoint must not touch the freed one.
+    OK(uc_emu_start(uc, code_start + 8, code_start + 12, 0, 0));
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
+static void test_arm64_context_cp_reg(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    uc_arm64_cp_reg sctlr = {1, 0, 3, 0, 0, 0x1234};
+
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    // There is no cp_regs table in a context to look the register up in, so
+    // this is handled like an unknown register.
+    uc_context_reg_read(ctx, UC_ARM64_REG_CP_REG, &sctlr);
+    TEST_CHECK(sctlr.val == 0x1234);
+    uc_context_reg_write(ctx, UC_ARM64_REG_CP_REG, &sctlr);
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -991,4 +1047,7 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_pauth_vanilla", test_arm64_pauth_vanilla},
              {"test_arm64_pauth_ctl", test_arm64_pauth_ctl},
              {"test_arm64_context", test_arm64_context},
+             {"test_arm64_context_hw_breakpoint",
+              test_arm64_context_hw_breakpoint},
+             {"test_arm64_context_cp_reg", test_arm64_context_cp_reg},
              {NULL, NULL}};

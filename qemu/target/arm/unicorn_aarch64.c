@@ -6,6 +6,7 @@
 #include "unicorn/unicorn.h"
 #include "sysemu/cpus.h"
 #include "cpu.h"
+#include "internals.h"
 #include "kvm-consts.h"
 #include "unicorn_common.h"
 #include "uc_priv.h"
@@ -98,8 +99,16 @@ static void reg_reset(struct uc_struct *uc)
 
 static uc_err read_cp_reg(CPUARMState *env, uc_arm64_cp_reg *cp)
 {
-    ARMCPU *cpu = ARM_CPU(env->uc->cpu);
-    const ARMCPRegInfo *ri = get_arm_cp_reginfo(
+    ARMCPU *cpu;
+    const ARMCPRegInfo *ri;
+
+    // A context has no cp_regs to look the register up in.
+    if (!env->uc) {
+        return UC_ERR_ARG;
+    }
+
+    cpu = ARM_CPU(env->uc->cpu);
+    ri = get_arm_cp_reginfo(
         cpu->cp_regs, ENCODE_AA64_CP_REG(CP_REG_ARM64_SYSREG_CP, cp->crn,
                                          cp->crm, cp->op0, cp->op1, cp->op2));
 
@@ -114,8 +123,16 @@ static uc_err read_cp_reg(CPUARMState *env, uc_arm64_cp_reg *cp)
 
 static uc_err write_cp_reg(CPUARMState *env, uc_arm64_cp_reg *cp)
 {
-    ARMCPU *cpu = ARM_CPU(env->uc->cpu);
-    const ARMCPRegInfo *ri = get_arm_cp_reginfo(
+    ARMCPU *cpu;
+    const ARMCPRegInfo *ri;
+
+    // A context has no cp_regs to look the register up in.
+    if (!env->uc) {
+        return UC_ERR_ARG;
+    }
+
+    cpu = ARM_CPU(env->uc->cpu);
+    ri = get_arm_cp_reginfo(
         cpu->cp_regs, ENCODE_AA64_CP_REG(CP_REG_ARM64_SYSREG_CP, cp->crn,
                                          cp->crm, cp->op0, cp->op1, cp->op2));
 
@@ -403,7 +420,9 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_ARM64_REG_CP_REG:
             CHECK_REG_TYPE(uc_arm64_cp_reg);
             ret = write_cp_reg(env, (uc_arm64_cp_reg *)value);
-            arm_rebuild_hflags(env);
+            if (ret == UC_ERR_OK) {
+                arm_rebuild_hflags(env);
+            }
             break;
         case UC_ARM64_REG_FPCR:
             CHECK_REG_TYPE(uint32_t);
@@ -499,6 +518,37 @@ static uc_err arm64_pauth_strip(struct uc_struct *uc, uint64_t ptr, int key, uin
     return UC_ERR_OK;
 }
 
+// Like for AArch32, copy the top part of CPUARMState that does not contain any
+// pointers into the context buffer, and zero-fill the remainder.  The fields
+// from pmsav7 onwards only hold state for M-profile and PMSA CPUs, but also
+// pointers like cpu_breakpoint, which must not end up in a context.  The zeroed
+// env->uc tells reg_read/reg_write that they are accessing a context.
+#define CONTEXT_COPYSIZE offsetof(CPUARMState, pmsav7)
+
+static size_t arm64_context_size(struct uc_struct *uc)
+{
+    return sizeof(CPUARMState);
+}
+
+static uc_err arm64_context_save(struct uc_struct *uc, uc_context *context)
+{
+    memcpy(context->data, uc->cpu->env_ptr, CONTEXT_COPYSIZE);
+    memset(context->data + CONTEXT_COPYSIZE, 0,
+           sizeof(CPUARMState) - CONTEXT_COPYSIZE);
+    return UC_ERR_OK;
+}
+
+static uc_err arm64_context_restore(struct uc_struct *uc, uc_context *context)
+{
+    memcpy(uc->cpu->env_ptr, context->data, CONTEXT_COPYSIZE);
+
+    // The restored debug registers may enable different hardware breakpoints
+    // than the ones currently inserted, so rebuild them like QEMU does after
+    // loading a VM state.
+    hw_breakpoint_update_all(ARM_CPU(uc->cpu));
+    return UC_ERR_OK;
+}
+
 static uc_err arm64_pauth_auth(struct uc_struct *uc, uint64_t ptr, int key, uint64_t diversifier, bool *valid)
 {
     CPUArchState *env = uc->cpu->env_ptr;
@@ -533,12 +583,9 @@ void uc_init(struct uc_struct *uc)
     uc->release = arm64_release;
     uc->cpus_init = arm64_cpus_init;
     uc->insn_hook_validate = arm64_insn_hook_validate;
-    // n.b. The following results in memcpy of pointers from CPUARMState to
-    // context buffers and vice versa.  That is currently safe for AArch64
-    // because none of the pointer fields of CPUARMState are allocated for any
-    // of the AArch64 CPUs, and none of reg_read/reg_write, when called on a
-    // context, accesses fields including and beyond cpu_watchpoint.
-    uc->cpu_context_size = offsetof(CPUARMState, cpu_watchpoint);
+    uc->context_size = arm64_context_size;
+    uc->context_save = arm64_context_save;
+    uc->context_restore = arm64_context_restore;
     uc->pauth_sign = arm64_pauth_sign;
     uc->pauth_strip = arm64_pauth_strip;
     uc->pauth_auth = arm64_pauth_auth;

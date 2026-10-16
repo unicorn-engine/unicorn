@@ -7,6 +7,7 @@
 #include "sysemu/cpus.h"
 #include "sysemu/tcg.h"
 #include "cpu.h"
+#include "internals.h"
 #include "uc_priv.h"
 #include "unicorn_common.h"
 #include "unicorn.h"
@@ -159,9 +160,17 @@ static void v7m_msr_xpsr(CPUARMState *env, uint32_t mask, uint32_t reg,
 
 static uc_err read_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
 {
-    ARMCPU *cpu = ARM_CPU(env->uc->cpu);
+    ARMCPU *cpu;
     int ns = cp->sec ? 0 : 1;
-    const ARMCPRegInfo *ri = get_arm_cp_reginfo(
+    const ARMCPRegInfo *ri;
+
+    // A context has no cp_regs to look the register up in.
+    if (!env->uc) {
+        return UC_ERR_ARG;
+    }
+
+    cpu = ARM_CPU(env->uc->cpu);
+    ri = get_arm_cp_reginfo(
         cpu->cp_regs, ENCODE_CP_REG(cp->cp, cp->is64, ns, cp->crn, cp->crm,
                                     cp->opc1, cp->opc2));
 
@@ -180,9 +189,17 @@ static uc_err read_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
 
 static uc_err write_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
 {
-    ARMCPU *cpu = ARM_CPU(env->uc->cpu);
+    ARMCPU *cpu;
     int ns = cp->sec ? 0 : 1;
-    const ARMCPRegInfo *ri = get_arm_cp_reginfo(
+    const ARMCPRegInfo *ri;
+
+    // A context has no cp_regs to look the register up in.
+    if (!env->uc) {
+        return UC_ERR_ARG;
+    }
+
+    cpu = ARM_CPU(env->uc->cpu);
+    ri = get_arm_cp_reginfo(
         cpu->cp_regs, ENCODE_CP_REG(cp->cp, cp->is64, ns, cp->crn, cp->crm,
                                     cp->opc1, cp->opc2));
 
@@ -559,7 +576,9 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_ARM_REG_CP_REG:
             CHECK_REG_TYPE(uc_arm_cp_reg);
             ret = write_cp_reg(env, (uc_arm_cp_reg *)value);
-            arm_rebuild_hflags_arm(env);
+            if (ret == UC_ERR_OK) {
+                arm_rebuild_hflags_arm(env);
+            }
             break;
         case UC_ARM_REG_ESR:
             CHECK_REG_TYPE(uint32_t);
@@ -738,14 +757,18 @@ static uc_err uc_arm_context_save(struct uc_struct *uc, uc_context *context)
     ARM_ENV_SAVE(env->pmsav8.rbar[M_REG_S])
     ARM_ENV_SAVE(env->pmsav8.rlar[M_REG_NS])
     ARM_ENV_SAVE(env->pmsav8.rlar[M_REG_S])
-    memcpy(p, &env->pmsav8.mair0, sizeof(env->pmsav8.mair0) + sizeof(env->pmsav8.mair1));
-    p += sizeof(env->pmsav8.mair0) + sizeof(env->pmsav8.mair1);
+    memcpy(p, &env->pmsav8.mair0, sizeof(env->pmsav8.mair0));
+    p += sizeof(env->pmsav8.mair0);
+    memcpy(p, &env->pmsav8.mair1, sizeof(env->pmsav8.mair1));
+    p += sizeof(env->pmsav8.mair1);
 
     nr = cpu->sau_sregion;
     ARM_ENV_SAVE(env->sau.rbar)
     ARM_ENV_SAVE(env->sau.rlar)
-    memcpy(p, &env->sau.rnr, sizeof(env->sau.rnr) + sizeof(env->sau.ctrl));
-    p += sizeof(env->sau.rnr) + sizeof(env->sau.ctrl);
+    memcpy(p, &env->sau.rnr, sizeof(env->sau.rnr));
+    p += sizeof(env->sau.rnr);
+    memcpy(p, &env->sau.ctrl, sizeof(env->sau.ctrl));
+    p += sizeof(env->sau.ctrl);
 
 #undef ARM_ENV_SAVE
     return UC_ERR_OK;
@@ -784,16 +807,25 @@ static uc_err uc_arm_context_restore(struct uc_struct *uc, uc_context *context)
     ARM_ENV_RESTORE(env->pmsav8.rbar[M_REG_S])
     ARM_ENV_RESTORE(env->pmsav8.rlar[M_REG_NS])
     ARM_ENV_RESTORE(env->pmsav8.rlar[M_REG_S])
-    memcpy(&env->pmsav8.mair0, p, sizeof(env->pmsav8.mair0) + sizeof(env->pmsav8.mair1));
-    p += sizeof(env->pmsav8.mair0) + sizeof(env->pmsav8.mair1);
+    memcpy(&env->pmsav8.mair0, p, sizeof(env->pmsav8.mair0));
+    p += sizeof(env->pmsav8.mair0);
+    memcpy(&env->pmsav8.mair1, p, sizeof(env->pmsav8.mair1));
+    p += sizeof(env->pmsav8.mair1);
 
     nr = cpu->sau_sregion;
     ARM_ENV_RESTORE(env->sau.rbar)
     ARM_ENV_RESTORE(env->sau.rlar)
-    memcpy(&env->sau.rnr, p, sizeof(env->sau.rnr) + sizeof(env->sau.ctrl));
-    p += sizeof(env->sau.rnr) + sizeof(env->sau.ctrl);
+    memcpy(&env->sau.rnr, p, sizeof(env->sau.rnr));
+    p += sizeof(env->sau.rnr);
+    memcpy(&env->sau.ctrl, p, sizeof(env->sau.ctrl));
+    p += sizeof(env->sau.ctrl);
 
 #undef ARM_ENV_RESTORE
+
+    // The restored debug registers may enable different hardware breakpoints
+    // than the ones currently inserted, so rebuild them like QEMU does after
+    // loading a VM state.
+    hw_breakpoint_update_all(cpu);
     return UC_ERR_OK;
 }
 
