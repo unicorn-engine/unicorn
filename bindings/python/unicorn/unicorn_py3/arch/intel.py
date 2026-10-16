@@ -117,7 +117,9 @@ class UcIntel(Uc):
             const.UC_X86_INS_OUT      : __hook_insn_out,
             const.UC_X86_INS_SYSCALL  : __hook_insn_syscall,
             const.UC_X86_INS_SYSENTER : __hook_insn_syscall,
-            const.UC_X86_INS_CPUID    : __hook_insn_cpuid
+            const.UC_X86_INS_CPUID    : __hook_insn_cpuid,
+            const.UC_X86_INS_RDTSC    : __hook_insn_cpuid,
+            const.UC_X86_INS_RDTSCP   : __hook_insn_cpuid
         }
 
         handler = handlers.get(insn.value)

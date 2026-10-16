@@ -1732,6 +1732,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, uint64_t size,
     uint64_t pc;
     uint64_t count, len;
     bool remove_exec = false;
+    bool add_exec;
 
     UC_INIT(uc);
 
@@ -1792,8 +1793,19 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, uint64_t size,
                 ((perms & UC_PROT_EXEC) == 0)) {
                 remove_exec = true;
             }
+            add_exec = ((mr->perms & UC_PROT_EXEC) == 0) &&
+                       ((perms & UC_PROT_EXEC) != 0);
             mr->perms = perms;
             uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+
+            // TLB_NOTDIRTY is only set on write entries of executable pages
+            // when the TLB is filled, so set it on the entries filled before.
+            // Otherwise writes through them would not invalidate the TBs
+            // translated from this range.  Unlike a TLB flush, this keeps the
+            // entries valid, so it is safe to do from within memory hooks.
+            if (add_exec) {
+                uc->tcg_reset_dirty_tlb(uc, mr, addr, len);
+            }
 
         } else {
             if (!split_mmio_region(uc, mr, addr, len, false)) {
@@ -1927,6 +1939,30 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 
     UC_INIT(uc);
 
+    int block_type = type & (UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT);
+    if (block_type == (UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT)) {
+        restore_jit_state(uc);
+        return UC_ERR_HOOK;
+    }
+    if (block_type != 0) {
+        int opposite_idx = block_type == UC_HOOK_BLOCK
+                               ? UC_HOOK_BLOCK_ICOUNT_IDX
+                               : UC_HOOK_BLOCK_IDX;
+        for (struct list_item *c = uc->hook[opposite_idx].head; c;
+             c = c->next) {
+            struct hook *other = c->data;
+            if (other->to_delete) {
+                continue;
+            }
+            bool overlaps = begin > end || other->begin > other->end ||
+                            (begin <= other->end && other->begin <= end);
+            if (overlaps) {
+                restore_jit_state(uc);
+                return UC_ERR_HOOK_EXIST;
+            }
+        }
+    }
+
     struct hook *hook = calloc(1, sizeof(struct hook));
     if (hook == NULL) {
         restore_jit_state(uc);
@@ -2013,7 +2049,8 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         return UC_ERR_OK;
     }
 
-    if (type & UC_HOOK_CODE || type & UC_HOOK_BLOCK) {
+    if (type & UC_HOOK_CODE || type & UC_HOOK_BLOCK ||
+        type & UC_HOOK_BLOCK_ICOUNT) {
         if (end <= begin) {
             uc->tb_flush(uc);
         } else {
@@ -2073,7 +2110,8 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
     // and store the type mask in the hook pointer.
     for (i = 0; i < UC_HOOK_MAX; i++) {
         if (list_exists(&uc->hook[i], (void *)hook)) {
-            if (hook->type & UC_HOOK_CODE || hook->type & UC_HOOK_BLOCK) {
+            if (hook->type & UC_HOOK_CODE || hook->type & UC_HOOK_BLOCK ||
+                hook->type & UC_HOOK_BLOCK_ICOUNT) {
                 g_hash_table_foreach(hook->hooked_regions,
                                      hook_invalidate_region, uc);
             }
@@ -2092,7 +2130,8 @@ UNICORN_EXPORT
 uc_err uc_hook_set_user_data(uc_engine *uc, uc_hook hh, void *user_data)
 {
     struct hook *hook = (struct hook *)hh;
-    if (hook->type == UC_HOOK_BLOCK || hook->type == UC_HOOK_CODE) {
+    if (hook->type == UC_HOOK_BLOCK || hook->type == UC_HOOK_CODE ||
+        hook->type == UC_HOOK_BLOCK_ICOUNT) {
         if (uc->nested_level) {
             return UC_ERR_ARG;
         }

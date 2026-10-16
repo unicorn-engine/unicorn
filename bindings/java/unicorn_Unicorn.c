@@ -994,6 +994,8 @@ Java_unicorn_Unicorn__1hook_1add__JILunicorn_Hook_2Ljava_lang_Object_2JJI(
             hook_callback = cb_insn_syscall;
             break;
         case UC_X86_INS_CPUID:
+        case UC_X86_INS_RDTSC:
+        case UC_X86_INS_RDTSCP:
             hook_sig = sig_CpuidHook;
             hook_callback = cb_insn_cpuid;
             break;

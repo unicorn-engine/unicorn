@@ -1132,10 +1132,14 @@ static void uc_tb_flush(struct uc_struct *uc) {
 static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t len) 
 {
     tb_page_addr_t start, end;
+    uint64_t invalid_addr = uc->invalid_addr;
+    int invalid_error = uc->invalid_error;
 
     uc->nested_level++;
     if (sigsetjmp(uc->jmp_bufs[uc->nested_level - 1], 0) != 0) {
         // We a get cpu fault in get_page_addr_code, ignore it.
+        uc->invalid_addr = invalid_addr;
+        uc->invalid_error = invalid_error;
         uc->nested_level--;
         return;
     }
@@ -1150,6 +1154,12 @@ static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t l
     start = get_page_addr_code(uc->cpu->env_ptr, start_addr) & (target_ulong)(-1);
 
     uc->nested_level--;
+
+    if (start == -1) {
+        uc->invalid_addr = invalid_addr;
+        uc->invalid_error = invalid_error;
+        return;
+    }
 
     // For 32bit target.
     end = (start + len) & (target_ulong)(-1);

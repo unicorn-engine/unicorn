@@ -408,6 +408,8 @@ typedef enum uc_hook_type {
     // Register tlb fill request hook on the virtuall addresses.
     // The callback will be triggert if the tlb cache don't contain an address.
     UC_HOOK_TLB_FILL = 1 << 17,
+    // Hook basic blocks but get the number of instructions as size
+    UC_HOOK_BLOCK_ICOUNT = 1 << 18,
 } uc_hook_type;
 
 // Hook type for all events of unmapped memory access

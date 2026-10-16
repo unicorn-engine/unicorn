@@ -5845,12 +5845,20 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             break;
 
         case 7: /* RDSEED */
+            if (mod != 3 ||
+                (s->prefix & (PREFIX_LOCK | PREFIX_REPZ | PREFIX_REPNZ)) ||
+                !(s->cpuid_7_0_ebx_features & CPUID_7_0_EBX_RDSEED)) {
+                goto illegal_op;
+            }
+            goto do_rdrand;
+
         case 6: /* RDRAND */
             if (mod != 3 ||
                 (s->prefix & (PREFIX_LOCK | PREFIX_REPZ | PREFIX_REPNZ)) ||
                 !(s->cpuid_ext_features & CPUID_EXT_RDRAND)) {
                 goto illegal_op;
             }
+        do_rdrand:
             if (tb_cflags(s->base.tb) & CF_USE_ICOUNT) {
                 gen_io_start(tcg_ctx);
             }
