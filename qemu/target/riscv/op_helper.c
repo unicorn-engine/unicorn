@@ -223,7 +223,7 @@ void helper_insn_hook_rtype(CPURISCVState *env, uint32_t insn_id, uint64_t pc, u
         if (!HOOK_BOUND_CHECK(hook, env->pc))
             continue;
         if (hook->insn == insn_id) {
-            JIT_CALLBACK_GUARD((uc_cb_insn_rtype_t)hook->callback)(uc, pc, rs1, rs2, rd, hook->user_data));
+            JIT_CALLBACK_GUARD(((uc_cb_insn_rtype_t)hook->callback)(uc, pc, rs1, rs2, rd, hook->user_data));
         }
     }
 }
