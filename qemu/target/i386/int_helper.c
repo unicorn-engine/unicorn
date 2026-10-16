@@ -23,6 +23,7 @@
 #include "qemu/host-utils.h"
 #include "exec/helper-proto.h"
 #include "qemu/guest-random.h"
+#include "uc_priv.h"
 
 //#define DEBUG_MULDIV
 
@@ -485,11 +486,44 @@ void helper_cr4_testbit(CPUX86State *env, uint32_t bit)
     }
 }
 
-target_ulong HELPER(rdrand)(CPUX86State *env)
+target_ulong HELPER(rdrand)(CPUX86State *env, uint32_t rdseed)
 {
-    target_ulong ret;
+    target_ulong ret = 0;
+    uint64_t value;
+    bool success;
+    uc_engine *uc = env->uc;
+    struct hook *hook;
+    bool synced = false;
+    uint32_t insn = rdseed ? UC_X86_INS_RDSEED : UC_X86_INS_RDRAND;
 
-    if (qemu_guest_getrandom(&ret, sizeof(ret)) < 0) {
+    success = qemu_guest_getrandom(&ret, sizeof(ret)) == 0;
+    // The callback takes a uint64_t regardless of the size of target_ulong.
+    value = ret;
+
+    // Unicorn: call the hooks registered for this insn.
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->eip))
+            continue;
+
+        if (hook->insn == insn) {
+            uintptr_t pc = GETPC();
+            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
+                cpu_restore_state(uc->cpu, pc, false);
+                synced = true;
+            }
+            JIT_CALLBACK_GUARD(
+                ((uc_cb_insn_rdrand_t)hook->callback)(uc, &value, &success,
+                                                      hook->user_data));
+        }
+
+        if (uc->stop_request)
+            break;
+    }
+
+    if (!success) {
         // qemu_log_mask(LOG_UNIMP, "rdrand: Crypto failure: %s",
         //               error_get_pretty(err));
         // error_free(err);
@@ -500,5 +534,5 @@ target_ulong HELPER(rdrand)(CPUX86State *env)
 
     /* Success sets CF and clears all others.  */
     env->cc_src = CC_C;
-    return ret;
+    return (target_ulong)value;
 }

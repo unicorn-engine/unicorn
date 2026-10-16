@@ -2377,6 +2377,141 @@ static void test_x86_hook_insn_rdtscp(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_hook_insn_rdrand_cb(uc_engine *uc, uint64_t *value,
+                                          bool *success, void *user_data)
+{
+    (*(int *)user_data)++;
+    *value = 0x0123456789ABCDEF;
+}
+
+static void test_x86_hook_insn_rdrand(void)
+{
+    char code[] = "\x48\x0F\xC7\xF3"; // RDRAND RBX
+    uc_engine *uc;
+    uint64_t rbx = 0;
+    uint64_t eflags = 0;
+    int called = 0;
+    uc_hook hook;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_HASWELL));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_x86_hook_insn_rdrand_cb, &called,
+                   1, 0, UC_X86_INS_RDRAND));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_hook_del(uc, hook));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RBX, &rbx));
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &eflags)); // check carry flag is set
+    TEST_CHECK(called == 1);
+    TEST_CHECK(rbx == 0x0123456789ABCDEF);
+    TEST_CHECK((eflags & 1) != 0);
+    OK(uc_close(uc));
+}
+
+static void test_x86_hook_insn_rdrand_failure_cb(uc_engine *uc,
+                                                  uint64_t *value, bool *success,
+                                                  void *user_data)
+{
+    (*(int *)user_data)++;
+    *success = false;
+}
+
+static void test_x86_hook_insn_rdrand_failure(void)
+{
+    char code[] = "\x48\x0F\xC7\xF3"; // RDRAND RBX
+    uc_engine *uc;
+    uint64_t rbx = 1;
+    uint64_t eflags = 0;
+    int called = 0;
+    uc_hook hook;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_HASWELL));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN,
+                   test_x86_hook_insn_rdrand_failure_cb, &called, 1, 0,
+                   UC_X86_INS_RDRAND));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_hook_del(uc, hook));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RBX, &rbx));
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &eflags));
+    TEST_CHECK(called == 1);
+    TEST_CHECK(rbx == 0);
+    TEST_CHECK((eflags & 1) == 0);
+    OK(uc_close(uc));
+}
+
+static void test_x86_hook_insn_rdrand_range_cb(uc_engine *uc, uint64_t *value,
+                                                bool *success, void *user_data)
+{
+    (*(int *)user_data)++;
+    *value = 0x1234;
+}
+
+static void test_x86_hook_insn_rdrand_range(void)
+{
+    // nop ; nop ; rdrand rbx
+    char code[] = "\x90\x90\x48\x0F\xC7\xF3";
+    uc_engine *uc;
+    uint64_t rbx = 0;
+    int called_on_insn = 0;
+    int called_on_start = 0;
+    uc_hook hook1, hook2;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_HASWELL));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    // Only the hook whose range covers the RDRAND itself must run.
+    OK(uc_hook_add(uc, &hook1, UC_HOOK_INSN, test_x86_hook_insn_rdrand_range_cb,
+                   &called_on_insn, code_start + 2, code_start + 2,
+                   UC_X86_INS_RDRAND));
+    OK(uc_hook_add(uc, &hook2, UC_HOOK_INSN, test_x86_hook_insn_rdrand_range_cb,
+                   &called_on_start, code_start, code_start,
+                   UC_X86_INS_RDRAND));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RBX, &rbx));
+    TEST_CHECK(called_on_insn == 1);
+    TEST_CHECK(called_on_start == 0);
+    TEST_CHECK(rbx == 0x1234);
+    OK(uc_close(uc));
+}
+
+static void test_x86_hook_insn_rdseed(void)
+{
+    char code[] = "\x48\x0F\xC7\xFB"; // RDSEED RBX
+    uc_engine *uc;
+    uint64_t rbx = 0;
+    uint64_t eflags = 0;
+    int called_rdseed = 0;
+    int called_rdrand = 0;
+    uc_hook hook1, hook2;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_BROADWELL));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    // RDSEED shares the helper with RDRAND but only runs its own hooks.
+    OK(uc_hook_add(uc, &hook1, UC_HOOK_INSN, test_x86_hook_insn_rdrand_cb,
+                   &called_rdseed, 1, 0, UC_X86_INS_RDSEED));
+    OK(uc_hook_add(uc, &hook2, UC_HOOK_INSN, test_x86_hook_insn_rdrand_cb,
+                   &called_rdrand, 1, 0, UC_X86_INS_RDRAND));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RBX, &rbx));
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &eflags));
+    TEST_CHECK(called_rdseed == 1);
+    TEST_CHECK(called_rdrand == 0);
+    TEST_CHECK(rbx == 0x0123456789ABCDEF);
+    TEST_CHECK((eflags & 1) != 0);
+    OK(uc_close(uc));
+}
+
 static void test_x86_rdseed(void)
 {
     char code[] = "\x48\x0F\xC7\xFB"; // RDSEED RBX
@@ -2826,6 +2961,10 @@ TEST_LIST = {
     {"test_x86_ro_segfault", test_x86_ro_segfault},
     {"test_x86_hook_insn_rdtsc", test_x86_hook_insn_rdtsc},
     {"test_x86_hook_insn_rdtscp", test_x86_hook_insn_rdtscp},
+    {"test_x86_hook_insn_rdrand", test_x86_hook_insn_rdrand},
+    {"test_x86_hook_insn_rdrand_failure", test_x86_hook_insn_rdrand_failure},
+    {"test_x86_hook_insn_rdrand_range", test_x86_hook_insn_rdrand_range},
+    {"test_x86_hook_insn_rdseed", test_x86_hook_insn_rdseed},
     {"test_x86_rdseed", test_x86_rdseed},
     {"test_x86_hook_insn_wrmsr", test_x86_hook_insn_wrmsr},
     {"test_x86_hook_insn_rdmsr", test_x86_hook_insn_rdmsr},
