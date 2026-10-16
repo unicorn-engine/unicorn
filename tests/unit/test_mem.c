@@ -689,8 +689,8 @@ static void test_smc2_callback(uc_engine *uc, uint64_t addr, size_t size,
                                void *data)
 {
     /* set executable flag _after_ page was already accessed, MMU set */
-    uc_mem_protect(uc, 0x2000, 0x1000,
-                   UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC);
+    OK(uc_mem_protect(uc, 0x2000, 0x1000,
+                      UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC));
 }
 
 /* this is only a dummy callback */
@@ -725,8 +725,6 @@ static void test_smc2(void)
         "\xB8\x00\x20\x00\x00"         // 23: mov eax,0x2000
         "\xFF\xD0";                    // 28: call eax
 
-    r_eax = 0xaaaa;
-    r_ecx = 0xcccc;
     r_esp = 0x5000;
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
@@ -741,8 +739,8 @@ static void test_smc2(void)
     // Callback to set page to RWX.
     OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_smc2_callback, NULL, 7, 8));
 
-    // Install dummy mem write hook so that tlb_reset_dirty_by_vaddr() will not
-    // be called in tb_gen_code()
+    // The bug only showed with a memory hook installed, as tb_gen_code() used
+    // to skip tlb_reset_dirty_by_vaddr() then
     OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_WRITE, test_smc2_dummy_callback, NULL,
                    1, 0));
 
@@ -755,6 +753,72 @@ static void test_smc2(void)
 
     TEST_CHECK(r_eax == 0x55345678);
     TEST_CHECK(r_ecx == 0x12345678);
+
+    OK(uc_close(uc));
+}
+
+static bool test_mem_protect_add_exec_fetch_prot_cb(uc_engine *uc,
+                                                    uc_mem_type type,
+                                                    uint64_t address, int size,
+                                                    int64_t value,
+                                                    void *user_data)
+{
+    OK(uc_mem_protect(uc, address & ~0xfffULL, 0x1000, UC_PROT_ALL));
+    return true;
+}
+
+static void test_mem_protect_add_exec_fetch_prot(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    char code[] = "\x40\x40\x40"; // inc eax; inc eax; inc eax
+    uint32_t r_eax = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_FETCH_PROT,
+                   test_mem_protect_add_exec_fetch_prot_cb, NULL, 1, 0));
+
+    // Making the page executable from the hook must not break the fetch that
+    // triggered it.
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    TEST_CHECK(r_eax == 3);
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_protect_add_exec_mem_write_cb(uc_engine *uc,
+                                                   uc_mem_type type,
+                                                   uint64_t address, int size,
+                                                   int64_t value,
+                                                   void *user_data)
+{
+    OK(uc_mem_protect(uc, address & ~0xfffULL, 0x1000, UC_PROT_ALL));
+}
+
+static void test_mem_protect_add_exec_mem_write(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    // mov dword ptr [0x2010], 0x41414141
+    char code[] = "\xc7\x05\x10\x20\x00\x00\x41\x41\x41\x41";
+    uint32_t val = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_WRITE,
+                   test_mem_protect_add_exec_mem_write_cb, NULL, 0x2000,
+                   0x2fff));
+
+    // Making the page executable from the hook must not break the store that
+    // triggered it.
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_mem_read(uc, 0x2010, &val, sizeof(val)));
+    TEST_CHECK(val == 0x41414141);
 
     OK(uc_close(uc));
 }
@@ -782,4 +846,8 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_smc", test_smc},
              {"test_tlbdirty_exec", test_tlbdirty_exec},
              {"test_smc2", test_smc2},
+             {"test_mem_protect_add_exec_fetch_prot",
+              test_mem_protect_add_exec_fetch_prot},
+             {"test_mem_protect_add_exec_mem_write",
+              test_mem_protect_add_exec_mem_write},
              {NULL, NULL}};
