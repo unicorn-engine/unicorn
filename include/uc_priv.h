@@ -145,6 +145,12 @@ typedef void (*uc_softfloat_initialize)(void);
 // tcg flush softmmu tlb
 typedef void (*uc_tcg_flush_tlb)(struct uc_struct *uc);
 
+// Set TLB_NOTDIRTY again on the softmmu tlb entries writing to
+// [start, start + len) of the RAM region mr
+typedef void (*uc_tcg_reset_dirty_tlb_t)(struct uc_struct *uc,
+                                         MemoryRegion *mr, uint64_t start,
+                                         uint64_t len);
+
 // Invalidate the TB at given address
 typedef void (*uc_invalidate_tb_t)(struct uc_struct *uc, uint64_t start,
                                    size_t len);
@@ -314,6 +320,7 @@ struct uc_struct {
     uc_target_page_init target_page;
     uc_softfloat_initialize softfloat_initialize;
     uc_tcg_flush_tlb tcg_flush_tlb;
+    uc_tcg_reset_dirty_tlb_t tcg_reset_dirty_tlb;
     uc_invalidate_tb_t uc_invalidate_tb;
     uc_gen_tb_t uc_gen_tb;
     uc_tb_flush_t tb_flush;

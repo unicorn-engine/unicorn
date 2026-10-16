@@ -1853,13 +1853,11 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
         phys_page2 = get_page_addr_code(env, virt_page2);
     }
 
-    /*
-     * Undoes tlb_set_dirty in notdirty_write.  Unicorn: notdirty_write keeps
-     * TLB_NOTDIRTY while memory hooks are installed, but a write entry filled
-     * while the page was not executable never had it set, so always re-arm it.
-     */
-    tlb_reset_dirty_by_vaddr(cpu, pc & TARGET_PAGE_MASK,
-                            (pc & ~TARGET_PAGE_MASK) + tb->size);
+    /* Undoes tlb_set_dirty in notdirty_write. */
+    if (!uc_mem_hook_installed(cpu->uc, tb->pc)) {
+        tlb_reset_dirty_by_vaddr(cpu, pc & TARGET_PAGE_MASK,
+                                (pc & ~TARGET_PAGE_MASK) + tb->size);
+    }
 
     /*
      * No explicit memory barrier is required -- tb_link_page() makes the

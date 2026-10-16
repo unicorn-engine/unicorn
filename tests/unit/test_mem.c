@@ -739,8 +739,8 @@ static void test_smc2(void)
     // Callback to set page to RWX.
     OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_smc2_callback, NULL, 7, 8));
 
-    // The bug only showed with a memory hook installed, as tb_gen_code() used
-    // to skip tlb_reset_dirty_by_vaddr() then
+    // Install dummy mem write hook so that tlb_reset_dirty_by_vaddr() will not
+    // be called in tb_gen_code()
     OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_WRITE, test_smc2_dummy_callback, NULL,
                    1, 0));
 
