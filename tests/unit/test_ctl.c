@@ -175,6 +175,31 @@ static void test_uc_ctl_tb_cache(void)
     OK(uc_close(uc));
 }
 
+static void test_uc_ctl_tb_cache_at_zero(void)
+{
+    uc_engine *uc;
+    // inc eax; inc eax; inc eax; inc eax; hlt
+    char code[] = "\x40\x40\x40\x40\xf4";
+    uc_tb tb;
+    uint32_t r_eax = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0, code, sizeof(code) - 1));
+
+    // There is no @until before uc_emu_start(), so the block at address 0
+    // must not be translated as an exit.
+    OK(uc_ctl_request_cache(uc, (uint64_t)0, &tb));
+    TEST_CHECK(tb.icount == 5);
+    TEST_CHECK(tb.size == sizeof(code) - 1);
+
+    OK(uc_emu_start(uc, 0, sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    TEST_CHECK(r_eax == 4);
+
+    OK(uc_close(uc));
+}
+
 // Test requires UC_ARCH_ARM.
 #ifdef UNICORN_HAS_ARM
 static void test_uc_ctl_change_page_size(void)
@@ -478,6 +503,7 @@ TEST_LIST = {
     {"test_uc_ctl_time_out", test_uc_ctl_time_out},
     {"test_uc_ctl_exits", test_uc_ctl_exits},
     {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
+    {"test_uc_ctl_tb_cache_at_zero", test_uc_ctl_tb_cache_at_zero},
 #ifdef UNICORN_HAS_ARM
     {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
     {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
