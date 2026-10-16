@@ -727,6 +727,12 @@ static bool gen_shift(DisasContext *ctx, arg_r *a,
     return true;
 }
 
+#define tcg_temp_free_i32_multiple(ctx, ...) do { \
+    TCGv_i32 _temps[] = {__VA_ARGS__}; \
+    for (size_t _i = 0; _i < sizeof(_temps)/sizeof(_temps[0]); _i++) \
+        tcg_temp_free_i32((ctx), _temps[_i]); \
+} while (0) 
+
 static void gen_insn_hook_rtype(DisasContext *ctx, uint32_t insn_id, uint32_t rs1, uint32_t rs2, uint32_t rd)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -737,12 +743,22 @@ static void gen_insn_hook_rtype(DisasContext *ctx, uint32_t insn_id, uint32_t rs
 
     tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
 
+    TGCv_i32 _insn_id = tcg_const_i32(tcg_ctx, insn_id);
+    TGCv_i64 _pc_next = tcg_const_i64(tcg_ctx, ctx->base.pc_next);
+    TGCv_i32 _rs1_ud_id = tcg_const_i32(tcg_ctx, rs1_uc_id);
+    TGCv_i32 _rs2_uc_id = tcg_const_i32(tcg_ctx, rs2_uc_id);
+    TGCv_i32 _rd_uc_id = tcg_const_i32(tcg_ctx, rd_uc_id));
+
     gen_helper_insn_hook_rtype(tcg_ctx, tcg_ctx->cpu_env,
-                                    tcg_const_i32(tcg_ctx, insn_id),
-                                    tcg_const_i64(tcg_ctx, ctx->base.pc_next),
-                                    tcg_const_i32(tcg_ctx, rs1_uc_id),
-                                    tcg_const_i32(tcg_ctx, rs2_uc_id),
-                                    tcg_const_i32(tcg_ctx, rd_uc_id));
+                                        _insn_id,
+                                        _pc_next,
+                                        _rs1_ud_id,
+                                        _rs2_uc_id,
+                                        _rd_uc_id);
+
+    tcg_temp_free_i32_multiple(tcg_ctx, _insn_id, _rs1_ud_id, _rs2_uc_id, _rd_uc_id);
+    tcg_temp_free_i64(tcg_ctx, _pc_next);
+
     check_exit_request(tcg_ctx);
 }
 
@@ -755,12 +771,22 @@ static void gen_insn_hook_itype(DisasContext *ctx, uint32_t insn_id, int32_t imm
 
     tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
 
+    TGCv_i32 _insn_id = tcg_const_i32(tcg_ctx, insn_id);
+    TGCv_i64 _pc_next = tcg_const_i64(tcg_ctx, ctx->base.pc_next);
+    TGCv_i32 _imm = tcg_const_i32(tcg_ctx, imm);
+    TGCv_i32 _rs1_ud_id = tcg_const_i32(tcg_ctx, rs1_uc_id);
+    TGCv_i32 _rd_uc_id = tcg_const_i32(tcg_ctx, rd_uc_id));
+
     gen_helper_insn_hook_itype(tcg_ctx, tcg_ctx->cpu_env,
-                                    tcg_const_i32(tcg_ctx, insn_id),
-                                    tcg_const_i64(tcg_ctx, ctx->base.pc_next),
-                                    tcg_const_i32(tcg_ctx, imm),
-                                    tcg_const_i32(tcg_ctx, rs1_uc_id),
-                                    tcg_const_i32(tcg_ctx, rd_uc_id));
+                                   _insn_id,
+                                   _pc_next,
+                                   _imm,
+                                   _rs1_uc_id,
+                                   _rd_uc_id);
+
+    tcg_temp_free_i32_multiple(tcg_ctx, _insn_id, _imm, _rs1_uc_id, _rd_uc_id);
+    tcg_temp_free_i64(tcg_ctx, _pc_next);
+
     check_exit_request(tcg_ctx);
 }
 
@@ -773,12 +799,22 @@ static void gen_insn_hook_stype(DisasContext *ctx, uint32_t insn_id, int32_t imm
 
     tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
 
+    TGCv_i32 _insn_id = tcg_const_i32(tcg_ctx, insn_id);
+    TGCv_i64 _pc_next = tcg_const_i64(tcg_ctx, ctx->base.pc_next);
+    TGCv_i32 _imm = tcg_const_i32(tcg_ctx, imm);
+    TGCv_i32 _rs1_ud_id = tcg_const_i32(tcg_ctx, rs1_uc_id);
+    TGCv_i32 _rs2_uc_id = tcg_const_i32(tcg_ctx, rs2_uc_id);
+
     gen_helper_insn_hook_stype(tcg_ctx, tcg_ctx->cpu_env,
-                                    tcg_const_i32(tcg_ctx, insn_id),
-                                    tcg_const_i64(tcg_ctx, ctx->base.pc_next),
-                                    tcg_const_i32(tcg_ctx, imm),
-                                    tcg_const_i32(tcg_ctx, rs1_uc_id),
-                                    tcg_const_i32(tcg_ctx, rs2_uc_id));
+                                   _insn_id),
+                                   _pc_next),
+                                   _imm),
+                                   _rs1_uc_id),
+                                   _rs2_uc_id));
+
+    tcg_temp_free_i32_multiple(tcg_ctx, _insn_id, _imm, _rs1_uc_id, _rs2_uc_id);
+    tcg_temp_free_i64(tcg_ctx, _pc_next);
+
     check_exit_request(tcg_ctx);
 }
 
@@ -790,11 +826,20 @@ static void gen_insn_hook_utype(DisasContext *ctx, uint32_t insn_id, int32_t imm
 
     tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
 
+    TGCv_i32 _insn_id = tcg_const_i32(tcg_ctx, insn_id);
+    TGCv_i64 _pc_next = tcg_const_i64(tcg_ctx, ctx->base.pc_next);
+    TGCv_i32 _imm = tcg_const_i32(tcg_ctx, imm);
+    TGCv_i32 _rd_uc_id = tcg_const_i32(tcg_ctx, rd_uc_id));
+
     gen_helper_insn_hook_utype(tcg_ctx, tcg_ctx->cpu_env,
-                                    tcg_const_i32(tcg_ctx, insn_id),
-                                    tcg_const_i64(tcg_ctx, ctx->base.pc_next),
-                                    tcg_const_i32(tcg_ctx, imm),
-                                    tcg_const_i32(tcg_ctx, rd_uc_id));
+                                   _insn_id),
+                                   _pc_next),
+                                   _imm),
+                                   _rd_uc_id));
+
+    tcg_temp_free_i32_multiple(tcg_ctx, _insn_id, _imm, _rd_uc_id);
+    tcg_temp_free_i64(tcg_ctx, _pc_next);
+
     check_exit_request(tcg_ctx);
 }
 
@@ -804,9 +849,16 @@ static void gen_insn_hook_privileged(DisasContext *ctx, uint32_t insn_id)
 
     tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
 
+    TGCv_i32 _insn_id = tcg_const_i32(tcg_ctx, insn_id);
+    TGCv_i64 _pc_next = tcg_const_i64(tcg_ctx, ctx->base.pc_next);
+
     gen_helper_insn_hook_privileged(tcg_ctx, tcg_ctx->cpu_env,
-                                    tcg_const_i32(tcg_ctx, insn_id),
-                                    tcg_const_i64(tcg_ctx, ctx->base.pc_next));
+                                    _insn_id),
+                                    _pc_next));
+
+    tcg_temp_free_i32(tcg_ctx, _insn_id);
+    tcg_temp_free_i64(tcg_ctx, _pc_next);
+
     check_exit_request(tcg_ctx);
 }
 
