@@ -222,7 +222,83 @@ static void test_mips_simple_coredump_2137(void)
     OK(uc_close(uc));
 }
 
+// Identity virtual-TLB fill hook: maps every virtual page to the same physical
+// address with full permissions.
+static bool test_mips_vtlb_identity_cb(uc_engine *uc, uint64_t addr,
+                                       uc_mem_type type, uc_tlb_entry *result,
+                                       void *user_data)
+{
+    result->paddr = addr;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+// Regression for issue #2272: under UC_TLB_VIRTUAL, a branch whose target is
+// itself a branch -- with a memory access in the first branch's delay slot,
+// forcing a TLB fill -- must not raise a spurious Reserved Instruction
+// exception. This mirrors glibc's __libc_setup_tls program-header (PT_TLS)
+// scan. The delay-slot load triggers unicorn_fill_tlb(), whose unconditional
+// cpu_restore_state() used to re-apply the branch-delay hflags into the live
+// env, so the branch-target block was decoded as if it sat in a delay slot.
+//
+// Note: this exercises the case where a UC_HOOK_TLB_FILL hook is registered
+// (how a soft-MMU front-end such as Qiling drives the virtual TLB), which the
+// permission-only change in PR #2273 does not address.
+static void test_mips_virtual_tlb_branch_in_delay_slot_2272(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    // big-endian MIPS64:
+    //         li     $a1, 7
+    //         b      L_bne          # delay slot is the load below
+    //         lw     $v1, 0($v0)
+    // L_top:  sltu   $v1, $v0, $a0
+    //         beqz   $v1, L_exit
+    //         nop
+    //         lw     $v1, 0($v0)
+    // L_bne:  bne    $v1, $a1, L_top
+    //         daddiu $v0, $v0, 56   # delay slot
+    //         daddiu $v0, $v0, -56
+    // L_exit: jr     $ra
+    //         nop
+    char code[] = "\x24\x05\x00\x07\x10\x00\x00\x05\x8c\x43\x00\x00"
+                  "\x00\x44\x18\x2b\x10\x60\x00\x05\x00\x00\x00\x00"
+                  "\x8c\x43\x00\x00\x14\x65\xff\xfb\x64\x42\x00\x38"
+                  "\x64\x42\xff\xc8\x03\xe0\x00\x08\x00\x00\x00\x00";
+    const uint64_t data_base = 0x20000000;
+    uint64_t r_v0 = data_base;
+    uint64_t r_a0 = data_base + 56 * 4; // scan 4 program-header-sized entries
+    uint64_t r_a1 = 7;
+    uint64_t r_v1 = 0;
+    // a PT_TLS (type == 7) entry at index 3; earlier entries are type 0
+    char tls_type[] = "\x00\x00\x00\x07";
+
+    OK(uc_open(UC_ARCH_MIPS, UC_MODE_MIPS64 | UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_mips_vtlb_identity_cb, NULL,
+                   1, 0));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, data_base, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, data_base + 56 * 3, tls_type, sizeof(tls_type) - 1));
+
+    OK(uc_reg_write(uc, UC_MIPS_REG_V0, &r_v0));
+    OK(uc_reg_write(uc, UC_MIPS_REG_A0, &r_a0));
+    OK(uc_reg_write(uc, UC_MIPS_REG_A1, &r_a1));
+
+    // Before the fix this raised a spurious EXCP_RI; with the fix it runs the
+    // scan to completion and finds the PT_TLS entry.
+    OK(uc_emu_start(uc, code_start, code_start + 0x28, 0, 0));
+
+    OK(uc_reg_read(uc, UC_MIPS_REG_V1, &r_v1)); // matched program-header type
+    TEST_CHECK(r_v1 == 7);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
+    {"test_mips_virtual_tlb_branch_in_delay_slot_2272",
+     test_mips_virtual_tlb_branch_in_delay_slot_2272},
     {"test_mips_stop_at_branch", test_mips_stop_at_branch},
     {"test_mips_stop_at_delay_slot", test_mips_stop_at_delay_slot},
     {"test_mips_el_ori", test_mips_el_ori},
