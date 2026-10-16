@@ -476,7 +476,9 @@ static inline int uc_addr_is_exit(uc_engine *uc, uint64_t addr)
     if (uc->use_exits) {
         return g_tree_lookup(uc->ctl_exits, (gpointer)(&addr)) == (gpointer)1;
     } else {
-        return uc->exits[uc->nested_level - 1] == addr;
+        // Translation can also happen outside of uc_emu_start(), e.g. via
+        // uc_ctl_request_cache(), where there is no @until to stop at.
+        return uc->nested_level > 0 && uc->exits[uc->nested_level - 1] == addr;
     }
 }
 
