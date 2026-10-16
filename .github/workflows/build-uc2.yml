@@ -136,7 +136,6 @@ jobs:
           install: >-
             mingw-w64-${{ matrix.config.mingw-arch }}-cmake
             mingw-w64-${{ matrix.config.mingw-arch }}-ninja
-            mingw-w64-${{ matrix.config.mingw-arch }}-cmocka
             mingw-w64-${{ matrix.config.mingw-arch }}-${{ matrix.compiler }}
             mingw-w64-${{ matrix.config.mingw-arch }}-toolchain
 
@@ -629,6 +628,9 @@ jobs:
         uses: jirutka/setup-alpine@v1
         with:
           arch: ${{ matrix.config.arch }}
+          # latest-stable ships apk-tools 3, which fails to read (at least on
+          # ppc64le) a database created by the default apk-tools 2 apk.static
+          apk-tools-url: https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v3.0.8/x86_64/apk.static#!sha256!11758d76de3699c7606152357f415f55879743ccf0e3d8942d5ba98cf29a3c86
           packages: cmake build-base automake cmocka-dev pkgconfig ${{ matrix.compiler }} ninja linux-headers
 
       - name: '🚧 Linux Alpine build'

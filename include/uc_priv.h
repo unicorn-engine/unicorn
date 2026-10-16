@@ -219,6 +219,7 @@ typedef enum uc_hook_idx {
     UC_HOOK_EDGE_GENERATED_IDX,
     UC_HOOK_TCG_OPCODE_IDX,
     UC_HOOK_TLB_FILL_IDX,
+    UC_HOOK_BLOCK_ICOUNT_IDX,
 
     UC_HOOK_MAX,
 } uc_hook_idx;
@@ -475,7 +476,9 @@ static inline int uc_addr_is_exit(uc_engine *uc, uint64_t addr)
     if (uc->use_exits) {
         return g_tree_lookup(uc->ctl_exits, (gpointer)(&addr)) == (gpointer)1;
     } else {
-        return uc->exits[uc->nested_level - 1] == addr;
+        // Translation can also happen outside of uc_emu_start(), e.g. via
+        // uc_ctl_request_cache(), where there is no @until to stop at.
+        return uc->nested_level > 0 && uc->exits[uc->nested_level - 1] == addr;
     }
 }
 
@@ -532,6 +535,8 @@ static inline void hooked_regions_check(uc_engine *uc, uint64_t start,
     // Only UC_HOOK_BLOCK and UC_HOOK_CODE might be wrongle cached!
     hooked_regions_check_single(uc->hook[UC_HOOK_CODE_IDX].head, start, length);
     hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_IDX].head, start,
+                                length);
+    hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_ICOUNT_IDX].head, start,
                                 length);
 }
 
