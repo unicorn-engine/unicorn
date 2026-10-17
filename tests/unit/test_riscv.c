@@ -55,6 +55,50 @@ static void test_riscv64_nop(void)
     OK(uc_close(uc));
 }
 
+static void test_riscv32_odd_pc(void)
+{
+    uc_engine *uc;
+    const char code[] = "\x13\x00\x00\x00"; // nop
+    uint32_t old_pc;
+    uint32_t new_pc;
+    uint32_t odd_pc = code_start + 1;
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
+                    sizeof(code) - 1);
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &old_pc));
+    uc_assert_err(UC_ERR_ARG, uc_reg_write(uc, UC_RISCV_REG_PC, &odd_pc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &new_pc));
+    TEST_CHECK(new_pc == old_pc);
+    uc_assert_err(UC_ERR_ARG,
+                  uc_emu_start(uc, odd_pc, code_start + sizeof(code) - 1, 0,
+                                0));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &new_pc));
+    TEST_CHECK(new_pc == old_pc);
+    OK(uc_close(uc));
+}
+
+static void test_riscv64_odd_pc(void)
+{
+    uc_engine *uc;
+    const char code[] = "\x13\x00\x00\x00"; // nop
+    uint64_t old_pc;
+    uint64_t new_pc;
+    uint64_t odd_pc = code_start + 1;
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &old_pc));
+    uc_assert_err(UC_ERR_ARG, uc_reg_write(uc, UC_RISCV_REG_PC, &odd_pc));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &new_pc));
+    TEST_CHECK(new_pc == old_pc);
+    uc_assert_err(UC_ERR_ARG,
+                  uc_emu_start(uc, odd_pc, code_start + sizeof(code) - 1, 0,
+                                0));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &new_pc));
+    TEST_CHECK(new_pc == old_pc);
+    OK(uc_close(uc));
+}
+
 static void test_riscv32_until_pc_update(void)
 {
     uc_engine *uc;
@@ -911,6 +955,8 @@ static void test_riscv_priv(void)
 TEST_LIST = {
     {"test_riscv32_nop", test_riscv32_nop},
     {"test_riscv64_nop", test_riscv64_nop},
+    {"test_riscv32_odd_pc", test_riscv32_odd_pc},
+    {"test_riscv64_odd_pc", test_riscv64_odd_pc},
     {"test_riscv32_3steps_pc_update", test_riscv32_3steps_pc_update},
     {"test_riscv64_3steps_pc_update", test_riscv64_3steps_pc_update},
     {"test_riscv64_until_at_page_end", test_riscv64_until_at_page_end},
