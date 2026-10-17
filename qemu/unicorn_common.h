@@ -12,6 +12,7 @@
 
 void vm_start(struct uc_struct*);
 void tcg_exec_init(struct uc_struct *uc, uint32_t tb_size);
+void tlb_reset_dirty(CPUState *cpu, ram_addr_t start1, ram_addr_t length);
 bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
                       MMUAccessType rw, int mmu_idx,
                       bool probe, uintptr_t retaddr);
@@ -184,6 +185,17 @@ MemoryRegion *find_memory_mapping(struct uc_struct *uc, hwaddr address)
     return mr;
 }
 
+static void tcg_reset_dirty_tlb(struct uc_struct *uc, MemoryRegion *mr,
+                                uint64_t start, uint64_t len)
+{
+    // The TLB entries are matched by their host address, so this also covers
+    // any virtual address the range is mapped at.
+    uintptr_t host = (uintptr_t)memory_region_get_ram_ptr(mr) +
+                     (start - mr->addr);
+
+    tlb_reset_dirty(uc->cpu, host, len);
+}
+
 void softfloat_init(void);
 static inline void uc_common_init(struct uc_struct* uc)
 {
@@ -203,6 +215,7 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->target_page = target_page_init;
     uc->softfloat_initialize = softfloat_init;
     uc->tcg_flush_tlb = tcg_flush_softmmu_tlb;
+    uc->tcg_reset_dirty_tlb = tcg_reset_dirty_tlb;
     uc->memory_map_io = memory_map_io;
     uc->set_tlb = uc_set_tlb;
     uc->memory_mapping = find_memory_mapping;

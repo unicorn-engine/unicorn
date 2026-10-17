@@ -60,6 +60,70 @@ static void test_sr_contains_flags(void)
     OK(uc_close(uc));
 }
 
+static void test_sr_read_preserves_flags(void)
+{
+    uc_engine *uc;
+    uint8_t code[] = {
+        0x02, 0x80, 0x00, 0x00, 0x3f, 0xff, // andi.l #0x3fff, %d0
+        0x66, 0x04,                         // bne.s  1f
+        0x72, 0x01,                         // moveq  #1, %d1
+        0x60, 0x02,                         // bra.s  2f
+        0x72, 0x02,                         // 1: moveq #2, %d1
+                                            // 2:
+    };
+    uint32_t sr = 0x2000;
+    uint32_t d0 = 0x4000;
+    uint32_t d1 = 0;
+    uint32_t pc;
+
+    uc_common_setup(&uc, UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, code, sizeof(code),
+                    UC_CPU_M68K_M68000);
+
+    // Writing SR leaves the condition codes in an explicit (Z clear) state.
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, &sr));
+    OK(uc_reg_write(uc, UC_M68K_REG_D0, &d0));
+    OK(uc_reg_write(uc, UC_M68K_REG_D1, &d1));
+
+    // Run only the andi.l, which sets Z lazily.
+    OK(uc_emu_start(uc, code_start, code_start + 6, 0, 0));
+
+    // Reading SR must report Z and must not change the guest state.
+    OK(uc_reg_read(uc, UC_M68K_REG_SR, &sr));
+    TEST_CHECK((sr & 0x4) /* Z flag */ == 0x4);
+
+    OK(uc_reg_read(uc, UC_M68K_REG_PC, &pc));
+    OK(uc_emu_start(uc, pc, code_start + sizeof(code), 0, 0));
+
+    OK(uc_reg_read(uc, UC_M68K_REG_D1, &d1));
+    TEST_CHECK(d1 == 1);
+
+    OK(uc_close(uc));
+}
+
+static void test_branch_on_initial_flags(void)
+{
+    uc_engine *uc;
+    uint8_t code[] = {
+        0x67, 0x02, // beq.s  1f
+        0x72, 0x01, // moveq  #1, %d1
+                    // 1:
+    };
+    uint32_t d1;
+
+    uc_common_setup(&uc, UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, code, sizeof(code),
+                    UC_CPU_M68K_M68000);
+
+    // The condition codes must be valid before any instruction sets them.
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_reg_read(uc, UC_M68K_REG_D1, &d1));
+    TEST_CHECK(d1 == 1);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_move_to_sr", test_move_to_sr},
              {"test_sr_contains_flags", test_sr_contains_flags},
+             {"test_sr_read_preserves_flags", test_sr_read_preserves_flags},
+             {"test_branch_on_initial_flags", test_branch_on_initial_flags},
              {NULL, NULL}};

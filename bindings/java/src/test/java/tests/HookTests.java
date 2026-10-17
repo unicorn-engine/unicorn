@@ -9,10 +9,33 @@ import unicorn.CodeHook;
 import unicorn.EdgeGeneratedHook;
 import unicorn.TlbFillHook;
 import unicorn.TranslationBlock;
+import unicorn.CpuidHook;
 import unicorn.Unicorn;
 import unicorn.UnicornException;
 
 public class HookTests {
+    @Test
+    public void testRdtscHooks() {
+        final int[] called = { 0 };
+        final CpuidHook hook = (uc, user) -> {
+            called[0]++;
+            return 1;
+        };
+        int[] instructions = { Unicorn.UC_X86_INS_RDTSC,
+                               Unicorn.UC_X86_INS_RDTSCP };
+        byte[][] code = { { 0x0f, 0x31 }, { 0x0f, 0x01, (byte) 0xf9 } };
+
+        for (int i = 0; i < instructions.length; i++) {
+            long address = 0x100000;
+            Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_64);
+            u.ctl_set_cpu_model(Unicorn.UC_CPU_X86_HASWELL);
+            u.mem_map(address, 0x1000, Unicorn.UC_PROT_ALL);
+            u.mem_write(address, code[i]);
+            u.hook_add(hook, instructions[i], null);
+            u.emu_start(address, address + code[i].length, 0, 0);
+        }
+        assertEquals(2, called[0]);
+    }
     private static void assertTranslationBlock(TranslationBlock expected,
             TranslationBlock actual) {
         assertEquals(expected.pc, actual.pc);

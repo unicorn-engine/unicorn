@@ -79,7 +79,9 @@ class TestCtl(regress.RegressTest):
         self.assertEqual(SIZE_2MB, uc.ctl_get_page_size())
 
     def test_timeout(self):
-        MILLIS_1S = 1000
+        # in microseconds; the timeout also covers translating the code, so
+        # keep it generous enough for slow hosts (e.g. Rosetta on CI)
+        MICROS_1S = 1000 * 1000
 
         uc = Uc(UC_ARCH_X86, UC_MODE_32)
 
@@ -87,10 +89,10 @@ class TestCtl(regress.RegressTest):
         uc.mem_write(BASE, CODE)
 
         # start a long emulation bound by timeout
-        uc.emu_start(BASE, BASE + len(CODE), timeout=MILLIS_1S)
+        uc.emu_start(BASE, BASE + len(CODE), timeout=MICROS_1S)
 
         # was timeout set properly? uc returns timeout in nanoseconds
-        self.assertEqual(MILLIS_1S * 1000, uc.ctl_get_timeout())
+        self.assertEqual(MICROS_1S * 1000, uc.ctl_get_timeout())
 
         # no way we made it all the way down to zero
         self.assertNotEqual(0, uc.reg_read(UC_X86_REG_ECX))

@@ -432,6 +432,25 @@ def test_i386_inout():
         print("ERROR: %s" % e)
 
 
+def test_x86_rdtsc_hooks():
+    for code, insn in ((b"\x0f\x31", UC_X86_INS_RDTSC),
+                       (b"\x0f\x01\xf9", UC_X86_INS_RDTSCP)):
+        mu = Uc(UC_ARCH_X86, UC_MODE_64)
+        mu.ctl_set_cpu_model(UC_CPU_X86_HASWELL)
+        mu.mem_map(ADDRESS, 0x1000)
+        mu.mem_write(ADDRESS, code)
+        called = [0]
+
+        def hook(uc, user_data):
+            called[0] += 1
+            return True
+
+        handle = mu.hook_add(UC_HOOK_INSN, hook, None, 1, 0, insn)
+        mu.emu_start(ADDRESS, ADDRESS + len(code))
+        mu.hook_del(handle)
+        assert called[0] == 1
+
+
 def test_i386_context_save():
     print("Save/restore CPU context in opaque blob")
     address = 0

@@ -1092,6 +1092,12 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 {
     uc_err err;
 
+#ifdef UNICORN_HAS_RISCV
+    if (uc->arch == UC_ARCH_RISCV && (begin & 1)) {
+        return UC_ERR_ARG;
+    }
+#endif
+
     // reset the counter
     uc->emu_counter = 0;
     uc->invalid_error = UC_ERR_OK;
@@ -1732,6 +1738,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, uint64_t size,
     uint64_t pc;
     uint64_t count, len;
     bool remove_exec = false;
+    bool add_exec;
 
     UC_INIT(uc);
 
@@ -1792,8 +1799,19 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, uint64_t size,
                 ((perms & UC_PROT_EXEC) == 0)) {
                 remove_exec = true;
             }
+            add_exec = ((mr->perms & UC_PROT_EXEC) == 0) &&
+                       ((perms & UC_PROT_EXEC) != 0);
             mr->perms = perms;
             uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+
+            // TLB_NOTDIRTY is only set on write entries of executable pages
+            // when the TLB is filled, so set it on the entries filled before.
+            // Otherwise writes through them would not invalidate the TBs
+            // translated from this range.  Unlike a TLB flush, this keeps the
+            // entries valid, so it is safe to do from within memory hooks.
+            if (add_exec) {
+                uc->tcg_reset_dirty_tlb(uc, mr, addr, len);
+            }
 
         } else {
             if (!split_mmio_region(uc, mr, addr, len, false)) {
@@ -1924,8 +1942,14 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 {
     int ret = UC_ERR_OK;
     int i = 0;
+    const unsigned int valid_hook_types = (1U << UC_HOOK_MAX) - 1;
 
     UC_INIT(uc);
+
+    if (type <= 0 || ((unsigned int)type & ~valid_hook_types) != 0) {
+        restore_jit_state(uc);
+        return UC_ERR_HOOK;
+    }
 
     int block_type = type & (UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT);
     if (block_type == (UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT)) {
