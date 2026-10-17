@@ -125,6 +125,50 @@ static void test_uc_ctl_exits(void)
     OK(uc_close(uc));
 }
 
+static void test_uc_invalid_hook_cb(uc_engine *uc, uint64_t address,
+                                    uint32_t size, void *user_data)
+{
+    uint32_t *calls = (uint32_t *)user_data;
+
+    (*calls)++;
+}
+
+static void test_uc_invalid_hook_types(void)
+{
+    const char code[] = "\x90";
+    const int unknown_type = 1U << 30;
+    uint32_t calls = 0;
+    uc_hook hook;
+    uc_engine *uc;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    hook = UINTPTR_MAX;
+    uc_assert_err(
+        UC_ERR_HOOK,
+        uc_hook_add(uc, &hook, 0, test_uc_invalid_hook_cb, &calls, 1, 0));
+    TEST_CHECK(hook == UINTPTR_MAX);
+    hook = UINTPTR_MAX;
+    uc_assert_err(UC_ERR_HOOK,
+                  uc_hook_add(uc, &hook, unknown_type, test_uc_invalid_hook_cb,
+                              &calls, 1, 0));
+    TEST_CHECK(hook == UINTPTR_MAX);
+    hook = UINTPTR_MAX;
+    uc_assert_err(UC_ERR_HOOK,
+                  uc_hook_add(uc, &hook, UC_HOOK_CODE | unknown_type,
+                              test_uc_invalid_hook_cb, &calls, 1, 0));
+    TEST_CHECK(hook == UINTPTR_MAX);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 1));
+    TEST_CHECK(calls == 0);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_CODE, test_uc_invalid_hook_cb, &calls, 1,
+                   0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 1));
+    TEST_CHECK(calls == 1);
+
+    OK(uc_close(uc));
+}
+
 double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
 {
     int64_t t1, t2;
@@ -531,6 +575,7 @@ TEST_LIST = {
     {"test_uc_ctl_arch", test_uc_ctl_arch},
     {"test_uc_ctl_time_out", test_uc_ctl_time_out},
     {"test_uc_ctl_exits", test_uc_ctl_exits},
+    {"test_uc_invalid_hook_types", test_uc_invalid_hook_types},
     {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
     {"test_uc_ctl_tb_cache_at_zero", test_uc_ctl_tb_cache_at_zero},
 #ifdef UNICORN_HAS_ARM
