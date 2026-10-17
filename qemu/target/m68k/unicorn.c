@@ -47,6 +47,7 @@ static void reg_reset(struct uc_struct *uc)
     memset(env->dregs, 0, sizeof(env->dregs));
 
     env->pc = 0;
+    cpu_m68k_set_ccr(env, 0);
 }
 
 DEFAULT_VISIBILITY
@@ -72,7 +73,6 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             break;
         case UC_M68K_REG_SR:
             CHECK_REG_TYPE(uint32_t);
-            env->cc_op = CC_OP_FLAGS;
             *(uint32_t *)value = cpu_m68k_get_sr(env);
             break;
         case UC_M68K_REG_CR_SFC:
