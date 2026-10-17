@@ -285,7 +285,7 @@ static bool riscv_stop_interrupt(struct uc_struct *uc, int intno)
 
 static bool riscv_insn_hook_validate(uint32_t insn_enum)
 {
-    return false;
+    return insn_enum < UC_RISCV_INS_ENDING && insn_enum > UC_RISCV_INS_INVALID;
 }
 
 static int riscv_cpus_init(struct uc_struct *uc, const char *cpu_model)

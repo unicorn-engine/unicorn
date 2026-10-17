@@ -78,3 +78,44 @@ DEF_HELPER_2(sret, tl, env, tl)
 DEF_HELPER_2(mret, tl, env, tl)
 DEF_HELPER_1(wfi, void, env)
 DEF_HELPER_1(tlb_flush, void, env)
+
+/* Instruction based hooks */
+#if defined(TARGET_RISCV32)
+# define helper_insn_hook_rtype  helper_insn_hook_rtype_riscv32
+#elif defined(TARGET_RISCV64)
+# define helper_insn_hook_rtype  helper_insn_hook_rtype_riscv64
+#endif
+
+DEF_HELPER_6(insn_hook_rtype, void, env, i32, i64, i32, i32, i32)
+
+#if defined(TARGET_RISCV32)
+# define helper_insn_hook_itype  helper_insn_hook_itype_riscv32
+#elif defined(TARGET_RISCV64)
+# define helper_insn_hook_itype  helper_insn_hook_itype_riscv64
+#endif
+
+DEF_HELPER_6(insn_hook_itype, void, env, i32, i64, s32, i32, i32)
+
+#if defined(TARGET_RISCV32)
+# define helper_insn_hook_stype  helper_insn_hook_stype_riscv32
+#elif defined(TARGET_RISCV64)
+# define helper_insn_hook_stype  helper_insn_hook_stype_riscv64
+#endif
+
+DEF_HELPER_6(insn_hook_stype, void, env, i32, i64, s32, i32, i32)
+
+#if defined(TARGET_RISCV32)
+# define helper_insn_hook_utype  helper_insn_hook_utype_riscv32
+#elif defined(TARGET_RISCV64)
+# define helper_insn_hook_utype  helper_insn_hook_utype_riscv64
+#endif
+
+DEF_HELPER_5(insn_hook_utype, void, env, i32, i64, s32, i32)
+
+#if defined(TARGET_RISCV32)
+# define helper_insn_hook_privileged  helper_insn_hook_privileged_riscv32
+#elif defined(TARGET_RISCV64)
+# define helper_insn_hook_privileged  helper_insn_hook_privileged_riscv64
+#endif
+
+DEF_HELPER_3(insn_hook_privileged, void, env, i32, i64)
