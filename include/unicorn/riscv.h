@@ -309,6 +309,100 @@ typedef enum uc_riscv_reg {
     UC_RISCV_REG_FT11 = UC_RISCV_REG_F31, // "ft11"
 } uc_riscv_reg;
 
+
+//> RISCV instructions
+typedef enum uc_riscv {
+  UC_RISCV_INS_INVALID = 0,
+  UC_RISCV_INS_LB,
+  UC_RISCV_INS_LH,
+  UC_RISCV_INS_LW,
+  UC_RISCV_INS_LD,
+  UC_RISCV_INS_LBU,
+  UC_RISCV_INS_LHU,
+  UC_RISCV_INS_LWU,
+  UC_RISCV_INS_SB,
+  UC_RISCV_INS_SH,
+  UC_RISCV_INS_SW,
+  UC_RISCV_INS_SD,
+  UC_RISCV_INS_LUI,
+  UC_RISCV_INS_AUIPC,
+  UC_RISCV_INS_ADDI,
+  UC_RISCV_INS_ADD,
+  UC_RISCV_INS_ADDIW,
+  UC_RISCV_INS_ADDW,
+  UC_RISCV_INS_SUB,
+  UC_RISCV_INS_SUBW,
+  UC_RISCV_INS_SLTI,
+  UC_RISCV_INS_SLT,
+  UC_RISCV_INS_SLTIU,
+  UC_RISCV_INS_SLTU,
+  UC_RISCV_INS_ANDI,
+  UC_RISCV_INS_AND,
+  UC_RISCV_INS_ORI,
+  UC_RISCV_INS_OR,
+  UC_RISCV_INS_XORI,
+  UC_RISCV_INS_XOR,
+  UC_RISCV_INS_SLLI,
+  UC_RISCV_INS_SLL,
+  UC_RISCV_INS_SLLIW,
+  UC_RISCV_INS_SLLW,
+  UC_RISCV_INS_SRLI,
+  UC_RISCV_INS_SRL,
+  UC_RISCV_INS_SRLIW,
+  UC_RISCV_INS_SRLW,
+  UC_RISCV_INS_SRAI,
+  UC_RISCV_INS_SRA,
+  UC_RISCV_INS_SRAIW,
+  UC_RISCV_INS_SRAW,
+  UC_RISCV_INS_JAL,
+  UC_RISCV_INS_JALR,
+  UC_RISCV_INS_BEQ,
+  UC_RISCV_INS_BNE,
+  UC_RISCV_INS_BLT,
+  UC_RISCV_INS_BGE,
+  UC_RISCV_INS_BLTU,
+  UC_RISCV_INS_BGEU,
+  UC_RISCV_INS_ECALL,
+  UC_RISCV_INS_EBREAK,
+  UC_RISCV_INS_URET,
+  UC_RISCV_INS_SRET,
+  UC_RISCV_INS_MRET,
+  UC_RISCV_INS_WFI,
+
+  UC_RISCV_INS_FENCE,
+  UC_RISCV_INS_FENCEI,
+
+  // CSR instructions
+  UC_RISCV_INS_CSRRW,
+  UC_RISCV_INS_CSRRS,
+  UC_RISCV_INS_CSRRC,
+  UC_RISCV_INS_CSRRWI,
+  UC_RISCV_INS_CSRRSI,
+  UC_RISCV_INS_CSRRCI,
+
+  UC_RISCV_INS_SFENCEVMA,
+  UC_RISCV_INS_SFENCEVM,
+  UC_RISCV_INS_HFENCEGVMA,
+  UC_RISCV_INS_HFENCEBVMA,
+
+  UC_RISCV_INS_ENDING, // mark the end of the list of insn
+} uc_riscv_insn;
+
+// Generic callback type for R type instructions
+typedef void (*uc_cb_insn_rtype_t)(struct uc_struct *uc, uint64_t pc, uint32_t rs1, uint32_t rs2, uint32_t rd, void *userdata);
+
+// Generic callback type for I type instructions
+typedef void (*uc_cb_insn_itype_t)(struct uc_struct *uc, uint64_t pc, int32_t imm, uint32_t rs1, uint32_t rd, void *userdata);
+
+// Generic callback type for S type instructions
+typedef void (*uc_cb_insn_stype_t)(struct uc_struct *uc, uint64_t pc, uint32_t imm, uint32_t rs1, uint32_t rs2, void *userdata);
+
+// Generic callback type for U type instructions
+typedef void (*uc_cb_insn_utype_t)(struct uc_struct *uc, uint64_t pc, uint32_t imm, uint32_t rd, void *userdata);
+
+// Generic callback type for privileged instructions
+typedef void (*uc_cb_insn_privileged_t)(struct uc_struct *uc, uint64_t pc, void *userdata);
+
 #ifdef __cplusplus
 }
 #endif

@@ -991,6 +991,96 @@ static void test_riscv_priv(void)
     TEST_ASSERT(reg_value == 0);
 }
 
+static int jalr_hook_fired = 0;
+static uint64_t jalr_hook_pc = 0;
+
+static void jalr_hook_cb(uc_engine *uc, uint64_t pc, int32_t imm,
+                          uint32_t rs1, uint32_t rd, void *user_data)
+{
+    jalr_hook_fired++;
+    jalr_hook_pc = pc;
+}
+
+static void test_riscv32_insn_hook_jalr(void)
+{
+    uc_engine *uc;
+    uc_hook hh;
+    char code[] = "\xb7\x12\x00\x00\xe7\x80\x82\x00"; // lui, t0, 1; jalr ra, 8(t0)
+
+    jalr_hook_fired = 0;
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
+                    sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hh, UC_HOOK_INSN, jalr_hook_cb, NULL, 1, 0,
+                    UC_RISCV_INS_JALR));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(jalr_hook_fired == 1);
+    TEST_CHECK(jalr_hook_pc == code_start + 4);
+
+    OK(uc_close(uc));
+}
+
+static void test_riscv64_insn_hook_jalr(void)
+{
+    uc_engine *uc;
+    uc_hook hh;
+    char code[] = "\xb7\x12\x00\x00\xe7\x80\x82\x00"; // lui, t0, 1; jalr ra, 8(t0)
+
+    jalr_hook_fired = 0;
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hh, UC_HOOK_INSN, jalr_hook_cb, NULL, 1, 0,
+                    UC_RISCV_INS_JALR));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(jalr_hook_fired == 1);
+    TEST_CHECK(jalr_hook_pc == code_start + 4);
+
+    OK(uc_close(uc));
+}
+
+static void test_riscv32_insn_hook_out_of_range(void)
+{
+    uc_engine *uc;
+    uc_hook hh;
+    char code[] = "\xb7\x12\x00\x00\xe7\x80\x82\x00"; // lui, t0, 1; jalr ra, 8(t0)
+
+    jalr_hook_fired = 0;
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
+                    sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hh, UC_HOOK_INSN, jalr_hook_cb, NULL,
+                    code_start + 0x100, code_start + 0x200,
+                    UC_RISCV_INS_JALR));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(jalr_hook_fired == 0);
+
+    OK(uc_close(uc));
+}
+
+static void test_riscv64_insn_hook_out_of_range(void)
+{
+    uc_engine *uc;
+    uc_hook hh;
+    char code[] = "\xb7\x12\x00\x00\xe7\x80\x82\x00"; // lui, t0, 1; jalr ra, 8(t0)
+
+    jalr_hook_fired = 0;
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hh, UC_HOOK_INSN, jalr_hook_cb, NULL,
+                    code_start + 0x100, code_start + 0x200,
+                    UC_RISCV_INS_JALR));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(jalr_hook_fired == 0);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_riscv32_nop", test_riscv32_nop},
     {"test_riscv64_nop", test_riscv64_nop},
@@ -1024,4 +1114,8 @@ TEST_LIST = {
      test_riscv_correct_address_in_long_jump_hook},
     {"test_riscv_mmu", test_riscv_mmu},
     {"test_riscv_priv", test_riscv_priv},
-    {NULL, NULL}};
+    {"test_riscv32_insn_hook_jalr", test_riscv32_insn_hook_jalr},
+    {"test_riscv64_insn_hook_jalr", test_riscv64_insn_hook_jalr},
+    {"test_riscv32_insn_hook_out_of_range", test_riscv32_insn_hook_out_of_range},
+    {"test_riscv64_insn_hook_out_of_range", test_riscv64_insn_hook_out_of_range},
+   {NULL, NULL}};
