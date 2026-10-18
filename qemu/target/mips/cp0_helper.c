@@ -405,11 +405,15 @@ target_ulong helper_mfc0_lladdr(CPUMIPSState *env)
 
 target_ulong helper_mfc0_maar(CPUMIPSState *env)
 {
+    if (env->CP0_MAARI >= MIPS_MAAR_MAX)
+        return 0;
     return (int32_t) env->CP0_MAAR[env->CP0_MAARI];
 }
 
 target_ulong helper_mfhc0_maar(CPUMIPSState *env)
 {
+    if (env->CP0_MAARI >= MIPS_MAAR_MAX)
+        return 0;
     return env->CP0_MAAR[env->CP0_MAARI] >> 32;
 }
 
@@ -488,6 +492,8 @@ target_ulong helper_dmfc0_lladdr(CPUMIPSState *env)
 
 target_ulong helper_dmfc0_maar(CPUMIPSState *env)
 {
+    if (env->CP0_MAARI >= MIPS_MAAR_MAX)
+        return 0;
     return env->CP0_MAAR[env->CP0_MAARI];
 }
 
@@ -1212,7 +1218,15 @@ void helper_mtc0_intctl(CPUMIPSState *env, target_ulong arg1)
 void helper_mtc0_srsctl(CPUMIPSState *env, target_ulong arg1)
 {
     uint32_t mask = (0xf << CP0SRSCtl_ESS) | (0xf << CP0SRSCtl_PSS);
-    env->CP0_SRSCtl = (env->CP0_SRSCtl & ~mask) | (arg1 & mask);
+    uint32_t val = (env->CP0_SRSCtl & ~mask) | (arg1 & mask);
+    uint32_t hss = (env->CP0_SRSCtl >> CP0SRSCtl_HSS) & 0xf;
+    uint32_t pss = (val >> CP0SRSCtl_PSS) & 0xf;
+    uint32_t ess = (val >> CP0SRSCtl_ESS) & 0xf;
+    if (pss > hss)
+        pss = hss;
+    if (ess > hss)
+        ess = hss;
+    env->CP0_SRSCtl = (val & ~mask) | (pss << CP0SRSCtl_PSS) | (ess << CP0SRSCtl_ESS);
 }
 
 void helper_mtc0_cause(CPUMIPSState *env, target_ulong arg1)
@@ -1329,11 +1343,15 @@ void helper_mtc0_lladdr(CPUMIPSState *env, target_ulong arg1)
 
 void helper_mtc0_maar(CPUMIPSState *env, target_ulong arg1)
 {
+    if (env->CP0_MAARI >= MIPS_MAAR_MAX)
+        return;
     env->CP0_MAAR[env->CP0_MAARI] = arg1 & MTC0_MAAR_MASK(env);
 }
 
 void helper_mthc0_maar(CPUMIPSState *env, target_ulong arg1)
 {
+    if (env->CP0_MAARI >= MIPS_MAAR_MAX)
+        return;
     env->CP0_MAAR[env->CP0_MAARI] =
         (((uint64_t) arg1 << 32) & MTC0_MAAR_MASK(env)) |
         (env->CP0_MAAR[env->CP0_MAARI] & 0x00000000ffffffffULL);

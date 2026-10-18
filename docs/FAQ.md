@@ -125,7 +125,7 @@ To provide end users with simple API, Unicorn does lots of dirty hacks within qe
 
 Yes, it’s possible but that is not Unicorn’s goal and there is no simple switch in qemu to disable softmmu.
 
-Starting from 2.0.2, Unicorn will emulate the MMU depending on the emulated architecture without further hacks. That said, Unicorn offers the full ability of the target MMU implementation. While this enables more possibilities of Uncorn, it has a few drawbacks:
+Starting from 2.0.2, Unicorn will emulate the MMU depending on the emulated architecture without further hacks. That said, Unicorn offers the full ability of the target MMU implementation. While this enables more possibilities of Unicorn, it has a few drawbacks:
 
 - As previous question points out already, some memory regions are not writable/executable.
 - You have to always check architecture-specific registers to confirm MMU status.

@@ -138,6 +138,9 @@ jobs:
         if: (runner.os == 'Linux' && (matrix.arch == 'x86_64' || matrix.arch == 'aarch64') && matrix.cibw_build == 'cp*-manylinux*') || (runner.os == 'macOS' && matrix.arch == 'arm64') || (runner.os == 'Windows' && matrix.arch == 'AMD64')
         with:
           python-version: 2.7
+          # 2.7 is in pyenv's bundled version list; refreshing the list hits
+          # third-party rate limits (e.g. the GitHub API for graalpy)
+          update-pyenv: false
 
       # we install and test python2.7 wheels only on native arch
       - name: 'Python 2.7 tests - Windows'

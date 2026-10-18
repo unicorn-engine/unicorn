@@ -1013,7 +1013,12 @@ static void tcg_out_tlb_load(TCGContext *s, TCGReg addrl,
 
     /* Compare masked address with the TLB entry. */
     label_ptr[0] = s->code_ptr;
-    tcg_out_opc_branch(s, OPC_BNE, TCG_REG_TMP0, TCG_REG_TMP1, 0);
+    /* Unicorn: when memory hooks are present, always branch to slow path */
+    if (tcg_uc_has_hookmem(s)) {
+        tcg_out_opc_branch(s, OPC_BEQ, TCG_REG_ZERO, TCG_REG_ZERO, 0);
+    } else {
+        tcg_out_opc_branch(s, OPC_BNE, TCG_REG_TMP0, TCG_REG_TMP1, 0);
+    }
     /* NOP to allow patching later */
     tcg_out_opc_imm(s, OPC_ADDI, TCG_REG_ZERO, TCG_REG_ZERO, 0);
 

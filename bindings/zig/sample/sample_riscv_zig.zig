@@ -15,19 +15,19 @@ pub fn main() !void {
     try test_riscv_func_return();
 }
 
-fn hook_block(uc: ?*unicornC.uc_engine, address: u64, size: u32, user_data: ?*anyopaque) callconv(.C) void {
+fn hook_block(uc: ?*unicornC.uc_engine, address: u64, size: u32, user_data: ?*anyopaque) callconv(.c) void {
     _ = user_data;
     _ = uc;
     log.info(">>> Tracing basic block at 0x{x:0>4}, block size = 0x{x:0>4}", .{ address, size });
 }
 
-fn hook_code(uc: ?*unicornC.uc_engine, address: u64, size: u32, user_data: ?*anyopaque) callconv(.C) void {
+fn hook_code(uc: ?*unicornC.uc_engine, address: u64, size: u32, user_data: ?*anyopaque) callconv(.c) void {
     _ = user_data;
     _ = uc;
     log.info(">>> Tracing instruction at 0x{x:0>4}, instruction size = 0x{x:0>4}", .{ address, size });
 }
 
-fn hook_code3(uc: ?*unicornC.uc_engine, address: u64, size: u32, user_data: ?*anyopaque) callconv(.C) void {
+fn hook_code3(uc: ?*unicornC.uc_engine, address: u64, size: u32, user_data: ?*anyopaque) callconv(.c) void {
     _ = user_data;
     log.info(">>> Tracing instruction at 0x{x:0>4}, instruction size = 0x{x:0>4}", .{ address, size });
     if (address == ADDRESS) {
@@ -35,7 +35,7 @@ fn hook_code3(uc: ?*unicornC.uc_engine, address: u64, size: u32, user_data: ?*an
         unicorn.uc_emu_stop(uc) catch |err| log.err("Error: {}", .{err});
     }
 }
-fn hook_memalloc(uc: ?*unicornC.uc_engine, @"type": unicornC.uc_mem_type, address: u64, size: u32, user_data: ?*anyopaque) callconv(.C) bool {
+fn hook_memalloc(uc: ?*unicornC.uc_engine, @"type": unicornC.uc_mem_type, address: u64, size: u32, user_data: ?*anyopaque) callconv(.c) bool {
     _ = user_data;
     _ = @"type";
     const algined_address = address & 0xFFFFFFFFFFFFF000;

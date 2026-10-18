@@ -1,7 +1,7 @@
 //! License: GNU GENERAL PUBLIC LICENSE Version 2
 
 const std = @import("std");
-const MIN_ZIG_VERSION: []const u8 = "0.13.0";
+const MIN_ZIG_VERSION: []const u8 = "0.15.1";
 const MIN_ZIG_VERSION_ERR_MSG = "Please! Update zig toolchain to >= v" ++ MIN_ZIG_VERSION;
 
 const SampleFileTypes = enum {
@@ -115,23 +115,18 @@ pub fn build(b: *std.Build) void {
 fn buildExe(b: *std.Build, info: BuildInfo) *std.Build.Step.Compile {
     const target = info.stdTarget();
 
-    const execonfig: std.Build.ExecutableOptions = switch (info.filetype) {
-        .c, .cpp => .{
-            .name = info.filename(),
-            .target = info.target,
-            .optimize = info.optimize,
-        },
-        else => .{
-            .name = info.filename(),
-            .target = info.target,
-            .optimize = info.optimize,
-            .root_source_file = b.path(info.filepath),
-        },
-    };
-    const exe = b.addExecutable(execonfig);
+    const root_module = b.createModule(.{
+        .target = info.target,
+        .optimize = info.optimize,
+        .root_source_file = if (info.filetype == .zig) b.path(info.filepath) else null,
+    });
+    const exe = b.addExecutable(.{
+        .name = info.filename(),
+        .root_module = root_module,
+    });
 
     if (info.filetype != .zig) {
-        exe.addCSourceFile(.{
+        root_module.addCSourceFile(.{
             .file = b.path(info.filepath),
             .flags = &.{
                 "-Wall",
@@ -142,28 +137,28 @@ fn buildExe(b: *std.Build, info: BuildInfo) *std.Build.Step.Compile {
         });
 
         // Ensure the C headers are available
-        exe.addIncludePath(b.path("include"));
+        root_module.addIncludePath(b.path("include"));
 
         // Ensure the C library is available
-        exe.addLibraryPath(b.path("build"));
+        root_module.addLibraryPath(b.path("build"));
 
         // linking to OS-LibC or static-linking for:
         // Musl(Linux) [e.g: -Dtarget=native-linux-musl]
         // MinGW(Windows) [e.g: -Dtarget=native-windows-gnu (default)]
         if (info.filetype == .cpp and target.abi != .msvc)
-            exe.linkLibCpp() // static-linking LLVM-libcxx (all targets) + libC
+            root_module.link_libcpp = true // static-linking LLVM-libcxx (all targets) + libC
         else
-            exe.linkLibC();
+            root_module.link_libc = true;
 
         // Now link the C library
         if (target.abi == .msvc and target.os.tag == .windows) {
-            exe.linkSystemLibrary("unicorn.dll");
-        } else exe.linkSystemLibrary("unicorn");
+            root_module.linkSystemLibrary("unicorn.dll", .{});
+        } else root_module.linkSystemLibrary("unicorn", .{});
     }
 
     // Linking to the Unicorn library
     if (target.abi == .msvc and target.os.tag == .windows) {
-        exe.want_lto = false;
+        exe.lto = .none;
     }
 
     // This declares intent for the executable to be installed into the

@@ -290,8 +290,8 @@ static void test_arm_m_exc_return(void)
     int r_sp = 0x8000;
     uc_hook hook;
 
-    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, code,
-                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code,
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_M7);
     OK(uc_mem_map(uc, r_sp - 0x1000, 0x1000, UC_PROT_ALL));
     OK(uc_hook_add(uc, &hook, UC_HOOK_INTR,
                    test_arm_m_exc_return_hook_interrupt, NULL, 0, 0));
@@ -871,6 +871,67 @@ static void test_arm_mem_hook_read_write(void)
     OK(uc_close(uc));
 }
 
+static void test_arm_thumb_it_mem_read_cb(uc_engine *uc, uc_mem_type type,
+                                          uint64_t address, int size,
+                                          int64_t value, void *user_data)
+{
+    uint64_t *count = (uint64_t *)user_data;
+
+    (void)uc;
+    (void)type;
+    (void)address;
+    (void)size;
+    (void)value;
+
+    (*count)++;
+}
+
+static void test_arm_thumb_it_mem_hook(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    uint8_t code[] = {
+        0x00, 0x28, /* cmp r0, #0 */
+        0x1c, 0xbf, /* itt ne */
+        0x11, 0x68, /* ldrne r1, [r2] */
+        0x00, 0x29, /* cmpne r1, #0 */
+        0x00, 0xe0, /* b.n #0x100c */
+        0x00, 0xbf, /* nop */
+        0x03, 0x2c, /* cmp r4, #3 */
+        0x00, 0xd3, /* bcc #0x1012 */
+        0x01, 0x23, /* movs r3, #1 */
+        0x02, 0x23, /* movs r3, #2 */
+    };
+    uint32_t r0 = 1;
+    uint32_t r1 = 0;
+    uint32_t r2 = code_start + 0x200;
+    uint32_t r3 = 0;
+    uint32_t r4 = 1;
+    uint32_t data = LEINT32(1);
+    uint64_t count = 0;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS,
+                    (char *)code, sizeof(code), UC_CPU_ARM_CORTEX_M7);
+
+    OK(uc_mem_write(uc, r2, &data, sizeof(data)));
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r0));
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r1));
+    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r2));
+    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r3));
+    OK(uc_reg_write(uc, UC_ARM_REG_R4, &r4));
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_READ,
+                   test_arm_thumb_it_mem_read_cb, &count, 1, 0));
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code), 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r3));
+    TEST_CHECK(r3 == 2);
+    TEST_CHECK(count == 1);
+
+    OK(uc_close(uc));
+}
+
 typedef struct {
     uint64_t v0;
     uint64_t v1;
@@ -960,6 +1021,48 @@ static void test_arm_cp15_c1_c0_2(void)
     TEST_CHECK(read_val == val);
 
     OK(uc_close(uc));
+}
+
+static void test_arm_mrrc_cp15_c15_1_cpu(uc_cpu_arm cpu)
+{
+    uc_engine *uc;
+    uc_arm_cp_reg reg = {
+        .cp = 15,
+        .is64 = 1,
+        .sec = 0,
+        .crm = 15,
+        .opc1 = 1,
+        .val = 0x0123456789abcdefULL,
+    };
+    const char code[] = "\x1f\x1f\x40\xec"
+                        "\x1f\x1f\x50\xec";
+    uint32_t r0 = 0x76543210;
+    uint32_t r1 = 0x89abcdef;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    cpu);
+
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r0));
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r1));
+    OK(uc_reg_write(uc, UC_ARM_REG_CP_REG, &reg));
+    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg));
+    TEST_CHECK(reg.val == 0);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r0));
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r1));
+
+    TEST_CHECK(r0 == 0);
+    TEST_CHECK(r1 == 0);
+
+    OK(uc_close(uc));
+}
+
+static void test_arm_mrrc_cp15_c15_1(void)
+{
+    test_arm_mrrc_cp15_c15_1_cpu(UC_CPU_ARM_CORTEX_A9);
+    test_arm_mrrc_cp15_c15_1_cpu(UC_CPU_ARM_CORTEX_A15);
+    test_arm_mrrc_cp15_c15_1_cpu(UC_CPU_ARM_MAX);
 }
 
 static bool test_arm_v7_lpae_hook_tlb(uc_engine *uc, uint64_t addr,
@@ -1159,6 +1262,86 @@ static void test_arm_hook_condexec_corruption(void)
 
     OK(uc_close(uc));
 };
+static void test_arm_context(void)
+{
+    for (int model = 0; model < UC_CPU_ARM_ENDING; model++) {
+        uc_engine *uc;
+        uc_engine *uc2;
+        uc_context *ctx;
+
+        OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+        OK(uc_ctl_set_cpu_model(uc, model));
+
+        OK(uc_context_alloc(uc, &ctx));
+        OK(uc_context_save(uc, ctx));
+
+        OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc2));
+        OK(uc_ctl_set_cpu_model(uc2, model));
+
+        OK(uc_context_restore(uc2, ctx));
+
+        // One of these will abort on a double-free for bug-afflicted CPU models.
+        OK(uc_context_free(ctx));
+        OK(uc_close(uc));
+        OK(uc_close(uc2));
+    }
+}
+
+static void test_arm_context_hw_breakpoint(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    // mcr p14, 0, r0, c0, c0, 5 ; DBGBCR0 = r0
+    // mcr p14, 0, r1, c0, c0, 5 ; DBGBCR0 = r1
+    // mcr p14, 0, r0, c0, c0, 5 ; DBGBCR0 = r0
+    char code[] = "\xb0\x0e\x00\xee\xb0\x1e\x00\xee\xb0\x0e\x00\xee";
+    // E=1, BAS=0b1111: unlinked address match breakpoint
+    uint32_t r_r0 = 0x1e1;
+    uint32_t r_r1 = 0;
+    uc_arm_cp_reg dbgbcr0 = {14, 0, 0, 0, 0, 0, 5, 0};
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r_r1));
+
+    // The guest enabling the breakpoint allocates it.
+    OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    // Disabling it frees it again, then the restore re-enables it.
+    OK(uc_emu_start(uc, code_start + 4, code_start + 8, 0, 0));
+    OK(uc_context_restore(uc, ctx));
+    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &dbgbcr0));
+    TEST_CHECK(dbgbcr0.val == r_r0);
+
+    // Updating the breakpoint must not touch the freed one.
+    OK(uc_emu_start(uc, code_start + 8, code_start + 12, 0, 0));
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
+static void test_arm_context_cp_reg(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    uc_arm_cp_reg sctlr = {15, 0, 0, 1, 0, 0, 0, 0x1234};
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    // There is no cp_regs table in a context to look the register up in, so
+    // this is handled like an unknown register.
+    uc_context_reg_read(ctx, UC_ARM_REG_CP_REG, &sctlr);
+    TEST_CHECK(sctlr.val == 0x1234);
+    uc_context_reg_write(ctx, UC_ARM_REG_CP_REG, &sctlr);
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
 
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
@@ -1186,12 +1369,17 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb2", test_arm_thumb2},
              {"test_armeb_be32_thumb2", test_armeb_be32_thumb2},
              {"test_arm_mem_hook_read_write", test_arm_mem_hook_read_write},
+             {"test_arm_thumb_it_mem_hook", test_arm_thumb_it_mem_hook},
              {"test_arm_tcg_opcode_cmp", test_arm_tcg_opcode_cmp},
              {"test_arm_thumb_tcg_opcode_cmn", test_arm_thumb_tcg_opcode_cmn},
              {"test_arm_cp15_c1_c0_2", test_arm_cp15_c1_c0_2},
+             {"test_arm_mrrc_cp15_c15_1", test_arm_mrrc_cp15_c15_1},
              {"test_arm_v7_lpae", test_arm_v7_lpae},
              {"test_arm_svc_hvc_syndrome", test_arm_svc_hvc_syndrome},
              {"test_arm_hook_insn_wfi", test_arm_hook_insn_wfi},
              {"test_arm_mmio_map_pc_sync", test_arm_mmio_map_pc_sync},
              {"test_arm_hook_condexec_corruption", test_arm_hook_condexec_corruption},
+             {"test_arm_context", test_arm_context},
+             {"test_arm_context_hw_breakpoint", test_arm_context_hw_breakpoint},
+             {"test_arm_context_cp_reg", test_arm_context_cp_reg},
              {NULL, NULL}};

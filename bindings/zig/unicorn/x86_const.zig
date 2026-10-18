@@ -285,7 +285,8 @@ pub const x86Const = enum(c_int) {
 	X86_REG_FDP = 256,
 	X86_REG_FDS = 257,
 	X86_REG_FOP = 258,
-	X86_REG_ENDING = 259,
+	X86_REG_XCR0 = 259,
+	X86_REG_ENDING = 260,
 
 // X86 instructions
 

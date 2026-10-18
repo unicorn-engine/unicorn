@@ -88,6 +88,11 @@ option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
 set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x;tricore" CACHE STRING "Enabled unicorn architectures")
 option(UNICORN_TRACER "Trace unicorn execution" OFF)
+# On Windows the code generation buffer is committed lazily through a
+# process-global vectored exception handler (VEH). Disabling this compiles out
+# the VEH and makes preallocation (commit upfront) mandatory. No effect on
+# non-Windows platforms.
+option(WIN32_ENABLE_VEH "Enable the Windows vectored exception handler for lazy code buffer commit" ON)
 
 foreach(ARCH_LOOP ${UNICORN_ARCH})
     string(TOUPPER "${ARCH_LOOP}" ARCH_LOOP)
@@ -115,6 +120,11 @@ include_directories(
 # QEMU logging facility
 if (UNICORN_LOGGING)
     add_compile_options(-DUNICORN_LOGGING)
+endif()
+
+# Windows vectored exception handler for lazy code buffer commit
+if (WIN32_ENABLE_VEH)
+    add_compile_options(-DWIN32_ENABLE_VEH)
 endif()
 
 # Some distributions on some rare architecures don't auto link atomic for us and
@@ -325,6 +335,13 @@ else()
     endif()
     if(UNICORN_TRACER)
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS} -DUNICORN_TRACER")
+    endif()
+    if (ATOMIC_LINKAGE_FIX)
+        include(CheckLibraryExists)
+        check_library_exists(atomic __atomic_fetch_add_4 "" HAVE_LIBATOMIC)
+        if (NOT HAVE_LIBATOMIC)
+            set(ATOMIC_LINKAGE_FIX FALSE)
+        endif()
     endif()
     if (ATOMIC_LINKAGE_FIX)
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS} -latomic")

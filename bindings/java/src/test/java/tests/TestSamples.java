@@ -236,7 +236,7 @@ public class TestSamples implements UnicornConst {
                 ">>> A6 = 0x0		>>> D6 = 0x0\n" +
                 ">>> A7 = 0x0		>>> D7 = 0x0\n" +
                 ">>> PC = 0x10002\n" +
-                ">>> SR = 0x0\n",
+                ">>> SR = 0x8\n",
             outContent.toString());
     }
 

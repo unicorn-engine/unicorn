@@ -231,7 +231,7 @@ void helper_rdtsc(CPUX86State *env)
             continue;
         if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
-        
+
         // Multiple rdtsc callbacks returning different values is undefined.
         // true -> skip the rdtsc instruction
         if (hook->insn == UC_X86_INS_RDTSC) {
@@ -275,7 +275,7 @@ void helper_rdtscp(CPUX86State *env)
             continue;
         if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
-        
+
         // Multiple rdtscp callbacks returning different values is undefined.
         // true -> skip the rdtscp instruction
         if (hook->insn == UC_X86_INS_RDTSCP) {
@@ -316,8 +316,36 @@ void helper_rdpmc(CPUX86State *env)
 void helper_wrmsr(CPUX86State *env)
 {
     uint64_t val;
+    uc_engine *uc = env->uc;
+    struct hook *hook;
+    int skip_wrmsr = 0;
+    bool synced = false;
 
     cpu_svm_check_intercept_param(env, SVM_EXIT_MSR, 1, GETPC());
+
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN)
+    {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->eip))
+            continue;
+        if (hook->insn == UC_X86_INS_WRMSR) {
+            uintptr_t pc = GETPC();
+            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
+                cpu_restore_state(uc->cpu, pc, false);
+                synced = true;
+            }
+            JIT_CALLBACK_GUARD_VAR(
+                skip_wrmsr,
+                ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
+        }
+        if (env->uc->stop_request)
+            break;
+    }
+
+    if (skip_wrmsr)
+        return;
 
     val = ((uint32_t)env->regs[R_EAX]) |
         ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
@@ -477,8 +505,36 @@ void helper_rdmsr(CPUX86State *env)
 {
     X86CPU *x86_cpu = env_archcpu(env);
     uint64_t val;
+    uc_engine *uc = env->uc;
+    struct hook *hook;
+    int skip_rdmsr = 0;
+    bool synced = false;
 
     cpu_svm_check_intercept_param(env, SVM_EXIT_MSR, 0, GETPC());
+
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN)
+    {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->eip))
+            continue;
+        if (hook->insn == UC_X86_INS_RDMSR) {
+            uintptr_t pc = GETPC();
+            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
+                cpu_restore_state(uc->cpu, pc, false);
+                synced = true;
+            }
+            JIT_CALLBACK_GUARD_VAR(
+                skip_rdmsr,
+                ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data));
+        }
+        if (env->uc->stop_request)
+            break;
+    }
+
+    if (skip_rdmsr)
+        return;
 
     switch ((uint32_t)env->regs[R_ECX]) {
     case MSR_IA32_SYSENTER_CS:
@@ -627,6 +683,7 @@ void helper_rdmsr(CPUX86State *env)
     env->regs[R_EAX] = (uint32_t)(val);
     env->regs[R_EDX] = (uint32_t)(val >> 32);
 }
+
 
 static void do_pause(X86CPU *cpu)
 {

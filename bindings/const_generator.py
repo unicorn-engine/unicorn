@@ -199,7 +199,7 @@ def gen(lang):
             for t in tmp:
                 t = t.strip()
                 if not t or t.startswith('//'): continue
-                f = re.split('\s+', t)
+                f = re.split('\\s+', t)
 
                 # parse #define UC_TARGET (num)
                 define = False
@@ -239,7 +239,7 @@ def gen(lang):
                                     continue
                                 skip += 1
                                 next_line = lines[lno + idx]
-                                next_line_f = re.split('\s+', next_line.strip())
+                                next_line_f = re.split('\\s+', next_line.strip())
                                 if next_line_f[-1] == "\\":
                                     rhs += "".join(next_line_f[:-1])
                                 else:

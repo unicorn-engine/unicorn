@@ -941,6 +941,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     return buf;
 }
 #elif defined(_WIN32)
+#ifdef WIN32_ENABLE_VEH
 #define COMMIT_COUNT (1024) // Commit 4MB per exception
 #define CLOSURE_SIZE (4096)
 
@@ -965,7 +966,7 @@ static LONG __fastcall code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct u
             uint8_t* base_end = base + COMMIT_COUNT * 4096;
             uint32_t size = COMMIT_COUNT * 4096;
             if (base_end >= right) {
-                size = base_end - base;
+                size = right - base;
                 // whoops, we are almost run out of memory! Commit all instead
             }
             if (VirtualAlloc(base, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)) {
@@ -986,16 +987,24 @@ static inline void may_remove_handler(struct uc_struct *uc) {
         VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
     }
 }
+#endif // WIN32_ENABLE_VEH
 
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
     size_t size = tcg_ctx->code_gen_buffer_size;
+#ifdef WIN32_ENABLE_VEH
     uint8_t *closure, *data;
     uint8_t *ptr;
     void* handler = code_gen_buffer_handler;
 
-    may_remove_handler(uc);    
+    if (uc->prealloc) {
+        // Commit the whole buffer upfront so no lazy-commit exception handler
+        // is needed. Required for safe concurrent use of multiple uc instances.
+        return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    }
+
+    may_remove_handler(uc);
 
     // Naive trampoline implementation
     closure = VirtualAlloc(NULL, CLOSURE_SIZE, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
@@ -1066,7 +1075,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     memcpy(data + 0xC, (void*)&handler, 4);
 #endif
 
-    uc->seh_handle = AddVectoredExceptionHandler(0, (PVECTORED_EXCEPTION_HANDLER)closure);
+    uc->seh_handle = AddVectoredExceptionHandler(1, (PVECTORED_EXCEPTION_HANDLER)closure);
     if (!uc->seh_handle) {
         VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
         uc->seh_closure = NULL;
@@ -1074,12 +1083,18 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     }
 
     return VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+#else
+    // The VEH lazy-commit path is compiled out: always commit upfront.
+    return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+#endif // WIN32_ENABLE_VEH
 }
 void free_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
     if (tcg_ctx->initial_buffer) {
+#ifdef WIN32_ENABLE_VEH
         may_remove_handler(uc);
+#endif
         VirtualFree(tcg_ctx->initial_buffer, 0, MEM_RELEASE);
     }
 }
@@ -1195,10 +1210,14 @@ static void uc_tb_flush(struct uc_struct *uc) {
 static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t len) 
 {
     tb_page_addr_t start, end;
+    uint64_t invalid_addr = uc->invalid_addr;
+    int invalid_error = uc->invalid_error;
 
     uc->nested_level++;
     if (sigsetjmp(uc->jmp_bufs[uc->nested_level - 1], 0) != 0) {
         // We a get cpu fault in get_page_addr_code, ignore it.
+        uc->invalid_addr = invalid_addr;
+        uc->invalid_error = invalid_error;
         uc->nested_level--;
         return;
     }
@@ -1213,6 +1232,12 @@ static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t l
     start = get_page_addr_code(uc->cpu->env_ptr, start_addr) & (target_ulong)(-1);
 
     uc->nested_level--;
+
+    if (start == -1) {
+        uc->invalid_addr = invalid_addr;
+        uc->invalid_error = invalid_error;
+        return;
+    }
 
     // For 32bit target.
     end = (start + len) & (target_ulong)(-1);

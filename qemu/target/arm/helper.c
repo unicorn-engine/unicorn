@@ -3753,6 +3753,10 @@ static const ARMCPRegInfo dummy_c15_cp_reginfo[] = {
       .access = PL1_RW,
       .type = ARM_CP_CONST | ARM_CP_NO_RAW | ARM_CP_OVERRIDE,
       .resetvalue = 0 },
+    { .name = "C15_IMPDEF_64", .cp = 15, .crm = 15, .opc1 = 1,
+      .access = PL1_RW,
+      .type = ARM_CP_64BIT | ARM_CP_NO_RAW,
+      .readfn = arm_cp_read_zero, .writefn = arm_cp_write_ignore },
     REGINFO_SENTINEL
 };
 

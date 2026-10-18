@@ -238,9 +238,15 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_RISCV_REG_PC:
 #ifdef TARGET_RISCV64
             CHECK_REG_TYPE(uint64_t);
+            if (*(uint64_t *)value & 1) {
+                return UC_ERR_ARG;
+            }
             env->pc = *(uint64_t *)value;
 #else
             CHECK_REG_TYPE(uint32_t);
+            if (*(uint32_t *)value & 1) {
+                return UC_ERR_ARG;
+            }
             env->pc = *(uint32_t *)value;
 #endif
             *setpc = 1;

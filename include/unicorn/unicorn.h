@@ -193,6 +193,9 @@ typedef enum uc_err {
     UC_ERR_RESOURCE,        // Insufficient resource: uc_emu_start()
     UC_ERR_EXCEPTION,       // Unhandled CPU exception
     UC_ERR_OVERFLOW,        // Provided buffer is not large enough: uc_reg_*2()
+    UC_ERR_MMU_READ,        // The tlb_fill hook returned false for a read access (see tlb_fill hook)
+    UC_ERR_MMU_WRITE,       // The tlb_fill hook returned false for a write operation (see tlb_fill hook)
+    UC_ERR_MMU_FETCH,       // The tlb_fill hook returned false for a fetch (see tlb_fill hook)
 } uc_err;
 
 /*
@@ -405,6 +408,8 @@ typedef enum uc_hook_type {
     // Register tlb fill request hook on the virtuall addresses.
     // The callback will be triggert if the tlb cache don't contain an address.
     UC_HOOK_TLB_FILL = 1 << 17,
+    // Hook basic blocks but get the number of instructions as size
+    UC_HOOK_BLOCK_ICOUNT = 1 << 18,
 } uc_hook_type;
 
 // Hook type for all events of unmapped memory access
@@ -645,6 +650,18 @@ typedef enum uc_control_type {
     // Read/write: @args = (uint64_t ptr, int key, uint64_t diversifier,
     //                      bool *valid)
     UC_CTL_PAUTH_AUTH,
+    // read the invalid_addr after an error
+    // Read: @args = (uint64_t*)
+    UC_CTL_INVALID_ADDR,
+    // Commit the whole code generation buffer upfront instead of relying on
+    // lazy commit. On Windows this avoids installing a process-global vectored
+    // exception handler, which is required for safe concurrent use of multiple
+    // uc instances. Must be set before the first emulation starts. Only
+    // supported on Windows builds with the VEH enabled; returns UC_ERR_ARG on
+    // Linux/macOS (where the buffer is always committed) and when the VEH is
+    // compiled out (where preallocation cannot be disabled).
+    // Write: @args = (int)
+    UC_CTL_UC_PREALLOC,
 } uc_control_type;
 
 /*
@@ -734,6 +751,10 @@ See sample_ctl.c for a detailed example.
     uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_PAUTH_STRIP, 3), (uint64_t)(ptr), (int)(key), (uint64_t *)(stripped_ptr))
 #define uc_ctl_pauth_auth(uc, ptr, key, diversifier, valid)                    \
     uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_PAUTH_AUTH, 4), (uint64_t)(ptr), (int)(key), (uint64_t)(diversifier), (uint64_t *)(valid))
+#define uc_ctl_get_invalid_addr(uc, addr)                                    \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_INVALID_ADDR, 1), (addr))
+#define uc_ctl_prealloc(uc, prealloc)                                          \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_PREALLOC, 1), (prealloc))
 
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
@@ -1148,6 +1169,22 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 */
 UNICORN_EXPORT
 uc_err uc_hook_del(uc_engine *uc, uc_hook hh);
+
+/*
+ change the user data from a hook callback.
+ This change the user-defined data for a given hook.
+ NOTE: It's undefinde behavior when called on a hook which was not initialized
+ by uc_hook_add or deleted by uc_hook_delete
+ @uc: handle returned by uc_open()
+ @hh: handle returned by uc_hook_add()
+ @user_data: user-defined data. This will be passed to callback function in its
+      last argument @user_data
+
+ @return UC_ERR_OK on success, or UC_ERR_ARG when the hook was block or code
+ hook and emulation is runnings
+*/
+UNICORN_EXPORT
+uc_err uc_hook_set_user_data(uc_engine *uc, uc_hook hh, void *user_data);
 
 /*
  Variables to control which state should be stored in the context.

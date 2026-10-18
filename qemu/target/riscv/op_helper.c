@@ -149,7 +149,8 @@ target_ulong helper_mret(CPURISCVState *env, target_ulong cpu_pc_deb)
         MSTATUS_MIE : MSTATUS_UIE << prev_priv,
         get_field(mstatus, MSTATUS_MPIE));
     mstatus = set_field(mstatus, MSTATUS_MPIE, 1);
-    mstatus = set_field(mstatus, MSTATUS_MPP, PRV_U);
+    mstatus = set_field(mstatus, MSTATUS_MPP,
+                        riscv_has_ext(env, RVU) ? PRV_U : PRV_M);
 #ifdef TARGET_RISCV32
     env->mstatush = set_field(env->mstatush, MSTATUS_MPV, 0);
 #else

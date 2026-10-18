@@ -145,6 +145,12 @@ typedef void (*uc_softfloat_initialize)(void);
 // tcg flush softmmu tlb
 typedef void (*uc_tcg_flush_tlb)(struct uc_struct *uc);
 
+// Set TLB_NOTDIRTY again on the softmmu tlb entries writing to
+// [start, start + len) of the RAM region mr
+typedef void (*uc_tcg_reset_dirty_tlb_t)(struct uc_struct *uc,
+                                         MemoryRegion *mr, uint64_t start,
+                                         uint64_t len);
+
 // Invalidate the TB at given address
 typedef void (*uc_invalidate_tb_t)(struct uc_struct *uc, uint64_t start,
                                    size_t len);
@@ -219,6 +225,7 @@ typedef enum uc_hook_idx {
     UC_HOOK_EDGE_GENERATED_IDX,
     UC_HOOK_TCG_OPCODE_IDX,
     UC_HOOK_TLB_FILL_IDX,
+    UC_HOOK_BLOCK_ICOUNT_IDX,
 
     UC_HOOK_MAX,
 } uc_hook_idx;
@@ -313,6 +320,7 @@ struct uc_struct {
     uc_target_page_init target_page;
     uc_softfloat_initialize softfloat_initialize;
     uc_tcg_flush_tlb tcg_flush_tlb;
+    uc_tcg_reset_dirty_tlb_t tcg_reset_dirty_tlb;
     uc_invalidate_tb_t uc_invalidate_tb;
     uc_gen_tb_t uc_gen_tb;
     uc_tb_flush_t tb_flush;
@@ -430,7 +438,13 @@ struct uc_struct {
     FlatView *empty_view; // Static function variable moved from flatviews_init
 
     uint32_t tcg_buffer_size; // The buffer size we are going to use
-#ifdef WIN32
+#if defined(WIN32) && defined(WIN32_ENABLE_VEH)
+    bool prealloc; // Commit the whole code gen buffer upfront instead of
+                   // relying on lazy commit via the vectored exception handler.
+                   // Avoids installing the process-global VEH, which is required
+                   // for safe concurrent use of multiple uc instances. Only
+                   // meaningful when the VEH path is compiled in; without it the
+                   // buffer is always committed upfront.
     PVOID seh_handle;
     void *seh_closure;
 #endif
@@ -469,7 +483,9 @@ static inline int uc_addr_is_exit(uc_engine *uc, uint64_t addr)
     if (uc->use_exits) {
         return g_tree_lookup(uc->ctl_exits, (gpointer)(&addr)) == (gpointer)1;
     } else {
-        return uc->exits[uc->nested_level - 1] == addr;
+        // Translation can also happen outside of uc_emu_start(), e.g. via
+        // uc_ctl_request_cache(), where there is no @until to stop at.
+        return uc->nested_level > 0 && uc->exits[uc->nested_level - 1] == addr;
     }
 }
 
@@ -526,6 +542,8 @@ static inline void hooked_regions_check(uc_engine *uc, uint64_t start,
     // Only UC_HOOK_BLOCK and UC_HOOK_CODE might be wrongle cached!
     hooked_regions_check_single(uc->hook[UC_HOOK_CODE_IDX].head, start, length);
     hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_IDX].head, start,
+                                length);
+    hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_ICOUNT_IDX].head, start,
                                 length);
 }
 

@@ -595,6 +595,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = (uint32_t)env->segs[R_FS].base;
             break;
+        case UC_X86_REG_XCR0:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->xcr0;
+            break;
         }
         break;
 
@@ -1092,6 +1096,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = (uint64_t)env->segs[R_GS].base;
             break;
+        case UC_X86_REG_XCR0:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->xcr0;
+            break;
         }
         break;
 #endif
@@ -1482,6 +1490,11 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             env->segs[R_GS].base = *(uint32_t *)value;
             continue;
             */
+        case UC_X86_REG_XCR0:
+            CHECK_REG_TYPE(uint64_t);
+            env->xcr0 = *(uint64_t *)value;
+            cpu_sync_bndcs_hflags(env);
+            break;
         }
         break;
 
@@ -2002,6 +2015,11 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             CHECK_REG_TYPE(uint64_t);
             env->segs[R_GS].base = *(uint64_t *)value;
             return 0;
+        case UC_X86_REG_XCR0:
+            CHECK_REG_TYPE(uint64_t);
+            env->xcr0 = *(uint64_t *)value;
+            cpu_sync_bndcs_hflags(env);
+            break;
         }
         break;
 #endif
@@ -2023,12 +2041,13 @@ static bool x86_stop_interrupt(struct uc_struct *uc, int intno)
 
 static bool x86_insn_hook_validate(uint32_t insn_enum)
 {
-    // for x86 we can only hook IN, OUT, SYSCALL, SYSENTER, CPUID, RDTSC, and
-    // RDTSCP
+    // for x86 we can only hook IN, OUT, SYSCALL, SYSENTER, CPUID, RDTSC, RDTSCP, RDRAND, RDSEED, RDMSR and WRMSR
     if (insn_enum != UC_X86_INS_IN && insn_enum != UC_X86_INS_OUT &&
         insn_enum != UC_X86_INS_SYSCALL && insn_enum != UC_X86_INS_SYSENTER &&
         insn_enum != UC_X86_INS_CPUID && insn_enum != UC_X86_INS_RDTSC &&
-        insn_enum != UC_X86_INS_RDTSCP) {
+        insn_enum != UC_X86_INS_RDTSCP && insn_enum != UC_X86_INS_RDRAND &&
+        insn_enum != UC_X86_INS_RDSEED && insn_enum != UC_X86_INS_RDMSR &&
+        insn_enum != UC_X86_INS_WRMSR) {
         return false;
     }
     return true;

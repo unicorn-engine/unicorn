@@ -288,7 +288,8 @@ const
   UC_X86_REG_FDP = 256;
   UC_X86_REG_FDS = 257;
   UC_X86_REG_FOP = 258;
-  UC_X86_REG_ENDING = 259;
+  UC_X86_REG_XCR0 = 259;
+  UC_X86_REG_ENDING = 260;
 
 // X86 instructions
 

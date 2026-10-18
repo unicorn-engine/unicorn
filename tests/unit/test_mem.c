@@ -582,9 +582,243 @@ static void test_virtual_write(void)
     OK(uc_vmem_write(uc, 0x1000, UC_PROT_EXEC, code, sizeof(code)));
     OK(uc_vmem_write(uc, 0x2000, UC_PROT_READ, &rax, sizeof(rax)));
 
-    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 1));
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code), 0, 1));
     OK(uc_reg_read(uc, UC_X86_REG_RAX, &res));
     TEST_CHECK(rax == res);
+
+    OK(uc_close(uc));
+}
+
+// Regression test for issue #2321. With two legal mappings (top page and
+// page 0), an address+size that wraps used to let check_mem_area() walk
+// from the top of the address space back to 0 and treat the wrapping
+// range as fully mapped. uc_mem_read then memcpy'd 0x2000 bytes into a
+// 0x1000 buffer; uc_mem_unmap silently dropped both regions. After the
+// fix, check_mem_area() rejects the wrap up front so the four entry
+// points fall back to their existing not-mapped error codes.
+static void test_mem_addr_size_wraparound(void)
+{
+    uc_engine *uc;
+    uint8_t buf[0x1000];
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0,                     0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0xFFFFFFFFFFFFF000ULL, 0x1000, UC_PROT_ALL));
+
+    uc_assert_err(UC_ERR_READ_UNMAPPED,
+        uc_mem_read(uc, 0xFFFFFFFFFFFFF000ULL, buf, 0x2000));
+    uc_assert_err(UC_ERR_WRITE_UNMAPPED,
+        uc_mem_write(uc, 0xFFFFFFFFFFFFF000ULL, buf, 0x2000));
+    uc_assert_err(UC_ERR_NOMEM,
+        uc_mem_unmap(uc, 0xFFFFFFFFFFFFF000ULL, 0x2000));
+    uc_assert_err(UC_ERR_NOMEM,
+        uc_mem_protect(uc, 0xFFFFFFFFFFFFF000ULL, 0x2000, UC_PROT_READ));
+
+    // The non-wrapping single-page case must still work for both regions.
+    OK(uc_mem_read(uc, 0xFFFFFFFFFFFFF000ULL, buf, 0x1000));
+    OK(uc_mem_read(uc, 0,                     buf, 0x1000));
+
+    OK(uc_close(uc));
+}
+
+/* SMC test: verifies that a store which overwrites code on
+ * the same page invalidates any cached TBs translated from that
+ * page, so subsequent execution sees the new instructions.
+ */
+static void test_smc(void)
+{
+    uc_engine *uc;
+    uint64_t r_rax;
+    uint64_t r_rsp;
+
+    char code[] = (                    // 00: do_inc_dec:
+        "\x48\xff\xc0"                 // 00:    inc %rax
+        "\xc3"                         // 03:    ret
+        "\xe8\xf7\xff\xff\xff"         // 04: call do_inc_dec
+        "\xc6\x05\xf2\xff\xff\xff\xc8" // 09: movb $0xc8, -0xe(%rip)
+        "\xe8\xeb\xff\xff\xff"         // 16: call do_inc_dec
+    );
+
+    r_rax = 0x1234;
+    r_rsp = 0x5000;
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map  (uc, 0x0,    0x1000, UC_PROT_ALL));                // text
+    OK(uc_mem_map  (uc, 0x4000, 0x1000, UC_PROT_READ|UC_PROT_WRITE)); // stack
+    OK(uc_mem_write(uc, 0x0,    code,   sizeof(code)-1));
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &r_rax));
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &r_rsp));
+    OK(uc_emu_start(uc, 0x4, sizeof(code)-1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax));
+    OK(uc_mem_read(uc, 0x0, code, sizeof(code)-1));
+    TEST_CHECK(r_rax == 0x1234);
+    TEST_CHECK((code[2] & 0xFF) == 0xC8);
+
+    OK(uc_close(uc));
+}
+
+/*
+ * Ensures that a code section initially as RW, if marked later as RX
+ * still works as expected
+ */
+static void test_tlbdirty_exec(void)
+{
+    uc_engine *uc;
+    uint32_t eax;
+
+    char code[] = ("\x40"); // inc eax
+    eax = 41;
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_reg_write  (uc, UC_X86_REG_EAX, &eax));
+    OK(uc_mem_map    (uc, 0x0, 0x1000, UC_PROT_READ|UC_PROT_WRITE));
+    OK(uc_mem_write  (uc, 0x0, code,   sizeof(code)-1));
+    OK(uc_mem_protect(uc, 0x0, 0x1000, UC_PROT_READ|UC_PROT_EXEC));
+    OK(uc_emu_start  (uc, 0x0, sizeof(code)-1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    TEST_CHECK(eax == 42);
+
+    OK(uc_close(uc));
+}
+
+/*
+ * Ensures that an already cached TLB entry (and TB) is refreshed whenever
+ * there is a protection change mid-execution.
+ */
+static void test_smc2_callback(uc_engine *uc, uint64_t addr, size_t size,
+                               void *data)
+{
+    /* set executable flag _after_ page was already accessed, MMU set */
+    OK(uc_mem_protect(uc, 0x2000, 0x1000,
+                      UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC));
+}
+
+/* this is only a dummy callback */
+static void test_smc2_dummy_callback(uc_engine *uc, uc_mem_type type,
+                                     uint64_t address, int size, int64_t value,
+                                     void *user_data)
+{
+}
+
+static void test_smc2(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    uint32_t r_eax, r_ecx;
+    uint32_t r_esp;
+
+    char code_func[] = "\x90\x90\x90\x90"     // 0x2000: nop nop nop nop
+                       "\x90\x90\x90\x90"     // 0x2004: nop nop nop nop
+                       "\xB8\x78\x56\x34\x12" // 0x2008: mov eax, 0x12345678
+                       "\xC3";                // 0x200d: ret
+    char code_main[] =
+        // access function page w/o exec bit set
+        "\xC6\x05\xff\x20\x00\x00\x55" // 0:  mov byte ptr [0x20ff],0x55
+
+        // meanwhile code hook sets exec bit on page 0x2000
+        "\xB8\x00\x20\x00\x00" // 7:  mov eax,0x2000
+        "\xFF\xD0"             // 12: call eax
+        "\x89\xC1"             // 14: mov ecx,eax
+
+        // rewrite function
+        "\xC6\x05\x0c\x20\x00\x00\x55" // 16: mov byte ptr [0x200c],0x55
+        "\xB8\x00\x20\x00\x00"         // 23: mov eax,0x2000
+        "\xFF\xD0";                    // 28: call eax
+
+    r_esp = 0x5000;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_reg_write(uc, UC_X86_REG_ESP, &r_esp));
+    // text
+    OK(uc_mem_map(uc, 0x0, 0x1000, UC_PROT_ALL));
+    // stack
+    OK(uc_mem_map(uc, 0x4000, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+    // another text
+    OK(uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+
+    // Callback to set page to RWX.
+    OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_smc2_callback, NULL, 7, 8));
+
+    // Install dummy mem write hook so that tlb_reset_dirty_by_vaddr() will not
+    // be called in tb_gen_code()
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_WRITE, test_smc2_dummy_callback, NULL,
+                   1, 0));
+
+    OK(uc_mem_write(uc, 0x2000, code_func, sizeof(code_func) - 1));
+    OK(uc_mem_write(uc, 0x0, code_main, sizeof(code_main) - 1));
+    OK(uc_emu_start(uc, 0x0, sizeof(code_main) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
+
+    TEST_CHECK(r_eax == 0x55345678);
+    TEST_CHECK(r_ecx == 0x12345678);
+
+    OK(uc_close(uc));
+}
+
+static bool test_mem_protect_add_exec_fetch_prot_cb(uc_engine *uc,
+                                                    uc_mem_type type,
+                                                    uint64_t address, int size,
+                                                    int64_t value,
+                                                    void *user_data)
+{
+    OK(uc_mem_protect(uc, address & ~0xfffULL, 0x1000, UC_PROT_ALL));
+    return true;
+}
+
+static void test_mem_protect_add_exec_fetch_prot(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    char code[] = "\x40\x40\x40"; // inc eax; inc eax; inc eax
+    uint32_t r_eax = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_FETCH_PROT,
+                   test_mem_protect_add_exec_fetch_prot_cb, NULL, 1, 0));
+
+    // Making the page executable from the hook must not break the fetch that
+    // triggered it.
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    TEST_CHECK(r_eax == 3);
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_protect_add_exec_mem_write_cb(uc_engine *uc,
+                                                   uc_mem_type type,
+                                                   uint64_t address, int size,
+                                                   int64_t value,
+                                                   void *user_data)
+{
+    OK(uc_mem_protect(uc, address & ~0xfffULL, 0x1000, UC_PROT_ALL));
+}
+
+static void test_mem_protect_add_exec_mem_write(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    // mov dword ptr [0x2010], 0x41414141
+    char code[] = "\xc7\x05\x10\x20\x00\x00\x41\x41\x41\x41";
+    uint32_t val = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_WRITE,
+                   test_mem_protect_add_exec_mem_write_cb, NULL, 0x2000,
+                   0x2fff));
+
+    // Making the page executable from the hook must not break the store that
+    // triggered it.
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_mem_read(uc, 0x2010, &val, sizeof(val)));
+    TEST_CHECK(val == 0x41414141);
 
     OK(uc_close(uc));
 }
@@ -608,4 +842,12 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
               test_mem_read_and_write_large_memory_block},
              {"test_virtual_to_physical", test_virtual_to_physical},
              {"test_virtual_write", test_virtual_write},
+             {"test_mem_addr_size_wraparound", test_mem_addr_size_wraparound},
+             {"test_smc", test_smc},
+             {"test_tlbdirty_exec", test_tlbdirty_exec},
+             {"test_smc2", test_smc2},
+             {"test_mem_protect_add_exec_fetch_prot",
+              test_mem_protect_add_exec_fetch_prot},
+             {"test_mem_protect_add_exec_mem_write",
+              test_mem_protect_add_exec_mem_write},
              {NULL, NULL}};

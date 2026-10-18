@@ -5293,7 +5293,7 @@ static void decode_bo_addrmode_ld_post_pre_base(DisasContext *ctx)
         tcg_gen_addi_tl(tcg_ctx, tcg_ctx->cpu_gpr_a[r2], tcg_ctx->cpu_gpr_a[r2], off10);
         break;
     case OPC2_32_BO_LD_BU_PREINC:
-        gen_ld_preincr(ctx, tcg_ctx->cpu_gpr_d[r1], tcg_ctx->cpu_gpr_a[r2], off10, MO_SB);
+        gen_ld_preincr(ctx, tcg_ctx->cpu_gpr_d[r1], tcg_ctx->cpu_gpr_a[r2], off10, MO_UB);
         break;
     case OPC2_32_BO_LD_D_SHORTOFF:
         CHECK_REG_PAIR(r1);

@@ -125,6 +125,90 @@ static void test_uc_ctl_exits(void)
     OK(uc_close(uc));
 }
 
+static void test_uc_invalid_hook_cb(uc_engine *uc, uint64_t address,
+                                    uint32_t size, void *user_data)
+{
+    uint32_t *calls = (uint32_t *)user_data;
+
+    (*calls)++;
+}
+
+static void test_uc_invalid_hook_types(void)
+{
+    const char code[] = "\x90";
+    const int unknown_type = 1U << 30;
+    uint32_t calls = 0;
+    uc_hook hook;
+    uc_engine *uc;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    hook = UINTPTR_MAX;
+    uc_assert_err(
+        UC_ERR_HOOK,
+        uc_hook_add(uc, &hook, 0, test_uc_invalid_hook_cb, &calls, 1, 0));
+    TEST_CHECK(hook == UINTPTR_MAX);
+    hook = UINTPTR_MAX;
+    uc_assert_err(UC_ERR_HOOK,
+                  uc_hook_add(uc, &hook, unknown_type, test_uc_invalid_hook_cb,
+                              &calls, 1, 0));
+    TEST_CHECK(hook == UINTPTR_MAX);
+    hook = UINTPTR_MAX;
+    uc_assert_err(UC_ERR_HOOK,
+                  uc_hook_add(uc, &hook, UC_HOOK_CODE | unknown_type,
+                              test_uc_invalid_hook_cb, &calls, 1, 0));
+    TEST_CHECK(hook == UINTPTR_MAX);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 1));
+    TEST_CHECK(calls == 0);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_CODE, test_uc_invalid_hook_cb, &calls, 1,
+                   0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 1));
+    TEST_CHECK(calls == 1);
+    OK(uc_close(uc));
+}
+
+static void test_uc_ctl_exits_boundaries(void)
+{
+    const char code[] = "\x90";
+    uint64_t exits[] = {
+        code_start + 0x30,
+        code_start + 0x10,
+        code_start + 0x30,
+        code_start + 0x20,
+    };
+    uint64_t output[4] = {
+        UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    };
+    size_t count;
+    uc_engine *uc;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code,
+                    sizeof(code) - 1);
+    uc_assert_err(UC_ERR_ARG, uc_ctl_get_exits_cnt(uc, &count));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_set_exits(uc, exits, 4));
+
+    OK(uc_ctl_exits_enable(uc));
+    OK(uc_ctl_set_exits(uc, exits, 4));
+    OK(uc_ctl_get_exits_cnt(uc, &count));
+    TEST_CHECK(count == 3);
+    uc_assert_err(UC_ERR_ARG, uc_ctl_get_exits(uc, output, 2));
+    TEST_CHECK(output[0] == UINT64_MAX && output[1] == UINT64_MAX);
+    OK(uc_ctl_get_exits(uc, output, 4));
+    TEST_CHECK(output[0] == code_start + 0x10);
+    TEST_CHECK(output[1] == code_start + 0x20);
+    TEST_CHECK(output[2] == code_start + 0x30);
+    TEST_CHECK(output[3] == UINT64_MAX);
+
+    OK(uc_ctl_exits_disable(uc));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_get_exits_cnt(uc, &count));
+    OK(uc_ctl_exits_enable(uc));
+    OK(uc_ctl_get_exits_cnt(uc, &count));
+    TEST_CHECK(count == 0);
+
+    OK(uc_close(uc));
+}
+
 double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
 {
     int64_t t1, t2;
@@ -175,6 +259,31 @@ static void test_uc_ctl_tb_cache(void)
     OK(uc_close(uc));
 }
 
+static void test_uc_ctl_tb_cache_at_zero(void)
+{
+    uc_engine *uc;
+    // inc eax; inc eax; inc eax; inc eax; hlt
+    char code[] = "\x40\x40\x40\x40\xf4";
+    uc_tb tb;
+    uint32_t r_eax = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0, code, sizeof(code) - 1));
+
+    // There is no @until before uc_emu_start(), so the block at address 0
+    // must not be translated as an exit.
+    OK(uc_ctl_request_cache(uc, (uint64_t)0, &tb));
+    TEST_CHECK(tb.icount == 5);
+    TEST_CHECK(tb.size == sizeof(code) - 1);
+
+    OK(uc_emu_start(uc, 0, sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    TEST_CHECK(r_eax == 4);
+
+    OK(uc_close(uc));
+}
+
 // Test requires UC_ARCH_ARM.
 #ifdef UNICORN_HAS_ARM
 static void test_uc_ctl_change_page_size(void)
@@ -194,6 +303,24 @@ static void test_uc_ctl_change_page_size(void)
     uc_assert_err(UC_ERR_ARG, uc_mem_map(uc, 1 << 10, 1 << 10, UC_PROT_ALL));
 
     OK(uc_close(uc));
+    OK(uc_close(uc2));
+}
+
+static void test_uc_ctl_invalid_page_size(void)
+{
+    uc_engine *uc;
+    uc_engine *uc2;
+    uint32_t page_size;
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+    OK(uc_ctl_set_page_size(uc, 4096));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_set_page_size(uc, 0));
+    OK(uc_ctl_get_page_size(uc, &page_size));
+    TEST_CHECK(page_size == 4096);
+    OK(uc_close(uc));
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc2));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_set_page_size(uc2, 1536));
     OK(uc_close(uc2));
 }
 #endif
@@ -398,15 +525,121 @@ static void test_noexec(void)
     OK(uc_close(uc));
 }
 
+static void test_add_block_hook_syscall_cb(uc_engine *uc, void *userdata)
+{
+    OK(uc_emu_stop(uc));
+}
+
+static void test_add_block_hook_block_cb(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+{
+    uint64_t *block_counter = user_data;
+    *block_counter += 1;
+}
+
+static void test_add_block_hook(void)
+{
+    uc_engine *uc;
+    uint64_t block_counter = 0;
+    uc_hook syscall_hook;
+    uc_hook block_hook;
+    /* nop
+     * syscall
+     */
+    char code[] = "\x90\x0F\x05";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &syscall_hook, UC_HOOK_INSN, &test_add_block_hook_syscall_cb, NULL, 1, 0, UC_X86_INS_SYSCALL));
+    OK(uc_emu_start(uc, code_start, 0, 0, 0));
+    OK(uc_hook_add(uc, &block_hook, UC_HOOK_BLOCK, &test_add_block_hook_block_cb, &block_counter, code_start, code_start+0x1000));
+    OK(uc_emu_start(uc, code_start, 0, 0, 0));
+    TEST_CHECK(block_counter == 1);
+    OK(uc_close(uc));
+}
+
+static void test_add_block_icount_hook_block_cb(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+{
+    uint64_t *icount = user_data;
+    *icount += size;
+}
+
+static void test_add_block_icount_hook(void)
+{
+    uc_engine *uc;
+    uint64_t icount = 0;
+    uc_hook syscall_hook;
+    uc_hook block_hook;
+    /* nop
+     * syscall
+     */
+    char code[] = "\x90\x0F\x05";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &syscall_hook, UC_HOOK_INSN, &test_add_block_hook_syscall_cb, NULL, 1, 0, UC_X86_INS_SYSCALL));
+    OK(uc_emu_start(uc, code_start, 0, 0, 0));
+    OK(uc_hook_add(uc, &block_hook, UC_HOOK_BLOCK_ICOUNT, &test_add_block_icount_hook_block_cb, &icount, code_start, code_start+0x1000));
+    OK(uc_emu_start(uc, code_start, 0, 0, 0));
+    TEST_CHECK(icount == 2);
+    TEST_CHECK(uc_hook_add(uc, &block_hook, UC_HOOK_BLOCK, &test_add_block_icount_hook_block_cb, &icount, 0, code_start+0x1000) == UC_ERR_HOOK_EXIST);
+    TEST_CHECK(uc_hook_add(uc, &block_hook, UC_HOOK_BLOCK,
+                           &test_add_block_icount_hook_block_cb, &icount,
+                           code_start + 0x1000,
+                           code_start + 0x2000) == UC_ERR_HOOK_EXIST);
+    TEST_CHECK(uc_hook_add(uc, &block_hook,
+                           UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT,
+                           &test_add_block_icount_hook_block_cb, &icount,
+                           code_start, code_start) == UC_ERR_HOOK);
+    OK(uc_hook_del(uc, block_hook));
+    OK(uc_hook_add(uc, &block_hook, UC_HOOK_BLOCK_ICOUNT,
+                   &test_add_block_icount_hook_block_cb, &icount, code_start,
+                   code_start));
+    TEST_CHECK(uc_hook_add(uc, &block_hook, UC_HOOK_BLOCK,
+                           &test_add_block_icount_hook_block_cb, &icount,
+                           code_start, code_start) == UC_ERR_HOOK_EXIST);
+    OK(uc_close(uc));
+}
+
+static bool test_unmapped_end_tlb_fill_hook(uc_engine *uc, uint64_t addr,
+                                            uc_mem_type type,
+                                            uc_tlb_entry *result,
+                                            void *user_data)
+{
+    return false;
+}
+
+static void test_unmapped_end(void)
+{
+    uc_engine *uc;
+    uc_hook syscall_hook;
+    uc_hook tlb_hook;
+    /* nop
+     * syscall
+     */
+    char code[] = "\x90\x0F\x05";
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &tlb_hook, UC_HOOK_TLB_FILL,
+                   test_unmapped_end_tlb_fill_hook, NULL, 0, code_start - 1));
+    OK(uc_hook_add(uc, &syscall_hook, UC_HOOK_INSN,
+                   &test_add_block_hook_syscall_cb, NULL, 1, 0,
+                   UC_X86_INS_SYSCALL));
+    OK(uc_emu_start(uc, code_start, 1, 0, 0));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_uc_ctl_mode", test_uc_ctl_mode},
     {"test_uc_ctl_page_size", test_uc_ctl_page_size},
     {"test_uc_ctl_arch", test_uc_ctl_arch},
     {"test_uc_ctl_time_out", test_uc_ctl_time_out},
     {"test_uc_ctl_exits", test_uc_ctl_exits},
+    {"test_uc_invalid_hook_types", test_uc_invalid_hook_types},
+    {"test_uc_ctl_exits_boundaries", test_uc_ctl_exits_boundaries},
     {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
+    {"test_uc_ctl_tb_cache_at_zero", test_uc_ctl_tb_cache_at_zero},
 #ifdef UNICORN_HAS_ARM
     {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
+    {"test_uc_ctl_invalid_page_size", test_uc_ctl_invalid_page_size},
     {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
 #endif
 #ifdef UNICORN_HAS_ARM64
@@ -416,4 +649,7 @@ TEST_LIST = {
     {"test_uc_emu_stop_set_ip", test_uc_emu_stop_set_ip},
     {"test_tlb_clear", test_tlb_clear},
     {"test_noexec", test_noexec},
+    {"test_add_block_hook", test_add_block_hook},
+    {"test_add_block_icount_hook", test_add_block_icount_hook},
+    {"test_unmapped_end", test_unmapped_end},
     {NULL, NULL}};

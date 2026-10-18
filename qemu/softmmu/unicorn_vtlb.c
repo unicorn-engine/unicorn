@@ -9,7 +9,19 @@
 static void raise_mmu_exception(CPUState *cs, target_ulong address,
                                 int rw, uintptr_t retaddr)
 {
-    cs->uc->invalid_error = UC_ERR_EXCEPTION;
+    switch (rw) {
+    case MMU_DATA_LOAD:
+        cs->uc->invalid_error = UC_ERR_MMU_READ;
+        break;
+    case MMU_DATA_STORE:
+        cs->uc->invalid_error = UC_ERR_MMU_WRITE;
+        break;
+    case MMU_INST_FETCH:
+        cs->uc->invalid_error = UC_ERR_MMU_FETCH;
+        break;
+    default:
+        cs->uc->invalid_error = UC_ERR_MMU_READ;
+    }
     cs->uc->invalid_addr = address;
     cpu_exit(cs->uc->cpu);
     cpu_loop_exit_restore(cs, retaddr);

@@ -1,4 +1,4 @@
-Documention of Unicorn engine.
+Documentation of Unicorn engine.
 
 * How to compile & install Unicorn.
 
@@ -12,6 +12,6 @@ Documention of Unicorn engine.
 
 	http://unicorn-engine.org/docs/beyond_qemu.html
 
-* Uncorn-Engine Documentation
+* Unicorn-Engine Documentation
 
 	https://github.com/kabeor/Unicorn-Engine-Documentation

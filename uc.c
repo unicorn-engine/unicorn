@@ -191,6 +191,12 @@ const char *uc_strerror(uc_err code)
         return "Unhandled CPU exception (UC_ERR_EXCEPTION)";
     case UC_ERR_OVERFLOW:
         return "Provided buffer is too small (UC_ERR_OVERFLOW)";
+    case UC_ERR_MMU_READ:
+        return "The tlb_fill hook returned false for a read (UC_ERR_MMU_READ)";
+    case UC_ERR_MMU_WRITE:
+        return "The tlb_fill hook returned false for a write (UC_ERR_MMU_WRITE)";
+    case UC_ERR_MMU_FETCH:
+        return "The tlb_fill hook returned false for a fetch (UC_ERR_MMU_FETCH)";
     }
 }
 
@@ -763,6 +769,14 @@ static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
 {
     size_t count = 0, len;
 
+    // A wrap-around range can never be a single mapped extent. Reject it
+    // here so the loop below can't walk from the top of the address space
+    // back to 0 and convince callers that a wrapping range is "valid".
+    // uc_mem_map() rejects the same condition in mem_map_check().
+    if (size != 0 && (address + size - 1) < address) {
+        return false;
+    }
+
     while (count < size) {
         MemoryRegion *mr = uc->memory_mapping(uc, address);
         if (mr) {
@@ -1077,6 +1091,12 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
                     uint64_t timeout, size_t count)
 {
     uc_err err;
+
+#ifdef UNICORN_HAS_RISCV
+    if (uc->arch == UC_ARCH_RISCV && (begin & 1)) {
+        return UC_ERR_ARG;
+    }
+#endif
 
     // reset the counter
     uc->emu_counter = 0;
@@ -1718,6 +1738,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, uint64_t size,
     uint64_t pc;
     uint64_t count, len;
     bool remove_exec = false;
+    bool add_exec;
 
     UC_INIT(uc);
 
@@ -1778,8 +1799,19 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, uint64_t size,
                 ((perms & UC_PROT_EXEC) == 0)) {
                 remove_exec = true;
             }
+            add_exec = ((mr->perms & UC_PROT_EXEC) == 0) &&
+                       ((perms & UC_PROT_EXEC) != 0);
             mr->perms = perms;
             uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+
+            // TLB_NOTDIRTY is only set on write entries of executable pages
+            // when the TLB is filled, so set it on the entries filled before.
+            // Otherwise writes through them would not invalidate the TBs
+            // translated from this range.  Unlike a TLB flush, this keeps the
+            // entries valid, so it is safe to do from within memory hooks.
+            if (add_exec) {
+                uc->tcg_reset_dirty_tlb(uc, mr, addr, len);
+            }
 
         } else {
             if (!split_mmio_region(uc, mr, addr, len, false)) {
@@ -1910,8 +1942,38 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 {
     int ret = UC_ERR_OK;
     int i = 0;
+    const unsigned int valid_hook_types = (1U << UC_HOOK_MAX) - 1;
 
     UC_INIT(uc);
+
+    if (type <= 0 || ((unsigned int)type & ~valid_hook_types) != 0) {
+        restore_jit_state(uc);
+        return UC_ERR_HOOK;
+    }
+
+    int block_type = type & (UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT);
+    if (block_type == (UC_HOOK_BLOCK | UC_HOOK_BLOCK_ICOUNT)) {
+        restore_jit_state(uc);
+        return UC_ERR_HOOK;
+    }
+    if (block_type != 0) {
+        int opposite_idx = block_type == UC_HOOK_BLOCK
+                               ? UC_HOOK_BLOCK_ICOUNT_IDX
+                               : UC_HOOK_BLOCK_IDX;
+        for (struct list_item *c = uc->hook[opposite_idx].head; c;
+             c = c->next) {
+            struct hook *other = c->data;
+            if (other->to_delete) {
+                continue;
+            }
+            bool overlaps = begin > end || other->begin > other->end ||
+                            (begin <= other->end && other->begin <= end);
+            if (overlaps) {
+                restore_jit_state(uc);
+                return UC_ERR_HOOK_EXIST;
+            }
+        }
+    }
 
     struct hook *hook = calloc(1, sizeof(struct hook));
     if (hook == NULL) {
@@ -1999,6 +2061,19 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         return UC_ERR_OK;
     }
 
+    if (type & UC_HOOK_CODE || type & UC_HOOK_BLOCK ||
+        type & UC_HOOK_BLOCK_ICOUNT) {
+        if (end <= begin) {
+            uc->tb_flush(uc);
+        } else {
+            uc->uc_invalidate_tb(uc, begin, end-begin);
+        }
+        if (uc->nested_level) {
+            uc->quit_request = true;
+            break_translation_loop(uc);
+        }
+    }
+
     while ((type >> i) > 0) {
         if ((type >> i) & 1) {
             // TODO: invalid hook error?
@@ -2047,8 +2122,11 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
     // and store the type mask in the hook pointer.
     for (i = 0; i < UC_HOOK_MAX; i++) {
         if (list_exists(&uc->hook[i], (void *)hook)) {
-            g_hash_table_foreach(hook->hooked_regions, hook_invalidate_region,
-                                 uc);
+            if (hook->type & UC_HOOK_CODE || hook->type & UC_HOOK_BLOCK ||
+                hook->type & UC_HOOK_BLOCK_ICOUNT) {
+                g_hash_table_foreach(hook->hooked_regions,
+                                     hook_invalidate_region, uc);
+            }
             g_hash_table_remove_all(hook->hooked_regions);
             hook->to_delete = true;
             uc->hooks_count[i]--;
@@ -2057,6 +2135,25 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
     }
 
     restore_jit_state(uc);
+    return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_hook_set_user_data(uc_engine *uc, uc_hook hh, void *user_data)
+{
+    struct hook *hook = (struct hook *)hh;
+    if (hook->type == UC_HOOK_BLOCK || hook->type == UC_HOOK_CODE ||
+        hook->type == UC_HOOK_BLOCK_ICOUNT) {
+        if (uc->nested_level) {
+            return UC_ERR_ARG;
+        }
+        if (hook->end < hook->begin) {
+            uc->tb_flush(uc);
+        } else {
+            uc->uc_invalidate_tb(uc, hook->begin, hook->end - hook->begin);
+        }
+    }
+    hook->user_data = user_data;
     return UC_ERR_OK;
 }
 
@@ -2685,7 +2782,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 break;
             }
 
-            if ((page_size & (page_size - 1))) {
+            if (page_size == 0 || (page_size & (page_size - 1))) {
                 err = UC_ERR_ARG;
                 break;
             }
@@ -2707,6 +2804,10 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     case UC_CTL_UC_USE_EXITS: {
         if (rw == UC_CTL_IO_WRITE) {
             int use_exits = va_arg(args, int);
+
+            if (!use_exits && uc->ctl_exits != NULL) {
+                g_tree_remove_all(uc->ctl_exits);
+            }
             uc->use_exits = use_exits;
         } else {
             err = UC_ERR_ARG;
@@ -3039,6 +3140,45 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         }
 
         restore_jit_state(uc);
+        break;
+    }
+    case UC_CTL_INVALID_ADDR:
+        if (rw == UC_CTL_IO_READ) {
+            uint64_t *invalid_addr = va_arg(args, uint64_t *);
+            *invalid_addr = uc->invalid_addr;
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+
+    case UC_CTL_UC_PREALLOC: {
+        if (rw == UC_CTL_IO_WRITE) {
+#if defined(WIN32) && defined(WIN32_ENABLE_VEH)
+            int prealloc = va_arg(args, int);
+
+            // Must be decided before the code gen buffer is allocated.
+            if (uc->init_done) {
+                err = UC_ERR_ARG;
+            } else {
+                uc->prealloc = (bool)prealloc;
+            }
+#elif defined(WIN32)
+            // The VEH lazy-commit path is compiled out, so preallocation is
+            // mandatory on Windows. Refuse to disable it; enabling it is
+            // already the effective behavior.
+            int prealloc = va_arg(args, int);
+
+            if (uc->init_done || !prealloc) {
+                err = UC_ERR_ARG;
+            }
+#else
+            // Not applicable on Linux/macOS: the code gen buffer is always
+            // committed and there is no VEH to opt out of.
+            err = UC_ERR_ARG;
+#endif
+        } else {
+            err = UC_ERR_ARG;
+        }
         break;
     }
 

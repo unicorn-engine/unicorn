@@ -844,7 +844,7 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     struct uc_struct *uc = ctx->uc;
     TCGContext *tcg_ctx = uc->tcg_ctx;
     CPURISCVState *env = cpu->env_ptr;
-    uint16_t opcode16 = translator_lduw(tcg_ctx, env, ctx->base.pc_next);
+    uint16_t opcode16;
     TCGOp *tcg_op, *prev_op = NULL;
     bool insn_hook = false;
 
@@ -853,6 +853,8 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         // Unicorn: We have to exit current execution here.
         dcbase->is_jmp = DISAS_UC_EXIT;
     } else {
+        opcode16 = translator_lduw(tcg_ctx, env, ctx->base.pc_next);
+
         // Unicorn: trace this instruction on request
         if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, ctx->base.pc_next)) {
 

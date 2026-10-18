@@ -136,7 +136,6 @@ jobs:
           install: >-
             mingw-w64-${{ matrix.config.mingw-arch }}-cmake
             mingw-w64-${{ matrix.config.mingw-arch }}-ninja
-            mingw-w64-${{ matrix.config.mingw-arch }}-cmocka
             mingw-w64-${{ matrix.config.mingw-arch }}-${{ matrix.compiler }}
             mingw-w64-${{ matrix.config.mingw-arch }}-toolchain
 
@@ -168,7 +167,16 @@ jobs:
           cmake --build . --config ${{ env.BUILD_TYPE }}
           cmake --install . --strip --config ${{ env.BUILD_TYPE }}
           ctest -VV -C ${{ env.BUILD_TYPE }}
-          mv ${{ env.BUILD_TYPE }} instdir
+          # vctip.exe (MSVC telemetry) and antivirus scans may transiently hold
+          # handles inside the build directory and make the rename fail, so
+          # retry for a while, killing vctip on each attempt
+          tries=0
+          until mv ${{ env.BUILD_TYPE }} instdir; do
+            tries=$((tries+1))
+            if [ $tries -ge 12 ]; then echo "mv keeps failing, giving up"; exit 1; fi
+            taskkill //IM vctip.exe //F || true
+            sleep 5
+          done
 
       - name: '🛠️ Win MSVC 32 setup'
         if: contains(matrix.config.name, 'MSVC 32')
@@ -195,7 +203,16 @@ jobs:
           cmake --build . --config ${{ env.BUILD_TYPE }}
           cmake --install . --strip --config ${{ env.BUILD_TYPE }}
           ctest -VV -C ${{ env.BUILD_TYPE }}
-          mv ${{ env.BUILD_TYPE }} instdir
+          # vctip.exe (MSVC telemetry) and antivirus scans may transiently hold
+          # handles inside the build directory and make the rename fail, so
+          # retry for a while, killing vctip on each attempt
+          tries=0
+          until mv ${{ env.BUILD_TYPE }} instdir; do
+            tries=$((tries+1))
+            if [ $tries -ge 12 ]; then echo "mv keeps failing, giving up"; exit 1; fi
+            taskkill //IM vctip.exe //F || true
+            sleep 5
+          done
 
       - name: '🚧 Win MINGW build'
         if: contains(matrix.config.mingw, 'MINGW')
@@ -247,9 +264,12 @@ jobs:
       fail-fast: false
       matrix:
         config:
+          # x64 builds cross-compile on the arm64 runners via ARCHFLAGS
+          # (see CMakeLists.txt); their tests run under Rosetta 2.
           - {
-            os: macos-14, # x64
+            os: macos-latest,
             arch: x64,
+            archflags: '-arch x86_64',
             name: 'macos-x64 cmake shared',
             shared: 'yes',
             artifact: 'macos-x64-cmake-shared-x64.7z',
@@ -257,8 +277,9 @@ jobs:
             generators: 'Ninja'
           }
           - {
-            os: macos-14,
+            os: macos-latest,
             arch: x64,
+            archflags: '-arch x86_64',
             name: 'macos-x64 cmake static',
             shared: 'no',
             artifact: 'macos-x64-cmake-static-x64.7z',
@@ -266,8 +287,9 @@ jobs:
             generators: 'Ninja'
           }
           - {
-            os: macos-14, # arm64
+            os: macos-latest,
             arch: arm64,
+            archflags: '-arch arm64',
             name: 'macos-arm64 cmake shared',
             shared: 'yes',
             artifact: 'macos-arm64-cmake-shared-x64.7z',
@@ -275,8 +297,9 @@ jobs:
             generators: 'Ninja'
           }
           - {
-            os: macos-14,
+            os: macos-latest,
             arch: arm64,
+            archflags: '-arch arm64',
             name: 'macos-arm64 cmake static',
             shared: 'no',
             artifact: 'macos-arm64-cmake-static-x64.7z',
@@ -297,6 +320,8 @@ jobs:
       - name: '🚧 Mac build'
         if: contains(matrix.config.name, 'macos')
         shell: bash
+        env:
+          ARCHFLAGS: ${{ matrix.config.archflags }}
         run: |
           ninja --version
           cmake --version
@@ -603,6 +628,9 @@ jobs:
         uses: jirutka/setup-alpine@v1
         with:
           arch: ${{ matrix.config.arch }}
+          # latest-stable ships apk-tools 3, which fails to read (at least on
+          # ppc64le) a database created by the default apk-tools 2 apk.static
+          apk-tools-url: https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v3.0.8/x86_64/apk.static#!sha256!11758d76de3699c7606152357f415f55879743ccf0e3d8942d5ba98cf29a3c86
           packages: cmake build-base automake cmocka-dev pkgconfig ${{ matrix.compiler }} ninja linux-headers
 
       - name: '🚧 Linux Alpine build'

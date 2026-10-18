@@ -1628,6 +1628,9 @@ static const ARMCPRegInfo cortexa9_cp_reginfo[] = {
       .fieldoffset = offsetof(CPUARMState, cp15.c15_power_diagnostic) },
     { .name = "NEONBUSY", .cp = 15, .crn = 15, .crm = 1, .opc1 = 0, .opc2 = 0,
       .access = PL1_RW, .resetvalue = 0, .type = ARM_CP_CONST },
+    { .name = "A9_C15_IMPDEF_64", .cp = 15, .crm = 15, .opc1 = 1,
+      .access = PL1_RW, .type = ARM_CP_64BIT | ARM_CP_NO_RAW,
+      .readfn = arm_cp_read_zero, .writefn = arm_cp_write_ignore },
     /* TLB lockdown control */
     { .name = "TLB_LOCKR", .cp = 15, .crn = 15, .crm = 4, .opc1 = 5, .opc2 = 2,
       .access = PL1_W, .resetvalue = 0, .type = ARM_CP_NOP },

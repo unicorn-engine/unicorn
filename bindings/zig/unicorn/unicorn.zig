@@ -13,7 +13,7 @@ pub const s390x = @import("s390x_const.zig");
 pub const x86 = @import("x86_const.zig");
 
 // Unicorn consts
-pub usingnamespace @import("unicorn_const.zig");
+pub const unicornConst = @import("unicorn_const.zig").unicornConst;
 // C include
 pub const c = @cImport(@cInclude("unicorn/unicorn.h"));
 
