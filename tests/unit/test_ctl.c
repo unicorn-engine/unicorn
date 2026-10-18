@@ -165,6 +165,46 @@ static void test_uc_invalid_hook_types(void)
                    0));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 1));
     TEST_CHECK(calls == 1);
+    OK(uc_close(uc));
+}
+
+static void test_uc_ctl_exits_boundaries(void)
+{
+    const char code[] = "\x90";
+    uint64_t exits[] = {
+        code_start + 0x30,
+        code_start + 0x10,
+        code_start + 0x30,
+        code_start + 0x20,
+    };
+    uint64_t output[4] = {
+        UINT64_MAX, UINT64_MAX, UINT64_MAX, UINT64_MAX,
+    };
+    size_t count;
+    uc_engine *uc;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code,
+                    sizeof(code) - 1);
+    uc_assert_err(UC_ERR_ARG, uc_ctl_get_exits_cnt(uc, &count));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_set_exits(uc, exits, 4));
+
+    OK(uc_ctl_exits_enable(uc));
+    OK(uc_ctl_set_exits(uc, exits, 4));
+    OK(uc_ctl_get_exits_cnt(uc, &count));
+    TEST_CHECK(count == 3);
+    uc_assert_err(UC_ERR_ARG, uc_ctl_get_exits(uc, output, 2));
+    TEST_CHECK(output[0] == UINT64_MAX && output[1] == UINT64_MAX);
+    OK(uc_ctl_get_exits(uc, output, 4));
+    TEST_CHECK(output[0] == code_start + 0x10);
+    TEST_CHECK(output[1] == code_start + 0x20);
+    TEST_CHECK(output[2] == code_start + 0x30);
+    TEST_CHECK(output[3] == UINT64_MAX);
+
+    OK(uc_ctl_exits_disable(uc));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_get_exits_cnt(uc, &count));
+    OK(uc_ctl_exits_enable(uc));
+    OK(uc_ctl_get_exits_cnt(uc, &count));
+    TEST_CHECK(count == 0);
 
     OK(uc_close(uc));
 }
@@ -576,6 +616,7 @@ TEST_LIST = {
     {"test_uc_ctl_time_out", test_uc_ctl_time_out},
     {"test_uc_ctl_exits", test_uc_ctl_exits},
     {"test_uc_invalid_hook_types", test_uc_invalid_hook_types},
+    {"test_uc_ctl_exits_boundaries", test_uc_ctl_exits_boundaries},
     {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
     {"test_uc_ctl_tb_cache_at_zero", test_uc_ctl_tb_cache_at_zero},
 #ifdef UNICORN_HAS_ARM
