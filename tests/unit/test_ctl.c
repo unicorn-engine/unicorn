@@ -305,6 +305,24 @@ static void test_uc_ctl_change_page_size(void)
     OK(uc_close(uc));
     OK(uc_close(uc2));
 }
+
+static void test_uc_ctl_invalid_page_size(void)
+{
+    uc_engine *uc;
+    uc_engine *uc2;
+    uint32_t page_size;
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+    OK(uc_ctl_set_page_size(uc, 4096));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_set_page_size(uc, 0));
+    OK(uc_ctl_get_page_size(uc, &page_size));
+    TEST_CHECK(page_size == 4096);
+    OK(uc_close(uc));
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc2));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_set_page_size(uc2, 1536));
+    OK(uc_close(uc2));
+}
 #endif
 
 // Test requires UC_ARCH_ARM64.
@@ -621,6 +639,7 @@ TEST_LIST = {
     {"test_uc_ctl_tb_cache_at_zero", test_uc_ctl_tb_cache_at_zero},
 #ifdef UNICORN_HAS_ARM
     {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
+    {"test_uc_ctl_invalid_page_size", test_uc_ctl_invalid_page_size},
     {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
 #endif
 #ifdef UNICORN_HAS_ARM64

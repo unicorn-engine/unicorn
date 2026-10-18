@@ -2782,7 +2782,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 break;
             }
 
-            if ((page_size & (page_size - 1))) {
+            if (page_size == 0 || (page_size & (page_size - 1))) {
                 err = UC_ERR_ARG;
                 break;
             }
