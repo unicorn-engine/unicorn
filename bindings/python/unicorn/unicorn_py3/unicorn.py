@@ -1627,4 +1627,4 @@ UC_MMIO_READ_TYPE = Callable[[Uc, int, int, Any], int]
 UC_MMIO_WRITE_TYPE = Callable[[Uc, int, int, int, Any], None]
 
 
-__all__ = ['Uc', 'UcContext', 'ucsubclass', 'UcError', 'uc_version', 'version_bind', 'uc_arch_supported', 'debug']
+__all__ = ['Uc', 'UcContext', 'ucsubclass', 'UcError', 'uc_version', 'version_bind', 'uc_arch_supported', 'debug', 'UC_MMIO_READ_TYPE', 'UC_MMIO_WRITE_TYPE']
