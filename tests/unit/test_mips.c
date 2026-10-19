@@ -222,7 +222,94 @@ static void test_mips_simple_coredump_2137(void)
     OK(uc_close(uc));
 }
 
+// On-demand fill for the ordinary soft-MMU path: map the faulting data page
+// with full permissions (seeding a PT_TLS marker) and return true so the
+// faulting access is retried in place.
+static bool test_mips_mem_read_unmapped_map_cb(uc_engine *uc, uc_mem_type type,
+                                               uint64_t address, int size,
+                                               int64_t value, void *user_data)
+{
+    uint64_t page = address & ~0xfffULL;
+    uc_err err = uc_mem_map(uc, page, 0x1000, UC_PROT_ALL);
+    if (err != UC_ERR_OK && err != UC_ERR_MAP) {
+        return false;
+    }
+    char tls_type[] = "\x00\x00\x00\x07"; // PT_TLS marker at index 3
+    uc_mem_write(uc, page + 56 * 3, tls_type, sizeof(tls_type) - 1);
+    return true; // handled -> resume the faulting load in place
+}
+
+// REPRO for issue #2272, MEM-hook variant. Demonstrates that the branch-delay
+// hflag leak is NOT specific to UC_TLB_VIRTUAL: it is reachable in the ordinary
+// soft-MMU via a UC_HOOK_MEM_READ_UNMAPPED hook.
+//
+// big-endian MIPS64:
+//         li     $a1, 7
+//         b      L_bne          # delay slot is the load below
+//         lw     $v1, 0($v0)
+// L_top:  sltu   $v1, $v0, $a0
+//         beqz   $v1, L_exit
+//         nop
+//         lw     $v1, 0($v0)
+// L_bne:  bne    $v1, $a1, L_top
+//         daddiu $v0, $v0, 56   # delay slot
+//         daddiu $v0, $v0, -56
+// L_exit: jr     $ra
+//         nop
+//
+// The delay-slot load faults on unmapped memory; the hook maps the page and
+// returns true, so the load resumes in place. The cpu_restore_state() done in
+// cputlb.c to sync the PC for the hook has re-applied the branch-delay hflags
+// (MIPS_HFLAG_B / MIPS_HFLAG_BDS32) into the live env, so the branch target
+// (itself a bne) is decoded as if it sat in a delay slot and raises a spurious
+// EXCP_RI (surfaced as UC_ERR_EXCEPTION).
+//
+// This test asserts the CORRECT behavior and therefore FAILS on current
+// mainline -- that is the point of a repro. It is intentionally kept out of the
+// #2272 fix PR: unlike the vtlb fill, cputlb.c's cpu_restore_state() is
+// deliberate (it honours the synced-PC contract for user hooks), so the proper
+// fix is lower-level (clear the transient branch hflags after a resume-in-place
+// restore) rather than dropping the call.
+static void test_mips_mem_read_unmapped_delay_slot_2272(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\x24\x05\x00\x07\x10\x00\x00\x05\x8c\x43\x00\x00"
+                  "\x00\x44\x18\x2b\x10\x60\x00\x05\x00\x00\x00\x00"
+                  "\x8c\x43\x00\x00\x14\x65\xff\xfb\x64\x42\x00\x38"
+                  "\x64\x42\xff\xc8\x03\xe0\x00\x08\x00\x00\x00\x00";
+    const uint64_t data_base = 0x20000000;
+    uint64_t r_v0 = data_base;
+    uint64_t r_a0 = data_base + 56 * 4; // scan 4 program-header-sized entries
+    uint64_t r_a1 = 7;
+    uint64_t r_v1 = 0;
+
+    // Ordinary soft-MMU: deliberately NOT UC_TLB_VIRTUAL.
+    OK(uc_open(UC_ARCH_MIPS, UC_MODE_MIPS64 | UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ_UNMAPPED,
+                   test_mips_mem_read_unmapped_map_cb, NULL, 1, 0));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+    // data_base intentionally left unmapped so the delay-slot load faults and
+    // the hook above services it.
+
+    OK(uc_reg_write(uc, UC_MIPS_REG_V0, &r_v0));
+    OK(uc_reg_write(uc, UC_MIPS_REG_A0, &r_a0));
+    OK(uc_reg_write(uc, UC_MIPS_REG_A1, &r_a1));
+
+    // On a correct implementation the scan runs to completion and finds the
+    // PT_TLS entry. Today this raises a spurious EXCP_RI instead.
+    OK(uc_emu_start(uc, code_start, code_start + 0x28, 0, 0));
+
+    OK(uc_reg_read(uc, UC_MIPS_REG_V1, &r_v1));
+    TEST_CHECK(r_v1 == 7);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
+    {"test_mips_mem_read_unmapped_delay_slot_2272",
+     test_mips_mem_read_unmapped_delay_slot_2272},
     {"test_mips_stop_at_branch", test_mips_stop_at_branch},
     {"test_mips_stop_at_delay_slot", test_mips_stop_at_delay_slot},
     {"test_mips_el_ori", test_mips_el_ori},
