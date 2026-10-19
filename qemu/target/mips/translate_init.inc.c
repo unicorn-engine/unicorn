@@ -830,6 +830,34 @@ const mips_def_t mips_defs[] =
         .insn_flags = CPU_MIPS64R2 | ASE_DSP | ASE_DSP_R2,
         .mmu_type = MMU_TYPE_R4000,
     },
+    {
+        /* Cavium Octeon Plus — MIPS64R2 plus Octeon-specific ISA extensions
+           (BBIT0/1, CINS, EXTS, DMUL, SEQ/SNE, etc.). FPU is omitted for now;
+           cnMIPS doesn't add architected floating-point ops, and most Octeon
+           Linux userspace stays integer-only. */
+        .name = "Octeon-Plus",
+        /* CompanyID=0x0d (Cavium), ProcessorID=0x06 (CN50XX, Octeon Plus),
+           Revision=0 (pass 1.0). Per CN50XX HRM, PRId Register section. */
+        .CP0_PRid = 0x000d0600,
+        .CP0_Config0 = MIPS_CONFIG0 | (0x1 << CP0C0_AR) | (0x2 << CP0C0_AT) |
+                       (MMU_TYPE_R4000 << CP0C0_MT),
+        .CP0_Config1 = MIPS_CONFIG1 | (63 << CP0C1_MMU) |
+                       (2 << CP0C1_IS) | (4 << CP0C1_IL) | (3 << CP0C1_IA) |
+                       (2 << CP0C1_DS) | (4 << CP0C1_DL) | (3 << CP0C1_DA) |
+                       (1 << CP0C1_PC) | (1 << CP0C1_WR) | (1 << CP0C1_EP),
+        .CP0_Config2 = MIPS_CONFIG2,
+        .CP0_Config3 = MIPS_CONFIG3 | (1 << CP0C3_LPA),
+        .CP0_LLAddr_rw_bitmask = 0,
+        .CP0_LLAddr_shift = 0,
+        .SYNCI_Step = 32,
+        .CCRes = 2,
+        .CP0_Status_rw_bitmask = 0x36FBFFFF,
+        .CP0_EBaseWG_rw_bitmask = (1 << CP0EBase_WG),
+        .SEGBITS = 42,
+        .PABITS = 49,
+        .insn_flags = CPU_OCTEON,
+        .mmu_type = MMU_TYPE_R4000,
+    },
 
 #endif
 };
