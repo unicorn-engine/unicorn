@@ -5037,8 +5037,10 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             rex_r = (rex_byte & 0x4) << 1;
             s->rex_x = (rex_byte & 0x2) << 2;
             REX_B(s) = (rex_byte & 0x1) << 3;
-            /* select uniform byte register addressing */
-            s->x86_64_hregs = true;
+            /* select uniform byte register addressing
+             * only when not decoding LAHF (0x9f) / SAHF (0x9e)
+             */
+            s->x86_64_hregs = (b & 0x9e) != 0x9e;
         }
 
         /* In 64-bit mode, the default data size is 32-bit.  Select 64-bit
