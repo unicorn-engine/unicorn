@@ -411,7 +411,7 @@ static void glue(gen_, name)(DisasContext *ctx)                         \
         return;                                                         \
     }                                                                   \
     rb = gen_avr_ptr(tcg_ctx, rB(ctx->opcode));                         \
-    gen_helper_##name(tcg_ctx, cpu_gpr[rD(ctx->opcode)], cpu_gpr[rA(ctx->opcode)], rb); \
+    gen_helper_##name(tcg_ctx, tcg_ctx->cpu_gpr[rD(ctx->opcode)], tcg_ctx->cpu_gpr[rA(ctx->opcode)], rb); \
     tcg_temp_free_ptr(tcg_ctx, rb);                                     \
 }
 
@@ -1134,7 +1134,7 @@ static void glue(gen_, name)(DisasContext *ctx)                         \
             return;                                                     \
         }                                                               \
         rb = gen_avr_ptr(tcg_ctx, rB(ctx->opcode));                     \
-        gen_helper_##name(tcg_ctx, cpu_gpr[rD(ctx->opcode)], rb);       \
+        gen_helper_##name(tcg_ctx, tcg_ctx->cpu_gpr[rD(ctx->opcode)], rb);       \
         tcg_temp_free_ptr(tcg_ctx, rb);                                 \
     }
 GEN_VXFORM_NOA(vupkhsb, 7, 8);
@@ -1401,7 +1401,7 @@ static void gen_##op(DisasContext *ctx)             \
                                                     \
     ps = tcg_const_i32(tcg_ctx, (ctx->opcode & 0x200) != 0); \
                                                     \
-    gen_helper_##op(tcg_ctx, cpu_crf[6], rd, ra, rb, ps);    \
+    gen_helper_##op(tcg_ctx, tcg_ctx->cpu_crf[6], rd, ra, rb, ps);    \
                                                     \
     tcg_temp_free_ptr(tcg_ctx, ra);                 \
     tcg_temp_free_ptr(tcg_ctx, rb);                 \
@@ -1426,7 +1426,7 @@ static void gen_##op(DisasContext *ctx)             \
                                                     \
     ps = tcg_const_i32(tcg_ctx, (ctx->opcode & 0x200) != 0); \
                                                     \
-    gen_helper_##op(tcg_ctx, cpu_crf[6], rd, rb, ps);        \
+    gen_helper_##op(tcg_ctx, tcg_ctx->cpu_crf[6], rd, rb, ps);        \
                                                     \
     tcg_temp_free_ptr(tcg_ctx, rb);                 \
     tcg_temp_free_ptr(tcg_ctx, rd);                 \
