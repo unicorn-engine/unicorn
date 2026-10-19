@@ -1115,6 +1115,27 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
                     uint64_t timeout, size_t count);
 
 /*
+ Emulate machine code starting from the current instruction pointer
+
+ @uc: handle returned by uc_open()
+ @until: address where emulation stops (i.e. when this address is hit)
+ @timeout: duration to emulate the code (in microseconds). When this value is 0,
+        we will emulate the code in infinite time, until the code is finished.
+ @count: the number of instructions to be emulated. When this value is 0,
+        we will emulate all the code available, until the code is finished.
+
+ NOTE: The internal states of the engine is guranteed to be correct if and only
+       if uc_emu_start returns without any errors or errors have been handled in
+       the callbacks.
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_emu_run(uc_engine *uc, uint64_t until, uint64_t timeout,
+                  size_t count);
+
+/*
  Stop emulation (which was started by uc_emu_start() API.
  This is typically called from callback functions registered via tracing APIs.
 
