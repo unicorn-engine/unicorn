@@ -108,7 +108,7 @@ static void sys_cache_info(int *isize, int *dsize)
  * Architecture (+ OS) specific detection mechanisms.
  */
 
-#if defined(__aarch64__)
+#if defined(__aarch64__) && !defined(_MSC_VER)
 
 static void arch_cache_info(int *isize, int *dsize)
 {
