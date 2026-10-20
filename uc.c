@@ -1023,6 +1023,12 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
     }
 }
 
+#if defined(_MSC_VER)
+static __declspec(thread) uc_engine *emulating_uc;
+#else
+static __thread uc_engine *emulating_uc;
+#endif
+
 #define TIMEOUT_STEP 2 // microseconds
 static void *_timeout_fn(void *arg)
 {
@@ -1208,6 +1214,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     }
     uc->skip_sync_pc_on_exit = false;
     uc->stop_request = false;
+    uc->async_stop = false;
 
     uc->emu_count = count;
     // remove count hook if counting isn't necessary
@@ -1245,7 +1252,10 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         enable_emu_timer(uc, timeout * 1000); // microseconds -> nanoseconds
     }
 
+    uc_engine *outer_uc = emulating_uc;
+    emulating_uc = uc;
     uc->vm_start(uc);
+    emulating_uc = outer_uc;
 
     uc->nested_level--;
 
@@ -1277,6 +1287,11 @@ UNICORN_EXPORT
 uc_err uc_emu_stop(uc_engine *uc)
 {
     UC_INIT(uc);
+    if (emulating_uc == uc) {
+        uc->async_stop = false;
+    } else if (!uc->stop_request) {
+        uc->async_stop = true;
+    }
     uc->stop_request = true;
     uc_err err = break_translation_loop(uc);
     restore_jit_state(uc);

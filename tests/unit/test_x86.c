@@ -2891,6 +2891,48 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+#ifndef _WIN32
+#include <pthread.h>
+#include <unistd.h>
+
+static void *test_x86_async_stop_thread(void *arg)
+{
+    usleep(1000);
+    uc_emu_stop((uc_engine *)arg);
+    return NULL;
+}
+
+static void test_x86_async_stop_no_replay(void)
+{
+    uc_engine *uc;
+    // 0x1000: inc dword ptr [rdi]; inc rcx; jmp 0x1000
+    char code[] = "\xff\x07\x48\xff\xc1\xeb\xf9";
+    uint64_t rdi = 0x10000, rcx, rip = code_start;
+    uint32_t mem;
+    pthread_t thread;
+    int i;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_mem_map(uc, rdi, 0x1000, UC_PROT_ALL));
+    OK(uc_reg_write(uc, UC_X86_REG_RDI, &rdi));
+
+    for (i = 0; i < 100; i++) {
+        TEST_CHECK(
+            pthread_create(&thread, NULL, test_x86_async_stop_thread, uc) == 0);
+        OK(uc_emu_start(uc, rip, 0, 1000000, 0));
+        pthread_join(thread, NULL);
+        OK(uc_reg_read(uc, UC_X86_REG_RIP, &rip));
+    }
+
+    OK(uc_reg_read(uc, UC_X86_REG_RCX, &rcx));
+    OK(uc_mem_read(uc, rdi, &mem, sizeof(mem)));
+    TEST_CHECK(mem == (uint32_t)rcx + (rip == code_start + 2 ? 1 : 0));
+    TEST_MSG("mem=%u rcx=%u rip=0x%" PRIx64, mem, (uint32_t)rcx, rip);
+
+    OK(uc_close(uc));
+}
+#endif
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +3020,7 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    #ifndef _WIN32
+    {"test_x86_async_stop_no_replay", test_x86_async_stop_no_replay},
+#endif
     {NULL, NULL}};
