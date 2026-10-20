@@ -23,6 +23,7 @@
 #include "internals.h"
 #include "exec/exec-all.h"
 #include "exec/cpu_ldst.h"
+#include "exec/uc_hook_state.h"
 
 #define SIGNBIT (uint32_t)0x80000000
 #define SIGNBIT64 ((uint64_t)1 << 63)
@@ -287,20 +288,19 @@ void HELPER(wfi)(CPUARMState *env, uint32_t insn_len)
     uc_engine *uc = env->uc;
     struct hook * hook;
     bool skip_wfi = false;
-    bool synced = false;
+    UcHookState hook_state;
+    // The translator already pointed the PC past the WFI
+    uint64_t next_pc = env->aarch64 ? env->pc : env->regs[15];
 
     HOOK_FOREACH_VAR_DECLARE;
+    uc_hook_state_init(env, &hook_state);
     HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
         if (hook->to_delete)
             continue;
         if (!HOOK_BOUND_CHECK(hook, env->pc))
             continue;
         if (hook->insn == (env->aarch64 ? UC_ARM64_INS_WFI : UC_ARM_INS_WFI)) {
-            uintptr_t pc = GETPC();
-            if (!synced && !uc->skip_sync_pc_on_exit && pc) {
-                cpu_restore_state(uc->cpu, pc, false);
-                synced = true;
-            }
+            uc_hook_state_sync(env, GETPC(), &hook_state);
             JIT_CALLBACK_GUARD_VAR(skip_wfi, ((uc_cb_insn_wfi_t)hook->callback)(env->uc, hook->user_data));
         }
 
@@ -308,6 +308,17 @@ void HELPER(wfi)(CPUARMState *env, uint32_t insn_len)
         if (env->uc->stop_request)
             break;
     }
+
+    // Unless a hook moved it, continue after the WFI rather than at the PC of
+    // the WFI that the sync restored.
+    if (hook_state.synced && !uc->stop_request && !uc->skip_sync_pc_on_exit) {
+        if (env->aarch64) {
+            env->pc = next_pc;
+        } else {
+            env->regs[15] = next_pc;
+        }
+    }
+    uc_hook_state_restore(env, &hook_state);
 
     if (skip_wfi) {
         return;

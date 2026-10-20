@@ -3,6 +3,7 @@
 #include "qemu-common.h"
 #include "exec/exec-all.h"
 #include "uc_priv.h"
+#include "exec/uc_hook_state.h"
 
 #include <stdio.h>
 
@@ -65,10 +66,10 @@ bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
     struct uc_struct *uc = cs->uc;
     uc_tlb_entry e;
     struct hook *hook;
+    UcHookState hook_state;
     HOOK_FOREACH_VAR_DECLARE;
 
-    cpu_restore_state(cs, retaddr, false);
-
+    uc_hook_state_init(cs->env_ptr, &hook_state);
     HOOK_FOREACH(uc, hook, UC_HOOK_TLB_FILL) {
         if (hook->to_delete) {
             continue;
@@ -77,11 +78,13 @@ bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
             continue;
         }
         handled = true;
+        uc_hook_state_sync(cs->env_ptr, retaddr, &hook_state);
         JIT_CALLBACK_GUARD_VAR(ret, ((uc_cb_tlbevent_t)hook->callback)(uc, address & TARGET_PAGE_MASK, rw_to_mem_type(rw), &e, hook->user_data));
         if (ret) {
             break;
         }
     }
+    uc_hook_state_restore(cs->env_ptr, &hook_state);
 
     if (handled && !ret) {
         goto tlb_miss;

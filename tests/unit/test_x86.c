@@ -2891,6 +2891,105 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_mem_hook_eflags_cb(uc_engine *uc, uc_mem_type type,
+                                        uint64_t address, int size,
+                                        int64_t value, void *user_data)
+{
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, (uint32_t *)user_data));
+}
+
+static void test_x86_mem_hook_eflags(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    // mov eax, 1; cmp eax, 2; mov ecx, [esi]; nop
+    char code[] = "\xb8\x01\x00\x00\x00\x83\xf8\x02\x8b\x0e\x90";
+    uint32_t esi = code_start + 0x1000;
+    uint32_t eflags = 0;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_X86_REG_ESI, &esi));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ, test_x86_mem_hook_eflags_cb,
+                   &eflags, 1, 0));
+
+    // The flags of the cmp must be visible in the hook of the next insn.
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    TEST_CHECK((eflags & 0x8c5) == 0x85); // OF ZF clear, SF PF CF set
+
+    OK(uc_close(uc));
+}
+
+typedef struct {
+    int reads;
+    uint32_t eip;
+} X86_MMIO_PC_RESULT;
+
+static uint64_t test_x86_mmio_pc_read_cb(uc_engine *uc, uint64_t offset,
+                                         unsigned size, void *user_data)
+{
+    X86_MMIO_PC_RESULT *result = (X86_MMIO_PC_RESULT *)user_data;
+
+    result->reads++;
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, &result->eip));
+    return 0;
+}
+
+static void test_x86_mmio_read_pc(void)
+{
+    uc_engine *uc;
+    // nop; mov eax, [edi]; nop
+    char code[] = "\x90\x8b\x07\x90";
+    uint32_t edi = 0x100000;
+    X86_MMIO_PC_RESULT result = {0, 0};
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_mmio_map(uc, edi, 0x1000, test_x86_mmio_pc_read_cb, &result, NULL,
+                   NULL));
+    OK(uc_reg_write(uc, UC_X86_REG_EDI, &edi));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    TEST_CHECK(result.reads == 1);
+    TEST_CHECK(result.eip == code_start + 1);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_mmio_mem_hook_set_pc_cb(uc_engine *uc, uc_mem_type type,
+                                             uint64_t address, int size,
+                                             int64_t value, void *user_data)
+{
+    uint32_t redirect = code_start + 0xe;
+
+    OK(uc_reg_write(uc, UC_X86_REG_EIP, &redirect));
+}
+
+static void test_x86_mmio_mem_hook_set_pc(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    // mov ebx, 0; mov eax, [edi]; mov ebx, 1; jmp end; redirect: mov ebx, 2
+    char code[] = "\xbb\x00\x00\x00\x00\x8b\x07\xbb\x01\x00\x00\x00\xeb\x05"
+                  "\xbb\x02\x00\x00\x00";
+    uint32_t edi = 0x100000;
+    uint32_t ebx = 0;
+    X86_MMIO_PC_RESULT result = {0, 0};
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_mmio_map(uc, edi, 0x1000, test_x86_mmio_pc_read_cb, &result, NULL,
+                   NULL));
+    OK(uc_reg_write(uc, UC_X86_REG_EDI, &edi));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ,
+                   test_x86_mmio_mem_hook_set_pc_cb, NULL, edi, edi + 0xfff));
+
+    // Syncing the state for the mmio callback must not undo the PC write.
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &ebx));
+    TEST_CHECK(ebx == 2);
+    TEST_CHECK(result.reads == 1);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +3077,7 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_mem_hook_eflags", test_x86_mem_hook_eflags},
+    {"test_x86_mmio_read_pc", test_x86_mmio_read_pc},
+    {"test_x86_mmio_mem_hook_set_pc", test_x86_mmio_mem_hook_set_pc},
     {NULL, NULL}};
