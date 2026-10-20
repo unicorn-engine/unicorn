@@ -37,6 +37,32 @@ static void test_tricore_ld_bu_preinc(void)
     OK(uc_close(uc));
 }
 
+static void test_tricore_insert_zero_width(void)
+{
+    uc_engine *uc;
+    // insert d3, d1, d2, #4, #0  (RRPW, width == 0)
+    char code[] = "\x37\x21\x00\x32";
+    uint32_t d1 = 0x12345678;
+    uint32_t d2 = 0xffffffff;
+    uint32_t d3 = 0xdeadbeef;
+
+    uc_common_setup(&uc, UC_ARCH_TRICORE, UC_MODE_LITTLE_ENDIAN, code,
+                    sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_TRICORE_REG_D1, &d1));
+    OK(uc_reg_write(uc, UC_TRICORE_REG_D2, &d2));
+    OK(uc_reg_write(uc, UC_TRICORE_REG_D3, &d3));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 1));
+
+    OK(uc_reg_read(uc, UC_TRICORE_REG_D3, &d3));
+
+    // Inserting zero bits leaves the destination's source (d1) unchanged.
+    TEST_CHECK(d3 == 0x12345678);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_tricore_ld_bu_preinc", test_tricore_ld_bu_preinc},
+    {"test_tricore_insert_zero_width", test_tricore_insert_zero_width},
     {NULL, NULL}};
