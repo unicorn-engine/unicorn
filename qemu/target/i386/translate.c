@@ -9517,9 +9517,3 @@ void restore_state_to_opc(CPUX86State *env, TranslationBlock *tb,
         env->cc_op = cc_op;
     }
 }
-
-void restore_pc_to_opc(CPUX86State *env, TranslationBlock *tb,
-                      target_ulong *data)
-{
-    env->eip = data[0] - tb->cs_base;
-}

@@ -7761,9 +7761,3 @@ void restore_state_to_opc(CPUPPCState *env, TranslationBlock *tb,
 {
     env->nip = data[0];
 }
-
-void restore_pc_to_opc(CPUPPCState *env, TranslationBlock *tb,
-                      target_ulong *data)
-{
-    env->nip = data[0];
-}

@@ -34,6 +34,7 @@
 #include "trace/mem.h"
 
 #include <uc_priv.h>
+#include "exec/uc_hook_state.h"
 
 #include <glib_compat.h>
 
@@ -1029,6 +1030,7 @@ static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
     MemoryRegion *mr;
     uint64_t val;
     MemTxResult r;
+    UcHookState hook_state;
 
     section = iotlb_to_section(cpu, iotlbentry->addr, iotlbentry->attrs);
     mr = section->mr;
@@ -1038,10 +1040,11 @@ static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
         cpu_io_recompile(cpu, retaddr);
     }
 
-    /* Restore the guest CPU state to ensure the PC is synced */
-    cpu_restore_pc_only(uc->cpu, retaddr, false);
-
+    // Unicorn: the mmio callbacks may read the guest state
+    uc_hook_state_init(env, &hook_state);
+    uc_hook_state_sync(env, retaddr, &hook_state);
     r = memory_region_dispatch_read(uc, mr, mr_offset, &val, op, iotlbentry->attrs);
+    uc_hook_state_restore(env, &hook_state);
     if (r != MEMTX_OK) {
 #if 0
         hwaddr physaddr = mr_offset +
@@ -1066,6 +1069,7 @@ static void io_writex(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
     MemoryRegionSection *section;
     MemoryRegion *mr;
     MemTxResult r;
+    UcHookState hook_state;
 
     section = iotlb_to_section(cpu, iotlbentry->addr, iotlbentry->attrs);
     mr = section->mr;
@@ -1075,10 +1079,11 @@ static void io_writex(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
     }
     cpu->mem_io_pc = retaddr;
 
-    /* Restore the guest CPU state to ensure the PC is synced */
-    cpu_restore_pc_only(uc->cpu, retaddr, false);
-
+    // Unicorn: the mmio callbacks may read the guest state
+    uc_hook_state_init(env, &hook_state);
+    uc_hook_state_sync(env, retaddr, &hook_state);
     r = memory_region_dispatch_write(uc, mr, mr_offset, val, op, iotlbentry->attrs);
+    uc_hook_state_restore(env, &hook_state);
     if (r != MEMTX_OK) {
 #if 0
         hwaddr physaddr = mr_offset +
@@ -1494,53 +1499,6 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
 typedef uint64_t FullLoadHelper(CPUArchState *env, target_ulong addr,
                                 TCGMemOpIdx oi, uintptr_t retaddr);
 
-typedef struct CPUTLBHookState {
-    bool synced;
-#ifdef TARGET_ARM
-    uint32_t condexec_bits;
-    uint32_t restored_condexec_bits;
-#endif
-} CPUTLBHookState;
-
-static inline void tlb_hook_state_init(CPUArchState *env,
-                                       CPUTLBHookState *state)
-{
-    state->synced = false;
-#ifdef TARGET_ARM
-    state->condexec_bits = env->condexec_bits;
-    state->restored_condexec_bits = env->condexec_bits;
-#endif
-}
-
-static inline void tlb_hook_state_sync(CPUArchState *env, uintptr_t retaddr,
-                                       CPUTLBHookState *state)
-{
-    struct uc_struct *uc = env->uc;
-
-    if (!state->synced && !uc->skip_sync_pc_on_exit && retaddr) {
-        cpu_restore_pc_only(uc->cpu, retaddr, false);
-        state->synced = true;
-#ifdef TARGET_ARM
-        state->restored_condexec_bits = env->condexec_bits;
-#endif
-    }
-#ifdef TARGET_ARM
-    else if (state->synced) {
-        env->condexec_bits = state->restored_condexec_bits;
-    }
-#endif
-}
-
-static inline void tlb_hook_state_restore(CPUArchState *env,
-                                          CPUTLBHookState *state)
-{
-#ifdef TARGET_ARM
-    if (state->synced && !env->uc->stop_request) {
-        env->condexec_bits = state->condexec_bits;
-    }
-#endif
-}
-
 static inline uint64_t
 load_memop(const void *haddr, MemOp op)
 {
@@ -1589,9 +1547,9 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
     HOOK_FOREACH_VAR_DECLARE;
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr;
-    CPUTLBHookState hook_state;
+    UcHookState hook_state;
 
-    tlb_hook_state_init(env, &hook_state);
+    uc_hook_state_init(env, &hook_state);
 
     /* Handle CPU specific unaligned behaviour */
     if (addr & ((1 << a_bits) - 1)) {
@@ -1628,7 +1586,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                         continue;
                     if (!HOOK_BOUND_CHECK(hook, paddr))
                         continue;
-                    tlb_hook_state_sync(env, retaddr, &hook_state);
+                    uc_hook_state_sync(env, retaddr, &hook_state);
                     JIT_CALLBACK_GUARD_VAR(handled,
                                            ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, paddr, size, 0, hook->user_data));
                     if (handled)
@@ -1646,7 +1604,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                         continue;
                     if (!HOOK_BOUND_CHECK(hook, paddr))
                         continue;
-                    tlb_hook_state_sync(env, retaddr, &hook_state);
+                    uc_hook_state_sync(env, retaddr, &hook_state);
                     JIT_CALLBACK_GUARD_VAR(handled, 
                                            ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, paddr, size, 0, hook->user_data));
                     if (handled)
@@ -1689,7 +1647,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 }
                 return 0;
             }
-            tlb_hook_state_restore(env, &hook_state);
+            uc_hook_state_restore(env, &hook_state);
         } else {
             uc->invalid_addr = paddr;
             uc->invalid_error = error_code;
@@ -1712,13 +1670,13 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 continue;
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
-            tlb_hook_state_sync(env, retaddr, &hook_state);
+            uc_hook_state_sync(env, retaddr, &hook_state);
             JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, paddr, size, 0, hook->user_data));
             // the last callback may already asked to stop emulation
             if (uc->stop_request)
                 break;
         }
-        tlb_hook_state_restore(env, &hook_state);
+        uc_hook_state_restore(env, &hook_state);
 
         /* Unicorn: Previous callbacks may invalidate TLB, reload everything.
                     This may have impact on performance but generally fine.
@@ -1742,7 +1700,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, paddr))
                     continue;
-                tlb_hook_state_sync(env, retaddr, &hook_state);
+                uc_hook_state_sync(env, retaddr, &hook_state);
                 JIT_CALLBACK_GUARD_VAR(handled, 
                                        ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, paddr, size, 0, hook->user_data));
                 if (handled)
@@ -1767,7 +1725,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     tlb_addr = code_read ? entry->addr_code : entry->addr_read;
                     tlb_addr &= ~TLB_INVALID_MASK;
                 }
-                tlb_hook_state_restore(env, &hook_state);
+                uc_hook_state_restore(env, &hook_state);
             } else {
                 uc->invalid_addr = paddr;
                 uc->invalid_error = UC_ERR_READ_PROT;
@@ -1790,7 +1748,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, paddr))
                     continue;
-                tlb_hook_state_sync(env, retaddr, &hook_state);
+                uc_hook_state_sync(env, retaddr, &hook_state);
                 JIT_CALLBACK_GUARD_VAR(handled,
                                        ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, paddr, size, 0, hook->user_data));
                 if (handled)
@@ -1803,7 +1761,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
 
             if (handled) {
                 uc->invalid_error = UC_ERR_OK;
-                tlb_hook_state_restore(env, &hook_state);
+                uc_hook_state_restore(env, &hook_state);
             } else {
                 uc->invalid_addr = paddr;
                 uc->invalid_error = UC_ERR_FETCH_PROT;
@@ -1902,14 +1860,14 @@ _out:
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, paddr))
                     continue;
-                tlb_hook_state_sync(env, retaddr, &hook_state);
+                uc_hook_state_sync(env, retaddr, &hook_state);
                 JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ_AFTER, paddr, size, res, hook->user_data));
                 // the last callback may already asked to stop emulation
                 if (uc->stop_request)
                     break;
             }
         }
-        tlb_hook_state_restore(env, &hook_state);
+        uc_hook_state_restore(env, &hook_state);
     }
 
     return res;
@@ -2217,9 +2175,9 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
     struct hook *hook;
     bool handled;
     MemoryRegion *mr;
-    CPUTLBHookState hook_state;
+    UcHookState hook_state;
 
-    tlb_hook_state_init(env, &hook_state);
+    uc_hook_state_init(env, &hook_state);
 
     /* Handle CPU specific unaligned behaviour */
     if (addr & ((1 << a_bits) - 1)) {
@@ -2250,13 +2208,13 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 continue;
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
-            tlb_hook_state_sync(env, retaddr, &hook_state);
+            uc_hook_state_sync(env, retaddr, &hook_state);
             JIT_CALLBACK_GUARD(((uc_cb_hookmem_t)hook->callback)(uc, UC_MEM_WRITE, paddr, size, val, hook->user_data));
             // the last callback may already asked to stop emulation
             if (uc->stop_request)
                 break;
         }
-        tlb_hook_state_restore(env, &hook_state);
+        uc_hook_state_restore(env, &hook_state);
     }
 
     // Unicorn: callback on invalid memory
@@ -2267,7 +2225,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 continue;
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
-            tlb_hook_state_sync(env, retaddr, &hook_state);
+            uc_hook_state_sync(env, retaddr, &hook_state);
             JIT_CALLBACK_GUARD_VAR(handled,
                                    ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_UNMAPPED, paddr, size, val, hook->user_data));
             if (handled)
@@ -2305,7 +2263,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 cpu_exit(uc->cpu);
                 return;
             }
-            tlb_hook_state_restore(env, &hook_state);
+            uc_hook_state_restore(env, &hook_state);
         }
     }
 
@@ -2318,7 +2276,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 continue;
             if (!HOOK_BOUND_CHECK(hook, paddr))
                 continue;
-            tlb_hook_state_sync(env, retaddr, &hook_state);
+            uc_hook_state_sync(env, retaddr, &hook_state);
             JIT_CALLBACK_GUARD_VAR(handled,
                                    ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, paddr, size, val, hook->user_data));
             if (handled)
@@ -2342,7 +2300,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 tlb_addr = tlb_addr_write(entry) & ~TLB_INVALID_MASK;
             }
             uc->invalid_error = UC_ERR_OK;
-            tlb_hook_state_restore(env, &hook_state);
+            uc_hook_state_restore(env, &hook_state);
         } else {
             uc->invalid_addr = paddr;
             uc->invalid_error = UC_ERR_WRITE_PROT;

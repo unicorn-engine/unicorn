@@ -1223,7 +1223,7 @@ static void test_arm_hook_condexec_corruption(void)
 {
     /*
      * Test to ensure that ARM condexec bits are not
-     * corrupted on a hook, and that only PC is synced.
+     * corrupted on a hook.
      */
     uc_engine *uc;
     uc_hook hook;
@@ -1262,6 +1262,112 @@ static void test_arm_hook_condexec_corruption(void)
 
     OK(uc_close(uc));
 };
+static bool test_arm_tlb_fill_it_state_cb(uc_engine *uc, uint64_t addr,
+                                          uc_mem_type type,
+                                          uc_tlb_entry *result,
+                                          void *user_data)
+{
+    result->paddr = addr;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+static void test_arm_tlb_fill_it_state(void)
+{
+    // The #2309 code: the ldrne inside the IT block misses the TLB.
+    char code[] = "\x00\x28\x1c\xbf\x06\x48\x86\x42\x00\xd1\x00\xbf\x05\x48"
+                  "\x86\x42\x04\xd0\x03\x2c\x00\xd3\x01\x25\x02\x23\x00\xbf"
+                  "\x09\x25\x00\xbf\x05\x00\x00\x00\x07\x00\x00\x00";
+    /*
+     * 00001000  0028       cmp     r0, #0
+     * 00001002  1cbf       itt     ne
+     * 00001004  0648       ldrne   r0, [pc, #0x18]
+     * 00001006  8642       cmpne   r6, r0
+     * 00001008  00d1       bne     #0x100c
+     * 0000100a  00bf       nop
+     * 0000100c  0548       ldr     r0, [pc, #0x14]
+     * 0000100e  8642       cmp     r6, r0
+     * 00001010  04d0       beq     #0x101c
+     * 00001012  032c       cmp     r4, #3
+     * 00001014  00d3       blo     #0x1018
+     * 00001016  0125       movs    r5, #1
+     * 00001018  0223       movs    r3, #2
+     */
+    uint32_t r0 = 1, r4 = 1, r6 = 0, r3 = 0, r5 = 0;
+
+    for (int with_hook = 0; with_hook < 2; with_hook++) {
+        uc_engine *uc;
+        uc_hook hook;
+
+        uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS,
+                        code, sizeof(code) - 1, UC_CPU_ARM_CORTEX_M4);
+        OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+        if (with_hook) {
+            OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL,
+                           test_arm_tlb_fill_it_state_cb, NULL, 1, 0));
+        }
+        OK(uc_reg_write(uc, UC_ARM_REG_R0, &r0));
+        OK(uc_reg_write(uc, UC_ARM_REG_R4, &r4));
+        OK(uc_reg_write(uc, UC_ARM_REG_R6, &r6));
+
+        // A stale IT state makes the blo in the next TB illegal.
+        OK(uc_emu_start(uc, code_start | 1, code_start + 0x1a, 0, 0));
+        OK(uc_reg_read(uc, UC_ARM_REG_R3, &r3));
+        OK(uc_reg_read(uc, UC_ARM_REG_R5, &r5));
+        TEST_CHECK(r3 == 2);
+        TEST_CHECK(r5 == 0);
+
+        OK(uc_close(uc));
+    }
+}
+
+static int test_arm_wfi_hook_it_state_cb(uc_engine *uc, void *user_data)
+{
+    uint32_t pc;
+
+    // The stop at the end address imitates a WFI as well, let it halt.
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &pc));
+    if (pc != code_start + 4) {
+        return 0;
+    }
+    (*(int *)user_data)++;
+    return 1; // skip the WFI
+}
+
+static void test_arm_wfi_hook_it_state(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\x80\x42\x0c\xbf\x30\xbf\x05\x21\x07\x22\x00\xbf";
+    /*
+     * 00001000  8042       cmp     r0, r0
+     * 00001002  0cbf       ite     eq
+     * 00001004  30bf       wfieq
+     * 00001006  0521       movne   r1, #5
+     * 00001008  0722       movs    r2, #7
+     * 0000100a  00bf       nop
+     */
+    int calls = 0;
+    uint32_t r1 = 0, r2 = 0, pc = 0;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, code,
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_M4);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_arm_wfi_hook_it_state_cb,
+                   &calls, 1, 0, UC_ARM_INS_WFI));
+
+    // Execution must continue after the skipped WFI, in the IT block.
+    OK(uc_emu_start(uc, code_start | 1, code_start + 0xa, 1000 * 1000, 0));
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r1));
+    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r2));
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &pc));
+    TEST_CHECK(calls == 1);
+    TEST_CHECK(r1 == 0);
+    TEST_CHECK(r2 == 7);
+    TEST_CHECK(pc == code_start + 0xa);
+
+    OK(uc_close(uc));
+}
+
 static void test_arm_context(void)
 {
     for (int model = 0; model < UC_CPU_ARM_ENDING; model++) {
@@ -1379,6 +1485,8 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_hook_insn_wfi", test_arm_hook_insn_wfi},
              {"test_arm_mmio_map_pc_sync", test_arm_mmio_map_pc_sync},
              {"test_arm_hook_condexec_corruption", test_arm_hook_condexec_corruption},
+             {"test_arm_tlb_fill_it_state", test_arm_tlb_fill_it_state},
+             {"test_arm_wfi_hook_it_state", test_arm_wfi_hook_it_state},
              {"test_arm_context", test_arm_context},
              {"test_arm_context_hw_breakpoint", test_arm_context_hw_breakpoint},
              {"test_arm_context_cp_reg", test_arm_context_cp_reg},

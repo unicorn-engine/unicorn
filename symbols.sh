@@ -1257,7 +1257,6 @@ helper_gvec_umax32 \
 helper_gvec_umax64 \
 helper_gvec_bitsel \
 cpu_restore_state \
-cpu_restore_pc_only \
 page_collection_lock \
 page_collection_unlock \
 free_code_gen_buffer \
@@ -1895,7 +1894,6 @@ do_vmexit \
 tcg_x86_init \
 gen_intermediate_code \
 restore_state_to_opc \
-restore_pc_to_opc \
 x86_cpu_xsave_all_areas \
 x86_cpu_xrstor_all_areas \
 cpu_get_fp80 \
@@ -2398,7 +2396,6 @@ gen_sshl_i32 \
 gen_sshl_i64 \
 gen_intermediate_code \
 restore_state_to_opc \
-restore_pc_to_opc \
 helper_neon_qrdmlah_s16 \
 helper_gvec_qrdmlah_s16 \
 helper_neon_qrdmlsh_s16 \
@@ -4088,7 +4085,6 @@ gen_sshl_i32 \
 gen_sshl_i64 \
 gen_intermediate_code \
 restore_state_to_opc \
-restore_pc_to_opc \
 disas_sve \
 helper_neon_qrdmlah_s16 \
 helper_gvec_qrdmlah_s16 \
@@ -4395,7 +4391,6 @@ pmpaddr_csr_read \
 gen_intermediate_code \
 riscv_translate_init \
 restore_state_to_opc \
-restore_pc_to_opc \
 cpu_riscv_init \
 helper_fcvt_l_s \
 helper_fcvt_lu_s \
@@ -5520,7 +5515,6 @@ mips_tcg_init \
 cpu_mips_realize_env \
 cpu_state_reset \
 restore_state_to_opc \
-restore_pc_to_opc \
 ieee_rm \
 mips_defs \
 mips_defs_number \
@@ -5643,7 +5637,6 @@ sparc_cpu_get_phys_page_debug \
 gen_intermediate_code \
 sparc_tcg_init \
 restore_state_to_opc \
-restore_pc_to_opc \
 cpu_set_cwp \
 cpu_get_psr \
 cpu_put_psr_raw \
@@ -5834,7 +5827,6 @@ m68k_tcg_init \
 register_m68k_insns \
 gen_intermediate_code \
 restore_state_to_opc \
-restore_pc_to_opc \
 "
 
 ppc_SYMBOLS="
@@ -6224,7 +6216,6 @@ ppc_translate_init \
 cpu_ppc_init \
 gen_intermediate_code \
 restore_state_to_opc \
-restore_pc_to_opc \
 ppc_set_irq \
 ppc6xx_irq_init \
 ppc40x_core_reset \
@@ -6558,7 +6549,6 @@ helper_fmsub \
 helper_pack \
 gen_intermediate_code \
 restore_state_to_opc \
-restore_pc_to_opc \
 helper_uc_tricore_exit \
 "
 
