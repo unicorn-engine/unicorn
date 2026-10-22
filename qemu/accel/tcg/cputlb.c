@@ -1295,6 +1295,12 @@ void *probe_access(CPUArchState *env, target_ulong addr, int size,
         /* Handle clean RAM pages.  */
         if (tlb_addr & TLB_NOTDIRTY) {
             notdirty_write(env_cpu(env), addr, size, iotlbentry, retaddr, entry);
+            // Unicorn: notdirty_write() keeps the page clean while it has
+            // memory hooks or is protected by a snapshot, force the slow path
+            // so that hooks fire and CoW happens.
+            if (tlb_read_ofs(entry, elt_ofs) & TLB_NOTDIRTY) {
+                return NULL;
+            }
         }
     }
 
