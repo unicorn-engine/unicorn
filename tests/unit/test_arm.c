@@ -305,6 +305,30 @@ static void test_arm_m_exc_return(void)
     OK(uc_close(uc));
 }
 
+static void test_arm_m_cpu_model(void)
+{
+    uc_engine *uc;
+    // vcvt.f64.f32 d0, s0; vabs.f64 d0, d0; vcvt.f32.f64 s0, d0
+    char code[] = "\xb7\xee\xc0\x0a\xb0\xee\xc0\x0b\xb7\xee\xc0\x0b";
+    int r_model;
+    uint32_t r_s0 = 0xbf800000; // -1.0f
+
+    // UC_MODE_MCLASS must keep a Cortex-M model set by the user. Only the
+    // Cortex-M7 has double precision, so the M33 fallback fails this code.
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, code,
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_M7);
+    OK(uc_reg_write(uc, UC_ARM_REG_S0, &r_s0));
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_ctl_get_cpu_model(uc, &r_model));
+    OK(uc_reg_read(uc, UC_ARM_REG_S0, &r_s0));
+
+    TEST_CHECK(r_model == UC_CPU_ARM_CORTEX_M7);
+    TEST_CHECK(r_s0 == 0x3f800000); // 1.0f
+
+    OK(uc_close(uc));
+}
+
 // For details, see https://github.com/unicorn-engine/unicorn/issues/1494.
 static void test_arm_und32_to_svc32(void)
 {
@@ -1255,6 +1279,7 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_m_thumb_mrs", test_arm_m_thumb_mrs},
              {"test_arm_m_control", test_arm_m_control},
              {"test_arm_m_exc_return", test_arm_m_exc_return},
+             {"test_arm_m_cpu_model", test_arm_m_cpu_model},
              {"test_arm_und32_to_svc32", test_arm_und32_to_svc32},
              {"test_arm_usr32_to_svc32", test_arm_usr32_to_svc32},
              {"test_arm_v8", test_arm_v8},
