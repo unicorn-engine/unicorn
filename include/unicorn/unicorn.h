@@ -531,7 +531,7 @@ typedef enum uc_query_type {
 #define UC_CTL_IO_READ_WRITE (UC_CTL_IO_WRITE | UC_CTL_IO_READ)
 
 #define UC_CTL(type, nr, rw)                                                   \
-    (uc_control_type)((type) | ((nr) << 26) | ((rw) << 30))
+    (uc_control_type)((type) | ((nr) << 26) | ((uint32_t)(rw) << 30))
 #define UC_CTL_NONE(type, nr) UC_CTL(type, nr, UC_CTL_IO_NONE)
 #define UC_CTL_READ(type, nr) UC_CTL(type, nr, UC_CTL_IO_READ)
 #define UC_CTL_WRITE(type, nr) UC_CTL(type, nr, UC_CTL_IO_WRITE)
