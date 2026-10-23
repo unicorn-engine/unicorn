@@ -299,6 +299,8 @@ M68kCPU *cpu_m68k_init(struct uc_struct *uc)
     // init address space
     cpu_address_space_init(cs, 0, cs->memory);
 
+    cpu_reset(cs);
+
     qemu_init_vcpu(cs);
 
     return cpu;
