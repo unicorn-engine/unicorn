@@ -6295,6 +6295,16 @@ static void m68k_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+
+    // Unicorn: a code hook on this instruction may read SR, write SR,
+    // write PC or stop, so store the lazy condition codes to env before
+    // it and take them from env afterward, as at the start of a block.
+    // Recording CC_OP_DYNAMIC below also keeps restore_state_to_opc()
+    // from undoing a write of SR by the hook if the instruction faults.
+    if (HOOK_EXISTS_BOUNDED(dc->uc, UC_HOOK_CODE, dc->base.pc_next)) {
+        update_cc_op(dc);
+        dc->cc_op = CC_OP_DYNAMIC;
+    }
     tcg_gen_insn_start(tcg_ctx, dc->base.pc_next, dc->cc_op);
 }
 
