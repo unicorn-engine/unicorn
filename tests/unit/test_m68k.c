@@ -122,8 +122,150 @@ static void test_branch_on_initial_flags(void)
     OK(uc_close(uc));
 }
 
+// move #0,ccr; moveq #2,d0; cmpi.l #2,d0 (Z set); seq d3
+static const uint8_t compare_then_seq[] = {
+    0x44, 0xfc, 0x00, 0x00,             // move   #0, %ccr
+    0x70, 0x02,                         // moveq  #2, %d0
+    0x0c, 0x80, 0x00, 0x00, 0x00, 0x02, // cmpi.l #2, %d0
+    0x57, 0xc3,                         // seq    %d3
+};
+static const uint64_t compare_then_seq_hooked = 12; // offset of seq
+
+static void hook_write_pc_once(uc_engine *uc, uint64_t address, uint32_t size,
+                               void *user_data)
+{
+    int *done = user_data;
+    uint32_t pc = (uint32_t)address;
+
+    if (!*done) {
+        *done = 1;
+        OK(uc_reg_write(uc, UC_M68K_REG_PC, &pc));
+    }
+}
+
+static void test_code_hook_pc_write_preserves_flags(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t at = code_start + compare_then_seq_hooked;
+    uint32_t sr = 0x2700;
+    uint32_t d3 = 0;
+    int done = 0;
+
+    uc_common_setup(&uc, UC_ARCH_M68K, UC_MODE_BIG_ENDIAN,
+                    (const char *)compare_then_seq, sizeof(compare_then_seq),
+                    UC_CPU_M68K_M68020);
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, &sr));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_CODE, hook_write_pc_once, &done, at, at));
+
+    // The hook writes PC in the middle of the block; the cmpi.l's Z must
+    // survive into the block that resumes at seq.
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(compare_then_seq), 0,
+                    0));
+
+    OK(uc_reg_read(uc, UC_M68K_REG_D3, &d3));
+    TEST_CHECK((d3 & 0xff) == 0xff);
+
+    OK(uc_close(uc));
+}
+
+static void hook_read_sr(uc_engine *uc, uint64_t address, uint32_t size,
+                         void *user_data)
+{
+    OK(uc_reg_read(uc, UC_M68K_REG_SR, user_data));
+}
+
+static void test_code_hook_sr_read_sees_flags(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t at = code_start + compare_then_seq_hooked;
+    uint32_t sr = 0x2700;
+
+    uc_common_setup(&uc, UC_ARCH_M68K, UC_MODE_BIG_ENDIAN,
+                    (const char *)compare_then_seq, sizeof(compare_then_seq),
+                    UC_CPU_M68K_M68020);
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, &sr));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_CODE, hook_read_sr, &sr, at, at));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(compare_then_seq), 0,
+                    0));
+
+    TEST_CHECK(sr == 0x2704);
+
+    OK(uc_close(uc));
+}
+
+static void hook_write_sr(uc_engine *uc, uint64_t address, uint32_t size,
+                          void *user_data)
+{
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, user_data));
+}
+
+static void test_code_hook_sr_write_sets_flags(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint64_t at = code_start + compare_then_seq_hooked;
+    uint32_t sr = 0x2700;
+    uint32_t d3 = 0;
+
+    uc_common_setup(&uc, UC_ARCH_M68K, UC_MODE_BIG_ENDIAN,
+                    (const char *)compare_then_seq, sizeof(compare_then_seq),
+                    UC_CPU_M68K_M68020);
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, &sr));
+    // The hook clears Z; seq, later in the same block, must see that.
+    OK(uc_hook_add(uc, &hook, UC_HOOK_CODE, hook_write_sr, &sr, at, at));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(compare_then_seq), 0,
+                    0));
+
+    OK(uc_reg_read(uc, UC_M68K_REG_D3, &d3));
+    TEST_CHECK((d3 & 0xff) == 0);
+
+    OK(uc_close(uc));
+}
+
+static void test_code_hook_sr_write_survives_fault(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    uint8_t code[] = {
+        0x44, 0xfc, 0x00, 0x00,             // move   #0, %ccr
+        0x70, 0x02,                         // moveq  #2, %d0
+        0x0c, 0x80, 0x00, 0x00, 0x00, 0x02, // cmpi.l #2, %d0
+        0x22, 0x39, 0x00, 0x10, 0x00, 0x00, // move.l (0x100000).l, %d1
+    };
+    uint64_t at = code_start + 12; // the move.l, which faults
+    uint32_t sr = 0x2700;
+    uint32_t hooked = 0x2701;
+
+    uc_common_setup(&uc, UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, (const char *)code,
+                    sizeof(code), UC_CPU_M68K_M68020);
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, &sr));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_CODE, hook_write_sr, &hooked, at, at));
+
+    // The move.l does not complete, so the hook's write of SR must stand.
+    uc_assert_err(
+        UC_ERR_READ_UNMAPPED,
+        uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_reg_read(uc, UC_M68K_REG_SR, &sr));
+    TEST_CHECK(sr == 0x2701);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_move_to_sr", test_move_to_sr},
              {"test_sr_contains_flags", test_sr_contains_flags},
              {"test_sr_read_preserves_flags", test_sr_read_preserves_flags},
              {"test_branch_on_initial_flags", test_branch_on_initial_flags},
+             {"test_code_hook_pc_write_preserves_flags",
+              test_code_hook_pc_write_preserves_flags},
+             {"test_code_hook_sr_read_sees_flags",
+              test_code_hook_sr_read_sees_flags},
+             {"test_code_hook_sr_write_sets_flags",
+              test_code_hook_sr_write_sets_flags},
+             {"test_code_hook_sr_write_survives_fault",
+              test_code_hook_sr_write_survives_fault},
              {NULL, NULL}};
