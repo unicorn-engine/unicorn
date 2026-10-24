@@ -6107,8 +6107,11 @@ static void decode_rcpw_insert(DisasContext *ctx)
         }
         break;
     case OPC2_32_RCPW_INSERT:
+        /* inserting zero bits leaves the destination's source unchanged */
+        if (width == 0) {
+            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr_d[r2], tcg_ctx->cpu_gpr_d[r1]);
         /* if pos + width > 32 undefined result */
-        if (pos + width <= 32) {
+        } else if (pos + width <= 32) {
             temp = tcg_const_i32(tcg_ctx, const4);
             tcg_gen_deposit_tl(tcg_ctx, tcg_ctx->cpu_gpr_d[r2], tcg_ctx->cpu_gpr_d[r1], temp, pos, width);
             tcg_temp_free(tcg_ctx, temp);
@@ -7389,7 +7392,10 @@ static void decode_rrpw_extract_insert(DisasContext *ctx)
 
         break;
     case OPC2_32_RRPW_INSERT:
-        if (pos + width <= 32) {
+        /* inserting zero bits leaves the destination's source unchanged */
+        if (width == 0) {
+            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr_d[r3], tcg_ctx->cpu_gpr_d[r1]);
+        } else if (pos + width <= 32) {
             tcg_gen_deposit_tl(tcg_ctx, tcg_ctx->cpu_gpr_d[r3], tcg_ctx->cpu_gpr_d[r1], tcg_ctx->cpu_gpr_d[r2],
                                pos, width);
         }
