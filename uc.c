@@ -2787,6 +2787,20 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                 break;
             }
 
+            // The page size must stay within the range the engine can
+            // represent. The lower bound is the architectural minimum that
+            // set_preferred_target_page_bits() enforces (TARGET_PAGE_BITS_MIN
+            // == 10 on both ARM and ARM64); below it the TLB flag bits start
+            // to overlap the page bits. The upper bound (the 64KiB ARM/ARM64
+            // translation granule) keeps the page-mask computation in
+            // exec-vary.c (TARGET_PAGE_SIZE == -(int)TARGET_PAGE_MASK) from
+            // overflowing a signed int. This also rejects the degenerate value
+            // 1, which the power-of-two test above lets through.
+            if (page_size < (1u << 10) || page_size > (1u << 16)) {
+                err = UC_ERR_ARG;
+                break;
+            }
+
             // Bits is used to calculate the mask
             while (page_size > 1) {
                 bits++;

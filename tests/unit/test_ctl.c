@@ -323,6 +323,26 @@ static void test_uc_ctl_invalid_page_size(void)
     uc_assert_err(UC_ERR_ARG, uc_ctl_set_page_size(uc2, 1536));
     OK(uc_close(uc2));
 }
+
+static void test_uc_ctl_page_size_range(void)
+{
+    uc_engine *uc;
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+
+    // Below the architectural minimum (1 << 10), degenerate, and large
+    // enough to overflow the page mask computation.
+    uc_assert_err(UC_ERR_ARG, uc_ctl_set_page_size(uc, 1));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_set_page_size(uc, 512));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_set_page_size(uc, 1 << 17));
+    uc_assert_err(UC_ERR_ARG, uc_ctl_set_page_size(uc, 1u << 31));
+
+    // The supported range stays accepted.
+    OK(uc_ctl_set_page_size(uc, 1 << 10));
+    OK(uc_ctl_set_page_size(uc, 1 << 16));
+
+    OK(uc_close(uc));
+}
 #endif
 
 // Test requires UC_ARCH_ARM64.
@@ -640,6 +660,7 @@ TEST_LIST = {
 #ifdef UNICORN_HAS_ARM
     {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
     {"test_uc_ctl_invalid_page_size", test_uc_ctl_invalid_page_size},
+    {"test_uc_ctl_page_size_range", test_uc_ctl_page_size_range},
     {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
 #endif
 #ifdef UNICORN_HAS_ARM64
