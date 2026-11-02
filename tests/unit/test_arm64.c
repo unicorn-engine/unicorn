@@ -1025,6 +1025,70 @@ static void test_arm64_context_cp_reg(void)
     OK(uc_close(uc));
 }
 
+typedef struct _ARM64_LSE_MINMAX_CASE {
+    const char *insn;
+    int size;
+    uint64_t src;
+    uint64_t old_mem;
+    uint64_t new_mem;
+    uint64_t old_val;
+} ARM64_LSE_MINMAX_CASE;
+
+static void test_arm64_lse_signed_minmax(void)
+{
+    const uint64_t data_addr = 0x10000;
+    const ARM64_LSE_MINMAX_CASE cases[] = {
+        // ldsmaxab w0, w2, [x1]
+        {"\x22\x40\xa0\x38", 1, 0xb4, 0x00, 0x00, 0x00},
+        // ldsminab w0, w2, [x1]
+        {"\x22\x50\xa0\x38", 1, 0x00, 0xf8, 0xf8, 0xf8},
+        // ldsmaxah w0, w2, [x1]
+        {"\x22\x40\xa0\x78", 2, 0x0f03, 0xf088, 0x0f03, 0xf088},
+        // ldsmaxal w0, w2, [x1]
+        {"\x22\x40\xe0\xb8", 4, 0xd2a9a464, 0x0000007b, 0x0000007b, 0x0000007b},
+        // ldsminal w0, w2, [x1]
+        {"\x22\x50\xe0\xb8", 4, 0x0000007b, 0xd2a9a464, 0xd2a9a464,
+         0x00000000d2a9a464},
+    };
+
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        const ARM64_LSE_MINMAX_CASE *c = &cases[i];
+        uint64_t r_x0 = c->src;
+        uint64_t r_x1 = data_addr;
+        uint64_t r_x2 = 0;
+        uint64_t mem = 0;
+        uint8_t buf[8];
+        int j;
+        uc_engine *uc;
+
+        uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, c->insn, 4,
+                        UC_CPU_ARM64_MAX);
+        OK(uc_mem_map(uc, data_addr, 0x1000, UC_PROT_ALL));
+        // Guest memory is little endian, so build it byte by byte.
+        for (j = 0; j < c->size; j++) {
+            buf[j] = (uint8_t)(c->old_mem >> (8 * j));
+        }
+        OK(uc_mem_write(uc, data_addr, buf, c->size));
+        OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
+        OK(uc_reg_write(uc, UC_ARM64_REG_X1, &r_x1));
+
+        OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
+
+        OK(uc_mem_read(uc, data_addr, buf, c->size));
+        for (j = 0; j < c->size; j++) {
+            mem |= (uint64_t)buf[j] << (8 * j);
+        }
+        OK(uc_reg_read(uc, UC_ARM64_REG_X2, &r_x2));
+
+        TEST_CHECK(mem == c->new_mem);
+        TEST_MSG("case %d: memory", (int)i);
+        TEST_CHECK(r_x2 == c->old_val);
+        TEST_MSG("case %d: x2", (int)i);
+
+        OK(uc_close(uc));
+    }
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -1050,4 +1114,5 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_context_hw_breakpoint",
               test_arm64_context_hw_breakpoint},
              {"test_arm64_context_cp_reg", test_arm64_context_cp_reg},
+             {"test_arm64_lse_signed_minmax", test_arm64_lse_signed_minmax},
              {NULL, NULL}};
