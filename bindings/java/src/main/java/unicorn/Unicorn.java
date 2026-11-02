@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
+import java.io.File;
 import java.math.BigInteger;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -120,7 +121,10 @@ public class Unicorn
 
     static {
         // load libunicorn_java.{so,dylib} or unicorn_java.dll
-        System.loadLibrary("unicorn_java");
+        // System.loadLibrary("unicorn_java");
+        File file = new File("./libunicorn_java.so");
+        // System.out.println(file.getAbsolutePath());
+        System.load(file.getAbsolutePath());
     }
 
     /**
