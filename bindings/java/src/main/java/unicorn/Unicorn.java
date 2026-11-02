@@ -25,6 +25,8 @@ import java.math.BigInteger;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -120,7 +122,35 @@ public class Unicorn
 
     static {
         // load libunicorn_java.{so,dylib} or unicorn_java.dll
-        System.loadLibrary("unicorn_java");
+                String pwd = System.getProperty("user.dir");
+        String libFileName;
+        String osName = System.getProperty("os.name").toLowerCase();
+
+        if (osName.contains("win")) {
+            libFileName = "unicorn_java.dll";
+        }
+        else if (osName.contains("mac")) {
+            libFileName = "libunicorn_java.dylib";
+        }
+        else {
+            // linux / bsd
+            libFileName = "libunicorn_java.so";
+        }
+
+        Path libPath = null;
+        if (pwd.endsWith("java")) {
+            libPath = Paths.get(pwd, libFileName);
+        }
+        else if (pwd.endsWith("unicorn")) {
+            libPath = Paths.get(pwd, "bindings", "java", libFileName);
+        }
+
+        if (libPath != null && libPath.toFile().exists()) {
+            System.load(libPath.toAbsolutePath().toString());
+        }
+        else {
+            System.loadLibrary("unicorn_java");
+        }
     }
 
     /**
