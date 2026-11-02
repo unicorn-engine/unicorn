@@ -760,7 +760,7 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn__1mem_1read(JNIEnv *env,
 {
     jlong size = (*env)->GetArrayLength(env, dest);
     jbyte *arr = (*env)->GetByteArrayElements(env, dest, NULL);
-    uc_err err = uc_mem_read((uc_engine *)uc, address, arr, *size);
+    uc_err err = uc_mem_read((uc_engine *)uc, address, arr, (uint64_t)size);
     (*env)->ReleaseByteArrayElements(env, dest, arr, 0);
     if (err != UC_ERR_OK) {
         throwUnicornException(env, err);
