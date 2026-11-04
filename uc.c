@@ -3180,6 +3180,7 @@ static uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
         uc->memory_filter_subregions(subregion, uc->snapshot_level);
         if (subregion->priority >= uc->snapshot_level ||
             (!subregion->terminates && QTAILQ_EMPTY(&subregion->subregions))) {
+            subregion->enabled = false;
             uc->memory_unmap(uc, subregion);
         }
     }

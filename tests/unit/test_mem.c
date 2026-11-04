@@ -821,6 +821,33 @@ static void test_mem_protect_add_exec_mem_write(void)
     OK(uc_close(uc));
 }
 
+static void test_snapshot_restore_after_map_and_cow(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    uint64_t value = 1;
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+    OK(uc_mem_map(uc, 0x3000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x1000, &value, sizeof(value)));
+    OK(uc_context_restore(uc, ctx));
+    uc_assert_err(UC_ERR_READ_UNMAPPED,
+                  uc_mem_read(uc, 0x3000, &value, sizeof(value)));
+    value = 2;
+    OK(uc_mem_write(uc, 0x1000, &value, sizeof(value)));
+    value = 0;
+    OK(uc_mem_read(uc, 0x1000, &value, sizeof(value)));
+    TEST_CHECK(value == 2);
+    OK(uc_context_restore(uc, ctx));
+    OK(uc_mem_read(uc, 0x1000, &value, sizeof(value)));
+    TEST_CHECK(value == 0);
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -836,8 +863,8 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_snapshot_with_vtlb", test_snapshot_with_vtlb},
              {"test_context_snapshot", test_context_snapshot},
              {"test_snapshot_unmap", test_snapshot_unmap},
-             //{"test_mem_read_and_write_large_memory_block",
-             // test_mem_read_and_write_large_memory_block},
+             {"test_mem_read_and_write_large_memory_block",
+              test_mem_read_and_write_large_memory_block},
              {"test_virtual_to_physical", test_virtual_to_physical},
              {"test_virtual_write", test_virtual_write},
              {"test_mem_addr_size_wraparound", test_mem_addr_size_wraparound},
@@ -848,4 +875,6 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
               test_mem_protect_add_exec_fetch_prot},
              {"test_mem_protect_add_exec_mem_write",
               test_mem_protect_add_exec_mem_write},
+             {"test_snapshot_restore_after_map_and_cow",
+              test_snapshot_restore_after_map_and_cow},
              {NULL, NULL}};

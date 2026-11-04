@@ -219,6 +219,7 @@ void memory_region_filter_subregions(MemoryRegion *mr, int32_t level)
      */
     QTAILQ_FOREACH_SAFE(subregion, &mr->subregions, subregions_link, subregion_next) {
         if (subregion->priority >= level) {
+            subregion->enabled = false;
             memory_region_remove_subregion(mr, subregion);
             subregion->destructor(subregion);
             g_free(subregion);
@@ -1328,7 +1329,7 @@ void memory_region_del_subregion(MemoryRegion *mr,
     assert(subregion->container == mr);
     subregion->container = NULL;
     QTAILQ_REMOVE(&mr->subregions, subregion, subregions_link);
-    mr->uc->memory_region_update_pending = true;
+    mr->uc->memory_region_update_pending |= mr->enabled && subregion->enabled;
     memory_region_transaction_commit(mr);
 }
 
