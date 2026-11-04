@@ -511,6 +511,9 @@ uc_err uc_close(uc_engine *uc)
     // Flush all translation buffers or we leak memory allocated by MMU
     uc->tb_flush(uc);
 
+    /* flatviews */
+    g_hash_table_destroy(uc->flat_views);
+
     // Cleanup internally.
     if (uc->release) {
         uc->release(uc->tcg_ctx);
@@ -523,9 +526,6 @@ uc_err uc_close(uc_engine *uc)
 
     /* cpu */
     qemu_vfree(uc->cpu);
-
-    /* flatviews */
-    g_hash_table_destroy(uc->flat_views);
 
     // During flatviews destruction, we may still access memory regions.
     // So we free them afterwards.
