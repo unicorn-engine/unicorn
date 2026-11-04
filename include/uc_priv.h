@@ -313,8 +313,6 @@ struct uc_struct {
     uc_memory_filter_t memory_filter_subregions;
     uc_flatview_copy_t flatview_copy;
     uc_mem_unmap_t memory_unmap;
-    uc_mem_unmap_t memory_moveout;
-    uc_mem_unmap_t memory_movein;
     uc_readonly_mem_t readonly_mem;
     uc_cpus_init cpus_init;
     uc_target_page_init target_page;
@@ -448,7 +446,6 @@ struct uc_struct {
     PVOID seh_handle;
     void *seh_closure;
 #endif
-    GArray *unmapped_regions;
     int32_t snapshot_level;
     uint64_t nested; // the nested level of all exposed API
     bool thread_executable_entry;
