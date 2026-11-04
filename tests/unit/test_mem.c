@@ -848,6 +848,44 @@ static void test_snapshot_restore_after_map_and_cow(void)
     OK(uc_close(uc));
 }
 
+static void test_ram_offset_after_larger_block_cb(uc_engine *uc, uc_tb *cur_tb,
+                                                  uc_tb *prev_tb, void *data)
+{
+    (*(int *)data)++;
+}
+
+/*
+ * A larger RAM block goes before the tail of the RAM block list, and a later
+ * page-sized block must still get RAM offsets after it. Otherwise a guest
+ * store to the page-sized block removes the translated blocks of the larger
+ * block, and each run translates them again.
+ */
+static void test_ram_offset_after_larger_block(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    int edges = 0;
+    int translated;
+    char code[] = ("\xc6\x04\x25\x00\x00\x02\x00\x00" // mov byte [0x20000], 0
+                   "\xeb\x00"                         // jmp next
+                   "\xeb\x00"                         // next: jmp last
+                   "\xf4"                             // last: hlt
+    );
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x10000, 0x4000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x20000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x10000, code, sizeof(code) - 1));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_EDGE_GENERATED,
+                   test_ram_offset_after_larger_block_cb, &edges, 1, 0));
+    OK(uc_emu_start(uc, 0x10000, 0x14000, 0, 0));
+    translated = edges;
+    OK(uc_emu_start(uc, 0x10000, 0x14000, 0, 0));
+    TEST_CHECK(edges == translated);
+    TEST_MSG("edges: %d, expected %d", edges, translated);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -877,4 +915,6 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
               test_mem_protect_add_exec_mem_write},
              {"test_snapshot_restore_after_map_and_cow",
               test_snapshot_restore_after_map_and_cow},
+             {"test_ram_offset_after_larger_block",
+              test_ram_offset_after_larger_block},
              {NULL, NULL}};
