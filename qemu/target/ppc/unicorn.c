@@ -132,6 +132,9 @@ static void ppc_release(void *ctx)
         }
     }
 
+    g_free(env->tb_env->decr_timer);
+    g_free(env->tb_env);
+
     ppc_cpu_instance_finalize(tcg_ctx->uc->cpu);
     ppc_cpu_unrealize(tcg_ctx->uc->cpu);
 }
