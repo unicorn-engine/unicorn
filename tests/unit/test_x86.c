@@ -2891,6 +2891,57 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_sse_f3_prefix_over_66(void)
+{
+    uc_engine *uc;
+    // movq xmm0, qword ptr [rax] with a redundant 66 prefix
+    char code[] = "\x66\xf3\x0f\x7e\x00";
+    char data[16] = "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d"
+                    "\x0e\x0f\x10";
+    char mem[16];
+    uint64_t rax = code_start + code_len;
+    uint64_t r_xmm0[2] = {0xaaaaaaaaaaaaaaaa, 0xbbbbbbbbbbbbbbbb};
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_mem_map(uc, code_start + code_len, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start + code_len, data, sizeof(data)));
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_write(uc, UC_X86_REG_XMM0, r_xmm0));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_XMM0, r_xmm0));
+    OK(uc_mem_read(uc, code_start + code_len, mem, sizeof(mem)));
+
+    TEST_CHECK(r_xmm0[0] == 0x0807060504030201);
+    TEST_CHECK(r_xmm0[1] == 0);
+    TEST_CHECK(memcmp(mem, data, sizeof(data)) == 0);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_crc32w(void)
+{
+    uc_engine *uc;
+    // crc32 eax, bx
+    char code[] = "\x66\xf2\x0f\x38\xf1\xc3";
+    uint64_t rax = 0xffffffff;
+    uint64_t rbx = 0x12341234;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+    OK(uc_reg_write(uc, UC_X86_REG_RBX, &rbx));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+
+    // CRC32C of the 16-bit value 0x1234
+    TEST_CHECK(rax == 0xf13f4cea);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +3029,6 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_sse_f3_prefix_over_66", test_x86_sse_f3_prefix_over_66},
+    {"test_x86_crc32w", test_x86_crc32w},
     {NULL, NULL}};

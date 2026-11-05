@@ -3348,14 +3348,19 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
     MemOp ot;
 
     b &= 0xff;
-    if (s->prefix & PREFIX_DATA)
-        b1 = 1;
-    else if (s->prefix & PREFIX_REPZ)
-        b1 = 2;
-    else if (s->prefix & PREFIX_REPNZ)
+    /*
+     * An F2 or F3 prefix selects the opcode over a 66 prefix, which then
+     * only acts as an operand-size override.
+     */
+    if (s->prefix & PREFIX_REPNZ) {
         b1 = 3;
-    else
+    } else if (s->prefix & PREFIX_REPZ) {
+        b1 = 2;
+    } else if (s->prefix & PREFIX_DATA) {
+        b1 = 1;
+    } else {
         b1 = 0;
+    }
     sse_fn_epp = sse_op_table1[b][b1];
     if (!sse_fn_epp) {
         goto unknown_op;
@@ -4083,7 +4088,6 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             switch (b) {
             case 0x3f0: /* crc32 Gd,Eb */
             case 0x3f1: /* crc32 Gd,Ey */
-            do_crc32:
                 if (!(s->cpuid_ext_features & CPUID_EXT_SSE42)) {
                     goto illegal_op;
                 }
@@ -4104,15 +4108,8 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                 gen_op_mov_reg_v(s, ot, reg, s->T0);
                 break;
 
-            case 0x1f0: /* crc32 or movbe */
+            case 0x1f0: /* movbe with an operand-size prefix */
             case 0x1f1:
-                /* For these insns, the f3 prefix is supposed to have priority
-                   over the 66 prefix, but that's not what we implement above
-                   setting b1.  */
-                if (s->prefix & PREFIX_REPNZ) {
-                    goto do_crc32;
-                }
-                /* FALLTHRU */
             case 0x0f0: /* movbe Gy,My */
             case 0x0f1: /* movbe My,Gy */
                 if (!(s->cpuid_ext_features & CPUID_EXT_MOVBE)) {
