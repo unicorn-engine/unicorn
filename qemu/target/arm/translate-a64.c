@@ -3376,7 +3376,7 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
     fn(tcg_ctx, cpu_reg(s, rt), clean_addr, tcg_rs, get_mem_index(s),
        s->be_data | mop);
 
-    if (size < MO_64 && (mop & MO_SIGN)) {
+    if (mop & MO_SIGN) {
         /*
          * The signed min/max ops sign extend the old value into Rt,
          * but the architecture requires it zero extended.
