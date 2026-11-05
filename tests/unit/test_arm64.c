@@ -1049,6 +1049,12 @@ static void test_arm64_lse_signed_minmax(void)
         // ldsminal w0, w2, [x1]
         {"\x22\x50\xe0\xb8", 4, 0x0000007b, 0xd2a9a464, 0xd2a9a464,
          0x00000000d2a9a464},
+        // ldsmaxa x0, x2, [x1]
+        {"\x22\x40\xa0\xf8", 8, 0x5, 0x8000000000000000, 0x5,
+         0x8000000000000000},
+        // ldsmina x0, x2, [x1]
+        {"\x22\x50\xa0\xf8", 8, 0x8000000000000000, 0x5, 0x8000000000000000,
+         0x5},
     };
 
     for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {

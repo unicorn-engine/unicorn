@@ -3340,6 +3340,11 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
         return;
     }
 
+    /* A 64-bit operand needs no extension. */
+    if (size == MO_64) {
+        mop &= ~MO_SIGN;
+    }
+
     if (rn == 31) {
         gen_check_sp_alignment(s);
     }
