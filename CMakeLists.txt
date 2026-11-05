@@ -175,6 +175,21 @@ if(MSVC)
         string(REGEX REPLACE "[/-]M[TD]d?" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
     endif()
 else()
+    # A cross build that selects its target with flags rather than with a
+    # target-prefixed compiler, as clang does, needs those flags wherever the
+    # compiler is run outside CMake: the host detection below and QEMU's
+    # configure.
+    set(UNICORN_CROSS_FLAGS)
+    if(CMAKE_CROSSCOMPILING AND CMAKE_C_COMPILER_TARGET)
+        list(APPEND UNICORN_CROSS_FLAGS --target=${CMAKE_C_COMPILER_TARGET})
+    endif()
+    if(CMAKE_CROSSCOMPILING AND CMAKE_SYSROOT)
+        list(APPEND UNICORN_CROSS_FLAGS --sysroot=${CMAKE_SYSROOT})
+    endif()
+    if(CMAKE_CROSSCOMPILING AND CMAKE_LINKER_TYPE STREQUAL "LLD")
+        list(APPEND UNICORN_CROSS_FLAGS -fuse-ld=lld)
+    endif()
+
     if(MINGW)
         execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine
             OUTPUT_VARIABLE UC_COMPILER_VERSION)
@@ -208,7 +223,7 @@ else()
             endif()
         endif()
     else()
-        execute_process(COMMAND ${CMAKE_C_COMPILER} -dM -E -
+        execute_process(COMMAND ${CMAKE_C_COMPILER} ${UNICORN_CROSS_FLAGS} -dM -E -
             INPUT_FILE /dev/null
             OUTPUT_VARIABLE UC_COMPILER_MACRO)
 
@@ -329,6 +344,9 @@ else()
     if(ANDROID_ABI)
         set(EXTRA_CFLAGS "${EXTRA_CFLAGS} --target=${CMAKE_C_COMPILER_TARGET}")
         set(EXTRA_CFLAGS "${EXTRA_CFLAGS} --sysroot=${CMAKE_SYSROOT}")
+    elseif(UNICORN_CROSS_FLAGS)
+        string(REPLACE ";" " " UNICORN_CROSS_FLAGS_STRING "${UNICORN_CROSS_FLAGS}")
+        set(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${UNICORN_CROSS_FLAGS_STRING}")
     endif()
     if(UNICORN_FUZZ)
         set(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${CMAKE_C_FLAGS}")
