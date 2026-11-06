@@ -1357,6 +1357,19 @@ static LONG CALLBACK acutest_arm64_crash_handler_(EXCEPTION_POINTERS *ptrs)
     default:
         return EXCEPTION_CONTINUE_SEARCH;
     }
+    /* Unicorn only reserves its TCG code buffer and commits it lazily from
+     * its own vectored handler on the first touch of each chunk, so an access
+     * violation on a reserved-but-uncommitted page is expected and will be
+     * resolved by a later handler.  Do not report it, and do not burn the
+     * one-shot flag on it. */
+    if (er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION &&
+        er->NumberParameters >= 2) {
+        MEMORY_BASIC_INFORMATION mbi;
+        const void *addr = (const void *)(ULONG_PTR)er->ExceptionInformation[1];
+        if (VirtualQuery(addr, &mbi, sizeof(mbi)) == sizeof(mbi) &&
+            mbi.State == MEM_RESERVE)
+            return EXCEPTION_CONTINUE_SEARCH;
+    }
     if (InterlockedCompareExchange(&acutest_arm64_crash_once_, 1, 0) != 0)
         return EXCEPTION_CONTINUE_SEARCH;
 
