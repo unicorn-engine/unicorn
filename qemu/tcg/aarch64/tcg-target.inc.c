@@ -1079,10 +1079,13 @@ static void tcg_out_movi(TCGContext *s, TCGType type, TCGReg rd,
         t0 = value;
         opc = I3405_MOVZ;
     }
+    /* The masks must be 64-bit: "unsigned long" is only 32 bits wide on
+       LLP64 hosts (Windows), where 0xffffUL would silently drop the upper
+       half of every host pointer materialized here.  */
     s0 = ctz64(t0) & (63 & -16);
-    t1 = t0 & ~(0xffffUL << s0);
+    t1 = t0 & ~(0xffffull << s0);
     s1 = ctz64(t1) & (63 & -16);
-    t2 = t1 & ~(0xffffUL << s1);
+    t2 = t1 & ~(0xffffull << s1);
     if (t2 == 0) {
         tcg_out_insn_3405(s, opc, type, rd, t0 >> s0, s0);
         if (t1 != 0) {
@@ -1503,14 +1506,24 @@ static inline void tcg_out_addsub2(TCGContext *s, TCGType ext, TCGReg rl,
 
 static inline void tcg_out_mb(TCGContext *s, TCGArg a0)
 {
-    static const uint32_t sync[] = {
-        [0 ... TCG_MO_ALL]            = DMB_ISH | DMB_LD | DMB_ST,
-        [TCG_MO_ST_ST]                = DMB_ISH | DMB_ST,
-        [TCG_MO_LD_LD]                = DMB_ISH | DMB_LD,
-        [TCG_MO_LD_ST]                = DMB_ISH | DMB_LD,
-        [TCG_MO_LD_ST | TCG_MO_LD_LD] = DMB_ISH | DMB_LD,
-    };
-    tcg_out32(s, sync[a0 & TCG_MO_ALL]);
+    /* Written as a switch rather than a GCC range-designated initializer
+       ([0 ... TCG_MO_ALL] = ...) so that MSVC can compile it too.  */
+    uint32_t sync;
+
+    switch (a0 & TCG_MO_ALL) {
+    case TCG_MO_ST_ST:
+        sync = DMB_ISH | DMB_ST;
+        break;
+    case TCG_MO_LD_LD:
+    case TCG_MO_LD_ST:
+    case TCG_MO_LD_ST | TCG_MO_LD_LD:
+        sync = DMB_ISH | DMB_LD;
+        break;
+    default:
+        sync = DMB_ISH | DMB_LD | DMB_ST;
+        break;
+    }
+    tcg_out32(s, sync);
 }
 
 static void tcg_out_cltz(TCGContext *s, TCGType ext, TCGReg d,

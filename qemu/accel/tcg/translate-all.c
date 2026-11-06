@@ -927,7 +927,46 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     uc->seh_closure = closure;
     data = closure + CLOSURE_SIZE /2;
     
-#ifdef _WIN64
+#if defined(_M_ARM64) || defined(__aarch64__)
+    /*
+     * AArch64 trampoline.  The vectored handler is entered with x0 = the
+     * EXCEPTION_POINTERS, so all we have to do is load uc into x1 and
+     * tail-call the real handler; x16 is the intra-procedure scratch
+     * register and may be clobbered freely.  Both operands come from a
+     * literal pool at `data`, which is within the +-1MB reach of LDR
+     * (literal).
+     *
+     *   closure+0:  ldr x1,  data+0x8      ; uc
+     *   closure+4:  ldr x16, data+0x10     ; handler
+     *   closure+8:  br  x16
+     *
+     * LDR (literal), 64-bit: 0x58000000 | imm19 << 5 | Rt, where imm19 is
+     * the byte offset from the instruction divided by 4.
+     */
+    {
+        uint32_t insn;
+        uint32_t off;
+
+        ptr = closure;
+        off = (uint32_t)((data + 0x8) - ptr);
+        insn = 0x58000000 | ((off / 4) << 5) | 1;      /* ldr x1, uc      */
+        memcpy(ptr, &insn, 4);
+        ptr += 4;
+        off = (uint32_t)((data + 0x10) - ptr);
+        insn = 0x58000000 | ((off / 4) << 5) | 16;     /* ldr x16, handler */
+        memcpy(ptr, &insn, 4);
+        ptr += 4;
+        insn = 0xd61f0200;                             /* br x16          */
+        memcpy(ptr, &insn, 4);
+    }
+
+    memcpy(data + 0x8,  (void*)&uc, 8);
+    memcpy(data + 0x10, (void*)&handler, 8);
+
+    /* The trampoline was written through the data cache; make sure the
+       instruction side sees it before Windows jumps there. */
+    FlushInstructionCache(GetCurrentProcess(), closure, CLOSURE_SIZE);
+#elif defined(_WIN64)
     ptr = closure;
     *ptr = 0x48; // REX.w
     ptr += 1;

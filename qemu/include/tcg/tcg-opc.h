@@ -40,6 +40,22 @@ DEF(br, 0, 0, 1, TCG_OPF_BB_END)
 #else
 #define IMPL(X) ((X) <= 0 ? TCG_OPF_NOT_PRESENT : 0)
 #endif
+
+/*
+ * On x86 hosts a few TCG_TARGET_HAS_* flags are runtime variables
+ * (have_bmi1, have_popcnt, have_avx2 in tcg/i386/tcg-target.h).  GCC's
+ * __builtin_constant_p() makes IMPL() fold to 0 for those, but MSVC cannot
+ * use them in a static initializer at all, so the affected opcodes are
+ * marked as present unconditionally below and the i386 backend checks the
+ * flag when it emits code.  That shortcut is only valid for the i386
+ * backend: on other MSVC hosts (ARM64) every flag is a compile-time
+ * constant and the regular IMPL() must be used, otherwise an opcode the
+ * backend does not implement (e.g. ctpop on AArch64) ends up without a
+ * TCGTargetOpDef and process_op_defs() dereferences NULL in uc_open().
+ */
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+#define TCG_MSVC_RUNTIME_HOST_FLAGS 1
+#endif
 #if TCG_TARGET_REG_BITS == 32
 # define IMPL64  TCG_OPF_64BIT | TCG_OPF_NOT_PRESENT
 #else
@@ -104,7 +120,7 @@ DEF(bswap16_i32, 1, 1, 0, IMPL(TCG_TARGET_HAS_bswap16_i32))
 DEF(bswap32_i32, 1, 1, 0, IMPL(TCG_TARGET_HAS_bswap32_i32))
 DEF(not_i32, 1, 1, 0, IMPL(TCG_TARGET_HAS_not_i32))
 DEF(neg_i32, 1, 1, 0, IMPL(TCG_TARGET_HAS_neg_i32))
-#ifdef _MSC_VER
+#ifdef TCG_MSVC_RUNTIME_HOST_FLAGS
 DEF(andc_i32, 1, 2, 0, 0)
 #else
 DEF(andc_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_andc_i32))
@@ -117,7 +133,7 @@ DEF(nor_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_nor_i32))
 DEF(clz_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_clz_i32))
 DEF(ctz_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_ctz_i32))
 
-#ifdef _MSC_VER
+#ifdef TCG_MSVC_RUNTIME_HOST_FLAGS
 DEF(ctpop_i32, 1, 1, 0, 0)
 #else
 DEF(ctpop_i32, 1, 1, 0, IMPL(TCG_TARGET_HAS_ctpop_i32))
@@ -186,7 +202,7 @@ DEF(bswap64_i64, 1, 1, 0, IMPL64 | IMPL(TCG_TARGET_HAS_bswap64_i64))
 DEF(not_i64, 1, 1, 0, IMPL64 | IMPL(TCG_TARGET_HAS_not_i64))
 DEF(neg_i64, 1, 1, 0, IMPL64 | IMPL(TCG_TARGET_HAS_neg_i64))
 
-#ifdef _MSC_VER
+#ifdef TCG_MSVC_RUNTIME_HOST_FLAGS
 DEF(andc_i64, 1, 2, 0, IMPL64)
 #else
 DEF(andc_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_andc_i64))
@@ -199,7 +215,7 @@ DEF(nor_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_nor_i64))
 DEF(clz_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_clz_i64))
 DEF(ctz_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_ctz_i64))
 
-#ifdef _MSC_VER
+#ifdef TCG_MSVC_RUNTIME_HOST_FLAGS
 DEF(ctpop_i64, 1, 1, 0, IMPL64)
 #else
 DEF(ctpop_i64, 1, 1, 0, IMPL64 | IMPL(TCG_TARGET_HAS_ctpop_i64))
@@ -275,7 +291,7 @@ DEF(shls_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_shs_vec))
 DEF(shrs_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_shs_vec))
 DEF(sars_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_shs_vec))
 
-#ifdef _MSC_VER
+#ifdef TCG_MSVC_RUNTIME_HOST_FLAGS
 DEF(shlv_vec, 1, 2, 0, IMPLVEC)
 DEF(shrv_vec, 1, 2, 0, IMPLVEC)
 DEF(sarv_vec, 1, 2, 0, IMPLVEC)
@@ -301,4 +317,5 @@ DEF(last_generic, 0, 0, 0, TCG_OPF_NOT_PRESENT)
 #undef IMPL
 #undef IMPL64
 #undef IMPLVEC
+#undef TCG_MSVC_RUNTIME_HOST_FLAGS
 #undef DEF

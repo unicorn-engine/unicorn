@@ -64,7 +64,7 @@ static inline Int128 atomic16_cmpxchg(Int128 *ptr, Int128 cmp, Int128 new)
 #endif
 }
 # define HAVE_CMPXCHG128 1
-#elif defined(__aarch64__)
+#elif defined(__aarch64__) && !defined(_MSC_VER)
 /* Through gcc 8, aarch64 has no support for 128-bit at all.  */
 static inline Int128 atomic16_cmpxchg(Int128 *ptr, Int128 cmp, Int128 new)
 {
@@ -108,7 +108,7 @@ static inline void atomic16_set(Int128 *ptr, Int128 val)
 }
 
 # define HAVE_ATOMIC128 1
-#elif defined(__aarch64__)
+#elif defined(__aarch64__) && !defined(_MSC_VER)
 /* We can do better than cmpxchg for AArch64.  */
 static inline Int128 atomic16_read(Int128 *ptr)
 {
