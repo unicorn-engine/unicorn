@@ -1262,6 +1262,167 @@ static LONG CALLBACK acutest_seh_exception_filter_(EXCEPTION_POINTERS *ptrs)
 }
 #endif
 
+#if defined(ACUTEST_WIN_) && defined(_M_ARM64) && defined(_MSC_VER)
+/* First-chance crash reporter for Windows on ARM64.
+ *
+ * The unit tests exercise JIT generated code (TCG) which has no unwind
+ * information, so a debugger stack walk through it is unreliable and the
+ * default "Access violation." report says nothing about where the fault
+ * happened.  This vectored handler runs before any unwinding, at the exact
+ * fault context, and prints everything needed to locate the crash without a
+ * debugger: the faulting PC and the region it lives in (module or private
+ * RWX memory, i.e. the TCG code buffer), the register file, the instruction
+ * words around PC and the frame-pointer chain with symbols (dbghelp).
+ * Nothing is changed in how the test then fails. */
+#include <dbghelp.h>
+#pragma comment(lib, "dbghelp.lib")
+
+static LONG acutest_arm64_crash_once_ = 0;
+
+static int acutest_arm64_readable_(const void *p, size_t len)
+{
+    MEMORY_BASIC_INFORMATION mbi;
+    if (VirtualQuery(p, &mbi, sizeof(mbi)) != sizeof(mbi))
+        return 0;
+    if (mbi.State != MEM_COMMIT)
+        return 0;
+    if (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD))
+        return 0;
+    if ((const char *)p + len > (const char *)mbi.BaseAddress + mbi.RegionSize)
+        return 0;
+    return 1;
+}
+
+static void acutest_arm64_describe_(DWORD64 addr)
+{
+    MEMORY_BASIC_INFORMATION mbi;
+    HMODULE hmod = NULL;
+    char name[MAX_PATH];
+    char symbuf[sizeof(SYMBOL_INFO) + 256];
+    SYMBOL_INFO *sym = (SYMBOL_INFO *)symbuf;
+    DWORD64 disp = 0;
+    IMAGEHLP_LINE64 line;
+    DWORD ldisp = 0;
+
+    if (VirtualQuery((LPCVOID)addr, &mbi, sizeof(mbi)) != sizeof(mbi)) {
+        fprintf(stderr, "    (not a mapped address)\n");
+        return;
+    }
+    if (mbi.Type == MEM_IMAGE &&
+        GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                           GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           (LPCSTR)addr, &hmod) &&
+        GetModuleFileNameA(hmod, name, sizeof(name))) {
+        const char *base = strrchr(name, '\\');
+        fprintf(stderr, "    in module %s + 0x%llx",
+                base ? base + 1 : name,
+                (unsigned long long)(addr - (DWORD64)(ULONG_PTR)hmod));
+    } else {
+        fprintf(stderr, "    in %s memory, state 0x%lx, protect 0x%lx%s",
+                mbi.Type == MEM_PRIVATE ? "private" :
+                mbi.Type == MEM_MAPPED ? "mapped" : "image",
+                mbi.State, mbi.Protect,
+                (mbi.State == MEM_COMMIT &&
+                 (mbi.Protect & (PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_READ)))
+                    ? " (executable private memory: TCG code buffer?)" : "");
+    }
+    memset(symbuf, 0, sizeof(symbuf));
+    sym->SizeOfStruct = sizeof(SYMBOL_INFO);
+    sym->MaxNameLen = 255;
+    if (SymFromAddr(GetCurrentProcess(), addr, &disp, sym)) {
+        fprintf(stderr, "  %s+0x%llx", sym->Name, (unsigned long long)disp);
+        memset(&line, 0, sizeof(line));
+        line.SizeOfStruct = sizeof(line);
+        if (SymGetLineFromAddr64(GetCurrentProcess(), addr, &ldisp, &line))
+            fprintf(stderr, "  [%s:%lu]", line.FileName, line.LineNumber);
+    }
+    fprintf(stderr, "\n");
+}
+
+static LONG CALLBACK acutest_arm64_crash_handler_(EXCEPTION_POINTERS *ptrs)
+{
+    EXCEPTION_RECORD *er = ptrs->ExceptionRecord;
+    CONTEXT *ctx = ptrs->ContextRecord;
+    DWORD64 fp;
+    int i;
+
+    switch (er->ExceptionCode) {
+    case EXCEPTION_ACCESS_VIOLATION:
+    case EXCEPTION_ILLEGAL_INSTRUCTION:
+    case EXCEPTION_PRIV_INSTRUCTION:
+    case EXCEPTION_DATATYPE_MISALIGNMENT:
+    case EXCEPTION_IN_PAGE_ERROR:
+    case EXCEPTION_STACK_OVERFLOW:
+        break;
+    default:
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+    if (InterlockedCompareExchange(&acutest_arm64_crash_once_, 1, 0) != 0)
+        return EXCEPTION_CONTINUE_SEARCH;
+
+    SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS | SYMOPT_LOAD_LINES);
+    SymInitialize(GetCurrentProcess(), NULL, TRUE);
+
+    fprintf(stderr, "\n==== ARM64 first-chance exception 0x%08lx ====\n",
+            er->ExceptionCode);
+    if (er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION ||
+        er->ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {
+        fprintf(stderr, "  %s of address 0x%016llx\n",
+                er->ExceptionInformation[0] == 0 ? "read" :
+                er->ExceptionInformation[0] == 1 ? "write" :
+                er->ExceptionInformation[0] == 8 ? "execute (DEP)" : "access",
+                (unsigned long long)er->ExceptionInformation[1]);
+    }
+    fprintf(stderr, "  PC  = 0x%016llx\n", (unsigned long long)ctx->Pc);
+    acutest_arm64_describe_(ctx->Pc);
+    fprintf(stderr, "  LR  = 0x%016llx\n", (unsigned long long)ctx->Lr);
+    acutest_arm64_describe_(ctx->Lr);
+    fprintf(stderr, "  SP  = 0x%016llx  FP = 0x%016llx  CPSR = 0x%08lx\n",
+            (unsigned long long)ctx->Sp, (unsigned long long)ctx->Fp, ctx->Cpsr);
+    for (i = 0; i < 29; i++) {
+        fprintf(stderr, "  x%-2d = 0x%016llx%s", i,
+                (unsigned long long)ctx->X[i], (i % 3 == 2) ? "\n" : "");
+    }
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "  code around PC (32-bit words, '>' marks PC):\n");
+    for (i = -8; i < 8; i++) {
+        DWORD64 a = ctx->Pc + (DWORD64)(LONG64)i * 4;
+        DWORD w;
+        if (acutest_arm64_readable_((const void *)a, 4)) {
+            memcpy(&w, (const void *)a, 4);
+            fprintf(stderr, "   %c 0x%016llx: %08lx\n", i == 0 ? '>' : ' ',
+                    (unsigned long long)a, (unsigned long)w);
+        } else {
+            fprintf(stderr, "   %c 0x%016llx: (unreadable)\n",
+                    i == 0 ? '>' : ' ', (unsigned long long)a);
+        }
+    }
+
+    fprintf(stderr, "  frame-pointer chain (x29 -> [fp]=prev fp, [fp+8]=lr):\n");
+    fp = ctx->Fp;
+    for (i = 0; i < 40 && fp != 0; i++) {
+        DWORD64 next, lr;
+        if ((fp & 7) || !acutest_arm64_readable_((const void *)fp, 16)) {
+            fprintf(stderr, "   #%-2d fp 0x%016llx is not readable, stop\n", i,
+                    (unsigned long long)fp);
+            break;
+        }
+        memcpy(&next, (const void *)fp, 8);
+        memcpy(&lr, (const void *)(fp + 8), 8);
+        fprintf(stderr, "   #%-2d fp 0x%016llx  return 0x%016llx\n", i,
+                (unsigned long long)fp, (unsigned long long)lr);
+        acutest_arm64_describe_(lr);
+        if (next <= fp)
+            break;
+        fp = next;
+    }
+    fprintf(stderr, "==== end of crash report ====\n");
+    fflush(stderr);
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif /* ACUTEST_WIN_ && _M_ARM64 && _MSC_VER */
+
 #define ACUTEST_CMDLINE_OPTFLAG_OPTIONALARG_ 0x0001
 #define ACUTEST_CMDLINE_OPTFLAG_REQUIREDARG_ 0x0002
 
@@ -1769,6 +1930,9 @@ int main(int argc, char **argv)
     acutest_timer_init_();
 
 #if defined(ACUTEST_WIN_)
+#if defined(_M_ARM64) && defined(_MSC_VER)
+    AddVectoredExceptionHandler(1, acutest_arm64_crash_handler_);
+#endif
     SetUnhandledExceptionFilter(acutest_seh_exception_filter_);
 #ifdef _MSC_VER
     _set_abort_behavior(0, _WRITE_ABORT_MSG);

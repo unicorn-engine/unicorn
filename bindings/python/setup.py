@@ -110,7 +110,12 @@ def build_libraries():
 
     if has_msbuild and sys.platform == 'win32':
         generators = os.getenv('GENERATORS') or 'Visual Studio 16 2019'
-        plat = 'Win32' if platform.architecture()[0] == '32bit' else 'x64'
+        if platform.machine().upper() in ('ARM64', 'AARCH64'):
+            plat = 'ARM64'
+        elif platform.architecture()[0] == '32bit':
+            plat = 'Win32'
+        else:
+            plat = 'x64'
         cmake_args += ['-G', generators, "-A", plat]
         subprocess.check_call(cmake_args, cwd=UC_DIR)
         subprocess.check_call(['msbuild', 'unicorn.sln', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf],

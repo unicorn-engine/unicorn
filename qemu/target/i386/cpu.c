@@ -1280,6 +1280,7 @@ const char *get_register_name_32(unsigned int reg)
 void host_cpuid(uint32_t function, uint32_t count,
                 uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
 {
+#if !defined(_M_ARM64) && !defined(_M_ARM)
     uint32_t vec[4];
 
 #ifdef _MSC_VER
@@ -1313,6 +1314,16 @@ void host_cpuid(uint32_t function, uint32_t count,
         *ecx = vec[2];
     if (edx)
         *edx = vec[3];
+#else
+    if (eax)
+        *eax = 0;
+    if (ebx)
+        *ebx = 0;
+    if (ecx)
+        *ecx = 0;
+    if (edx)
+        *edx = 0;
+#endif
 }
 
 void host_vendor_fms(char *vendor, int *family, int *model, int *stepping)

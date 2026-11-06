@@ -3919,7 +3919,7 @@ static void tcg_register_jit_int(TCGContext *s, void *buf_ptr, size_t buf_size,
                                  const void *debug_frame,
                                  size_t debug_frame_size)
 {
-    struct __attribute__((packed)) DebugInfo {
+    struct DebugInfo {
         uint32_t  len;
         uint16_t  version;
         uint32_t  abbrev;
