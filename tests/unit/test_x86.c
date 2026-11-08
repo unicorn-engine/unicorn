@@ -3558,6 +3558,21 @@ static void test_x86_vpermilps_null_ptr_call(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_pinsrw_assert_failure(void)
+{
+    char code[] = {
+        0xc5, 0xf8, 0xc4, 0x00, 0x00
+    };
+
+    uc_engine *uc = NULL;
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code));
+
+    uc_assert_err(UC_ERR_INSN_INVALID,
+            uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_close(uc));
+}
+
 static bool test_x86_hook_insn_rdtsc_cb(uc_engine *uc, void *user_data)
 {
     uint64_t h = 0x00000000FEDCBA98;
@@ -4094,6 +4109,7 @@ TEST_LIST = {
     {"test_rex_x64", test_rex_x64},
     {"test_x86_ro_segfault", test_x86_ro_segfault},
     {"test_x86_vpermilps_null_ptr_call", test_x86_vpermilps_null_ptr_call},
+    {"test_x86_pinsrw_assert_failure", test_x86_pinsrw_assert_failure},
     {"test_x86_hook_insn_rdtsc", test_x86_hook_insn_rdtsc},
     {"test_x86_hook_insn_rdtscp", test_x86_hook_insn_rdtscp},
     {"test_x86_hook_insn_wrmsr", test_x86_hook_insn_wrmsr},
