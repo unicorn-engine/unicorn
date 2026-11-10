@@ -153,10 +153,55 @@ static void test_ppc32_spr_mftb(void)
     TEST_CHECK(t1 != t2);
 }
 
+static void test_ppc32_dcbz_snapshot_cb(uc_engine *uc, uc_mem_type type,
+                                        uint64_t address, int size,
+                                        int64_t value, void *user_data)
+{
+    (*(int *)user_data)++;
+}
+
+static void test_ppc32_dcbz_snapshot(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    uc_hook h;
+    char code[] = "\x7c\x00\x1f\xec"; // dcbz 0, r3
+    uint32_t r_r3 = 0x6000;
+    uint8_t data[0x20], expected[0x20];
+    int writes = 0;
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1);
+
+    memset(expected, 0xaa, sizeof(expected));
+    OK(uc_mem_map(uc, 0x6000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x6000, expected, sizeof(expected)));
+    OK(uc_reg_write(uc, UC_PPC_REG_3, &r_r3));
+    OK(uc_hook_add(uc, &h, UC_HOOK_MEM_WRITE, test_ppc32_dcbz_snapshot_cb,
+                   &writes, 1, 0));
+
+    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY));
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_mem_read(uc, 0x6000, data, sizeof(data)));
+    TEST_CHECK(data[0] == 0 && data[sizeof(data) - 1] == 0);
+    TEST_CHECK(writes > 0);
+
+    OK(uc_context_restore(uc, ctx));
+    OK(uc_mem_read(uc, 0x6000, data, sizeof(data)));
+    TEST_CHECK(memcmp(data, expected, sizeof(data)) == 0);
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_ppc32_add", test_ppc32_add},
              {"test_ppc32_fadd", test_ppc32_fadd},
              {"test_ppc32_sc", test_ppc32_sc},
              {"test_ppc32_cr", test_ppc32_cr},
              {"test_ppc32_spr_time", test_ppc32_spr_time},
              {"test_ppc32_spr_mftb", test_ppc32_spr_mftb},
+             {"test_ppc32_dcbz_snapshot", test_ppc32_dcbz_snapshot},
              {NULL, NULL}};
