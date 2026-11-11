@@ -3292,6 +3292,7 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
     bool a = extract32(insn, 23, 1);
     TCGv_i64 tcg_rs, clean_addr;
     AtomicThreeOpFn *fn;
+    MemOp mop = size | MO_ALIGN;
 
     if (is_vector || !dc_isar_feature(aa64_atomics, s)) {
         unallocated_encoding(s);
@@ -3311,9 +3312,11 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
         fn = tcg_gen_atomic_fetch_or_i64;
         break;
     case 004: /* LDSMAX */
+        mop |= MO_SIGN;
         fn = tcg_gen_atomic_fetch_smax_i64;
         break;
     case 005: /* LDSMIN */
+        mop |= MO_SIGN;
         fn = tcg_gen_atomic_fetch_smin_i64;
         break;
     case 006: /* LDUMAX */
@@ -3335,6 +3338,11 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
     default:
         unallocated_encoding(s);
         return;
+    }
+
+    /* A 64-bit operand needs no extension. */
+    if (size == MO_64) {
+        mop &= ~MO_SIGN;
     }
 
     if (rn == 31) {
@@ -3366,7 +3374,27 @@ static void disas_ldst_atomic(DisasContext *s, uint32_t insn,
      * can ignore the Acquire and Release bits of this instruction.
      */
     fn(tcg_ctx, cpu_reg(s, rt), clean_addr, tcg_rs, get_mem_index(s),
-       s->be_data | size | MO_ALIGN);
+       s->be_data | mop);
+
+    if (mop & MO_SIGN) {
+        /*
+         * The signed min/max ops sign extend the old value into Rt,
+         * but the architecture requires it zero extended.
+         */
+        switch (size) {
+        case MO_8:
+            tcg_gen_ext8u_i64(tcg_ctx, cpu_reg(s, rt), cpu_reg(s, rt));
+            break;
+        case MO_16:
+            tcg_gen_ext16u_i64(tcg_ctx, cpu_reg(s, rt), cpu_reg(s, rt));
+            break;
+        case MO_32:
+            tcg_gen_ext32u_i64(tcg_ctx, cpu_reg(s, rt), cpu_reg(s, rt));
+            break;
+        default:
+            g_assert_not_reached();
+        }
+    }
 }
 
 /*
