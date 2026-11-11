@@ -989,6 +989,7 @@ static void test_riscv_priv(void)
     OK(uc_emu_start(uc, main_address, main_end_address, 0, 0));
     OK(uc_reg_read(uc, UC_RISCV_REG_SSCRATCH, &reg_value));
     TEST_ASSERT(reg_value == 0);
+    OK(uc_close(uc));
 }
 
 TEST_LIST = {

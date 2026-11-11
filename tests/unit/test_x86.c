@@ -1941,6 +1941,8 @@ static void test_x86_read_virtual(void)
         uc_vmem_read(uc, 0x1000, UC_PROT_WRITE, &tmp, sizeof(tmp)));
     TEST_CHECK(parrent == 60);
     TEST_CHECK(child == 42);
+    OK(uc_context_free(context));
+    OK(uc_close(uc));
 }
 
 static bool test_x86_vtlb_callback(uc_engine *uc, uint64_t addr,
