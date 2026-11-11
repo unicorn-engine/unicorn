@@ -624,6 +624,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: '🚧 Prepare Setup Linux Alpine'
+        shell: bash
+        run: |
+          sudo update-alternatives --set sudo /usr/bin/sudo.ws
+
       - name: '🚧 Setup Alpine Linux'
         uses: jirutka/setup-alpine@v1
         with:
