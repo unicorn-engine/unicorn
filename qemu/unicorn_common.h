@@ -130,9 +130,9 @@ static void release_common(void *t)
 
     // these function is not available outside qemu
     // so we keep them here instead of outside uc_close.
-    memory_free(s->uc);
     address_space_destroy(&s->uc->address_space_memory);
     address_space_destroy(&s->uc->address_space_io);
+    memory_free(s->uc);
     /* clean up uc->l1_map. */
     tb_cleanup(s->uc);
     /* clean up tcg_ctx->code_gen_buffer. */
@@ -209,8 +209,6 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->memory_map = memory_map;
     uc->memory_map_ptr = memory_map_ptr;
     uc->memory_unmap = memory_unmap;
-    uc->memory_moveout = memory_moveout;
-    uc->memory_movein = memory_movein;
     uc->readonly_mem = memory_region_set_readonly;
     uc->target_page = target_page_init;
     uc->softfloat_initialize = softfloat_init;

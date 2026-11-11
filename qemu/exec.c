@@ -1075,6 +1075,7 @@ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
      * tail, so save the last element in last_block.
      */
     if (uc->ram_list.freed || new_block->max_length > uc->target_page_size) {
+        uc->ram_list.freed = true;
         RAMBLOCK_FOREACH(block) {
             last_block = block;
             if (block->max_length < new_block->max_length) {

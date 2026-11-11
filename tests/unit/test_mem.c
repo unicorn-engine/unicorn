@@ -432,11 +432,9 @@ static void test_snapshot_unmap(void)
     OK(uc_context_save(uc, ctx));
 
     uc_assert_err(UC_ERR_ARG, uc_mem_unmap(uc, 0x1000, 0x1000));
-    OK(uc_mem_unmap(uc, 0x1000, 0x2000));
-    uc_assert_err(UC_ERR_READ_UNMAPPED,
-                  uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
-    uc_assert_err(UC_ERR_READ_UNMAPPED,
-                  uc_mem_read(uc, 0x2000, &tmp, sizeof(tmp)));
+    uc_assert_err(UC_ERR_ARG, uc_mem_unmap(uc, 0x1000, 0x2000));
+    OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    OK(uc_mem_read(uc, 0x2000, &tmp, sizeof(tmp)));
 
     OK(uc_context_restore(uc, ctx));
     OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
@@ -823,6 +821,71 @@ static void test_mem_protect_add_exec_mem_write(void)
     OK(uc_close(uc));
 }
 
+static void test_snapshot_restore_after_map_and_cow(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    uint64_t value = 1;
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+    OK(uc_mem_map(uc, 0x3000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x1000, &value, sizeof(value)));
+    OK(uc_context_restore(uc, ctx));
+    uc_assert_err(UC_ERR_READ_UNMAPPED,
+                  uc_mem_read(uc, 0x3000, &value, sizeof(value)));
+    value = 2;
+    OK(uc_mem_write(uc, 0x1000, &value, sizeof(value)));
+    value = 0;
+    OK(uc_mem_read(uc, 0x1000, &value, sizeof(value)));
+    TEST_CHECK(value == 2);
+    OK(uc_context_restore(uc, ctx));
+    OK(uc_mem_read(uc, 0x1000, &value, sizeof(value)));
+    TEST_CHECK(value == 0);
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
+static void test_ram_offset_after_larger_block_cb(uc_engine *uc, uc_tb *cur_tb,
+                                                  uc_tb *prev_tb, void *data)
+{
+    (*(int *)data)++;
+}
+
+/*
+ * A larger RAM block goes before the tail of the RAM block list, and a later
+ * page-sized block must still get RAM offsets after it. Otherwise a guest
+ * store to the page-sized block removes the translated blocks of the larger
+ * block, and each run translates them again.
+ */
+static void test_ram_offset_after_larger_block(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    int edges = 0;
+    int translated;
+    char code[] = ("\xc6\x04\x25\x00\x00\x02\x00\x00" // mov byte [0x20000], 0
+                   "\xeb\x00"                         // jmp next
+                   "\xeb\x00"                         // next: jmp last
+                   "\xf4"                             // last: hlt
+    );
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x10000, 0x4000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x20000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x10000, code, sizeof(code) - 1));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_EDGE_GENERATED,
+                   test_ram_offset_after_larger_block_cb, &edges, 1, 0));
+    OK(uc_emu_start(uc, 0x10000, 0x14000, 0, 0));
+    translated = edges;
+    OK(uc_emu_start(uc, 0x10000, 0x14000, 0, 0));
+    TEST_CHECK(edges == translated);
+    TEST_MSG("edges: %d, expected %d", edges, translated);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -850,4 +913,8 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
               test_mem_protect_add_exec_fetch_prot},
              {"test_mem_protect_add_exec_mem_write",
               test_mem_protect_add_exec_mem_write},
+             {"test_snapshot_restore_after_map_and_cow",
+              test_snapshot_restore_after_map_and_cow},
+             {"test_ram_offset_after_larger_block",
+              test_ram_offset_after_larger_block},
              {NULL, NULL}};
