@@ -480,8 +480,9 @@ jobs:
           if [ ${{ matrix.config.arch }} == 'x64' ]; then
                 sudo apt-get update -q -y
                 sudo apt install -q -y libcmocka-dev ninja-build 
+                export CFLAGS="-fsanitize=address" LDFLAGS="-fsanitize=address"
           else
-                export CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386" 
+                export CFLAGS="-fsanitize=address -m32" LDFLAGS="-fsanitize=address -m32" LDFLAGS_STATIC="-fsanitize=address -m32" UNICORN_QEMU_FLAGS="--cpu=i386" 
                 sudo dpkg --add-architecture i386
                 sudo apt-get update -q -y
                 sudo apt install -q -y lib32ncurses-dev lib32z1-dev lib32gcc-9-dev libc6-dev-i386 gcc-multilib \
