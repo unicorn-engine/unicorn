@@ -646,6 +646,12 @@ class Uc(RegStateManager):
         if not Uc.__is_compliant():
             raise UcError(uc.UC_ERR_VERSION)
 
+        subclass = Uc._select_arch_class(arch)
+
+        return super(Uc, cls).__new__(subclass)
+
+    @staticmethod
+    def _select_arch_class(arch: int) -> Type[Uc]:
         import importlib
 
         def __uc_subclass(pkgname: str, clsname: str):
@@ -676,10 +682,8 @@ class Uc(RegStateManager):
             uc.UC_ARCH_TRICORE : __uc_generic
         }[arch]
 
-        subclass = wrapped()
-
         # return the appropriate unicorn subclass type
-        return super(Uc, cls).__new__(subclass)
+        return wrapped()
 
     def __init__(self, arch: int, mode: int, cpu: Optional[int] = None) -> None:
         """Initialize a Unicorn engine instance.
@@ -1543,6 +1547,9 @@ class UcContext(RegStateManager):
         self._to_free = True
         self._arch = arch
         self._mode = mode
+
+    def _select_reg_class(self, reg_id: int) -> Type:
+        return Uc._select_arch_class(self._arch)._select_reg_class(reg_id)
 
     @property
     def context(self):
