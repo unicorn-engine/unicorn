@@ -211,3 +211,88 @@ void helper_uc_riscv_exit(CPURISCVState *env)
     cs->halted = 1;
     cpu_loop_exit(cs);
 }
+
+void helper_insn_hook_rtype(CPURISCVState *env, uint32_t insn_id, uint64_t pc, uint32_t rs1, uint32_t rs2, uint32_t rd)
+{
+    struct uc_struct *uc = env->uc;
+    struct hook *hook;
+
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->pc))
+            continue;
+        if (hook->insn == insn_id) {
+            JIT_CALLBACK_GUARD(((uc_cb_insn_rtype_t)hook->callback)(uc, pc, rs1, rs2, rd, hook->user_data));
+        }
+    }
+}
+
+void helper_insn_hook_itype(CPURISCVState *env, uint32_t insn_id, uint64_t pc, int32_t imm, uint32_t rs1, uint32_t rd)
+{
+    struct uc_struct *uc = env->uc;
+    struct hook *hook;
+
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->pc))
+            continue;
+        if (hook->insn == insn_id) {
+            JIT_CALLBACK_GUARD(((uc_cb_insn_itype_t)hook->callback)(uc, pc, imm, rs1, rd, hook->user_data));
+        }
+    }
+}
+
+void helper_insn_hook_stype(CPURISCVState *env, uint32_t insn_id, uint64_t pc, int32_t imm, uint32_t rs1, uint32_t rs2)
+{
+    struct uc_struct *uc = env->uc;
+    struct hook *hook;
+
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->pc))
+            continue;
+        if (hook->insn == insn_id) {
+            JIT_CALLBACK_GUARD(((uc_cb_insn_stype_t)hook->callback)(uc, pc, imm, rs1, rs2, hook->user_data));
+        }
+    }
+}
+
+void helper_insn_hook_utype(CPURISCVState *env, uint32_t insn_id, uint64_t pc, int32_t imm, uint32_t rd)
+{
+    struct uc_struct *uc = env->uc;
+    struct hook *hook;
+
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->pc))
+            continue;
+        if (hook->insn == insn_id) {
+            JIT_CALLBACK_GUARD(((uc_cb_insn_utype_t)hook->callback)(uc, pc, imm, rd, hook->user_data));
+        }
+    }
+}
+
+void helper_insn_hook_privileged(CPURISCVState *env, uint32_t insn_id, uint64_t pc)
+{
+    struct uc_struct *uc = env->uc;
+    struct hook *hook;
+
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, env->pc))
+            continue;
+        if (hook->insn == insn_id) {
+            JIT_CALLBACK_GUARD(((uc_cb_insn_privileged_t)hook->callback)(uc, pc, hook->user_data));
+        }
+    }
+}
