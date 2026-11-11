@@ -823,6 +823,105 @@ static void test_mem_protect_add_exec_mem_write(void)
     OK(uc_close(uc));
 }
 
+static bool test_mem_protect_prot_hook_grant_cb(uc_engine *uc, uc_mem_type type,
+                                                uint64_t address, int size,
+                                                int64_t value, void *user_data)
+{
+    (*(int *)user_data)++;
+    OK(uc_mem_protect(uc, address & ~0xfffULL, 0x1000,
+                      UC_PROT_READ | UC_PROT_WRITE));
+    return true;
+}
+
+static void test_mem_protect_write_prot_hook_grant(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    // mov dword ptr [rbx], 42; mov dword ptr [rbx + 4], 43
+    char code[] = "\xc7\x03\x2a\x00\x00\x00\xc7\x43\x04\x2b\x00\x00\x00";
+    uint64_t r_rbx = 0x10000;
+    uint32_t mem[2] = {0, 0};
+    int called = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, 0x10000, 0x1000, UC_PROT_READ));
+    OK(uc_reg_write(uc, UC_X86_REG_RBX, &r_rbx));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_WRITE_PROT,
+                   test_mem_protect_prot_hook_grant_cb, &called, 1, 0));
+
+    // The hook makes the page writable and returns true: the store that
+    // triggered it must be performed, not only the following ones.
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_mem_read(uc, 0x10000, mem, sizeof(mem)));
+    TEST_CHECK(called == 1);
+    TEST_CHECK(LEINT32(mem[0]) == 42);
+    TEST_CHECK(LEINT32(mem[1]) == 43);
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_protect_write_prot_hook_grant_cross_page(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    // mov rax, 0x8877665544332211; mov qword ptr [rbx], rax
+    char code[] = "\x48\xb8\x11\x22\x33\x44\x55\x66\x77\x88\x48\x89\x03";
+    uint64_t r_rbx = 0x10ffc;
+    uint64_t mem = 0;
+    int called = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, 0x10000, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+    OK(uc_mem_map(uc, 0x11000, 0x1000, UC_PROT_READ));
+    OK(uc_reg_write(uc, UC_X86_REG_RBX, &r_rbx));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_WRITE_PROT,
+                   test_mem_protect_prot_hook_grant_cb, &called, 1, 0));
+
+    // A store split across a writable and a read-only page: the bytes on the
+    // read-only page must land once the hook made it writable.
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_mem_read(uc, 0x10ffc, &mem, sizeof(mem)));
+    TEST_CHECK(called == 1);
+    TEST_CHECK(LEINT64(mem) == 0x8877665544332211ULL);
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_protect_read_prot_hook_grant(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    // mov eax, dword ptr [rbx]
+    char code[] = "\x8b\x03";
+    uint64_t r_rbx = 0x10000;
+    uint32_t val = LEINT32(0x11223344);
+    uint32_t r_eax = 0;
+    int called = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, 0x10000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x10000, &val, sizeof(val)));
+    OK(uc_mem_protect(uc, 0x10000, 0x1000, UC_PROT_NONE));
+    OK(uc_reg_write(uc, UC_X86_REG_RBX, &r_rbx));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_READ_PROT,
+                   test_mem_protect_prot_hook_grant_cb, &called, 1, 0));
+
+    // Granting write access as well flushes the TLB from within the hook: the
+    // load must not go through the flushed entry.
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    TEST_CHECK(called == 1);
+    TEST_CHECK(r_eax == 0x11223344);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -850,4 +949,10 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
               test_mem_protect_add_exec_fetch_prot},
              {"test_mem_protect_add_exec_mem_write",
               test_mem_protect_add_exec_mem_write},
+             {"test_mem_protect_write_prot_hook_grant",
+              test_mem_protect_write_prot_hook_grant},
+             {"test_mem_protect_write_prot_hook_grant_cross_page",
+              test_mem_protect_write_prot_hook_grant_cross_page},
+             {"test_mem_protect_read_prot_hook_grant",
+              test_mem_protect_read_prot_hook_grant},
              {NULL, NULL}};
