@@ -1246,7 +1246,124 @@ static void test_arm_context_cp_reg(void)
     OK(uc_close(uc));
 }
 
+
+/* Pack exact FP32 test values without depending on the host byte order. */
+static uint64_t vcmla_pair(float real, float imag)
+{
+    uint32_t r, i;
+    memcpy(&r, &real, sizeof(r));
+    memcpy(&i, &imag, sizeof(i));
+    return ((uint64_t)i << 32) | r;
+}
+
+static void check_arm_vcmla_indexed(bool q)
+{
+    /* n=(2,-3), m=(-4,5), accumulator=(10,-20), rotations 0/90/180/270. */
+    static const float expected[4][2] = {
+        {2, -10}, {25, -8}, {18, -30}, {-5, -32}
+    };
+    /* Second complex pair for Q: n=(7,-11), accumulator=(30,-40). */
+    static const float expected_high[4][2] = {
+        {2, -5}, {85, 4}, {58, -75}, {-25, -84}
+    };
+    static const float expected_dn[4][2] = {
+        {-30, 30}, {110, 60}, {50, -70}, {-90, -100}
+    };
+    static const float expected_dm[4][2] = {
+        {30, -60}, {-50, -50}, {-10, 20}, {70, 10}
+    };
+    static const int dregs[] = {0, 1, 14, 30, 31, 4, 4, 0};
+    static const int qregs[] = {0, 14, 30};
+    int thumb, rot, variant, i;
+
+    for (thumb = 0; thumb < 2; thumb++) {
+        for (rot = 0; rot < 4; rot++) {
+            for (variant = 0; variant < (q ? 3 : 8); variant++) {
+                uc_engine *uc;
+                int rd = q ? qregs[variant] : dregs[variant];
+                int rn = !q && variant == 6 ? 6 : 4;
+                int rm = !q && variant == 6 ? rd : 8;
+                uint32_t insn = 0xfe800800 | (rot << 20) | (q << 6) |
+                    ((rd & 15) << 12) | ((rd >> 4) << 22) |
+                    ((rn & 15) << 16) | ((rn >> 4) << 7) |
+                    (rm & 15) | ((rm >> 4) << 5);
+                char code[4];
+                uint64_t initial[32], want[32], actual;
+                uint32_t cpacr = 0x00f00000, fpexc = 0x40000000;
+                uint32_t fpscr = 0x80000010, actual_fpscr;
+                const float *result = expected[rot];
+
+                TEST_CASE_("%s %s rot=%d D%d variant=%d",
+                          thumb ? "T32" : "A32", q ? "Q" : "D",
+                          rot * 90, rd, variant);
+                for (i = 0; i < 4; i++) {
+                    code[i] = insn >> (8 * (thumb ? (i ^ 2) : i));
+                }
+                for (i = 0; i < 32; i++) {
+                    initial[i] = vcmla_pair(i + 1, -i - 1);
+                }
+                initial[rn] = vcmla_pair(2, -3);
+                /* An inactive sNaN must not raise IOC for a D operation. */
+                initial[rn + 1] = q ? vcmla_pair(7, -11)
+                                      : UINT64_C(0x7f8000017f800001);
+                initial[rm] = vcmla_pair(-4, 5);
+                initial[rd] = vcmla_pair(10, -20);
+                if (q) {
+                    initial[rd + 1] = vcmla_pair(30, -40);
+                } else if (variant == 5) {
+                    result = expected_dn[rot];
+                } else if (variant == 6) {
+                    result = expected_dm[rot];
+                } else if (variant == 7) {
+                    initial[rn] = vcmla_pair(0, 0);
+                }
+                memcpy(want, initial, sizeof(want));
+                if (q || variant != 7) {
+                    want[rd] = vcmla_pair(result[0], result[1]);
+                }
+                if (q) {
+                    want[rd + 1] = vcmla_pair(expected_high[rot][0],
+                                             expected_high[rot][1]);
+                }
+                uc_common_setup(&uc, UC_ARCH_ARM,
+                                thumb ? UC_MODE_THUMB : UC_MODE_ARM,
+                                code, sizeof(code), UC_CPU_ARM_MAX);
+                OK(uc_reg_write(uc, UC_ARM_REG_C1_C0_2, &cpacr));
+                OK(uc_reg_write(uc, UC_ARM_REG_FPEXC, &fpexc));
+                OK(uc_reg_write(uc, UC_ARM_REG_FPSCR, &fpscr));
+                for (i = 0; i < 32; i++) {
+                    OK(uc_reg_write(uc, UC_ARM_REG_D0 + i, &initial[i]));
+                }
+                OK(uc_emu_start(uc, code_start | thumb, code_start + 4, 0, 1));
+                for (i = 0; i < 32; i++) {
+                    OK(uc_reg_read(uc, UC_ARM_REG_D0 + i, &actual));
+                    TEST_CHECK(actual == want[i]);
+                    TEST_MSG("D%d: expected %016llx, got %016llx", i,
+                             (unsigned long long)want[i],
+                             (unsigned long long)actual);
+                }
+                OK(uc_reg_read(uc, UC_ARM_REG_FPSCR, &actual_fpscr));
+                TEST_CHECK(actual_fpscr == fpscr);
+                TEST_MSG("FPSCR: expected %08x, got %08x", fpscr, actual_fpscr);
+                OK(uc_close(uc));
+            }
+        }
+    }
+}
+
+static void test_arm_vcmla_indexed_d(void)
+{
+    check_arm_vcmla_indexed(false);
+}
+
+static void test_arm_vcmla_indexed_q(void)
+{
+    check_arm_vcmla_indexed(true);
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
+             {"test_arm_vcmla_indexed_d", test_arm_vcmla_indexed_d},
+             {"test_arm_vcmla_indexed_q", test_arm_vcmla_indexed_q},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
              {"test_armeb_be8_sub", test_armeb_be8_sub},
