@@ -2891,6 +2891,83 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+typedef struct PcmpestrCase_t {
+    const char *name;
+    uint8_t code[8];
+    size_t len;
+    uint64_t rax;
+    uint64_t rdx;
+    uint32_t ecx;
+    uint64_t xmm0_hi;
+    uint64_t xmm0_lo;
+    uint32_t flags;
+} PcmpestrCase;
+
+static void test_x86_pcmpestr_explicit_len(void)
+{
+    static const PcmpestrCase cases[] = {
+        // 32-bit lengths
+        {"pcmpestri imm=00, eax=edx=INT_MIN",
+         {0x66, 0x0f, 0x3a, 0x61, 0xc1, 0x00}, 6,
+         0x80000000ull, 0x80000000ull, 0, 0x100f0e0d0c0b0a09ull, 0x0807060500030201ull, 0x801},
+        {"pcmpestri imm=04, eax=5, edx=INT_MIN",
+         {0x66, 0x0f, 0x3a, 0x61, 0xc1, 0x04}, 6,
+         5, 0x80000000ull, 0x10, 0x100f0e0d0c0b0a09ull, 0x0807060500030201ull, 0x080},
+        {"pcmpestri imm=0c, eax=INT_MIN, edx=5",
+         {0x66, 0x0f, 0x3a, 0x61, 0xc1, 0x0c}, 6,
+         0x80000000ull, 5, 0x10, 0x100f0e0d0c0b0a09ull, 0x0807060500030201ull, 0x040},
+        {"pcmpestrm imm=08, eax=edx=INT_MIN",
+         {0x66, 0x0f, 0x3a, 0x60, 0xc1, 0x08}, 6,
+         0x80000000ull, 0x80000000ull, 0xdeadbeef, 0, 0, 0x000},
+        // 64-bit lengths (REX.W)
+        {"pcmpestri imm=00, rax=rdx=2^32",
+         {0x66, 0x48, 0x0f, 0x3a, 0x61, 0xc1, 0x00}, 7,
+         0x100000000ull, 0x100000000ull, 0, 0x100f0e0d0c0b0a09ull, 0x0807060500030201ull, 0x801},
+        {"pcmpestri imm=0c, rax=rdx=INT64_MIN",
+         {0x66, 0x48, 0x0f, 0x3a, 0x61, 0xc1, 0x0c}, 7,
+         0x8000000000000000ull, 0x8000000000000000ull, 0x10, 0x100f0e0d0c0b0a09ull, 0x0807060500030201ull, 0x000},
+        {"pcmpestri imm=00, rax=2^32+3, rdx=5",
+         {0x66, 0x48, 0x0f, 0x3a, 0x61, 0xc1, 0x00}, 7,
+         0x100000003ull, 5, 0, 0x100f0e0d0c0b0a09ull, 0x0807060500030201ull, 0x841},
+        {"pcmpestrm imm=01, rax=rdx=0xffffffff",
+         {0x66, 0x48, 0x0f, 0x3a, 0x60, 0xc1, 0x01}, 7,
+         0xffffffffull, 0xffffffffull, 0xdeadbeef, 0, 0x3f, 0x801},
+    };
+    const uint8_t x0[16] = {1, 2, 3, 0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    const uint8_t x1[16] = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 0, 0, 0, 0};
+    size_t i;
+
+    for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+        const PcmpestrCase *c = &cases[i];
+        uc_engine *uc;
+        uint64_t rax = c->rax, rdx = c->rdx, rcx = 0xdeadbeef, rflags;
+        uint64_t xmm0[2];
+
+        uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, (const char *)c->code,
+                        c->len);
+        OK(uc_reg_write(uc, UC_X86_REG_RAX, &rax));
+        OK(uc_reg_write(uc, UC_X86_REG_RDX, &rdx));
+        OK(uc_reg_write(uc, UC_X86_REG_RCX, &rcx));
+        OK(uc_reg_write(uc, UC_X86_REG_XMM0, x0));
+        OK(uc_reg_write(uc, UC_X86_REG_XMM1, x1));
+        OK(uc_emu_start(uc, code_start, code_start + c->len, 0, 0));
+
+        OK(uc_reg_read(uc, UC_X86_REG_RCX, &rcx));
+        OK(uc_reg_read(uc, UC_X86_REG_XMM0, xmm0));
+        OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &rflags));
+        TEST_CHECK_((uint32_t)rcx == c->ecx, "%s: ecx=%x expected %x", c->name,
+                    (uint32_t)rcx, c->ecx);
+        TEST_CHECK_(xmm0[0] == c->xmm0_lo && xmm0[1] == c->xmm0_hi,
+                    "%s: xmm0=%llx:%llx expected %llx:%llx", c->name,
+                    (unsigned long long)xmm0[1], (unsigned long long)xmm0[0],
+                    (unsigned long long)c->xmm0_hi,
+                    (unsigned long long)c->xmm0_lo);
+        TEST_CHECK_((rflags & 0x8c1) == c->flags, "%s: flags=%x expected %x",
+                    c->name, (uint32_t)(rflags & 0x8c1), c->flags);
+        OK(uc_close(uc));
+    }
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +3055,5 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_pcmpestr_explicit_len", test_x86_pcmpestr_explicit_len},
     {NULL, NULL}};
