@@ -56,6 +56,27 @@ static int perms_to_prot(int perms)
     return ret;
 }
 
+/*
+ * cpu_restore_state() in unicorn_fill_tlb() syncs the PC for the TLB fill
+ * hooks, and when the fill succeeds the current TB keeps running. On ARM it
+ * also restores condexec_bits (the Thumb IT state) of the faulting
+ * instruction, but translated code relies on env->condexec_bits keeping the
+ * value it had on TB entry. Leaving the restored value in place makes the
+ * next TB lookup run as if it were still inside the IT block, so the
+ * instruction after the block is skipped when its condition does not hold.
+ * Same problem as the memory hook path in cputlb.c (#2309).
+ */
+static inline void vtlb_continue_tb(CPUState *cs, uint32_t condexec_bits)
+{
+#ifdef TARGET_ARM
+    CPUArchState *env = cs->env_ptr;
+
+    if (!cs->uc->stop_request) {
+        env->condexec_bits = condexec_bits;
+    }
+#endif
+}
+
 bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
                       MMUAccessType rw, int mmu_idx,
                       bool probe, uintptr_t retaddr)
@@ -65,8 +86,12 @@ bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
     struct uc_struct *uc = cs->uc;
     uc_tlb_entry e;
     struct hook *hook;
+    uint32_t condexec_bits = 0;
     HOOK_FOREACH_VAR_DECLARE;
 
+#ifdef TARGET_ARM
+    condexec_bits = ((CPUArchState *)cs->env_ptr)->condexec_bits;
+#endif
     cpu_restore_state(cs, retaddr, false);
 
     HOOK_FOREACH(uc, hook, UC_HOOK_TLB_FILL) {
@@ -122,11 +147,13 @@ bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
 
     if (ret) {
         tlb_set_page(cs, address & TARGET_PAGE_MASK, e.paddr & TARGET_PAGE_MASK, perms_to_prot(e.perms), mmu_idx, TARGET_PAGE_SIZE);
+        vtlb_continue_tb(cs, condexec_bits);
         return true;
     }
 
 tlb_miss:
     if (probe) {
+        vtlb_continue_tb(cs, condexec_bits);
         return false;
     }
     raise_mmu_exception(cs, address, rw, retaddr);

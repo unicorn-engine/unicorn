@@ -945,6 +945,69 @@ static void _uc_hook_sub_cmp(uc_engine *uc, uint64_t address, uint64_t arg1,
     user_data->v1 = arg2;
 }
 
+static bool test_arm_thumb_it_tlb_fill_cb(uc_engine *uc, uint64_t addr,
+                                          uc_mem_type type,
+                                          uc_tlb_entry *result,
+                                          void *user_data)
+{
+    (void)uc;
+    (void)type;
+    (void)user_data;
+
+    result->paddr = addr;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+// A TLB fill inside an IT block must not leave the IT state behind: the
+// instruction after the block (the loop head here) has to run every time.
+static void test_arm_thumb_it_tlb_fill(void)
+{
+    uc_engine *uc;
+    uc_hook hk;
+    uint8_t code[] = {
+        0x00, 0x25,             /* movs r5, #0 */
+        0x00, 0x21,             /* movs r1, #0 */
+        0x0d, 0x4e,             /* ldr r6, [pc, #52] (tbl) */
+        0x00, 0xbf,             /* nop */
+        0x01, 0x35,             /* mid: adds r5, #1 */
+        0x56, 0xf8, 0x21, 0x00, /* ldr.w r0, [r6, r1, lsl #2] */
+        0x04, 0x29,             /* cmp r1, #4 */
+        0x08, 0xda,             /* bge out */
+        0x01, 0x31,             /* adds r1, #1 */
+        0x01, 0x34,             /* adds r4, #1 */
+        0xc0, 0x07,             /* lsls r0, r0, #31 */
+        0x44, 0xbf,             /* itt mi */
+        0x63, 0xf0, 0x7f, 0x03, /* ornmi r3, r3, #127 */
+        0x04, 0xf8, 0x01, 0x3c, /* strbmi.w r3, [r4, #-1] */
+        0xf1, 0xe7,             /* b.n mid */
+        0xfe, 0xe7,             /* out: b out */
+        0x00, 0xbf,             /* nop */
+        0x01, 0x00, 0x00, 0x00, /* tbl: .word 1, 1, 0, 1, 0 */
+        0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x01, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x28, 0x10, 0x00, 0x00, /* literal: tbl */
+    };
+    uint32_t r4 = code_start + 0x2000;
+    uint32_t r5 = 0;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS,
+                    (char *)code, sizeof(code), UC_CPU_ARM_CORTEX_M7);
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_TLB_FILL, test_arm_thumb_it_tlb_fill_cb,
+                   NULL, 1, 0));
+    OK(uc_reg_write(uc, UC_ARM_REG_R4, &r4));
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + 0x24, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R5, &r5));
+    TEST_CHECK(r5 == 5);
+
+    OK(uc_close(uc));
+}
+
 static void test_arm_tcg_opcode_cmp(void)
 {
     uc_engine *uc;
@@ -1273,6 +1336,7 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_armeb_be32_thumb2", test_armeb_be32_thumb2},
              {"test_arm_mem_hook_read_write", test_arm_mem_hook_read_write},
              {"test_arm_thumb_it_mem_hook", test_arm_thumb_it_mem_hook},
+             {"test_arm_thumb_it_tlb_fill", test_arm_thumb_it_tlb_fill},
              {"test_arm_tcg_opcode_cmp", test_arm_tcg_opcode_cmp},
              {"test_arm_thumb_tcg_opcode_cmn", test_arm_thumb_tcg_opcode_cmn},
              {"test_arm_cp15_c1_c0_2", test_arm_cp15_c1_c0_2},
