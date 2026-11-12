@@ -42,7 +42,7 @@ ldr x0, [x1] <--- exception here and PC sync-ed here
 <details>
   <summary>For version >= 2.1.4 </summary>
 
-We should always have valid PC all the time. Please report an issue for your case.
+We should always have valid PC all the time, with one documented exception: inside a `UC_HOOK_TLB_FILL` callback the CPU registers (including PC) are *not* rolled back to the faulting instruction. See [the `UC_TLB_VIRTUAL` question below](#is-there-anyway-to-disable-softmmu-to-speed-up-execution) for details. Otherwise, please report an issue for your case.
 
 </details>
 
@@ -134,6 +134,10 @@ Starting from 2.0.2, Unicorn will emulate the MMU depending on the emulated arch
 Therefore, if you still prefer the previous `paddr = vaddr` simple mapping, we have a simple experimental MMU implementation that can be switched on by: `uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL)`. With this mode, you could also add a `UC_HOOK_TLB_FILL` hook to manage the TLB. When a virtual address is not cached, the hook will be called. Besides, users are allowed to flush the tlb with `uc_ctl_flush_tlb`.
 
 In theory, `UC_TLB_VIRTUAL` will achieve better performance as it skips all MMU details, though not benchmarked.
+
+The `UC_HOOK_TLB_FILL` callback is given the faulting *virtual* address and the access type, and returns the mapping for that page (physical address and permissions), or `false` to reject it. Decide the mapping from the address argument passed to the hook — **not** from the CPU registers. Unlike most hooks, the registers (including PC) are not guaranteed to be rolled back to the faulting instruction while the callback runs: on a successful fill the faulting access is resumed in place, so rolling the state back here would leak into the resumed execution (on MIPS, for example, it re-applies branch-delay-slot flags and raises a spurious Reserved Instruction exception). Keeping this off the register-restore path also avoids per-fill overhead.
+
+When the hook returns `false` — or when no hook is installed and a virtual address cannot be translated — `uc_emu_start` stops and returns `UC_ERR_MMU_READ`, `UC_ERR_MMU_WRITE`, or `UC_ERR_MMU_FETCH` depending on the access type. You can then read the faulting virtual address with `uc_ctl_get_invalid_addr(uc, &addr)`.
 
 ## Something is wrong - I would like to dig deeper
 
