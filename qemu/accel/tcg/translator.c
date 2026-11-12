@@ -173,7 +173,8 @@ _end_loop:
             tcg_op = QTAILQ_FIRST(&tcg_ctx->ops);
         }
 
-        if (tcg_op->args[1] == 0xf8f8f8f8) {
+        // the size placeholder is an int32_t, sign-extended in the 64-bit TCGArg
+        if ((uint32_t)tcg_op->args[1] == 0xf8f8f8f8) {
             tcg_op->args[1] = db->tb->size;
         } else {
             tcg_op->args[1] = db->tb->icount;
