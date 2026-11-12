@@ -34,6 +34,9 @@ You might also use it to trace the execution with a disassembly, in a similar wa
 
 If you want to inject behaviour you might use this hook to modify the registers - including modifying the program counter, to jump to a different place.
 
+> [!WARNING]  
+> **ARM only:** Changes to the program counter are ignored when the callback is invoked inside an *If-Then (IT)* block.
+
 
 ## UC_HOOK_MEM_READ, UC_HOOK_MEM_WRITE, UC_HOOK_READ_MEM_AFTER
 
