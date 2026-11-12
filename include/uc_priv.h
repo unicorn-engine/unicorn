@@ -454,6 +454,7 @@ struct uc_struct {
     bool thread_executable_entry;
     bool current_executable;
     bool skip_sync_pc_on_exit;
+    bool async_stop; // uc_emu_stop came from outside this uc's emulation
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
@@ -554,6 +555,8 @@ static inline void hooked_regions_check(uc_engine *uc, uint64_t start,
  2. the user has set it IP. This requires to restart the internal
  CPU emulation and rebuild some translation blocks
 */
+#define UC_EXIT_CHECK_AFTER_MEM 0x80000000u
+
 static inline uc_err break_translation_loop(uc_engine *uc)
 {
     if (uc->emulation_done) {
