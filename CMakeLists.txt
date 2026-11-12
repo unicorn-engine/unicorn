@@ -156,8 +156,12 @@ if(MSVC)
 
     # handle msvcrt setting being passed in CMAKE_C_FLAGS
     if(CMAKE_C_FLAGS MATCHES "[/-]M[TD]d?")
-        # ensure CMAKE_MSVC_RUNTIME_LIBRARY is not already defined
-        if(DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+        # A toolchain file may define CMAKE_MSVC_RUNTIME_LIBRARY with an empty
+        # value (cargo-xwin does this). Treat only a non-empty value as an
+        # explicit runtime selection, otherwise the two settings are not
+        # actually in conflict.
+        if(DEFINED CMAKE_MSVC_RUNTIME_LIBRARY AND
+           NOT "${CMAKE_MSVC_RUNTIME_LIBRARY}" STREQUAL "")
             message(FATAL_ERROR "please set the runtime library via either CMAKE_C_FLAGS or CMAKE_MSVC_RUNTIME_LIBRARY, not both")
         endif()
 
