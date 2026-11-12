@@ -1024,6 +1024,19 @@ target_ulong helper_rdhwr_ccres(CPUMIPSState *env)
     return env->CCRes;
 }
 
+target_ulong helper_rdhwr_cvmcount(CPUMIPSState *env)
+{
+    /*
+     * Octeon-specific hardware register 31 (CvmCount): a 64-bit free-running
+     * core-cycle counter. This configuration has no running CP0 cycle timer,
+     * so advance the counter a fixed amount per read to model the passage of
+     * core cycles monotonically. The exact increment is not architecturally
+     * meaningful; it only needs to be non-zero and monotonic.
+     */
+    env->CvmCount += 0x8000;
+    return (target_ulong)env->CvmCount;
+}
+
 target_ulong helper_rdhwr_performance(CPUMIPSState *env)
 {
     check_hwrena(env, 4, GETPC());

@@ -4,6 +4,8 @@ Unicorn Engine
 [![pypi downloads](https://pepy.tech/badge/unicorn)](https://pepy.tech/project/unicorn)
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/unicorn.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:unicorn)
 
+**LOOKING FOR CONTRIBUTORS!** See [this](https://github.com/unicorn-engine/unicorn/issues/2237).
+==============
 
 <p align="center">
 <img width="250" src="docs/unicorn-logo.png">
