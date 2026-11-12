@@ -725,6 +725,68 @@ static void test_arm_switch_endian(void)
     OK(uc_close(uc));
 }
 
+static uint32_t armeb_load_word(uc_mode mode, const char *code,
+                                size_t code_size, bool thumb, int cpsr)
+{
+    uc_engine *uc;
+    uint32_t r0 = 0;
+    uint32_t r1 = (uint32_t)code_start + 0x100;
+
+    OK(uc_open(UC_ARCH_ARM, mode, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_926));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, code_size));
+    OK(uc_mem_write(uc, r1, "\x11\x22\x33\x44", 4));
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r1));
+    if (cpsr >= 0) {
+        uint32_t value = (uint32_t)cpsr;
+        OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &value));
+    }
+    OK(uc_emu_start(uc, code_start | (thumb ? 1 : 0), 0, 0, 1));
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r0));
+    OK(uc_close(uc));
+
+    return r0;
+}
+
+static void test_armeb_cpsr_write_data_endianness(void)
+{
+    // ARM926 is ARMv5TEJ and has no CPSR.E. In UC_MODE_BIG_ENDIAN the
+    // endianness is carried by SCTLR.B, so writing CPSR must not switch
+    // data accesses to little-endian.
+    const char arm_code[] = "\xe5\x91\x00\x00";     // ldr r0, [r1]
+    const char thumb_code[] = "\x68\x08";           // ldr r0, [r1, #0]
+    const char be8_arm_code[] = "\x00\x00\x91\xe5"; // ldr r0, [r1]
+    uc_mode be32 = UC_MODE_ARM | UC_MODE_BIG_ENDIAN;
+    uc_mode be8 = UC_MODE_ARM | UC_MODE_ARMBE8;
+    uint32_t r0;
+
+    r0 = armeb_load_word(be32, arm_code, sizeof(arm_code) - 1, false, -1);
+    TEST_CHECK(r0 == 0x11223344);
+    r0 = armeb_load_word(be32, arm_code, sizeof(arm_code) - 1, false, 0x10);
+    TEST_CHECK(r0 == 0x11223344);
+    r0 = armeb_load_word(be32, arm_code, sizeof(arm_code) - 1, false, 0x210);
+    TEST_CHECK(r0 == 0x11223344);
+    r0 = armeb_load_word(be32, thumb_code, sizeof(thumb_code) - 1, true, -1);
+    TEST_CHECK(r0 == 0x11223344);
+    r0 = armeb_load_word(be32, thumb_code, sizeof(thumb_code) - 1, true, 0x30);
+    TEST_CHECK(r0 == 0x11223344);
+    r0 = armeb_load_word(be32, thumb_code, sizeof(thumb_code) - 1, true, 0x230);
+    TEST_CHECK(r0 == 0x11223344);
+
+    // UC_MODE_ARMBE8 does not set SCTLR.B, so CPSR.E keeps selecting
+    // the data endianness.
+    r0 = armeb_load_word(be8, be8_arm_code, sizeof(be8_arm_code) - 1, false,
+                         -1);
+    TEST_CHECK(r0 == 0x11223344);
+    r0 = armeb_load_word(be8, be8_arm_code, sizeof(be8_arm_code) - 1, false,
+                         0x10);
+    TEST_CHECK(r0 == 0x44332211);
+    r0 = armeb_load_word(be8, be8_arm_code, sizeof(be8_arm_code) - 1, false,
+                         0x210);
+    TEST_CHECK(r0 == 0x11223344);
+}
+
 static void test_armeb_ldrb(void)
 {
     uc_engine *uc;
@@ -1053,6 +1115,8 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_read_sctlr", test_arm_read_sctlr},
              {"test_arm_be_cpsr_sctlr", test_arm_be_cpsr_sctlr},
              {"test_arm_switch_endian", test_arm_switch_endian},
+             {"test_armeb_cpsr_write_data_endianness",
+              test_armeb_cpsr_write_data_endianness},
              {"test_armeb_ldrb", test_armeb_ldrb},
              {"test_arm_context_save", test_arm_context_save},
              {"test_arm_thumb2", test_arm_thumb2},
