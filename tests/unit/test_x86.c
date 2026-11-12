@@ -2891,6 +2891,26 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_mmx_regs(void)
+{
+    uc_engine *uc;
+    char code[] = "\x0f\x6f\xc8"      // movq %mm0, %mm1
+                  "\x0f\xfe\xc9"      // paddd %mm1, %mm1
+                  "\x48\x0f\x7e\xc8"; // movq %mm1, %rax
+    uint64_t mm0 = 0x1122334455667788ULL, mm1 = 0, rax = 0;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_X86_REG_MM0, &mm0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_MM1, &mm1));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+    TEST_CHECK(rax == 0x22446688aaccef10ULL);
+    TEST_CHECK(mm1 == 0x22446688aaccef10ULL);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +2998,5 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_mmx_regs", test_x86_mmx_regs},
     {NULL, NULL}};

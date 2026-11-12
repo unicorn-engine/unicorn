@@ -258,6 +258,18 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
                      reg);
         return ret;
     }
+    case UC_X86_REG_MM0:
+    case UC_X86_REG_MM1:
+    case UC_X86_REG_MM2:
+    case UC_X86_REG_MM3:
+    case UC_X86_REG_MM4:
+    case UC_X86_REG_MM5:
+    case UC_X86_REG_MM6:
+    case UC_X86_REG_MM7:
+        // MMn is the low 64 bits of the physical x87 register n
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->fpregs[regid - UC_X86_REG_MM0].mmx.MMX_Q(0);
+        return ret;
     case UC_X86_REG_FPSW: {
         CHECK_REG_TYPE(uint16_t);
         uint16_t fpus = env->fpus;
@@ -1133,6 +1145,17 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         env->fpregs[regid - UC_X86_REG_FP0].d = cpu_set_fp80(mant, upper);
         return ret;
     }
+    case UC_X86_REG_MM0:
+    case UC_X86_REG_MM1:
+    case UC_X86_REG_MM2:
+    case UC_X86_REG_MM3:
+    case UC_X86_REG_MM4:
+    case UC_X86_REG_MM5:
+    case UC_X86_REG_MM6:
+    case UC_X86_REG_MM7:
+        CHECK_REG_TYPE(uint64_t);
+        env->fpregs[regid - UC_X86_REG_MM0].mmx.MMX_Q(0) = *(uint64_t *)value;
+        return ret;
     case UC_X86_REG_FPSW: {
         CHECK_REG_TYPE(uint16_t);
         uint16_t fpus = *(uint16_t *)value;
