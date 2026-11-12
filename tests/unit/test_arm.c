@@ -16,6 +16,10 @@ typedef struct _WFI_HOOK_INSN_RESULT {
     bool called;
 } WFI_HOOK_INSN_RESULT;
 
+typedef struct _MMIO_MAP_WRITE_PC_SYNC_RESULT {
+    uint32_t pc_val;
+} MMIO_MAP_WRITE_PC_SYNC_RESULT;
+
 static void test_arm_nop(void)
 {
     uc_engine *uc;
@@ -1155,13 +1159,212 @@ static void test_arm_hook_insn_wfi(void)
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
                     UC_CPU_ARM_CORTEX_A15);
-    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_arm_hook_insn_wfi_callback, &result, 1, 0,
-                   UC_ARM_INS_WFI));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_arm_hook_insn_wfi_callback, 
+                   &result, 1, 0, UC_ARM_INS_WFI));
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
     TEST_CHECK(result.called == true);
 
     OK(uc_hook_del(uc, hook));
+    OK(uc_close(uc));
+}
+
+static uint64_t test_arm_mmio_map_pc_sync_read_callback(struct uc_struct *uc, uint64_t addr, 
+                                                        unsigned size, void *user_data)
+{
+    return 0;
+}
+
+static void test_arm_mmio_map_pc_sync_write_callback(struct uc_struct *uc, uint64_t addr, 
+                                                     unsigned size, uint64_t data, void *user_data)
+{
+    MMIO_MAP_WRITE_PC_SYNC_RESULT *result = (MMIO_MAP_WRITE_PC_SYNC_RESULT *)user_data;
+    uc_reg_read(uc, UC_ARM_REG_PC, &result->pc_val);
+}
+
+static void test_arm_mmio_map_pc_sync(void)
+{
+    uc_engine *uc;
+    char code[] = "\xce\xf2\x00\x01\xcd\xf6\xad\x62\x0a\x60\x00\xbf";
+    /*
+     * 00001000     0  cef20001   movt    r1, #0xe000
+     * 00001004     0  cdf6ad62   movt    r2, #0xdead
+     * 00001008     0  0a60       str     r2, [r1]
+     * 0000100a     0  00bf       nop
+     */
+
+    MMIO_MAP_WRITE_PC_SYNC_RESULT result = {0xFFFFFFFF};
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
+    OK(uc_mmio_map(uc, 0xe0000000, 0x1000, 
+                   test_arm_mmio_map_pc_sync_read_callback, NULL, 
+                   test_arm_mmio_map_pc_sync_write_callback, &result));
+    
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
+    /* 
+     * The PC value should be at the str inst, because that is when the MMIO_MAP
+     * write callback is called. If the PC has not been synced yet,
+     * our PC value would be 0x1000.
+     */
+    TEST_CHECK(result.pc_val == 0x1008);
+
+    OK(uc_close(uc));
+};
+
+static bool test_arm_hook_condexec_corruption_cb(uc_engine *uc, int type,
+                                                 uint64_t address, int size,
+                                                 int64_t value, void *user_data)
+{
+    return 0;
+}
+
+static void test_arm_hook_condexec_corruption(void)
+{
+    /*
+     * Test to ensure that ARM condexec bits are not
+     * corrupted on a hook.
+     */
+    uc_engine *uc;
+    uc_hook hook;
+    uint32_t reg;
+    char code_main[] = "\x00\xf0\x7e\xf8\x00\xbf\x96\x21";
+    /*
+     * 00010000  00f07ef8   bl      0x1100
+     * 00010004  00bf       nop
+     * 00010006  9621       movs    r1, #0x96
+     */
+    char code_itte_fn[] = "\x9a\xbf\x00\xbf\x00\x48\x00\xbf\x70\x47";
+    /*
+     * 00010100  9abf       itte    ls
+     * 00010102  00bf       nop
+     * 00010104  0048       ldr     r0, [pc] @ trigger the mem hook!
+     * 00010106  00bf       nop
+     * 00010108  7047       bx      lr
+     */
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code_main, 
+                    sizeof(code_main) - 1, UC_CPU_ARM_CORTEX_A15);
+    OK(uc_mem_write(uc, 0x1100, code_itte_fn, sizeof(code_itte_fn) - 1));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ, 
+                   test_arm_hook_condexec_corruption_cb, NULL, 1, 0));
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code_main) - 1,
+                    0, 0));
+    
+    /* 
+        Ensure the MOVS instruction executed. If condexec has been
+        corrupted, this MOVS instruction becomes conditional and
+        will not execute.
+    */
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &reg));
+    TEST_CHECK(reg == 0x96);
+
+    OK(uc_close(uc));
+};
+static bool test_arm_tlb_fill_it_state_cb(uc_engine *uc, uint64_t addr,
+                                          uc_mem_type type,
+                                          uc_tlb_entry *result,
+                                          void *user_data)
+{
+    result->paddr = addr;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+static void test_arm_tlb_fill_it_state(void)
+{
+    // The #2309 code: the ldrne inside the IT block misses the TLB.
+    char code[] = "\x00\x28\x1c\xbf\x06\x48\x86\x42\x00\xd1\x00\xbf\x05\x48"
+                  "\x86\x42\x04\xd0\x03\x2c\x00\xd3\x01\x25\x02\x23\x00\xbf"
+                  "\x09\x25\x00\xbf\x05\x00\x00\x00\x07\x00\x00\x00";
+    /*
+     * 00001000  0028       cmp     r0, #0
+     * 00001002  1cbf       itt     ne
+     * 00001004  0648       ldrne   r0, [pc, #0x18]
+     * 00001006  8642       cmpne   r6, r0
+     * 00001008  00d1       bne     #0x100c
+     * 0000100a  00bf       nop
+     * 0000100c  0548       ldr     r0, [pc, #0x14]
+     * 0000100e  8642       cmp     r6, r0
+     * 00001010  04d0       beq     #0x101c
+     * 00001012  032c       cmp     r4, #3
+     * 00001014  00d3       blo     #0x1018
+     * 00001016  0125       movs    r5, #1
+     * 00001018  0223       movs    r3, #2
+     */
+    uint32_t r0 = 1, r4 = 1, r6 = 0, r3 = 0, r5 = 0;
+
+    for (int with_hook = 0; with_hook < 2; with_hook++) {
+        uc_engine *uc;
+        uc_hook hook;
+
+        uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS,
+                        code, sizeof(code) - 1, UC_CPU_ARM_CORTEX_M4);
+        OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+        if (with_hook) {
+            OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL,
+                           test_arm_tlb_fill_it_state_cb, NULL, 1, 0));
+        }
+        OK(uc_reg_write(uc, UC_ARM_REG_R0, &r0));
+        OK(uc_reg_write(uc, UC_ARM_REG_R4, &r4));
+        OK(uc_reg_write(uc, UC_ARM_REG_R6, &r6));
+
+        // A stale IT state makes the blo in the next TB illegal.
+        OK(uc_emu_start(uc, code_start | 1, code_start + 0x1a, 0, 0));
+        OK(uc_reg_read(uc, UC_ARM_REG_R3, &r3));
+        OK(uc_reg_read(uc, UC_ARM_REG_R5, &r5));
+        TEST_CHECK(r3 == 2);
+        TEST_CHECK(r5 == 0);
+
+        OK(uc_close(uc));
+    }
+}
+
+static int test_arm_wfi_hook_it_state_cb(uc_engine *uc, void *user_data)
+{
+    uint32_t pc;
+
+    // The stop at the end address imitates a WFI as well, let it halt.
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &pc));
+    if (pc != code_start + 4) {
+        return 0;
+    }
+    (*(int *)user_data)++;
+    return 1; // skip the WFI
+}
+
+static void test_arm_wfi_hook_it_state(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\x80\x42\x0c\xbf\x30\xbf\x05\x21\x07\x22\x00\xbf";
+    /*
+     * 00001000  8042       cmp     r0, r0
+     * 00001002  0cbf       ite     eq
+     * 00001004  30bf       wfieq
+     * 00001006  0521       movne   r1, #5
+     * 00001008  0722       movs    r2, #7
+     * 0000100a  00bf       nop
+     */
+    int calls = 0;
+    uint32_t r1 = 0, r2 = 0, pc = 0;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, code,
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_M4);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INSN, test_arm_wfi_hook_it_state_cb,
+                   &calls, 1, 0, UC_ARM_INS_WFI));
+
+    // Execution must continue after the skipped WFI, in the IT block.
+    OK(uc_emu_start(uc, code_start | 1, code_start + 0xa, 1000 * 1000, 0));
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r1));
+    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r2));
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &pc));
+    TEST_CHECK(calls == 1);
+    TEST_CHECK(r1 == 0);
+    TEST_CHECK(r2 == 7);
+    TEST_CHECK(pc == code_start + 0xa);
+
     OK(uc_close(uc));
 }
 
@@ -1280,6 +1483,10 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_v7_lpae", test_arm_v7_lpae},
              {"test_arm_svc_hvc_syndrome", test_arm_svc_hvc_syndrome},
              {"test_arm_hook_insn_wfi", test_arm_hook_insn_wfi},
+             {"test_arm_mmio_map_pc_sync", test_arm_mmio_map_pc_sync},
+             {"test_arm_hook_condexec_corruption", test_arm_hook_condexec_corruption},
+             {"test_arm_tlb_fill_it_state", test_arm_tlb_fill_it_state},
+             {"test_arm_wfi_hook_it_state", test_arm_wfi_hook_it_state},
              {"test_arm_context", test_arm_context},
              {"test_arm_context_hw_breakpoint", test_arm_context_hw_breakpoint},
              {"test_arm_context_cp_reg", test_arm_context_cp_reg},
