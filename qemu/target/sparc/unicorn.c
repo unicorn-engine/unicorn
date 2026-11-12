@@ -59,6 +59,8 @@ static void reg_reset(struct uc_struct *uc)
     env->pc = 0;
     env->npc = 0;
     env->regwptr = env->regbase;
+    // the condition codes start in env->psr; CC_OP_DYNAMIC has no entry in the cc tables
+    env->cc_op = CC_OP_FLAGS;
 }
 
 DEFAULT_VISIBILITY
@@ -82,10 +84,8 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         *(uint32_t *)value = env->regwptr[16 + regid - UC_SPARC_REG_I0];
     } else if (regid == UC_SPARC_REG_PSR) {
         CHECK_REG_TYPE(uint32_t);
-        if (env->cc_op != CC_OP_FLAGS) {
-            cpu_get_psr(env);
-        }
-        *(uint32_t *)value = env->psr;
+        // env->psr only holds the condition codes; cpu_get_psr() adds the fields kept elsewhere
+        *(uint32_t *)value = cpu_get_psr(env);
     } else {
         switch (regid) {
         default:
@@ -93,6 +93,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         case UC_SPARC_REG_PC:
             CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = env->pc;
+            break;
+        case UC_SPARC_REG_Y:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->y;
             break;
         }
     }
@@ -133,6 +137,10 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             env->pc = *(uint32_t *)value;
             env->npc = *(uint32_t *)value + 4;
             *setpc = 1;
+            break;
+        case UC_SPARC_REG_Y:
+            CHECK_REG_TYPE(uint32_t);
+            env->y = *(uint32_t *)value;
             break;
         }
     }

@@ -110,6 +110,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(uint64_t);
             *(uint64_t *)value = env->pc;
             break;
+        case UC_SPARC_REG_Y:
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = env->y;
+            break;
         }
     }
 
@@ -144,6 +148,10 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             env->pc = *(uint64_t *)value;
             env->npc = *(uint64_t *)value + 4;
             *setpc = 1;
+            break;
+        case UC_SPARC_REG_Y:
+            CHECK_REG_TYPE(uint64_t);
+            env->y = *(uint64_t *)value;
             break;
         }
     }
