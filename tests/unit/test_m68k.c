@@ -122,8 +122,27 @@ static void test_branch_on_initial_flags(void)
     OK(uc_close(uc));
 }
 
+// A 680x0 reset enters supervisor mode with interrupts masked (IPL 7).
+static void test_sr_after_open(void)
+{
+    uc_engine *uc;
+    uint32_t sr;
+
+    OK(uc_open(UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_reg_read(uc, UC_M68K_REG_SR, &sr));
+    TEST_CHECK(sr == 0x2700);
+    OK(uc_close(uc));
+
+    OK(uc_open(UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_M68K_M68000));
+    OK(uc_reg_read(uc, UC_M68K_REG_SR, &sr));
+    TEST_CHECK(sr == 0x2700);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_move_to_sr", test_move_to_sr},
              {"test_sr_contains_flags", test_sr_contains_flags},
              {"test_sr_read_preserves_flags", test_sr_read_preserves_flags},
              {"test_branch_on_initial_flags", test_branch_on_initial_flags},
+             {"test_sr_after_open", test_sr_after_open},
              {NULL, NULL}};
