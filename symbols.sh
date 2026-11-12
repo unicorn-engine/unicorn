@@ -6528,7 +6528,9 @@ helper_xsrqpi \
 helper_xsrqpxp \
 helper_xssqrtqp \
 helper_xssubqp \
-do_store_fpscr
+do_store_fpscr \
+cpu_read_xer \
+cpu_write_xer
 "
 
 ppc64_SYMBOLS=${ppc_SYMBOLS}

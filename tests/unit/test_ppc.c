@@ -35,6 +35,44 @@ static void test_ppc32_add(void)
 }
 
 // https://www.ibm.com/docs/en/aix/7.2?topic=set-fadd-fa-floating-add-instruction
+// The SO, OV and CA bits of XER live outside env->xer in QEMU.
+static void test_ppc32_xer(void)
+{
+    uc_engine *uc;
+    char code[] = "\x7c\x64\x29\x14"; // ADDE 3, 4, 5
+    int reg;
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1);
+
+    reg = 0;
+    OK(uc_reg_write(uc, UC_PPC_REG_4, &reg));
+    OK(uc_reg_write(uc, UC_PPC_REG_5, &reg));
+    reg = 0x20000000; // CA
+    OK(uc_reg_write(uc, UC_PPC_REG_XER, &reg));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_PPC_REG_3, &reg));
+    TEST_CHECK(reg == 1);
+    OK(uc_reg_read(uc, UC_PPC_REG_XER, &reg));
+    TEST_CHECK(reg == 0);
+
+    reg = -1;
+    OK(uc_reg_write(uc, UC_PPC_REG_4, &reg));
+    reg = 1;
+    OK(uc_reg_write(uc, UC_PPC_REG_5, &reg));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_PPC_REG_3, &reg));
+    TEST_CHECK(reg == 0);
+    OK(uc_reg_read(uc, UC_PPC_REG_XER, &reg));
+    TEST_CHECK(reg == 0x20000000);
+
+    OK(uc_close(uc));
+}
+
 static void test_ppc32_fadd(void)
 {
     uc_engine *uc;
@@ -154,6 +192,7 @@ static void test_ppc32_spr_mftb(void)
 }
 
 TEST_LIST = {{"test_ppc32_add", test_ppc32_add},
+             {"test_ppc32_xer", test_ppc32_xer},
              {"test_ppc32_fadd", test_ppc32_fadd},
              {"test_ppc32_sc", test_ppc32_sc},
              {"test_ppc32_cr", test_ppc32_cr},

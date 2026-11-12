@@ -195,7 +195,7 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             break;
         case UC_PPC_REG_XER:
             CHECK_REG_TYPE(uint32_t);
-            *(uint32_t *)value = env->xer;
+            *(uint32_t *)value = cpu_read_xer(env);
             break;
         case UC_PPC_REG_FPSCR:
             CHECK_REG_TYPE(uint32_t);
@@ -257,7 +257,7 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
             break;
         case UC_PPC_REG_XER:
             CHECK_REG_TYPE(uint32_t);
-            env->xer = *(uint32_t *)value;
+            cpu_write_xer(env, *(uint32_t *)value);
             break;
         case UC_PPC_REG_FPSCR:
             CHECK_REG_TYPE(uint32_t);

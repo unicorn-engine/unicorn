@@ -1993,4 +1993,6 @@
 #define helper_xssqrtqp helper_xssqrtqp_ppc64
 #define helper_xssubqp helper_xssubqp_ppc64
 #define do_store_fpscr do_store_fpscr_ppc64
+#define cpu_read_xer cpu_read_xer_ppc64
+#define cpu_write_xer cpu_write_xer_ppc64
 #endif
