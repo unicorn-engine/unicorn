@@ -1374,6 +1374,43 @@ static void test_x86_blsi_cf(void)
     test_x86_blsi_cf_case(0, 0, false, true);
 }
 
+static void test_x86_bextr_case(const char *code, uint64_t src, uint64_t ctrl,
+                                uint64_t expected_dst)
+{
+    uc_engine *uc;
+    uint64_t rax;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, 5);
+    OK(uc_reg_write(uc, UC_X86_REG_RBX, &src));
+    OK(uc_reg_write(uc, UC_X86_REG_RCX, &ctrl));
+
+    OK(uc_emu_start(uc, code_start, code_start + 5, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
+
+    TEST_CHECK(rax == expected_dst);
+    TEST_MSG("bextr src=0x%" PRIx64 " ctrl=0x%" PRIx64 ": 0x%" PRIx64
+             ", expected 0x%" PRIx64,
+             src, ctrl, rax, expected_dst);
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_bextr_len(void)
+{
+    const char *bextr64 = "\xc4\xe2\xf0\xf7\xc3"; /* bextr rax, rbx, rcx */
+    const char *bextr32 = "\xc4\xe2\x70\xf7\xc3"; /* bextr eax, ebx, ecx */
+
+    /* LEN at or above the operand size keeps every bit from START */
+    test_x86_bextr_case(bextr64, 0x8000000000000000, 0x4000,
+                        0x8000000000000000);
+    test_x86_bextr_case(bextr64, 0x8000000000000000, 0xff00,
+                        0x8000000000000000);
+    test_x86_bextr_case(bextr64, 0xffffffffffffffff, 0x3f00,
+                        0x7fffffffffffffff);
+    test_x86_bextr_case(bextr64, 0x8000000000000000, 0x013f, 1);
+    test_x86_bextr_case(bextr32, 0x80000000, 0x2000, 0x80000000);
+}
+
 static void test_x86_bzhi_index_case(uint64_t index, uint64_t expected_dst,
                                      bool expected_cf, bool expected_sf)
 {
@@ -2932,6 +2969,7 @@ TEST_LIST = {
     {"test_x86_64_nested_emu_start_error", test_x86_64_nested_emu_start_error},
     {"test_x86_eflags_reserved_bit", test_x86_eflags_reserved_bit},
     {"test_x86_blsi_cf", test_x86_blsi_cf},
+    {"test_x86_bextr_len", test_x86_bextr_len},
     {"test_x86_bzhi_index_boundary", test_x86_bzhi_index_boundary},
     {"test_x86_nested_uc_emu_start_exits", test_x86_nested_uc_emu_start_exits},
     {"test_x86_clear_count_cache", test_x86_clear_count_cache},

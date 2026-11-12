@@ -4169,18 +4169,17 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                     zero = tcg_const_tl(tcg_ctx, 0);
                     tcg_gen_movcond_tl(tcg_ctx, TCG_COND_LEU, s->T0, s->A0, bound,
                                        s->T0, zero);
-                    tcg_temp_free(tcg_ctx, zero);
 
-                    /* Extract the LEN into a mask.  Lengths larger than
-                       operand size get all ones.  */
+                    /* Extract the LEN into an inverse mask.  Lengths larger
+                       than operand size get all zeros, length 0 gets all ones.  */
                     tcg_gen_extract_tl(tcg_ctx, s->A0, tcg_ctx->cpu_regs[s->vex_v], 8, 8);
-                    tcg_gen_movcond_tl(tcg_ctx, TCG_COND_LEU, s->A0, s->A0, bound,
-                                       s->A0, bound);
-                    tcg_temp_free(tcg_ctx, bound);
-                    tcg_gen_movi_tl(tcg_ctx, s->T1, 1);
+                    tcg_gen_movi_tl(tcg_ctx, s->T1, -1);
                     tcg_gen_shl_tl(tcg_ctx, s->T1, s->T1, s->A0);
-                    tcg_gen_subi_tl(tcg_ctx, s->T1, s->T1, 1);
-                    tcg_gen_and_tl(tcg_ctx, s->T0, s->T0, s->T1);
+                    tcg_gen_movcond_tl(tcg_ctx, TCG_COND_LEU, s->T1, s->A0, bound,
+                                       s->T1, zero);
+                    tcg_temp_free(tcg_ctx, bound);
+                    tcg_temp_free(tcg_ctx, zero);
+                    tcg_gen_andc_tl(tcg_ctx, s->T0, s->T0, s->T1);
 
                     gen_op_mov_reg_v(s, ot, reg, s->T0);
                     gen_op_update1_cc(s);
