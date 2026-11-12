@@ -244,6 +244,17 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
     switch (regid) {
     default:
         break;
+    case UC_X86_REG_MM0:
+    case UC_X86_REG_MM1:
+    case UC_X86_REG_MM2:
+    case UC_X86_REG_MM3:
+    case UC_X86_REG_MM4:
+    case UC_X86_REG_MM5:
+    case UC_X86_REG_MM6:
+    case UC_X86_REG_MM7:
+        CHECK_REG_TYPE(uint64_t);
+        *(uint64_t *)value = env->fpregs[regid - UC_X86_REG_MM0].mmx.MMX_Q(0);
+        return ret;
     case UC_X86_REG_FP0:
     case UC_X86_REG_FP1:
     case UC_X86_REG_FP2:
@@ -1119,6 +1130,17 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
     switch (regid) {
     default:
         break;
+    case UC_X86_REG_MM0:
+    case UC_X86_REG_MM1:
+    case UC_X86_REG_MM2:
+    case UC_X86_REG_MM3:
+    case UC_X86_REG_MM4:
+    case UC_X86_REG_MM5:
+    case UC_X86_REG_MM6:
+    case UC_X86_REG_MM7:
+        CHECK_REG_TYPE(uint64_t);
+        env->fpregs[regid - UC_X86_REG_MM0].mmx.MMX_Q(0) = *(const uint64_t *)value;
+        return ret;
     case UC_X86_REG_FP0:
     case UC_X86_REG_FP1:
     case UC_X86_REG_FP2:

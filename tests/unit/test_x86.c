@@ -2891,6 +2891,137 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static const uc_mode x86_modes[] = {
+    UC_MODE_16, UC_MODE_32, UC_MODE_64
+};
+
+static const uint64_t mmx_values[] = {
+    0, 1, UINT64_MAX, UINT64_C(0x8000000000000000),
+    UINT64_C(0x0123456789abcdef), UINT64_C(0xfedcba9876543210),
+    UINT64_C(0xaaaaaaaaaaaaaaaa), UINT64_C(0x5555555555555555)
+};
+
+static void test_x86_mmx_reg_rw(void)
+{
+    for (unsigned m = 0; m < sizeof(x86_modes)/sizeof(x86_modes[0]); m++) {
+        uc_engine *uc;
+
+        OK(uc_open(UC_ARCH_X86, x86_modes[m], &uc));
+        for (unsigned top = 0; top < 8; top++) {
+            uint16_t fpsw = top << 11;
+
+            OK(uc_reg_write(uc, UC_X86_REG_FPSW, &fpsw));
+            for (int i = 0; i < sizeof(mmx_values)/sizeof(mmx_values[0]); i++) {
+                /* FPn is physical storage; MMn must not depend on TOP.
+                 * The FP API uses a mantissa followed by an exponent.
+                 */
+                uint64_t fp[2] = {0, 0};
+                uint64_t mantissa = ~mmx_values[i];
+                uint16_t exponent = 0x3fff;
+                uint64_t actual = mmx_values[i];
+
+                memcpy(fp, &mantissa, sizeof(mantissa));
+                memcpy((char *)fp + 8, &exponent, sizeof(exponent));
+                OK(uc_reg_write(uc, UC_X86_REG_FP0 + i, fp));
+
+                /* Test reads independently of MM register writes. */
+                OK(uc_reg_read(uc, UC_X86_REG_MM0 + i, &actual));
+                TEST_CHECK(actual == mantissa);
+
+                OK(uc_reg_write(uc, UC_X86_REG_MM0 + i, &mmx_values[i]));
+                actual = ~mmx_values[i];
+                OK(uc_reg_read(uc, UC_X86_REG_MM0 + i, &actual));
+                TEST_CHECK(actual == mmx_values[i]);
+
+                /* Writing MMn changes the mantissa, preserving upper bits. */
+                OK(uc_reg_read(uc, UC_X86_REG_FP0 + i, fp));
+                memcpy(&mantissa, fp, sizeof(mantissa));
+                memcpy(&exponent, (char *)fp + 8, sizeof(exponent));
+                TEST_CHECK(mantissa == mmx_values[i]);
+                TEST_CHECK(exponent == 0x3fff);
+            }
+            OK(uc_reg_read(uc, UC_X86_REG_FPSW, &fpsw));
+            TEST_CHECK(((fpsw >> 11) & 7) == top);
+        }
+        OK(uc_close(uc));
+    }
+}
+
+static void test_x86_mmx_batch_context(void)
+{
+    for (unsigned m = 0; m < sizeof(x86_modes)/sizeof(x86_modes[0]); m++) {
+        uc_engine *uc;
+        uc_context *ctx;
+        int regs[8];
+        uint64_t input[8], output[8];
+        void *inputs[8], *outputs[8];
+
+        OK(uc_open(UC_ARCH_X86, x86_modes[m], &uc));
+        for (int i = 0; i < 8; i++) {
+            regs[i] = UC_X86_REG_MM0 + i;
+            input[i] = mmx_values[i];
+            output[i] = ~input[i];
+            inputs[i] = &input[i];
+            outputs[i] = &output[i];
+        }
+
+        OK(uc_reg_write_batch(uc, regs, inputs, 8));
+        OK(uc_reg_read_batch(uc, regs, outputs, 8));
+        for (int i = 0; i < 8; i++) {
+            TEST_CHECK(output[i] == input[i]);
+        }
+
+        OK(uc_context_alloc(uc, &ctx));
+        OK(uc_context_save(uc, ctx));
+        for (int i = 0; i < 8; i++) {
+            uint64_t actual = ~input[i];
+            uint64_t replacement = ~input[i];
+
+            OK(uc_context_reg_read(ctx, regs[i], &actual));
+            TEST_CHECK(actual == input[i]);
+            OK(uc_context_reg_write(ctx, regs[i], &replacement));
+
+            /* Context edits must leave the live engine unchanged. */
+            actual = ~input[i];
+            OK(uc_reg_read(uc, regs[i], &actual));
+            TEST_CHECK(actual == input[i]);
+        }
+
+        OK(uc_context_restore(uc, ctx));
+        for (int i = 0; i < 8; i++) {
+            uint64_t actual = input[i];
+
+            OK(uc_reg_read(uc, regs[i], &actual));
+            TEST_CHECK(actual == ~input[i]);
+        }
+
+        OK(uc_context_free(ctx));
+        OK(uc_close(uc));
+    }
+}
+
+static void test_x86_mmx_paddb(void)
+{
+    for (unsigned m = 0; m < sizeof(x86_modes)/sizeof(x86_modes[0]); m++) {
+        for (int i = 0; i < 8; i++) {
+            uc_engine *uc;
+            /* paddb mmN, mmN */
+            char code[] = {0x0f, 0xfc, (0xc0 | (i << 3) | i)};
+            uint64_t input = UINT64_C(0x0102030405060708);
+            uint64_t actual = 0;
+
+            uc_common_setup(&uc, UC_ARCH_X86, x86_modes[m],
+                            code, sizeof(code));
+            OK(uc_reg_write(uc, UC_X86_REG_MM0 + i, &input));
+            OK(uc_emu_start(uc, code_start, code_start + sizeof(code),
+                            0, 1));
+            OK(uc_reg_read(uc, UC_X86_REG_MM0 + i, &actual));
+            TEST_CHECK(actual == UINT64_C(0x020406080a0c0e10));
+            OK(uc_close(uc));
+        }
+    }
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +3109,7 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_mmx_reg_rw", test_x86_mmx_reg_rw},
+    {"test_x86_mmx_batch_context", test_x86_mmx_batch_context},
+    {"test_x86_mmx_paddb", test_x86_mmx_paddb},
     {NULL, NULL}};
