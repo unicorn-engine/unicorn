@@ -122,8 +122,37 @@ static void test_branch_on_initial_flags(void)
     OK(uc_close(uc));
 }
 
+static void test_vbr(void)
+{
+    uc_engine *uc;
+    uint8_t code[] = {
+        0x4e, 0x7a, 0x08, 0x01, // movec %vbr, %d0
+        0x4e, 0x7b, 0x18, 0x01, // movec %d1, %vbr
+    };
+    uint32_t sr = 0x2700, vbr = 0x12345600, d1 = 0x00abc000, d0 = 0, r_vbr = 0;
+
+    uc_common_setup(&uc, UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, code, sizeof(code),
+                    UC_CPU_M68K_M68040);
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, &sr));
+    OK(uc_reg_write(uc, UC_M68K_REG_CR_VBR, &vbr));
+    OK(uc_reg_write(uc, UC_M68K_REG_D1, &d1));
+
+    OK(uc_reg_read(uc, UC_M68K_REG_CR_VBR, &r_vbr));
+    TEST_CHECK(r_vbr == 0x12345600);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_reg_read(uc, UC_M68K_REG_D0, &d0));
+    TEST_CHECK(d0 == 0x12345600);
+    OK(uc_reg_read(uc, UC_M68K_REG_CR_VBR, &r_vbr));
+    TEST_CHECK(r_vbr == 0x00abc000);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_move_to_sr", test_move_to_sr},
              {"test_sr_contains_flags", test_sr_contains_flags},
              {"test_sr_read_preserves_flags", test_sr_read_preserves_flags},
              {"test_branch_on_initial_flags", test_branch_on_initial_flags},
+             {"test_vbr", test_vbr},
              {NULL, NULL}};

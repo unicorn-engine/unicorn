@@ -83,6 +83,10 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
             CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = env->dfc;
             break;
+        case UC_M68K_REG_CR_VBR:
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = env->vbr;
+            break;
         case UC_M68K_REG_CR_CACR:
             CHECK_REG_TYPE(uint32_t);
             *(uint32_t *)value = env->cacr;
@@ -171,6 +175,10 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         case UC_M68K_REG_CR_DFC:
             CHECK_REG_TYPE(uint32_t);
             env->dfc = (*(uint32_t *)value) & 7;
+            break;
+        case UC_M68K_REG_CR_VBR:
+            CHECK_REG_TYPE(uint32_t);
+            env->vbr = *(uint32_t *)value;
             break;
         case UC_M68K_REG_CR_CACR: {
             CHECK_REG_TYPE(uint32_t);
