@@ -2114,7 +2114,11 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
 
 #if !defined(TARGET_AARCH64)
     if (uc->mode & UC_MODE_MCLASS) {
-        uc->cpu_model = UC_CPU_ARM_CORTEX_M33;
+        // Keep a Cortex-M model set with uc_ctl_set_cpu_model().
+        if (uc->cpu_model < UC_CPU_ARM_CORTEX_M0 ||
+            uc->cpu_model > UC_CPU_ARM_CORTEX_M33) {
+            uc->cpu_model = UC_CPU_ARM_CORTEX_M33;
+        }
     } else if (uc->mode & UC_MODE_ARM926) {
         uc->cpu_model = UC_CPU_ARM_926;
     } else if (uc->mode & UC_MODE_ARM946) {
