@@ -423,6 +423,14 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
             return true;
         }
 
+#if defined(TARGET_X86_64)
+        // Unicorn: the hook has handled the exception, so it counts as
+        // delivered (as at the end of x86_cpu_do_interrupt). Otherwise the
+        // next exception is turned into a double fault and the one after
+        // into a triple fault (#1883).
+        env->old_exception = -1;
+#endif
+
         cpu->exception_index = -1;
     }
 

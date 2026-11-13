@@ -2891,6 +2891,46 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_hook_intr_exceptions_cb(uc_engine *uc, uint32_t intno,
+                                             void *user_data)
+{
+    uint32_t *seen = (uint32_t *)user_data;
+    uint32_t eip;
+
+    seen[seen[0] + 1] = intno;
+    seen[0]++;
+
+    // skip the faulting div
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, &eip));
+    eip += 2;
+    OK(uc_reg_write(uc, UC_X86_REG_EIP, &eip));
+}
+
+static void test_x86_hook_intr_exceptions(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    // xor ecx, ecx; div ecx; div ecx; div ecx
+    char code[] = "\x31\xc9\xf7\xf1\xf7\xf1\xf7\xf1";
+    uint32_t seen[8] = {0};
+    int i;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_INTR, test_x86_hook_intr_exceptions_cb,
+                   seen, 1, 0));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    // every #DE handled by the hook comes in as #DE, not as a double fault
+    TEST_CHECK(seen[0] == 3);
+    for (i = 1; i <= 3; i++) {
+        TEST_CHECK(seen[i] == 0);
+    }
+
+    OK(uc_hook_del(uc, hook));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +3018,5 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_hook_intr_exceptions", test_x86_hook_intr_exceptions},
     {NULL, NULL}};
