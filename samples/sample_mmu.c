@@ -26,7 +26,7 @@ static void mmu_write_callback(uc_engine *uc, uc_mem_type type,
                                uint64_t address, int size, int64_t value,
                                void *user_data)
 {
-    printf("write at 0x%lx: 0x%lx\n", address, value);
+    printf("write at 0x%" PRIx64 ": 0x%" PRIx64 "\n", address, value);
 }
 
 static void x86_mmu_prepare_tlb(uc_engine *uc, uint64_t vaddr,
@@ -280,8 +280,8 @@ void cpu_tlb(void)
         printf("failed to read from child memory\n");
         exit(1);
     }
-    printf("parrent result == %lu\n", parrent);
-    printf("child result == %lu\n", child);
+    printf("parrent result == %" PRIu64 "\n", parrent);
+    printf("child result == %" PRIu64 "\n", child);
     uc_close(uc);
 }
 
@@ -289,7 +289,7 @@ static bool virtual_tlb_callback(uc_engine *uc, uint64_t addr, uc_mem_type type,
                                  uc_tlb_entry *result, void *user_data)
 {
     bool *parrent_done = user_data;
-    printf("tlb lookup for address: 0x%lX\n", addr);
+    printf("tlb lookup for address: 0x%" PRIx64 "\n", addr);
     switch (addr & ~(0xfff)) {
     case 0x2000:
         result->paddr = 0x0;
@@ -431,8 +431,8 @@ void virtual_tlb(void)
         printf("failed to read from child memory\n");
         exit(1);
     }
-    printf("parrent result == %lu\n", parrent);
-    printf("child result == %lu\n", child);
+    printf("parrent result == %" PRIu64 "\n", parrent);
+    printf("child result == %" PRIu64 "\n", child);
     uc_close(uc);
 }
 
