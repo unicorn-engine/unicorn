@@ -947,6 +947,12 @@ void tlb_set_page_with_attrs(CPUState *cpu, target_ulong vaddr,
         if (wp_flags & BP_MEM_READ) {
             tn.addr_read |= TLB_WATCHPOINT;
         }
+        /* Unicorn: the fast path ignores UC_PROT_READ, so force the slow
+           path (which checks mr->perms) when the page is not readable.  */
+        if (is_ram && section->mr &&
+            !(section->mr->perms & UC_PROT_READ)) {
+            tn.addr_read |= TLB_SLOWPATH;
+        }
     } else {
         tn.addr_read = -1;
     }
@@ -965,6 +971,11 @@ void tlb_set_page_with_attrs(CPUState *cpu, target_ulong vaddr,
         }
         if (wp_flags & BP_MEM_WRITE) {
             tn.addr_write |= TLB_WATCHPOINT;
+        }
+        /* Unicorn: same for UC_PROT_WRITE.  */
+        if (is_ram && section->mr &&
+            !(section->mr->perms & UC_PROT_WRITE)) {
+            tn.addr_write |= TLB_SLOWPATH;
         }
     }
 

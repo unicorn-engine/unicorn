@@ -823,6 +823,65 @@ static void test_mem_protect_add_exec_mem_write(void)
     OK(uc_close(uc));
 }
 
+static void test_mem_prot_no_hook_read(void)
+{
+    uc_engine *uc;
+    // mov byte ptr [0x2008], 0x55 ; mov al, [0x2000]
+    char code[] = "\xc6\x05\x08\x20\x00\x00\x55\xa0\x00\x20\x00\x00";
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    // Writable and executable, but not readable.
+    OK(uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_WRITE | UC_PROT_EXEC));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+
+    // The store is allowed and fills the TLB; the following load must still
+    // be rejected without any memory hook installed.
+    uc_assert_err(UC_ERR_READ_PROT,
+                  uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0,
+                               0));
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_prot_no_hook_write(void)
+{
+    uc_engine *uc;
+    // mov byte ptr [0x2000], 0x55
+    char code[] = "\xc6\x05\x00\x20\x00\x00\x55";
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    // Readable and executable, but not writable.
+    OK(uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_READ | UC_PROT_EXEC));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+
+    uc_assert_err(UC_ERR_WRITE_PROT,
+                  uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0,
+                               0));
+
+    OK(uc_close(uc));
+}
+
+static void test_mem_prot_no_hook_allowed(void)
+{
+    uc_engine *uc;
+    uint8_t al = 0;
+    // mov byte ptr [0x2000], 0x55 ; mov al, [0x2000]
+    char code[] = "\xc6\x05\x00\x20\x00\x00\x55\xa0\x00\x20\x00\x00";
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_READ | UC_PROT_WRITE));
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_AL, &al));
+    TEST_CHECK(al == 0x55);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -850,4 +909,7 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
               test_mem_protect_add_exec_fetch_prot},
              {"test_mem_protect_add_exec_mem_write",
               test_mem_protect_add_exec_mem_write},
+             {"test_mem_prot_no_hook_read", test_mem_prot_no_hook_read},
+             {"test_mem_prot_no_hook_write", test_mem_prot_no_hook_write},
+             {"test_mem_prot_no_hook_allowed", test_mem_prot_no_hook_allowed},
              {NULL, NULL}};
