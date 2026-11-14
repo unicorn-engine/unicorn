@@ -337,13 +337,16 @@ CPUArchState *cpu_copy(CPUArchState *env);
 #define TLB_BSWAP           (1 << (TARGET_PAGE_BITS_MIN - 5))
 /* Set if TLB entry writes ignored.  */
 #define TLB_DISCARD_WRITE   (1 << (TARGET_PAGE_BITS_MIN - 6))
+/* Unicorn: Set if the entry must use load_helper()/store_helper() so the
+   Unicorn memory region permissions are enforced.  */
+#define TLB_SLOWPATH        (1 << (TARGET_PAGE_BITS_MIN - 7))
 
 /* Use this mask to check interception with an alignment mask
  * in a TCG backend.
  */
 #define TLB_FLAGS_MASK \
     (TLB_INVALID_MASK | TLB_NOTDIRTY | TLB_MMIO \
-    | TLB_WATCHPOINT | TLB_BSWAP | TLB_DISCARD_WRITE)
+    | TLB_WATCHPOINT | TLB_BSWAP | TLB_DISCARD_WRITE | TLB_SLOWPATH)
 
 /**
  * tlb_hit_page: return true if page aligned @addr is a hit against the
