@@ -222,6 +222,18 @@ static void test_mips_simple_coredump_2137(void)
     OK(uc_close(uc));
 }
 
+static void test_mips_overflow_tcg_temps(void)
+{
+    uc_engine *uc = NULL;
+    uint64_t base = 0x1000;
+    uc_tb tb;
+
+    OK(uc_open(UC_ARCH_MIPS, UC_MODE_MIPS64, &uc));
+    OK(uc_mem_map(uc, base, 0x1000, UC_PROT_READ | UC_PROT_EXEC | UC_PROT_WRITE));
+    OK(uc_ctl_request_cache(uc, base, &tb));
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_mips_stop_at_branch", test_mips_stop_at_branch},
     {"test_mips_stop_at_delay_slot", test_mips_stop_at_delay_slot},
@@ -234,4 +246,5 @@ TEST_LIST = {
      test_mips_stop_delay_slot_from_qiling},
      {"test_mips_simple_coredump_2134", test_mips_simple_coredump_2134},
      {"test_mips_simple_coredump_2137", test_mips_simple_coredump_2137},
+    {"test_mips_overflow_tcg_temps", test_mips_overflow_tcg_temps},
     {NULL, NULL}};
