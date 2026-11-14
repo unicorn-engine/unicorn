@@ -42,6 +42,13 @@ extern int _setjmp_wrapper(jmp_buf);
 #undef setjmp
 #define setjmp(env) _setjmp_wrapper(env)
 
+#if defined(_M_ARM64)
+// On ARM64, we also need a custom longjmp to avoid unwinding issues
+extern __declspec(noreturn) void _longjmp_wrapper(jmp_buf, int);
+#undef longjmp
+#define longjmp(env, val) _longjmp_wrapper(env, val)
+#endif
+
 #else // MingW
 
 #undef setjmp
