@@ -4014,6 +4014,34 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_vldmxcsr_vex_l(void)
+{
+    uc_engine *uc;
+    char code[] = {
+        0xc5, 0xfc, 0xae, 0x10,
+    };
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code));
+
+    uc_assert_err(UC_ERR_INSN_INVALID, uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
+static void test_x86_vstmxcsr_vex_l(void)
+{
+    uc_engine *uc;
+    char code[] = {
+        0xc5, 0xfc, 0xae, 0x18,
+    };
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code));
+
+    uc_assert_err(UC_ERR_INSN_INVALID, uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -4124,4 +4152,6 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_vldmxcsr_vex_l", test_x86_vldmxcsr_vex_l},
+    {"test_x86_vstmxcsr_vex_l", test_x86_vstmxcsr_vex_l},
     {NULL, NULL}};
