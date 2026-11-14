@@ -272,7 +272,7 @@ M68kCPU *cpu_m68k_init(struct uc_struct *uc)
     memset((void*)cpu, 0, sizeof(*cpu));
 
     if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = UC_CPU_M68K_CFV4E; // cfv4e
+        uc->cpu_model = UC_CPU_M68K_M68000; // m68000
     } else if (uc->cpu_model >= ARRAY_SIZE(m68k_cpus_type_infos)) {
         free(cpu);
         return NULL;
