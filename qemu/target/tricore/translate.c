@@ -373,6 +373,15 @@ static inline void gen_mfcr(DisasContext *ctx, TCGv ret, int32_t offset)
     /* since we're caching PSW make this a special case */
     if (offset == 0xfe04) {
         gen_helper_psw_read(tcg_ctx, ret, tcg_ctx->cpu_env);
+    } else if (offset == 0xfe00 && has_feature(ctx, TRICORE_FEATURE_13)) {
+        /* PCXI, PC and ICR are kept in TCG globals. Read the global so
+           that updates made earlier in the same translation block are
+           visible, and so that this read does not bypass a pending value. */
+        tcg_gen_mov_tl(tcg_ctx, ret, tcg_ctx->cpu_PCXI);
+    } else if (offset == 0xfe08 && has_feature(ctx, TRICORE_FEATURE_13)) {
+        tcg_gen_mov_tl(tcg_ctx, ret, tcg_ctx->cpu_PC);
+    } else if (offset == 0xfe2c && has_feature(ctx, TRICORE_FEATURE_13)) {
+        tcg_gen_mov_tl(tcg_ctx, ret, tcg_ctx->cpu_ICR);
     } else {
         switch (offset) {
 #include "csfr.def"
@@ -405,6 +414,16 @@ static inline void gen_mtcr(DisasContext *ctx, TCGv r1,
         /* since we're caching PSW make this a special case */
         if (offset == 0xfe04) {
             gen_helper_psw_write(tcg_ctx, tcg_ctx->cpu_env, r1);
+        } else if (offset == 0xfe00 && has_feature(ctx, TRICORE_FEATURE_13)) {
+            /* PCXI, PC and ICR are kept in TCG globals. Write the global so
+               that later instructions in the same block do not read back a
+               stale value, and so that the block exit does not overwrite
+               this write with the previous global value. */
+            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_PCXI, r1);
+        } else if (offset == 0xfe08 && has_feature(ctx, TRICORE_FEATURE_13)) {
+            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_PC, r1);
+        } else if (offset == 0xfe2c && has_feature(ctx, TRICORE_FEATURE_13)) {
+            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_ICR, r1);
         } else {
             switch (offset) {
 #include "csfr.def"

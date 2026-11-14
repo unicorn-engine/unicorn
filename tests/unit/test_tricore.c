@@ -37,6 +37,35 @@ static void test_tricore_ld_bu_preinc(void)
     OK(uc_close(uc));
 }
 
+static void test_tricore_mtcr_icr(void)
+{
+    uc_engine *uc;
+    const uint32_t psw = 0x00000b7f;
+    uint32_t icr = 0;
+    char code[] = {
+        0x0d, 0x00, 0x40, 0x03, /* disable */
+        0x4d, 0xc0, 0xe2, 0xff, /* mfcr d15, icr */
+        0x96, 0xff,             /* or d15, 0xff */
+        0xcd, 0xcf, 0xe2, 0x0f, /* mtcr icr, d15 */
+        0x0d, 0x00, 0x00, 0x03  /* enable */
+    };
+
+    uc_common_setup(&uc, UC_ARCH_TRICORE, UC_MODE_LITTLE_ENDIAN, code,
+                    sizeof(code));
+    OK(uc_reg_write(uc, UC_TRICORE_REG_PSW, &psw));
+    OK(uc_reg_write(uc, UC_TRICORE_REG_ICR, &icr));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_reg_read(uc, UC_TRICORE_REG_ICR, &icr));
+
+    TEST_CHECK((icr & 0xff) == 0xff);
+    TEST_MSG("icr = %#x", icr);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_tricore_ld_bu_preinc", test_tricore_ld_bu_preinc},
+    {"test_tricore_mtcr_icr", test_tricore_mtcr_icr},
     {NULL, NULL}};
