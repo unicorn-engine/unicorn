@@ -122,8 +122,49 @@ static void test_branch_on_initial_flags(void)
     OK(uc_close(uc));
 }
 
+static void test_default_cpu_model(void)
+{
+    uc_engine *uc;
+    uint8_t code[] = {
+        0x50, 0x4f,
+        0xde, 0xfc, 0x00, 0x08,
+        0x48, 0xe7, 0xc0, 0x00,
+    };
+    uint32_t a7 = 0x3000;
+    uint32_t d0 = 0x11111111;
+    uint32_t d1 = 0x22222222;
+    uint32_t sr = 0x2700;
+    uint32_t value;
+
+    OK(uc_open(UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code)));
+
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, &sr));
+    OK(uc_reg_write(uc, UC_M68K_REG_A7, &a7));
+    OK(uc_reg_write(uc, UC_M68K_REG_D0, &d0));
+    OK(uc_reg_write(uc, UC_M68K_REG_D1, &d1));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 0));
+
+    OK(uc_reg_read(uc, UC_M68K_REG_A7, &a7));
+    OK(uc_reg_read(uc, UC_M68K_REG_D0, &value));
+    TEST_CHECK(value == d0);
+    OK(uc_reg_read(uc, UC_M68K_REG_D1, &value));
+    TEST_CHECK(value == d1);
+    TEST_CHECK(a7 == 0x3008);
+
+    OK(uc_mem_read(uc, 0x3008, &value, sizeof(value)));
+    TEST_CHECK(value == d0);
+    OK(uc_mem_read(uc, 0x300c, &value, sizeof(value)));
+    TEST_CHECK(value == d1);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_move_to_sr", test_move_to_sr},
              {"test_sr_contains_flags", test_sr_contains_flags},
              {"test_sr_read_preserves_flags", test_sr_read_preserves_flags},
              {"test_branch_on_initial_flags", test_branch_on_initial_flags},
+             {"test_default_cpu_model", test_default_cpu_model},
              {NULL, NULL}};
