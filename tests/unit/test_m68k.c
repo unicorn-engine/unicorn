@@ -122,8 +122,83 @@ static void test_branch_on_initial_flags(void)
     OK(uc_close(uc));
 }
 
+static void test_rte_coldfire(void)
+{
+    uc_engine *uc;
+    uint8_t code[] = {
+        0x4e, 0x73, // rte
+    };
+    // Two-longword ColdFire exception frame: [FORMAT|VECTOR|SR][PC].
+    uint8_t frame[] = {
+        0x40, 0x40, 0x27, 0x00, // format/vector + SR 0x2700
+        0x00, 0x00, 0x12, 0x34, // PC 0x1234
+    };
+    uint32_t a7 = 0x3000;
+    uint32_t pc = 0;
+    uint32_t sr = 0;
+
+    uc_common_setup(&uc, UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, code, sizeof(code),
+                    UC_CPU_M68K_CFV4E);
+
+    OK(uc_mem_write(uc, a7, frame, sizeof(frame)));
+    sr = 0x2700;
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, &sr));
+    OK(uc_reg_write(uc, UC_M68K_REG_A7, &a7));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 1));
+
+    OK(uc_reg_read(uc, UC_M68K_REG_PC, &pc));
+    OK(uc_reg_read(uc, UC_M68K_REG_A7, &a7));
+    OK(uc_reg_read(uc, UC_M68K_REG_SR, &sr));
+
+    TEST_CHECK(pc == 0x1234);
+    TEST_CHECK(a7 == 0x3008);
+    TEST_CHECK(sr == 0x2700);
+
+    OK(uc_close(uc));
+}
+
+static void test_rte_68020(void)
+{
+    uc_engine *uc;
+    uint8_t code[] = {
+        0x4e, 0x73, // rte
+    };
+    // 68010+ exception frame: [SR][PC][FORMAT].
+    uint8_t frame[] = {
+        0x27, 0x00,             // SR 0x2700
+        0x00, 0x00, 0x12, 0x34, // PC 0x1234
+        0x00, 0x00,             // format 0
+    };
+    uint32_t a7 = 0x3000;
+    uint32_t pc = 0;
+    uint32_t sr = 0;
+
+    uc_common_setup(&uc, UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, code, sizeof(code),
+                    UC_CPU_M68K_M68020);
+
+    OK(uc_mem_write(uc, a7, frame, sizeof(frame)));
+    sr = 0x2700;
+    OK(uc_reg_write(uc, UC_M68K_REG_SR, &sr));
+    OK(uc_reg_write(uc, UC_M68K_REG_A7, &a7));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code), 0, 1));
+
+    OK(uc_reg_read(uc, UC_M68K_REG_PC, &pc));
+    OK(uc_reg_read(uc, UC_M68K_REG_A7, &a7));
+    OK(uc_reg_read(uc, UC_M68K_REG_SR, &sr));
+
+    TEST_CHECK(pc == 0x1234);
+    TEST_CHECK(a7 == 0x3008);
+    TEST_CHECK(sr == 0x2700);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_move_to_sr", test_move_to_sr},
              {"test_sr_contains_flags", test_sr_contains_flags},
              {"test_sr_read_preserves_flags", test_sr_read_preserves_flags},
              {"test_branch_on_initial_flags", test_branch_on_initial_flags},
+             {"test_rte_coldfire", test_rte_coldfire},
+             {"test_rte_68020", test_rte_68020},
              {NULL, NULL}};

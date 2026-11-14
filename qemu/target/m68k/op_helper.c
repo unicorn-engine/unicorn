@@ -23,21 +23,21 @@
 #include "exec/cpu_ldst.h"
 
 
-static void cf_rte(CPUM68KState *env)
+static void cf_rte(CPUM68KState *env, uintptr_t ra)
 {
     uint32_t sp;
     uint32_t fmt;
 
     sp = env->aregs[7];
-    fmt = cpu_ldl_mmuidx_ra(env, sp, MMU_KERNEL_IDX, 0);
-    env->pc = cpu_ldl_mmuidx_ra(env, sp + 4, MMU_KERNEL_IDX, 0);
+    fmt = cpu_ldl_mmuidx_ra(env, sp, MMU_KERNEL_IDX, ra);
+    env->pc = cpu_ldl_mmuidx_ra(env, sp + 4, MMU_KERNEL_IDX, ra);
     sp |= (fmt >> 28) & 3;
     env->aregs[7] = sp + 8;
 
     cpu_m68k_set_sr(env, fmt);
 }
 
-static void m68k_rte(CPUM68KState *env)
+static void m68k_rte(CPUM68KState *env, uintptr_t ra)
 {
     uint32_t sp;
     uint16_t fmt;
@@ -45,13 +45,13 @@ static void m68k_rte(CPUM68KState *env)
 
     sp = env->aregs[7];
 throwaway:
-    sr = cpu_lduw_mmuidx_ra(env, sp, MMU_KERNEL_IDX, 0);
+    sr = cpu_lduw_mmuidx_ra(env, sp, MMU_KERNEL_IDX, ra);
     sp += 2;
-    env->pc = cpu_ldl_mmuidx_ra(env, sp, MMU_KERNEL_IDX, 0);
+    env->pc = cpu_ldl_mmuidx_ra(env, sp, MMU_KERNEL_IDX, ra);
     sp += 4;
     if (m68k_feature(env, M68K_FEATURE_QUAD_MULDIV)) {
         /*  all except 68000 */
-        fmt = cpu_lduw_mmuidx_ra(env, sp, MMU_KERNEL_IDX, 0);
+        fmt = cpu_lduw_mmuidx_ra(env, sp, MMU_KERNEL_IDX, ra);
         sp += 2;
         switch (fmt >> 12) {
         case 0:
@@ -76,6 +76,15 @@ throwaway:
     cpu_m68k_set_sr(env, sr);
 }
 
+void HELPER(rte)(CPUM68KState *env)
+{
+    if (m68k_feature(env, M68K_FEATURE_M68000)) {
+        m68k_rte(env, GETPC());
+    } else {
+        cf_rte(env, GETPC());
+    }
+}
+
 static void cf_interrupt_all(CPUM68KState *env, int is_hw)
 {
     CPUState *cs = env_cpu(env);
@@ -92,7 +101,7 @@ static void cf_interrupt_all(CPUM68KState *env, int is_hw)
         switch (cs->exception_index) {
         case EXCP_RTE:
             /* Return from an exception.  */
-            cf_rte(env);
+            cf_rte(env, 0);
             return;
         case EXCP_HALT_INSN:
             cs->halted = 1;
@@ -179,7 +188,7 @@ static void m68k_interrupt_all(CPUM68KState *env, int is_hw)
         switch (cs->exception_index) {
         case EXCP_RTE:
             /* Return from an exception.  */
-            m68k_rte(env);
+            m68k_rte(env, 0);
             return;
         case EXCP_TRAP0:
         case EXCP_TRAP0 + 1:

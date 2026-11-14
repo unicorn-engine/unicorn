@@ -4848,11 +4848,14 @@ DISAS_INSN(stop)
 
 DISAS_INSN(rte)
 {
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
     if (IS_USER(s)) {
         gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
-    gen_exception(s, s->base.pc_next, EXCP_RTE);
+    gen_helper_rte(tcg_ctx, tcg_ctx->cpu_env);
+    s->base.is_jmp = DISAS_EXIT;
 }
 
 DISAS_INSN(cf_movec)
