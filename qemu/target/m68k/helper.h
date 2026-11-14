@@ -3,6 +3,7 @@ DEF_HELPER_6(uc_traceopcode, void, ptr, i64, i64, i32, ptr, i64)
 
 DEF_HELPER_1(bitrev, i32, i32)
 DEF_HELPER_1(ff1, i32, i32)
+DEF_HELPER_1(rte, void, env)
 DEF_HELPER_FLAGS_2(sats, TCG_CALL_NO_RWG_SE, i32, i32, i32)
 DEF_HELPER_3(divuw, void, env, int, i32)
 DEF_HELPER_3(divsw, void, env, int, s32)
