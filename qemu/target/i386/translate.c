@@ -5493,7 +5493,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         mod = (modrm >> 6) & 3;
         rm = (modrm & 7) | REX_B(s);
         op = (modrm >> 3) & 7;
-        if (op >= 2 && b == 0xfe) {
+        if (op == 7 || (op >= 2 && b == 0xfe)) {
             goto unknown_op;
         }
         if (CODE64(s)) {
