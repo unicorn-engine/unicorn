@@ -5277,6 +5277,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 
         switch(op) {
         case 0: /* test */
+        case 1:
             val = insn_get(env, s, ot);
             tcg_gen_movi_tl(tcg_ctx, s->T1, val);
             gen_op_testl_T0_T1_cc(s);
