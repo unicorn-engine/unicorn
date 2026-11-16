@@ -9453,17 +9453,20 @@ static void i386_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
            the flag and abort the translation to give the irqs a
            chance to happen */
         dc->base.is_jmp = DISAS_TOO_MANY;
-    } else if ((tb_cflags(dc->base.tb) & CF_USE_ICOUNT)
-               && ((pc_next & TARGET_PAGE_MASK)
+    } else if ((pc_next & TARGET_PAGE_MASK)
                    != ((pc_next + TARGET_MAX_INSN_SIZE - 1)
                        & TARGET_PAGE_MASK)
-                   || (pc_next & ~TARGET_PAGE_MASK) == 0)) {
-        /* Do not cross the boundary of the pages in icount mode,
-           it can cause an exception. Do it only when boundary is
-           crossed by the first instruction in the block.
+                   || (pc_next & ~TARGET_PAGE_MASK) == 0) {
+        /* Do not cross the boundary of the pages, it can cause an
+           exception. Do it only when boundary is crossed by the first
+           instruction in the block.
            If current instruction already crossed the bound - it's ok,
            because an exception hasn't stopped this code.
-         */
+           Unicorn: always, not only in icount mode. A fetch fault on the
+           next page stops emulation, and if the block runs into that page
+           the fault is raised while translating, before any instruction of
+           the block has run: the instructions up to the page end would be
+           skipped and the fault reported at the block start. */
         dc->base.is_jmp = DISAS_TOO_MANY;
     } else if ((pc_next - dc->base.pc_first) >= (TARGET_PAGE_SIZE - 32)) {
         dc->base.is_jmp = DISAS_TOO_MANY;
