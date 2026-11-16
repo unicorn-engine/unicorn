@@ -2891,6 +2891,61 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static void hook_count_insn(uc_engine *uc, uint64_t address, uint32_t size,
+                            void *user_data)
+{
+    (*(uint64_t *)user_data)++;
+}
+
+// Straight-line code up to the end of an executable page whose next page cannot
+// be fetched: every instruction up to the page end must run, and the fetch
+// fault must be reported at the page end, wherever the run starts and whether
+// or not a code hook is installed (issue #2196).
+static void test_x86_fetch_fault_at_page_end(void)
+{
+    const uint64_t page = 0x10000, next = 0x11000;
+    const uint64_t starts[] = {0x10000, 0x10001, 0x10080, 0x10f80, 0x10ff0};
+    int nx, hook, i;
+
+    for (nx = 0; nx < 2; nx++) {
+        for (hook = 0; hook < 2; hook++) {
+            for (i = 0; i < sizeof(starts) / sizeof(starts[0]); i++) {
+                uc_engine *uc;
+                uc_hook h;
+                uint8_t code[0x1000];
+                uint32_t r_eax = 0, r_eip;
+                uint64_t seen = 0;
+
+                memset(code, 0x40, sizeof(code)); // inc eax
+                OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+                OK(uc_mem_map(uc, page, 0x1000, UC_PROT_ALL));
+                OK(uc_mem_write(uc, page, code, sizeof(code)));
+                if (nx) {
+                    OK(uc_mem_map(uc, next, 0x1000,
+                                  UC_PROT_READ | UC_PROT_WRITE));
+                }
+                if (hook) {
+                    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, hook_count_insn,
+                                   &seen, 1, 0));
+                }
+                OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
+                uc_assert_err(nx ? UC_ERR_FETCH_PROT : UC_ERR_FETCH_UNMAPPED,
+                              uc_emu_start(uc, starts[i], 0x90000, 0, 0));
+                OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+                OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_eip));
+                TEST_CHECK(r_eax == next - starts[i]);
+                TEST_CHECK(r_eip == next);
+                TEST_MSG("start 0x%" PRIx64 " nx %d hook %d: eax %u eip 0x%x",
+                         starts[i], nx, hook, r_eax, r_eip);
+                if (hook) {
+                    TEST_CHECK(seen == next - starts[i]);
+                }
+                OK(uc_close(uc));
+            }
+        }
+    }
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +3033,5 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_fetch_fault_at_page_end", test_x86_fetch_fault_at_page_end},
     {NULL, NULL}};
