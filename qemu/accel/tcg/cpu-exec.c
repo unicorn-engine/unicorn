@@ -588,6 +588,22 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 #endif /* buggy compiler */
 
         assert_no_pages_locked();
+
+        /* Unicorn: a fault while fetching guest code (e.g. a call into
+           non-executable or unmapped memory) longjmps out of tb_gen_code after
+           tcg_tb_alloc() has taken a slot of code_gen_buffer. That TB was never
+           linked or inserted, so give the slot back; otherwise every such fault
+           wastes ~200 bytes of the buffer. Only when nothing was allocated
+           after it. */
+        {
+            TCGContext *tcg_ctx = uc->tcg_ctx;
+            if (tcg_ctx->uc_pending_tb) {
+                if (tcg_ctx->code_gen_ptr == tcg_ctx->uc_pending_tb_end) {
+                    tcg_ctx->code_gen_ptr = tcg_ctx->uc_pending_tb;
+                }
+                tcg_ctx->uc_pending_tb = NULL;
+            }
+        }
     }
 
     /* if an exception is pending, we execute it here */

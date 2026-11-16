@@ -653,6 +653,11 @@ struct TCGContext {
     size_t initial_buffer_size;
     size_t code_gen_buffer_size;
     void *code_gen_ptr;
+    /* Unicorn: TB allocated by tb_gen_code whose translation has not finished
+       yet, and the code_gen_ptr right after it. A fault while fetching guest
+       code longjmps out of the translator; cpu_exec then returns the slot. */
+    void *uc_pending_tb;
+    void *uc_pending_tb_end;
     void *data_gen_ptr;
 
     /* Threshold to flush the translated code buffer.  */
