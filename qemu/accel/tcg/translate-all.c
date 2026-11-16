@@ -1766,6 +1766,8 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
         cpu_loop_exit(cpu);
     }
 
+    tcg_ctx->uc_pending_tb = tb;
+    tcg_ctx->uc_pending_tb_end = tcg_ctx->code_gen_ptr;
     gen_code_buf = tcg_ctx->code_gen_ptr;
     tb->tc.ptr = gen_code_buf;
     tb->pc = pc;
@@ -1784,6 +1786,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     gen_intermediate_code(cpu, tb, max_insns);
     UC_TRACE_END(UC_TRACE_TB_TRANS, "[uc] translate tb 0x%" PRIx64 ": ", tb->pc);
     tcg_ctx->cpu = NULL;
+    tcg_ctx->uc_pending_tb = NULL;
 
     /* generate machine code */
     tb->jmp_reset_offset[0] = TB_JMP_RESET_OFFSET_INVALID;
