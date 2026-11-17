@@ -1975,6 +1975,97 @@ static void test_x86_vtlb(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_64_vtlb_high_address_code(uc_engine *uc, uint64_t address,
+                                               uint32_t size, void *user_data)
+{
+    int *count = user_data;
+
+    TEST_CHECK(address == 0xfffff80010000000ULL + 5 * (*count));
+    TEST_CHECK(size == 5);
+    (*count)++;
+}
+
+static bool test_x86_64_vtlb_high_address_unmapped(uc_engine *uc,
+                                                   uc_mem_type type,
+                                                   uint64_t address, int size,
+                                                   int64_t value,
+                                                   void *user_data)
+{
+    int *count = user_data;
+
+    TEST_CHECK(type == UC_MEM_WRITE_UNMAPPED);
+    TEST_CHECK(address == 0xffffa000000fdd40ULL);
+    TEST_CHECK(size == 8);
+    TEST_CHECK(value == 0x1122334455667788LL);
+    (*count)++;
+    OK(uc_mem_map(uc, 0xffffa000000fd000ULL, 0x1000, UC_PROT_ALL));
+    return true;
+}
+
+static void test_x86_64_vtlb_high_address(void)
+{
+    uc_engine *uc;
+    uc_hook code_hook, mem_hook;
+    const char code[] = "\x48\x89\x5c\x24\x10\x48\x8b\x44\x24\x10";
+    uint64_t begin = 0xfffff80010000000ULL;
+    uint64_t stack = 0xffffa000000fdd30ULL;
+    uint64_t value = 0x1122334455667788ULL;
+    uint64_t result;
+    uint64_t alias = LEINT64(0x8877665544332211ULL);
+    int code_count = 0, map_count = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_mem_map(uc, begin, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, begin, code, sizeof(code) - 1));
+    OK(uc_mem_map(uc, 0x000fa000000fd000ULL, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x000fa000000fdd40ULL, &alias, sizeof(alias)));
+    OK(uc_reg_write(uc, UC_X86_REG_RSP, &stack));
+    OK(uc_reg_write(uc, UC_X86_REG_RBX, &value));
+    OK(uc_hook_add(uc, &code_hook, UC_HOOK_CODE,
+                   test_x86_64_vtlb_high_address_code, &code_count, 1, 0));
+    OK(uc_hook_add(uc, &mem_hook, UC_HOOK_MEM_WRITE_UNMAPPED,
+                   test_x86_64_vtlb_high_address_unmapped, &map_count, 1, 0));
+
+    OK(uc_emu_start(uc, begin, begin + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(code_count == 2);
+    TEST_CHECK(map_count == 1);
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &result));
+    TEST_CHECK(result == value);
+    OK(uc_mem_read(uc, 0xffffa000000fdd40ULL, &result, sizeof(result)));
+    TEST_CHECK(LEINT64(result) == value);
+    OK(uc_mem_read(uc, 0x000fa000000fdd40ULL, &result, sizeof(result)));
+    TEST_CHECK(result == alias);
+    OK(uc_close(uc));
+}
+
+static void test_x86_64_vtlb_noncanonical(void)
+{
+    uc_engine *uc;
+    const char code[] = "\x48\x8b\x03";
+    uint64_t address = 0x0010008000000000ULL;
+    uint64_t value = LEINT64(0x1122334455667788ULL);
+    uint64_t alias = LEINT64(0x8877665544332211ULL);
+    uint64_t result;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_mem_map(uc, address, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, address, &value, sizeof(value)));
+    OK(uc_mem_map(uc, 0x0000008000000000ULL, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x0000008000000000ULL, &alias, sizeof(alias)));
+    OK(uc_reg_write(uc, UC_X86_REG_RBX, &address));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &result));
+    TEST_CHECK(result == 0x1122334455667788ULL);
+    OK(uc_mem_read(uc, 0x0000008000000000ULL, &result, sizeof(result)));
+    TEST_CHECK(result == alias);
+    OK(uc_close(uc));
+}
+
 static void test_x86_segmentation(void)
 {
     uc_engine *uc;
@@ -2950,6 +3041,8 @@ TEST_LIST = {
     {"test_x86_mmu", test_x86_mmu},
     {"test_x86_read_virtual", test_x86_read_virtual},
     {"test_x86_vtlb", test_x86_vtlb},
+    {"test_x86_64_vtlb_high_address", test_x86_64_vtlb_high_address},
+    {"test_x86_64_vtlb_noncanonical", test_x86_64_vtlb_noncanonical},
     {"test_x86_segmentation", test_x86_segmentation},
     {"test_x86_0xff_lcall", test_x86_0xff_lcall},
     {"test_x86_64_not_overwriting_tmp0_for_pc_update",
