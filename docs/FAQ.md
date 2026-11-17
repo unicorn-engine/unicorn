@@ -87,6 +87,43 @@ For MIPS, you might have an address that falls in MIPS `kseg` segments. In that 
 
 For ARM, you might have an address that falls in some non-executable segments. For example, for m-class ARM cpu, some memory area is not executable according to [the ARM document](https://developer.arm.com/documentation/ddi0403/d/System-Level-Architecture/System-Address-Map/The-system-address-map?lang=en). 
 
+## Why do x86-64 high addresses fail or access a different memory region?
+
+The default `UC_TLB_CPU` mode uses the emulated CPU's address translation.
+`uc_mem_map`, `uc_mem_read` and `uc_mem_write` operate on physical addresses,
+while emulated instructions use virtual addresses. Successfully mapping and
+reading an address with the memory API does not guarantee that an instruction
+can access that same address.
+
+In x86-64 mode with paging disabled, CPU translation still masks physical
+addresses to 52 bits. A high canonical address such as `0xfffff80010000000`
+therefore does not reach a region mapped at that same address, and can instead
+reach a region mapped at `0x000ff80010000000`.
+
+If you need a flat address space, for example to emulate kernel code without
+setting up its page tables, select virtual TLB mode once for each engine,
+before starting emulation:
+
+```python
+from unicorn import Uc, UC_ARCH_X86, UC_MODE_64, UC_TLB_VIRTUAL
+
+uc = Uc(UC_ARCH_X86, UC_MODE_64)
+uc.ctl_set_tlb_mode(UC_TLB_VIRTUAL)
+```
+
+In C, use `uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL)`. The Python bindings in 2.1.0
+and 2.1.1 use `ctl_tlb_mode`; `ctl_set_tlb_mode` is available from 2.1.2.
+
+Without a `UC_HOOK_TLB_FILL` hook, this mode uses identity mapping and preserves
+the high address bits. Unmapped-memory hooks can still map pages on demand.
+Virtual TLB mode bypasses the CPU's page-table translation and canonical-address
+checks; it cannot be used to validate hardware page-table behavior or determine
+whether an address would fault on a real CPU. Keep `UC_TLB_CPU` and configure
+the target MMU when those semantics are required.
+
+See [#2010](https://github.com/unicorn-engine/unicorn/issues/2010) for the
+background of this behavior.
+
 ## KeyboardInterrupt is not raised during `uc.emu_start`
 
 This is intended as python [signal module](https://docs.python.org/3.10/library/signal.html) states:
