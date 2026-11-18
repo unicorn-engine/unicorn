@@ -1487,7 +1487,7 @@ if (UNICORN_LEGACY_STATIC_ARCHIVE)
 endif()
 
 if(UNICORN_FUZZ)
-    set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_armbe;arm_thumb;arm64_arm;arm64_armbe;m68k_be;mips_32be;mips_32le;sparc_32be;x86_16;x86_32;x86_64;s390x_be")
+    set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_armbe;arm_thumb;arm64_arm;arm64_armbe;m68k_be;mips_32be;mips_32le;sparc_32be;sparc_64be;x86_16;x86_32;x86_64;s390x_be")
     if (NOT APPLE)
         set(SAMPLES_LIB ${SAMPLES_LIB} rt)
     endif()
