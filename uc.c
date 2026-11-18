@@ -1060,6 +1060,9 @@ static void enable_emu_timer(uc_engine *uc, uint64_t timeout)
 static void hook_count_cb(struct uc_struct *uc, uint64_t address, uint32_t size,
                           void *user_data)
 {
+    if (uc->emu_count == 0) {
+        return;
+    }
     // count this instruction. ah ah ah.
     uc->emu_counter++;
     // printf(":: emu counter = %u, at %lx\n", uc->emu_counter, address);
@@ -1094,6 +1097,8 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
                     uint64_t timeout, size_t count)
 {
     uc_err err;
+    size_t outer_emu_count = uc->emu_count;
+    size_t outer_emu_counter = uc->emu_counter;
 
 #ifdef UNICORN_HAS_RISCV
     if (uc->arch == UC_ARCH_RISCV && (begin & 1)) {
@@ -1118,6 +1123,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     // we return from uc_emu_start.
     if (uc->nested_level >= UC_MAX_NESTED_LEVEL) {
         // We can't support so many nested levels.
+        uc->emu_counter = outer_emu_counter;
         return UC_ERR_RESOURCE;
     }
     uc->nested_level++;
@@ -1214,12 +1220,10 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 
     uc->emu_count = count;
     // remove count hook if counting isn't necessary
-    if (count <= 0 && uc->count_hook != 0) {
+    // Blocks are keyed by CF_UC_COUNT, so no tb_flush; a nested run keeps the outer's hook.
+    if (count <= 0 && uc->count_hook != 0 && uc->nested_level == 1) {
         uc_hook_del(uc, uc->count_hook);
         uc->count_hook = 0;
-
-        // In this case, we have to drop all translated blocks.
-        uc->tb_flush(uc);
     }
     // set up count hook to count instructions.
     if (count > 0 && uc->count_hook == 0) {
@@ -1234,6 +1238,8 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         uc->hook_insert = 0;
         if (err != UC_ERR_OK) {
             uc->nested_level--;
+            uc->emu_count = outer_emu_count;
+            uc->emu_counter = outer_emu_counter;
             return err;
         }
     }
@@ -1251,6 +1257,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     uc->vm_start(uc);
 
     uc->nested_level--;
+
+    if (uc->nested_level > 0) {
+        uc->emu_count = outer_emu_count;
+        uc->emu_counter = outer_emu_counter;
+    }
 
     // emulation is done if and only if we exit the outer uc_emu_start
     // or we may lost uc_emu_stop
@@ -2064,8 +2075,10 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         return UC_ERR_OK;
     }
 
-    if (type & UC_HOOK_CODE || type & UC_HOOK_BLOCK ||
-        type & UC_HOOK_BLOCK_ICOUNT) {
+    // The count hook needs no flush: blocks it instruments carry CF_UC_COUNT.
+    if ((type & UC_HOOK_CODE || type & UC_HOOK_BLOCK ||
+         type & UC_HOOK_BLOCK_ICOUNT) &&
+        callback != (void *)hook_count_cb) {
         if (end <= begin) {
             uc->tb_flush(uc);
         } else {
