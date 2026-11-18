@@ -1211,6 +1211,8 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     }
     uc->skip_sync_pc_on_exit = false;
     uc->stop_request = false;
+    // Cleared before the timeout thread starts, so its stop is never lost.
+    uc->cpu->exit_request = 0;
 
     uc->emu_count = count;
     // remove count hook if counting isn't necessary
