@@ -2847,10 +2847,7 @@ static void gen_ldst_i64(TCGContext *tcg_ctx, TCGOpcode opc, TCGv_i64 val, TCGv 
 #endif
 }
 
-// Unicorn engine
-// check if the last memory access was invalid
-// if so, we jump to the block epilogue to quit immediately.
-void check_exit_request(TCGContext *tcg_ctx)
+static void gen_check_exit_request(TCGContext *tcg_ctx, uint32_t flags)
 {
     // Unicorn:
     //   For ARM IT block, we couldn't exit in the middle of the
@@ -2867,9 +2864,27 @@ void check_exit_request(TCGContext *tcg_ctx)
     if (tcg_ctx->delay_slot_flag != NULL) {
         tcg_gen_mov_i32(tcg_ctx, tmp, tcg_ctx->delay_slot_flag);
     }
+    if (flags) {
+        tcg_gen_ori_i32(tcg_ctx, tmp, tmp, flags);
+    }
     gen_helper_check_exit_request(tcg_ctx, puc, tmp);
     tcg_temp_free_i32(tcg_ctx, tmp);
     tcg_temp_free_ptr(tcg_ctx, puc);
+}
+
+// Unicorn engine
+// check if the callback requested a stop; used at instruction boundaries.
+void check_exit_request(TCGContext *tcg_ctx)
+{
+    gen_check_exit_request(tcg_ctx, 0);
+}
+
+// Unicorn engine
+// check if the last memory access was invalid
+// if so, we jump to the block epilogue to quit immediately.
+static void check_exit_request_after_mem(TCGContext *tcg_ctx)
+{
+    gen_check_exit_request(tcg_ctx, UC_EXIT_CHECK_AFTER_MEM);
 }
 
 static void tcg_gen_req_mo(TCGContext *tcg_ctx, TCGBar type)
@@ -2917,7 +2932,7 @@ void tcg_gen_qemu_ld_i32(TCGContext *tcg_ctx, TCGv_i32 val, TCGv addr, TCGArg id
         }
     }
 
-    check_exit_request(tcg_ctx);
+    check_exit_request_after_mem(tcg_ctx);
 }
 
 void tcg_gen_qemu_st_i32(TCGContext *tcg_ctx, TCGv_i32 val, TCGv addr, TCGArg idx, MemOp memop)
@@ -2952,7 +2967,7 @@ void tcg_gen_qemu_st_i32(TCGContext *tcg_ctx, TCGv_i32 val, TCGv addr, TCGArg id
         tcg_temp_free_i32(tcg_ctx, swap);
     }
 
-    check_exit_request(tcg_ctx);
+    check_exit_request_after_mem(tcg_ctx);
 }
 
 void tcg_gen_qemu_ld_i64(TCGContext *tcg_ctx, TCGv_i64 val, TCGv addr, TCGArg idx, MemOp memop)
@@ -2967,7 +2982,7 @@ void tcg_gen_qemu_ld_i64(TCGContext *tcg_ctx, TCGv_i64 val, TCGv addr, TCGArg id
         } else {
             tcg_gen_movi_i32(tcg_ctx, TCGV_HIGH(tcg_ctx, val), 0);
         }
-        check_exit_request(tcg_ctx);
+        check_exit_request_after_mem(tcg_ctx);
         return;
     }
 #endif
@@ -3009,7 +3024,7 @@ void tcg_gen_qemu_ld_i64(TCGContext *tcg_ctx, TCGv_i64 val, TCGv addr, TCGArg id
             g_assert_not_reached();
         }
     }
-    check_exit_request(tcg_ctx);
+    check_exit_request_after_mem(tcg_ctx);
 }
 
 void tcg_gen_qemu_st_i64(TCGContext *tcg_ctx, TCGv_i64 val, TCGv addr, TCGArg idx, MemOp memop)
@@ -3019,7 +3034,7 @@ void tcg_gen_qemu_st_i64(TCGContext *tcg_ctx, TCGv_i64 val, TCGv addr, TCGArg id
 #if TCG_TARGET_REG_BITS == 32
     if ((memop & MO_SIZE) < MO_64) {
         tcg_gen_qemu_st_i32(tcg_ctx, TCGV_LOW(tcg_ctx, val), addr, idx, memop);
-        check_exit_request(tcg_ctx);
+        check_exit_request_after_mem(tcg_ctx);
         return;
     }
 #endif
@@ -3055,7 +3070,7 @@ void tcg_gen_qemu_st_i64(TCGContext *tcg_ctx, TCGv_i64 val, TCGv addr, TCGArg id
     if (swap) {
         tcg_temp_free_i64(tcg_ctx, swap);
     }
-    check_exit_request(tcg_ctx);
+    check_exit_request_after_mem(tcg_ctx);
 }
 
 static void tcg_gen_ext_i32(TCGContext *tcg_ctx, TCGv_i32 ret, TCGv_i32 val, MemOp opc)

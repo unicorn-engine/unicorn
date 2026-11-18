@@ -1026,6 +1026,12 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
     }
 }
 
+#if defined(_MSC_VER)
+static __declspec(thread) uc_engine *emulating_uc;
+#else
+static __thread uc_engine *emulating_uc;
+#endif
+
 #define TIMEOUT_STEP 2 // microseconds
 static void *_timeout_fn(void *arg)
 {
@@ -1211,6 +1217,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     }
     uc->skip_sync_pc_on_exit = false;
     uc->stop_request = false;
+    uc->sync_stop = false;
 
     uc->emu_count = count;
     // remove count hook if counting isn't necessary
@@ -1248,7 +1255,10 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         enable_emu_timer(uc, timeout * 1000); // microseconds -> nanoseconds
     }
 
+    uc_engine *outer_uc = emulating_uc;
+    emulating_uc = uc;
     uc->vm_start(uc);
+    emulating_uc = outer_uc;
 
     uc->nested_level--;
 
@@ -1279,11 +1289,15 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 UNICORN_EXPORT
 uc_err uc_emu_stop(uc_engine *uc)
 {
-    UC_INIT(uc);
+    // No UC_INIT: its JIT write-protect bookkeeping is per-uc, not per-thread.
+    if (!uc->init_done) {
+        return UC_ERR_OK;
+    }
+    if (emulating_uc == uc) {
+        uc->sync_stop = true;
+    }
     uc->stop_request = true;
-    uc_err err = break_translation_loop(uc);
-    restore_jit_state(uc);
-    return err;
+    return break_translation_loop(uc);
 }
 
 // return target index where a memory region at the address exists, or could be
@@ -2222,6 +2236,11 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
 
     // the last callback may already asked to stop emulation
     if (uc->stop_request && !not_allow_stop) {
+        // Unicorn:
+        //   A stop can be pending before the CPU is told to exit (uc_emu_stop
+        //   from another thread sets stop_request first). Skipping the hooks
+        //   must not let the instruction or block they guard run unhooked.
+        cpu_exit(uc->cpu);
         return;
     } else if (not_allow_stop && uc->stop_request) {
         revert_uc_emu_stop(uc);
@@ -2259,6 +2278,7 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
         if (not_allow_stop && uc->stop_request) {
             revert_uc_emu_stop(uc);
         } else if (!not_allow_stop && uc->stop_request) {
+            cpu_exit(uc->cpu);
             break;
         }
     }
