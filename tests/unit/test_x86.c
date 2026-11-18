@@ -2933,6 +2933,72 @@ static void test_x86_async_stop_no_replay(void)
 }
 #endif
 
+#ifndef _WIN32
+static volatile int test_x86_stop_hammer_running;
+
+static void *test_x86_stop_hammer(void *arg)
+{
+    while (test_x86_stop_hammer_running) {
+        uc_emu_stop((uc_engine *)arg);
+        usleep(100);
+    }
+    return NULL;
+}
+
+static void test_x86_async_stop_hook_redirect(uc_engine *uc, uint64_t address,
+                                              uint32_t size, void *user_data)
+{
+    uint32_t esp, ret;
+    if (address != code_start + 0x1000) {
+        return;
+    }
+    OK(uc_reg_read(uc, UC_X86_REG_ESP, &esp));
+    OK(uc_mem_read(uc, esp, &ret, sizeof(ret)));
+    esp += 4;
+    OK(uc_reg_write(uc, UC_X86_REG_ESP, &esp));
+    OK(uc_reg_write(uc, UC_X86_REG_EIP, &ret));
+}
+
+static void test_x86_async_stop_never_skips_block_hooks(void)
+{
+    uc_engine *uc;
+    uc_hook h1, h2;
+    // code_start: call code_start+0x1000; jmp code_start
+    char code[] = "\xe8\xfb\x0f\x00\x00\xeb\xf9";
+    // code_start+0x1000: inc dword ptr [0x10000]; ret  (always redirected)
+    char body[] = "\xff\x05\x00\x00\x01\x00\xc3";
+    uint32_t esp = 0x30000, eip = code_start, ran = 0;
+    pthread_t thread;
+    int i;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_mem_write(uc, code_start + 0x1000, body, sizeof(body) - 1));
+    OK(uc_mem_map(uc, 0x10000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x20000, 0x10000, UC_PROT_ALL));
+    OK(uc_reg_write(uc, UC_X86_REG_ESP, &esp));
+    // Two block hooks route block hooks through helper_uc_tracecode.
+    OK(uc_hook_add(uc, &h1, UC_HOOK_BLOCK, test_x86_async_stop_hook_redirect,
+                   NULL, code_start + 0x1000, code_start + 0x1fff));
+    OK(uc_hook_add(uc, &h2, UC_HOOK_BLOCK, test_x86_async_stop_hook_redirect,
+                   NULL, 0x70000000, 0x70000fff));
+
+    test_x86_stop_hammer_running = 1;
+    TEST_CHECK(pthread_create(&thread, NULL, test_x86_stop_hammer, uc) == 0);
+    for (i = 0; i < 2000; i++) {
+        OK(uc_emu_start(uc, eip, 0, 0, 0));
+        OK(uc_reg_read(uc, UC_X86_REG_EIP, &eip));
+    }
+    test_x86_stop_hammer_running = 0;
+    pthread_join(thread, NULL);
+
+    OK(uc_mem_read(uc, 0x10000, &ran, sizeof(ran)));
+    TEST_CHECK(ran == 0);
+    TEST_MSG("hooked block ran unhooked %u times", ran);
+
+    OK(uc_close(uc));
+}
+#endif
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -3022,5 +3088,7 @@ TEST_LIST = {
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
     #ifndef _WIN32
     {"test_x86_async_stop_no_replay", test_x86_async_stop_no_replay},
+    {"test_x86_async_stop_never_skips_block_hooks",
+     test_x86_async_stop_never_skips_block_hooks},
 #endif
     {NULL, NULL}};

@@ -2234,6 +2234,11 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
 
     // the last callback may already asked to stop emulation
     if (uc->stop_request && !not_allow_stop) {
+        // Unicorn:
+        //   A stop can be pending before the CPU is told to exit (uc_emu_stop
+        //   from another thread sets stop_request first). Skipping the hooks
+        //   must not let the instruction or block they guard run unhooked.
+        cpu_exit(uc->cpu);
         return;
     } else if (not_allow_stop && uc->stop_request) {
         revert_uc_emu_stop(uc);
@@ -2271,6 +2276,7 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
         if (not_allow_stop && uc->stop_request) {
             revert_uc_emu_stop(uc);
         } else if (!not_allow_stop && uc->stop_request) {
+            cpu_exit(uc->cpu);
             break;
         }
     }
