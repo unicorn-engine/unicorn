@@ -1302,6 +1302,33 @@ static void test_x86_nested_emu_stop(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_timeout_before_first_tb(void)
+{
+    uc_engine *uc;
+    // code_start: dec ecx; jnz code_start
+    char code[] = "\x49\x75\xfd";
+    uint64_t end = code_start + sizeof(code) - 1;
+    uint32_t ecx;
+    size_t timed_out;
+    int i, lost = 0;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    for (i = 0; i < 2000; i++) {
+        ecx = 20000000;
+        OK(uc_reg_write(uc, UC_X86_REG_ECX, &ecx));
+        // A 1 us timeout often fires before the first TB runs.
+        OK(uc_emu_start(uc, code_start, end, 1, 0));
+        OK(uc_reg_read(uc, UC_X86_REG_ECX, &ecx));
+        OK(uc_query(uc, UC_QUERY_TIMEOUT, &timed_out));
+        if (ecx == 0 && timed_out) {
+            lost++;
+        }
+    }
+    TEST_CHECK(lost == 0);
+    TEST_MSG("%d of 2000 timeouts were lost", lost);
+    OK(uc_close(uc));
+}
+
 static void test_x86_nested_emu_start_error_cb(uc_engine *uc, uint64_t addr,
                                                size_t size, void *data)
 {
@@ -2929,6 +2956,7 @@ TEST_LIST = {
     {"test_x86_pdep32_zero_extend", test_x86_pdep32_zero_extend},
     {"test_x86_nested_emu_start", test_x86_nested_emu_start},
     {"test_x86_nested_emu_stop", test_x86_nested_emu_stop},
+    {"test_x86_timeout_before_first_tb", test_x86_timeout_before_first_tb},
     {"test_x86_64_nested_emu_start_error", test_x86_64_nested_emu_start_error},
     {"test_x86_eflags_reserved_bit", test_x86_eflags_reserved_bit},
     {"test_x86_blsi_cf", test_x86_blsi_cf},

@@ -207,7 +207,6 @@ void resume_all_vcpus(struct uc_struct* uc)
 {
     CPUState *cpu = uc->cpu;
     cpu->halted = 0;
-    cpu->exit_request = 0;
     cpu->exception_index = -1;
     cpu_resume(cpu);
     /* static void qemu_tcg_cpu_loop(struct uc_struct *uc) */
