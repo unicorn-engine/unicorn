@@ -1214,7 +1214,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     }
     uc->skip_sync_pc_on_exit = false;
     uc->stop_request = false;
-    uc->async_stop = false;
+    uc->sync_stop = false;
 
     uc->emu_count = count;
     // remove count hook if counting isn't necessary
@@ -1291,9 +1291,7 @@ uc_err uc_emu_stop(uc_engine *uc)
         return UC_ERR_OK;
     }
     if (emulating_uc == uc) {
-        uc->async_stop = false;
-    } else if (!uc->stop_request) {
-        uc->async_stop = true;
+        uc->sync_stop = true;
     }
     uc->stop_request = true;
     return break_translation_loop(uc);

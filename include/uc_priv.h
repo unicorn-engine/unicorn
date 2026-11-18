@@ -454,7 +454,7 @@ struct uc_struct {
     bool thread_executable_entry;
     bool current_executable;
     bool skip_sync_pc_on_exit;
-    bool async_stop; // uc_emu_stop came from outside this uc's emulation
+    bool sync_stop; // uc_emu_stop came from this uc's own emulation
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
@@ -575,6 +575,7 @@ static inline uc_err break_translation_loop(uc_engine *uc)
 static inline void revert_uc_emu_stop(uc_engine *uc)
 {
     uc->stop_request = 0;
+    uc->sync_stop = false;
     uc->cpu->exit_request = 0;
     uc->cpu->tcg_exit_req = 0;
     uc->cpu->icount_decr_ptr->u16.high = 0;

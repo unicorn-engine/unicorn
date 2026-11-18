@@ -175,7 +175,7 @@ void HELPER(check_exit_request)(void *p, uint32_t flags) {
         //   left pending for the next TB start: restoring the PC here would
         //   rewind to the start of an instruction whose stores already
         //   happened, and resuming would replay them.
-        if ((flags & UC_EXIT_CHECK_AFTER_MEM) && uc->async_stop &&
+        if ((flags & UC_EXIT_CHECK_AFTER_MEM) && !uc->sync_stop && !uc->quit_request &&
             uc->invalid_error == UC_ERR_OK && !uc->skip_sync_pc_on_exit) {
             return;
         }

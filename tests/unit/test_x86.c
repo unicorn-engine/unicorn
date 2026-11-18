@@ -2935,14 +2935,55 @@ static void test_x86_async_stop_no_replay(void)
 
 #ifndef _WIN32
 static volatile int test_x86_stop_hammer_running;
+static useconds_t test_x86_stop_hammer_gap_us;
 
 static void *test_x86_stop_hammer(void *arg)
 {
     while (test_x86_stop_hammer_running) {
         uc_emu_stop((uc_engine *)arg);
-        usleep(100);
+        if (test_x86_stop_hammer_gap_us) {
+            usleep(test_x86_stop_hammer_gap_us);
+        }
     }
     return NULL;
+}
+
+static void test_x86_async_stop_hammer_no_replay(void)
+{
+    uc_engine *uc;
+    // 0x1000: inc dword ptr [rdi]; inc rcx; jmp 0x1000
+    char code[] = "\xff\x07\x48\xff\xc1\xeb\xf9";
+    uint64_t rdi = 0x10000, rcx, rip = code_start;
+    uint32_t mem;
+    pthread_t thread;
+    int i, replays = 0;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_mem_map(uc, rdi, 0x1000, UC_PROT_ALL));
+    OK(uc_reg_write(uc, UC_X86_REG_RDI, &rdi));
+
+    // Stops land across uc_emu_start boundaries, including its prologue.
+    test_x86_stop_hammer_gap_us = 0;
+    test_x86_stop_hammer_running = 1;
+    TEST_CHECK(pthread_create(&thread, NULL, test_x86_stop_hammer, uc) == 0);
+    for (i = 0; i < 20000; i++) {
+        OK(uc_emu_start(uc, rip, 0, 0, 0));
+        OK(uc_reg_read(uc, UC_X86_REG_RIP, &rip));
+        OK(uc_reg_read(uc, UC_X86_REG_RCX, &rcx));
+        OK(uc_mem_read(uc, rdi, &mem, sizeof(mem)));
+        if (mem != (uint32_t)rcx + (rip == code_start + 2 ? 1 : 0)) {
+            replays++;
+            rcx = mem - (rip == code_start + 2 ? 1 : 0);
+            OK(uc_reg_write(uc, UC_X86_REG_RCX, &rcx));
+        }
+    }
+    test_x86_stop_hammer_running = 0;
+    pthread_join(thread, NULL);
+
+    TEST_CHECK(replays == 0);
+    TEST_MSG("%d of 20000 stops replayed a store", replays);
+
+    OK(uc_close(uc));
 }
 
 static void test_x86_async_stop_hook_redirect(uc_engine *uc, uint64_t address,
@@ -2982,6 +3023,7 @@ static void test_x86_async_stop_never_skips_block_hooks(void)
     OK(uc_hook_add(uc, &h2, UC_HOOK_BLOCK, test_x86_async_stop_hook_redirect,
                    NULL, 0x70000000, 0x70000fff));
 
+    test_x86_stop_hammer_gap_us = 100;
     test_x86_stop_hammer_running = 1;
     TEST_CHECK(pthread_create(&thread, NULL, test_x86_stop_hammer, uc) == 0);
     for (i = 0; i < 2000; i++) {
@@ -3090,5 +3132,7 @@ TEST_LIST = {
     {"test_x86_async_stop_no_replay", test_x86_async_stop_no_replay},
     {"test_x86_async_stop_never_skips_block_hooks",
      test_x86_async_stop_never_skips_block_hooks},
+    {"test_x86_async_stop_hammer_no_replay",
+     test_x86_async_stop_hammer_no_replay},
 #endif
     {NULL, NULL}};
