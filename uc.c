@@ -759,9 +759,9 @@ static uint64_t memory_region_len(uc_engine *uc, MemoryRegion *mr,
 
 // check if a memory area is mapped
 // this is complicated because an area can overlap adjacent blocks
-static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
+static bool check_mem_area(uc_engine *uc, uint64_t address, uint64_t size)
 {
-    size_t count = 0, len;
+    uint64_t count = 0, len;
 
     while (count < size) {
         MemoryRegion *mr = uc->memory_mapping(uc, address);
@@ -968,28 +968,35 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
         if (mr) {
             uint32_t operms = mr->perms;
             uint64_t align = uc->target_page_align;
-            if (!(operms & UC_PROT_WRITE)) { // write protected
-                // but this is not the program accessing memory, so temporarily
-                // mark writable
-                uc->readonly_mem(mr, false);
-            }
+            bool ok;
 
             len = memory_region_len(uc, mr, address, size - count);
             if (uc->snapshot_level && uc->snapshot_level > mr->priority) {
                 mr = uc->memory_cow(uc, mr, address & ~align,
                                     (len + (address & align) + align) & ~align);
                 if (!mr) {
+                    restore_jit_state(uc);
                     return UC_ERR_NOMEM;
                 }
             }
-            if (uc->write_mem(&uc->address_space_memory, address, bytes, len) ==
-                false) {
-                break;
-            }
 
             if (!(operms & UC_PROT_WRITE)) { // write protected
-                // now write protect it again
+                // but this is not the program accessing memory, so temporarily
+                // mark writable. When a copy-on-write region was just created
+                // it inherited the read-only flag, so this must be done on the
+                // region that will actually receive the data.
+                uc->readonly_mem(mr, false);
+            }
+
+            ok = uc->write_mem(&uc->address_space_memory, address, bytes, len);
+
+            if (!(operms & UC_PROT_WRITE)) { // write protected
+                // now write protect it again, even if the write failed
                 uc->readonly_mem(mr, true);
+            }
+
+            if (!ok) {
+                break;
             }
 
             count += len;
@@ -2567,6 +2574,7 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
         uc->snapshot_level = context->snapshot_level;
         if (!uc->flatview_copy(uc, uc->address_space_memory.current_map,
                                context->fv, true)) {
+            restore_jit_state(uc);
             return UC_ERR_NOMEM;
         }
         ret = uc_restore_latest_snapshot(uc);
@@ -3001,10 +3009,19 @@ static uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
     MemoryRegion *subregion, *subregion_next, *mr, *initial_mr;
     int level;
 
+    // Drop the copy-on-write layers of every region first. This must be done
+    // before anything is unmapped: memory_unmap() rebuilds the flatview from
+    // the current region tree, and if a container still held a CoW layer at
+    // that point, the rebuilt flatview would keep pointing to it after it is
+    // freed below.
+    QTAILQ_FOREACH(subregion, &uc->system_memory->subregions, subregions_link)
+    {
+        uc->memory_filter_subregions(subregion, uc->snapshot_level);
+    }
+
     QTAILQ_FOREACH_SAFE(subregion, &uc->system_memory->subregions,
                         subregions_link, subregion_next)
     {
-        uc->memory_filter_subregions(subregion, uc->snapshot_level);
         if (subregion->priority >= uc->snapshot_level ||
             (!subregion->terminates && QTAILQ_EMPTY(&subregion->subregions))) {
             uc->memory_unmap(uc, subregion);
@@ -3031,7 +3048,12 @@ static uc_err uc_restore_latest_snapshot(struct uc_struct *uc)
         uc->memory_movein(uc, mr);
         uc->memory_filter_subregions(mr, uc->snapshot_level);
         if (initial_mr != mr && QTAILQ_EMPTY(&mr->subregions)) {
-            uc->memory_unmap(uc, subregion);
+            // Every layer of this container was newer than the snapshot, so
+            // initial_mr has just been freed: drop the empty container and do
+            // not map it back.
+            uc->memory_unmap(uc, mr);
+            g_array_remove_range(uc->unmapped_regions, i, 1);
+            continue;
         }
         mem_map(uc, initial_mr);
         g_array_remove_range(uc->unmapped_regions, i, 1);
