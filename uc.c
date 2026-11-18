@@ -1286,16 +1286,17 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 UNICORN_EXPORT
 uc_err uc_emu_stop(uc_engine *uc)
 {
-    UC_INIT(uc);
+    // No UC_INIT: its JIT write-protect bookkeeping is per-uc, not per-thread.
+    if (!uc->init_done) {
+        return UC_ERR_OK;
+    }
     if (emulating_uc == uc) {
         uc->async_stop = false;
     } else if (!uc->stop_request) {
         uc->async_stop = true;
     }
     uc->stop_request = true;
-    uc_err err = break_translation_loop(uc);
-    restore_jit_state(uc);
-    return err;
+    return break_translation_loop(uc);
 }
 
 // return target index where a memory region at the address exists, or could be
