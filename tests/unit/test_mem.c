@@ -448,44 +448,127 @@ static void test_snapshot_unmap(void)
     OK(uc_close(uc));
 }
 
-static void parts_increment(size_t idx, char parts[3])
+// Host writes to read-only memory must work while a memory snapshot is active
+// (they go to a copy-on-write layer), and the memory must stay read-only for
+// the guest afterwards.
+static void test_snapshot_write_readonly(void)
 {
-    if (idx && idx % 3 == 0) {
-        if (++parts[2] > '9') {
-            parts[2] = '0';
-            if (++parts[1] > 'z') {
-                parts[1] = 'a';
-                if (++parts[0] > 'Z')
-                    parts[0] = 'A';
-            }
+    uc_engine *uc;
+    uc_context *ctx;
+    uint32_t tmp;
+    // mov dword ptr [0x1000], eax
+    char code[] = "\xa3\x00\x10\x00\x00";
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_READ));
+    OK(uc_mem_map(uc, 0x10000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x10000, code, sizeof(code) - 1));
+
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    tmp = 0x11223344;
+    OK(uc_mem_write(uc, 0x1000, &tmp, sizeof(tmp)));
+    tmp = 0;
+    OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    TEST_CHECK(tmp == 0x11223344);
+
+    uc_assert_err(UC_ERR_WRITE_PROT,
+                  uc_emu_start(uc, 0x10000, 0x10000 + sizeof(code) - 1, 0, 0));
+
+    OK(uc_context_restore(uc, ctx));
+    OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    TEST_CHECK(tmp == 0);
+    uc_assert_err(UC_ERR_WRITE_PROT,
+                  uc_emu_start(uc, 0x10000, 0x10000 + sizeof(code) - 1, 0, 0));
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
+// Restoring a snapshot that has to unmap a region mapped after it, while
+// another region has a copy-on-write layer, used to leave the flatview
+// pointing to the freed layer.
+static void test_snapshot_restore_cow_and_map(void)
+{
+    uc_engine *uc;
+    uc_context *ctx;
+    uint32_t tmp;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_ctl_context_mode(uc, UC_CTL_CONTEXT_MEMORY));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+
+    tmp = 1;
+    OK(uc_mem_write(uc, 0x1000, &tmp, sizeof(tmp)));
+    OK(uc_mem_map(uc, 0x10000, 0x1000, UC_PROT_ALL));
+
+    OK(uc_context_restore(uc, ctx));
+    OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    TEST_CHECK(tmp == 0);
+    uc_assert_err(UC_ERR_READ_UNMAPPED,
+                  uc_mem_read(uc, 0x10000, &tmp, sizeof(tmp)));
+
+    tmp = 2;
+    OK(uc_mem_write(uc, 0x1000, &tmp, sizeof(tmp)));
+    OK(uc_mem_read(uc, 0x1000, &tmp, sizeof(tmp)));
+    TEST_CHECK(tmp == 2);
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+}
+
+#define LARGE_BLOCK_PAGE 0x1000
+#define LARGE_BLOCK_MAGIC 0x9e3779b97f4a7c15ULL
+
+// Offset of the per-page marker inside page `page`. It moves around so that a
+// chunking bug that shifts data within a page is caught as well. It never
+// touches the first or last 8 bytes of a page, which keeps it clear of the
+// head and tail bytes checked separately.
+static size_t large_block_marker_off(size_t page)
+{
+    return sizeof(uint64_t) +
+           (page * sizeof(uint64_t)) % (LARGE_BLOCK_PAGE - 2 * sizeof(uint64_t));
+}
+
+// Fill `buf` with a sparse but position-dependent pattern: every page gets a
+// marker derived from its index, the rest stays zero. Mostly-zero pages are
+// cheap for the host (compressed memory, zram, ...), so a > INT_MAX block does
+// not drive a machine with modest RAM into swap thrashing, which made the old
+// fully-patterned version of this test appear to hang.
+static void large_block_fill(uint8_t *buf, size_t len)
+{
+    size_t page;
+
+    for (page = 0; page < len / LARGE_BLOCK_PAGE; page++) {
+        uint64_t v = (uint64_t)page ^ LARGE_BLOCK_MAGIC;
+        memcpy(buf + page * LARGE_BLOCK_PAGE + large_block_marker_off(page),
+               &v, sizeof(v));
+    }
+    // Make the very first and very last bytes distinctive too.
+    buf[0] = 0xA5;
+    buf[len - 1] = 0x5A;
+}
+
+static bool large_block_verify(const uint8_t *buf, size_t len)
+{
+    size_t page;
+
+    if (buf[0] != 0xA5 || buf[len - 1] != 0x5A) {
+        return false;
+    }
+    for (page = 0; page < len / LARGE_BLOCK_PAGE; page++) {
+        uint64_t v;
+        memcpy(&v, buf + page * LARGE_BLOCK_PAGE + large_block_marker_off(page),
+               sizeof(v));
+        if (v != ((uint64_t)page ^ LARGE_BLOCK_MAGIC)) {
+            return false;
         }
     }
-}
-
-// Create a pattern string. It works the same as
-// https://github.com/rapid7/metasploit-framework/blob/master/tools/exploit/pattern_create.rb
-static void pattern_create(char *buf, size_t len)
-{
-    char parts[] = {'A', 'a', '0'};
-    size_t i;
-
-    for (i = 0; i < len; i++) {
-        buf[i] = parts[i % 3];
-        parts_increment(i, parts);
-    }
-}
-
-static bool pattern_verify(const char *buf, size_t len)
-{
-    char parts[] = {'A', 'a', '0'};
-    size_t i;
-
-    for (i = 0; i < len; i++) {
-        if (buf[i] != parts[i % 3])
-            return false;
-        parts_increment(i, parts);
-    }
-
     return true;
 }
 
@@ -494,8 +577,10 @@ static void test_mem_read_and_write_large_memory_block(void)
 {
     uc_engine *uc;
     uint64_t mem_addr = 0x1000000;
-    uint64_t mem_size = 0x9f000000;
-    char *pmem = NULL;
+    // Just above INT_MAX, page aligned: enough to exercise any int/uint32
+    // truncation in the read/write paths while keeping the footprint low.
+    uint64_t mem_size = 0x80000000ULL + 2 * LARGE_BLOCK_PAGE;
+    uint8_t *pmem = NULL;
 
     if (sizeof(void *) < 8) {
         // Don't perform the test on a 32-bit platforms since we may not have
@@ -504,22 +589,23 @@ static void test_mem_read_and_write_large_memory_block(void)
     }
     // Android CI/CD services do not have enough memory capacity for this
     // test to work. Executing it will result in a permanent loop with the
-    // low memory killer daemon. 
+    // low memory killer daemon.
 #ifdef __ANDROID__
     return;
-#endif 
+#endif
 
     OK(uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc));
     OK(uc_mem_map(uc, mem_addr, mem_size, UC_PROT_ALL));
 
-    pmem = malloc(mem_size);
+    // calloc of a block this size is backed by lazily zero-filled pages.
+    pmem = calloc(1, (size_t)mem_size);
     if (TEST_CHECK(pmem != NULL)) {
-        pattern_create(pmem, mem_size);
+        large_block_fill(pmem, (size_t)mem_size);
 
         OK(uc_mem_write(uc, mem_addr, pmem, mem_size));
-        memset(pmem, 'a', mem_size);
+        memset(pmem, 0, (size_t)mem_size);
         OK(uc_mem_read(uc, mem_addr, pmem, mem_size));
-        TEST_CHECK(pattern_verify(pmem, mem_size));
+        TEST_CHECK(large_block_verify(pmem, (size_t)mem_size));
         free(pmem);
     }
 
@@ -604,6 +690,9 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_snapshot_with_vtlb", test_snapshot_with_vtlb},
              {"test_context_snapshot", test_context_snapshot},
              {"test_snapshot_unmap", test_snapshot_unmap},
+             {"test_snapshot_write_readonly", test_snapshot_write_readonly},
+             {"test_snapshot_restore_cow_and_map",
+              test_snapshot_restore_cow_and_map},
              {"test_mem_read_and_write_large_memory_block",
               test_mem_read_and_write_large_memory_block},
              {"test_virtual_to_physical", test_virtual_to_physical},

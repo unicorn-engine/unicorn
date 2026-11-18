@@ -37,10 +37,34 @@
  * That is what we need for QEMU. Passing the value of register rsp (default)
  * lets longjmp try a stack unwinding which will crash with generated code. */
 #if defined(_MSC_VER)   // MSVC
-// See qemu/include/utils/setjmp-wrapper-win32.asm for details.
+#if defined(_M_ARM64)
+/* On ARM64 the NULL-frame trick is not enough: the CRT's longjmp always
+ * unwinds the stack (with a NULL frame it even does a full "exit unwind"),
+ * and unwinding through TCG generated code, which has no unwind info, ends
+ * in an access violation.  Use a private setjmp/longjmp pair that only saves
+ * and restores the callee-saved registers and never unwinds.
+ * See qemu/util/setjmp-wrapper-win32-arm64.asm for details. */
 extern int _setjmp_wrapper(jmp_buf);
+extern __declspec(noreturn) void _longjmp_wrapper(jmp_buf, int);
 #undef setjmp
+#undef longjmp
 #define setjmp(env) _setjmp_wrapper(env)
+#define longjmp(env, val) _longjmp_wrapper(env, val)
+
+#else // MSVC x64
+/* The NULL-frame trick (a wrapper that calls _setjmp with rdx = 0) only
+ * works with the native x64 vcruntime.  An x64 process on Windows-on-ARM64
+ * loads the ARM64X vcruntime140.dll, whose ARM64EC longjmp always unwinds,
+ * and that dies in the TCG frames with STATUS_BAD_FUNCTION_TABLE.  So use a
+ * private, never-unwinding setjmp/longjmp pair here as well.
+ * See qemu/util/setjmp-wrapper-win32.asm for details. */
+extern int _setjmp_wrapper(jmp_buf);
+extern __declspec(noreturn) void _longjmp_wrapper(jmp_buf, int);
+#undef setjmp
+#undef longjmp
+#define setjmp(env) _setjmp_wrapper(env)
+#define longjmp(env, val) _longjmp_wrapper(env, val)
+#endif
 
 #else // MingW
 

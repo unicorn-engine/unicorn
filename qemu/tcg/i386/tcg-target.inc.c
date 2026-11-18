@@ -3738,7 +3738,7 @@ static void tcg_target_init(TCGContext *s)
     if (max >= 7) {
         /* BMI1 is available on AMD Piledriver and Intel Haswell CPUs.  */
 #ifdef _MSC_VER
-        __cpuid(cpu_info, 7);
+        __cpuidex(cpu_info, 7, 0);
         a = cpu_info[0];
         b7 = cpu_info[1];
         c = cpu_info[2];

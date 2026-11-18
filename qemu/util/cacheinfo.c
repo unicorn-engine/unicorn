@@ -108,7 +108,7 @@ static void sys_cache_info(int *isize, int *dsize)
  * Architecture (+ OS) specific detection mechanisms.
  */
 
-#if defined(__aarch64__)
+#if defined(__aarch64__) && !defined(_MSC_VER)
 
 static void arch_cache_info(int *isize, int *dsize)
 {
@@ -120,6 +120,42 @@ static void arch_cache_info(int *isize, int *dsize)
            kernel.  However, CTR_EL0 contains the minimum linesize in the
            entire hierarchy, and is used by userspace cache flushing.  */
         asm volatile("mrs\t%0, ctr_el0" : "=r"(ctr));
+        if (*isize == 0) {
+            *isize = 4 << (ctr & 0xf);
+        }
+        if (*dsize == 0) {
+            *dsize = 4 << ((ctr >> 16) & 0xf);
+        }
+    }
+}
+
+#elif defined(_MSC_VER) && defined(_M_ARM64)
+#include <intrin.h>
+
+/* System register encoding used by _ReadStatusReg(); winnt.h defines
+   ARM64_SYSREG() on recent SDKs, older ones only have a few fixed ids.  */
+#ifndef ARM64_SYSREG
+#define ARM64_SYSREG(op0, op1, crn, crm, op2)                              \
+    ((((op0) & 1) << 14) | (((op1) & 7) << 11) | (((crn) & 15) << 7) |    \
+     (((crm) & 15) << 3) | ((op2) & 7))
+#endif
+#ifndef ARM64_CTR_EL0
+#define ARM64_CTR_EL0 ARM64_SYSREG(3, 3, 0, 0, 1)   /* S3_3_C0_C0_1 */
+#endif
+
+static void arch_cache_info(int *isize, int *dsize)
+{
+    if (*isize == 0 || *dsize == 0) {
+        uint64_t ctr = 0;
+
+        /* Same as the GCC/Clang version above, using the MSVC intrinsic.
+           Windows allows EL0 reads of CTR_EL0, but stay defensive: if the
+           access ever traps we simply keep the fallback line size.  */
+        __try {
+            ctr = (uint64_t)_ReadStatusReg(ARM64_CTR_EL0);
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            return;
+        }
         if (*isize == 0) {
             *isize = 4 << (ctr & 0xf);
         }

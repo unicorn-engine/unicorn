@@ -121,13 +121,47 @@ endif()
 # we do this manually by adding flags.
 set(ATOMIC_LINKAGE_FIX FALSE)
 if(MSVC)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    # Work out which host architecture the compiler targets. CMake records this
+    # during compiler detection as CMAKE_C_COMPILER_ARCHITECTURE_ID (x64, X86,
+    # ARM64, ARM64EC, ARM), independently of the generator in use. Fall back to the
+    # generator platform / system processor / pointer size for older CMake.
+    set(UNICORN_MSVC_ARCH "")
+    if(DEFINED CMAKE_C_COMPILER_ARCHITECTURE_ID AND NOT "${CMAKE_C_COMPILER_ARCHITECTURE_ID}" STREQUAL "")
+        set(UNICORN_MSVC_ARCH "${CMAKE_C_COMPILER_ARCHITECTURE_ID}")
+    elseif(DEFINED MSVC_C_ARCHITECTURE_ID AND NOT "${MSVC_C_ARCHITECTURE_ID}" STREQUAL "")
+        set(UNICORN_MSVC_ARCH "${MSVC_C_ARCHITECTURE_ID}")
+    elseif(NOT "${CMAKE_GENERATOR_PLATFORM}" STREQUAL "")
+        set(UNICORN_MSVC_ARCH "${CMAKE_GENERATOR_PLATFORM}")
+    elseif(NOT "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "")
+        set(UNICORN_MSVC_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+    string(TOLOWER "${UNICORN_MSVC_ARCH}" UNICORN_MSVC_ARCH)
+
+    if(UNICORN_MSVC_ARCH STREQUAL "arm64ec")
+        message(FATAL_ERROR "ARM64EC is not supported: the TCG JIT needs the native ARM64 ABI. Build for ARM64 or x64 instead.")
+    elseif(UNICORN_MSVC_ARCH MATCHES "^(arm64|aarch64)$")
+        # Windows on ARM64: use the AArch64 TCG backend.
+        set(UNICORN_TARGET_ARCH "aarch64")
+        set(MSVC_FLAG  -D__aarch64__)
+    elseif(UNICORN_MSVC_ARCH MATCHES "^(x64|amd64|x86_64)$")
+        set(UNICORN_TARGET_ARCH "i386")
+        set(MSVC_FLAG  -D__x86_64__)
+    elseif(UNICORN_MSVC_ARCH MATCHES "^(x86|win32|i[3-6]86)$")
+        set(UNICORN_TARGET_ARCH "i386")
+        set(MSVC_FLAG  -D__i386__)
+    elseif(UNICORN_MSVC_ARCH MATCHES "^arm")
+        message(FATAL_ERROR "32-bit ARM Windows is not supported with MSVC (host arch: ${UNICORN_MSVC_ARCH}).")
+    elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        # Unknown architecture id: keep the historical behaviour.
+        set(UNICORN_TARGET_ARCH "i386")
         set(MSVC_FLAG  -D__x86_64__)
     elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+        set(UNICORN_TARGET_ARCH "i386")
         set(MSVC_FLAG  -D__i386__)
     else()
         message(FATAL_ERROR "Neither WIN64 or WIN32!")
     endif()
+    message(STATUS "MSVC host architecture: ${UNICORN_MSVC_ARCH} (TCG backend: ${UNICORN_TARGET_ARCH})")
 
     add_compile_options(
         -Dinline=__inline
@@ -135,7 +169,7 @@ if(MSVC)
         -D_CRT_SECURE_NO_WARNINGS
         -DWIN32_LEAN_AND_MEAN
         ${MSVC_FLAG}
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/${UNICORN_TARGET_ARCH}
     )
 
     # Disable some warnings
@@ -1214,7 +1248,30 @@ if(MSVC)
         qemu/util/oslib-win32.c
         qemu/util/qemu-thread-win32.c
     )
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    if(UNICORN_TARGET_ARCH STREQUAL "aarch64")
+        # ARM64 needs the same setjmp wrapper as x64 (see os-win32.h), but it is
+        # written for the Microsoft ARM64 assembler (armasm64), which CMake
+        # supports through the ASM_MARMASM language since 3.26.
+        if(CMAKE_VERSION VERSION_LESS "3.26")
+            message(FATAL_ERROR "Building for ARM64 with MSVC requires CMake 3.26 or greater (ASM_MARMASM support).")
+        endif()
+        enable_language(ASM_MARMASM)
+        # Assemble into the build tree (never into the source tree) so that a
+        # stale object from an older copy of the .asm can not be linked in.
+        set(UNICORN_ARM64_SETJMP_ASM "${CMAKE_CURRENT_SOURCE_DIR}/qemu/util/setjmp-wrapper-win32-arm64.asm")
+        set(UNICORN_ARM64_SETJMP_OBJ "${CMAKE_CURRENT_BINARY_DIR}/setjmp-wrapper-win32-arm64.obj")
+        if(CMAKE_ASM_MARMASM_COMPILER)
+            set(UNICORN_ARMASM64 "${CMAKE_ASM_MARMASM_COMPILER}")
+        else()
+            set(UNICORN_ARMASM64 armasm64)
+        endif()
+        add_custom_command(OUTPUT "${UNICORN_ARM64_SETJMP_OBJ}"
+                COMMAND "${UNICORN_ARMASM64}" -nologo -o "${UNICORN_ARM64_SETJMP_OBJ}" "${UNICORN_ARM64_SETJMP_ASM}"
+                DEPENDS "${UNICORN_ARM64_SETJMP_ASM}"
+                COMMENT "Assembling setjmp-wrapper-win32-arm64.asm (non-unwinding setjmp/longjmp)"
+            )
+        set(UNICORN_COMMON_SRCS ${UNICORN_COMMON_SRCS} "${UNICORN_ARM64_SETJMP_OBJ}")
+    elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
         if(MSVC_VERSION LESS 1600 AND MSVC_IDE)
             add_custom_command(OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/build/setjmp-wrapper-win32.dir/setjmp-wrapper-win32.obj"
                 COMMAND ml64 /c /nologo /Fo"${CMAKE_CURRENT_SOURCE_DIR}/build/setjmp-wrapper-win32.dir/setjmp-wrapper-win32.obj" /W3 /errorReport:prompt /Ta"${CMAKE_CURRENT_SOURCE_DIR}/qemu/util/setjmp-wrapper-win32.asm"

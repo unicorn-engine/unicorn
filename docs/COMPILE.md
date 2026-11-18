@@ -52,6 +52,42 @@ cmake .. -G "Visual Studio 16 2019" -A "win32" -DCMAKE_BUILD_TYPE=Release
 msbuild unicorn.sln -p:Plaform=Win32 -p:Configuration=Release
 ```
 
+### Windows on ARM64, with MSVC
+
+Unicorn2 also builds for ARM64 Windows with MSVC (Visual Studio 2022 and Visual Studio 2026 are
+supported, ARM64EC is not). The host architecture is detected from the compiler, so the only
+difference from the x64 build is the toolchain you select. The ARM64 build needs `cmake` >= 3.26
+because the setjmp/longjmp replacement is assembled with `armasm64`. (The CRT's `longjmp` always
+unwinds the stack on ARM64, which crashes when it walks through TCG generated code, so
+`qemu/util/setjmp-wrapper-win32-arm64.asm` provides a non-unwinding pair instead.)
+
+- Native build, from an ARM64 Developer Command Prompt (or after `vcvarsarm64.bat`):
+
+```bash
+mkdir build; cd build
+cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+ninja
+```
+
+- Cross build from an x64 host, from an "x64_arm64" Developer Command Prompt (or after
+  `vcvarsamd64_arm64.bat`). The test binaries cannot run on the x64 host, so you may want to
+  skip them:
+
+```bash
+mkdir build; cd build
+cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DUNICORN_BUILD_TESTS=OFF
+ninja
+```
+
+- With the Visual Studio generator, pass the platform explicitly (use `Visual Studio 17 2022` for
+  VS 2022):
+
+```bash
+mkdir build; cd build
+cmake .. -G "Visual Studio 18 2026" -A "ARM64" -DCMAKE_BUILD_TYPE=Release
+msbuild unicorn.sln -p:Platform=ARM64 -p:Configuration=Release
+```
+
 ## Cross build with NDK
 
 To cross-build and run Unicorn2 on the Android platform, firstly you need to download [NDK](https://developer.android.com/ndk/downloads).

@@ -9,7 +9,12 @@
 
 #include "qemu/atomic.h"
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(_MSC_VER)
+/* YieldProcessor() (from <windows.h>) expands to the right spin hint for
+   every architecture MSVC targets: pause on x86/x64, yield on ARM/ARM64.  */
+# define cpu_relax() YieldProcessor()
+
+#elif defined(__i386__) || defined(__x86_64__)
 # define cpu_relax() asm volatile("rep; nop" ::: "memory")
 
 #elif defined(__aarch64__)
