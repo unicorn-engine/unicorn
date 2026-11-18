@@ -153,7 +153,7 @@ void *HELPER(lookup_tb_ptr)(CPUArchState *env)
     uint32_t flags;
     struct uc_struct *uc = (struct uc_struct *)cpu->uc;
 
-    tb = tb_lookup__cpu_state(cpu, &pc, &cs_base, &flags, curr_cflags());
+    tb = tb_lookup__cpu_state(cpu, &pc, &cs_base, &flags, curr_cflags(cpu->uc));
     if (tb == NULL) {
         return uc->tcg_ctx->code_gen_epilogue;
     }

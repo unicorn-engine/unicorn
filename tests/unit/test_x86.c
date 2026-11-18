@@ -2891,6 +2891,121 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static size_t test_x86_nested_count;
+static uint32_t test_x86_nested_hits;
+
+static void test_x86_nested_run_hook(uc_engine *uc, uint64_t address,
+                                     uint32_t size, void *user_data)
+{
+    uint32_t esp, eip, ecx;
+    if (address != code_start + 0x1000 || ++test_x86_nested_hits % 8) {
+        return;
+    }
+    OK(uc_reg_read(uc, UC_X86_REG_ESP, &esp));
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, &eip));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &ecx));
+    OK(uc_emu_start(uc, code_start + 0x2000, code_start + 0x2008, 0,
+                    test_x86_nested_count));
+    OK(uc_reg_write(uc, UC_X86_REG_ESP, &esp));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &ecx));
+    OK(uc_reg_write(uc, UC_X86_REG_EIP, &eip));
+}
+
+static uc_engine *test_x86_nested_setup(const char *code, size_t size)
+{
+    uc_engine *uc;
+    uc_hook h1, h2;
+    // code_start+0x1000: ret
+    char target[] = "\xc3";
+    // code_start+0x2000: mov ecx, 64; L: dec ecx; jnz L
+    char nested[] = "\xb9\x40\x00\x00\x00\x49\x75\xfd";
+    uint32_t esp = 0x30000;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, size);
+    OK(uc_mem_write(uc, code_start + 0x1000, target, sizeof(target) - 1));
+    OK(uc_mem_write(uc, code_start + 0x2000, nested, sizeof(nested) - 1));
+    OK(uc_mem_map(uc, 0x10000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x20000, 0x10000, UC_PROT_ALL));
+    OK(uc_reg_write(uc, UC_X86_REG_ESP, &esp));
+    // Two block hooks route block hooks through helper_uc_tracecode.
+    OK(uc_hook_add(uc, &h1, UC_HOOK_BLOCK, test_x86_nested_run_hook, NULL,
+                   code_start + 0x1000, code_start + 0x1fff));
+    OK(uc_hook_add(uc, &h2, UC_HOOK_BLOCK, test_x86_nested_run_hook, NULL,
+                   0x70000000, 0x70000fff));
+    test_x86_nested_hits = 0;
+    return uc;
+}
+
+static void test_x86_nested_run_keeps_outer_count(size_t nested_count)
+{
+    // code_start: inc dword ptr [0x10000]; call code_start+0x1000; jmp code_start
+    char code[] = "\xff\x05\x00\x00\x01\x00\xe8\xf5\x0f\x00\x00\xeb\xf3";
+    uc_engine *uc = test_x86_nested_setup(code, sizeof(code) - 1);
+    uint32_t loops = 0;
+
+    test_x86_nested_count = nested_count;
+    OK(uc_emu_start(uc, code_start, 0, 5000000, 4000));
+    OK(uc_mem_read(uc, 0x10000, &loops, sizeof(loops)));
+    // inc, call, ret, jmp: 4000 outer instructions are about 1000 loops.
+    TEST_CHECK(loops >= 900 && loops <= 1001);
+    TEST_MSG("nested count=%zu: outer ran %u loops for count=4000",
+             nested_count, loops);
+    OK(uc_close(uc));
+}
+
+static void test_x86_nested_uncounted_run_in_counted_run(void)
+{
+    test_x86_nested_run_keeps_outer_count(0);
+}
+
+static void test_x86_nested_counted_run_in_counted_run(void)
+{
+    test_x86_nested_run_keeps_outer_count(100000);
+}
+
+static void test_x86_nested_counted_run_in_uncounted_run(void)
+{
+    // code_start: mov ecx, 1000; L: call code_start+0x1000; dec ecx; jnz L
+    //             mov ecx, 300; L2: dec ecx; jnz L2   (translated after nesting)
+    char code[] = "\xb9\xe8\x03\x00\x00\xe8\xf6\x0f\x00\x00\x49\x75\xf8"
+                  "\xb9\x2c\x01\x00\x00\x49\x75\xfd";
+    uc_engine *uc = test_x86_nested_setup(code, sizeof(code) - 1);
+    uint32_t ecx = 0xffffffff, eip;
+
+    test_x86_nested_count = 200;
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 5000000,
+                    0));
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &ecx));
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, &eip));
+    TEST_CHECK(ecx == 0 && eip == code_start + sizeof(code) - 1);
+    TEST_MSG("outer stopped early: ecx=%u eip=0x%x", ecx, eip);
+    OK(uc_close(uc));
+}
+
+static void test_x86_count_after_uncounted_run(void)
+{
+    uc_engine *uc;
+    // code_start: inc dword ptr [0x10000]; dec ecx; jnz code_start
+    char code[] = "\xff\x05\x00\x00\x01\x00\x49\x75\xf7";
+    uint64_t end = code_start + sizeof(code) - 1;
+    uint32_t loops = 10000, before = 0, after = 0;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_mem_map(uc, 0x10000, 0x1000, UC_PROT_ALL));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &loops));
+    OK(uc_emu_start(uc, code_start, end, 0, 0));
+    OK(uc_mem_read(uc, 0x10000, &before, sizeof(before)));
+    loops = 1000000;
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &loops));
+    OK(uc_emu_start(uc, code_start, end, 0, 1000));
+    OK(uc_mem_read(uc, 0x10000, &after, sizeof(after)));
+    // 1000 instructions of inc, dec, jnz end on the 334th inc.
+    TEST_CHECK(before == 10000 && after - before == 334);
+    TEST_MSG("uncounted run %u loops, count=1000 ran %u loops", before,
+             after - before);
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +3093,11 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_nested_uncounted_run_in_counted_run",
+     test_x86_nested_uncounted_run_in_counted_run},
+    {"test_x86_nested_counted_run_in_counted_run",
+     test_x86_nested_counted_run_in_counted_run},
+    {"test_x86_nested_counted_run_in_uncounted_run",
+     test_x86_nested_counted_run_in_uncounted_run},
+    {"test_x86_count_after_uncounted_run", test_x86_count_after_uncounted_run},
     {NULL, NULL}};

@@ -112,7 +112,7 @@ static void cpu_exec_nocache(CPUState *cpu, int max_cycles,
                              TranslationBlock *orig_tb, bool ignore_icount)
 {
     TranslationBlock *tb;
-    uint32_t cflags = curr_cflags() | CF_NOCACHE;
+    uint32_t cflags = curr_cflags(cpu->uc) | CF_NOCACHE;
 
     if (ignore_icount) {
         cflags &= ~CF_USE_ICOUNT;
@@ -284,6 +284,9 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
      * spanning two pages because the mapping for the second page can change.
      */
     if (tb->page_addr[1] != -1) {
+        last_tb = NULL;
+    }
+    if (last_tb && ((tb_cflags(last_tb) ^ tb_cflags(tb)) & CF_UC_COUNT)) {
         last_tb = NULL;
     }
     /* See if we can patch the calling TB. */
@@ -605,9 +608,10 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                have CF_INVALID set, -1 is a convenient invalid value that
                does not require tcg headers for cpu_common_reset.  */
             if (cflags == -1) {
-                cflags = curr_cflags();
+                cflags = curr_cflags(cpu->uc);
             } else {
                 cpu->cflags_next_tb = -1;
+                cflags = (cflags & ~CF_UC_COUNT) | curr_cflags(cpu->uc);
             }
 
             tb = tb_find(cpu, last_tb, tb_exit, cflags);
