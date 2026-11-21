@@ -100,6 +100,8 @@ static int tcg_cpu_exec(struct uc_struct *uc)
             if (uc->quit_request && !uc->stop_request) {
                 // reset stop_request
                 uc->stop_request = false;
+                // the hook's PC write is in effect; later hooks must sync PC again
+                uc->skip_sync_pc_on_exit = false;
 
                 // resume cpu
                 cpu->halted = 0;

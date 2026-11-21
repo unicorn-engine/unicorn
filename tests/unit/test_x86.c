@@ -2891,6 +2891,42 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_intr_set_pc_redirect(uc_engine *uc, uint32_t intno,
+                                          void *user_data)
+{
+    uint64_t rip = code_start + 2;
+    OK(uc_reg_write(uc, UC_X86_REG_RIP, &rip));
+}
+
+static bool test_x86_intr_set_pc_fault(uc_engine *uc, uc_mem_type type,
+                                       uint64_t address, int size,
+                                       int64_t value, void *user_data)
+{
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, user_data));
+    return false;
+}
+
+static void test_x86_mem_hook_pc_after_intr_set_pc(void)
+{
+    uc_engine *uc;
+    uc_hook h1, h2;
+    // int3; hlt; nop; nop; mov dword ptr [0x39e], eax; hlt
+    char code[] = "\xcc\xf4\x90\x90\x89\x04\x25\x9e\x03\x00\x00\xf4";
+    uint64_t rip = 0;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &h1, UC_HOOK_INTR, test_x86_intr_set_pc_redirect, NULL,
+                   1, 0));
+    OK(uc_hook_add(uc, &h2, UC_HOOK_MEM_WRITE_UNMAPPED,
+                   test_x86_intr_set_pc_fault, &rip, 1, 0));
+    uc_assert_err(UC_ERR_WRITE_UNMAPPED,
+                  uc_emu_start(uc, code_start, code_start + sizeof(code) - 1,
+                               0, 0));
+    TEST_CHECK(rip == code_start + 4);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +3014,5 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_mem_hook_pc_after_intr_set_pc", test_x86_mem_hook_pc_after_intr_set_pc},
     {NULL, NULL}};
