@@ -17,6 +17,17 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * The exception handler of the lazily committed code buffer, below, takes an
+ * SRWLOCK, which the Windows headers declare from Vista on. osdep.h asks for
+ * that level as well, but only after it has included system headers, and by
+ * then a toolchain whose default is older has settled on its own. So ask
+ * here, ahead of the first header.
+ */
+#if defined(_WIN32) && defined(WIN32_ENABLE_VEH) && !defined(_WIN32_WINNT)
+#define _WIN32_WINNT 0x0600
+#endif
+
 #include "qemu/osdep.h"
 #include "qemu/units.h"
 #include "qemu-common.h"
@@ -865,49 +876,122 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 #elif defined(_WIN32)
 #ifdef WIN32_ENABLE_VEH
 #define COMMIT_COUNT (1024) // Commit 4MB per exception
-#define CLOSURE_SIZE (4096)
 
-#ifdef _WIN64
-static LONG code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct uc_struct *uc)
-#else
 /*
-The first two DWORD or smaller arguments that are found in the argument list
-from left to right are passed in ECX and EDX registers; all other arguments
-are passed on the stack from right to left.
-*/
-static LONG __fastcall code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct uc_struct* uc)
-#endif
+ * A translation buffer is reserved, and committed where it is first written:
+ * the write raises an access violation, which a vectored exception handler
+ * answers by committing the pages.
+ *
+ * Vectored handlers belong to the process, not to an engine. Every exception
+ * raised on any thread is offered to each of them, and
+ * RemoveVectoredExceptionHandler() does not wait for a dispatch that has
+ * already picked the handler up: the handler can still be entered, and can
+ * still be running, after the call returns. A handler that lives in memory
+ * one engine owns is therefore called after that engine has released it.
+ *
+ * So the handler is in this library's own code, over a list of the live
+ * buffers, and is shared by every engine of this target. An engine joins and
+ * leaves the list under a lock the handler holds for as long as it reads the
+ * list and commits, which makes leaving wait for a handler that is running;
+ * nothing the handler touches is ever released under it. Nothing but pointers
+ * is assigned while the list is locked for change, so that no exception is
+ * raised there and the handler never waits for its own thread. The handler is
+ * registered while an engine has a buffer, under a lock of its own that the
+ * handler does not take.
+ */
+typedef struct CodeGenBuffer {
+    struct CodeGenBuffer *next;
+    uint8_t *left;
+    uint8_t *right;
+} CodeGenBuffer;
+
+static SRWLOCK code_gen_buffers_lock = SRWLOCK_INIT;
+static CodeGenBuffer *code_gen_buffers;
+
+static SRWLOCK code_gen_handler_lock = SRWLOCK_INIT;
+static PVOID code_gen_handler;
+static size_t code_gen_handler_users;
+
+static LONG CALLBACK code_gen_buffer_handler(PEXCEPTION_POINTERS ptr)
 {
     PEXCEPTION_RECORD record = ptr->ExceptionRecord;
+    LONG result = EXCEPTION_CONTINUE_SEARCH;
     if (record->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
         uint8_t* base = (uint8_t*)(record->ExceptionInformation[1]);
-        uint8_t* left = uc->tcg_ctx->initial_buffer;
-        uint8_t* right = left + uc->tcg_ctx->initial_buffer_size;
-        if (left && base >= left && base < right) {
-            // It's our region
-            uint8_t* base_end = base + COMMIT_COUNT * 4096;
-            uint32_t size = COMMIT_COUNT * 4096;
-            if (base_end >= right) {
-                size = right - base;
-                // whoops, we are almost run out of memory! Commit all instead
-            }
-            if (VirtualAlloc(base, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)) {
-                return EXCEPTION_CONTINUE_EXECUTION;
-            } else {
-                return EXCEPTION_CONTINUE_SEARCH;
+        CodeGenBuffer *buffer;
+        AcquireSRWLockShared(&code_gen_buffers_lock);
+        for (buffer = code_gen_buffers; buffer; buffer = buffer->next) {
+            uint8_t* right = buffer->right;
+            if (base >= buffer->left && base < right) {
+                // It's our region
+                uint8_t* base_end = base + COMMIT_COUNT * 4096;
+                uint32_t size = COMMIT_COUNT * 4096;
+                if (base_end >= right) {
+                    size = right - base;
+                    // whoops, we are almost run out of memory! Commit all instead
+                }
+                if (VirtualAlloc(base, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)) {
+                    result = EXCEPTION_CONTINUE_EXECUTION;
+                }
+                break;
             }
         }
+        ReleaseSRWLockShared(&code_gen_buffers_lock);
     }
-    return EXCEPTION_CONTINUE_SEARCH;
+    return result;
 }
 
-static inline void may_remove_handler(struct uc_struct *uc) {
-    if (uc->seh_closure) {
-        if (uc->seh_handle) {
-            RemoveVectoredExceptionHandler(uc->seh_handle);
-        }
-        VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
+static bool remember_code_gen_buffer(struct uc_struct *uc, uint8_t *left, size_t size)
+{
+    CodeGenBuffer *buffer;
+    bool registered;
+
+    AcquireSRWLockExclusive(&code_gen_handler_lock);
+    if (!code_gen_handler) {
+        code_gen_handler = AddVectoredExceptionHandler(1, code_gen_buffer_handler);
     }
+    registered = code_gen_handler != NULL;
+    if (registered) {
+        code_gen_handler_users++;
+    }
+    ReleaseSRWLockExclusive(&code_gen_handler_lock);
+    if (!registered) {
+        return false;
+    }
+
+    buffer = g_malloc(sizeof(*buffer));
+    buffer->left = left;
+    buffer->right = left + size;
+    AcquireSRWLockExclusive(&code_gen_buffers_lock);
+    buffer->next = code_gen_buffers;
+    code_gen_buffers = buffer;
+    ReleaseSRWLockExclusive(&code_gen_buffers_lock);
+    uc->code_gen_buffer_entry = buffer;
+    return true;
+}
+
+static void forget_code_gen_buffer(struct uc_struct *uc)
+{
+    CodeGenBuffer *buffer = uc->code_gen_buffer_entry;
+    CodeGenBuffer **link;
+
+    if (!buffer) {
+        return;
+    }
+    AcquireSRWLockExclusive(&code_gen_buffers_lock);
+    for (link = &code_gen_buffers; *link != buffer; link = &(*link)->next) {
+    }
+    *link = buffer->next;
+    ReleaseSRWLockExclusive(&code_gen_buffers_lock);
+    uc->code_gen_buffer_entry = NULL;
+    g_free(buffer);
+
+    AcquireSRWLockExclusive(&code_gen_handler_lock);
+    if (--code_gen_handler_users == 0) {
+        RemoveVectoredExceptionHandler(code_gen_handler);
+        code_gen_handler = NULL;
+    }
+    ReleaseSRWLockExclusive(&code_gen_handler_lock);
 }
 #endif // WIN32_ENABLE_VEH
 
@@ -916,9 +1000,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     TCGContext *tcg_ctx = uc->tcg_ctx;
     size_t size = tcg_ctx->code_gen_buffer_size;
 #ifdef WIN32_ENABLE_VEH
-    uint8_t *closure, *data;
-    uint8_t *ptr;
-    void* handler = code_gen_buffer_handler;
+    void *buf;
 
     if (uc->prealloc) {
         // Commit the whole buffer upfront so no lazy-commit exception handler
@@ -926,85 +1008,15 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
         return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
     }
 
-    may_remove_handler(uc);
+    forget_code_gen_buffer(uc);
 
-    // Naive trampoline implementation
-    closure = VirtualAlloc(NULL, CLOSURE_SIZE, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-    if (!closure) {
-        return NULL;
-    }
-    uc->seh_closure = closure;
-    data = closure + CLOSURE_SIZE /2;
-    
-#ifdef _WIN64
-    ptr = closure;
-    *ptr = 0x48; // REX.w
-    ptr += 1;
-    *ptr = 0xb8; // mov rax
-    ptr += 1;
-    memcpy(ptr, &data, 8); // mov rax, &data
-    ptr += 8;
-    // ; rax = &data
-    // mov [rax], rdx ; save rdx
-    // mov rdx, [rax+0x8] ; move uc pointer to 2nd arg
-    // sub rsp, 0x10; reserve 2 slots as ms fastcall requires
-    // call [rax + 0x10] ; go to handler
-    const char tramp[] = "\x48\x89\x10\x48\x8b\x50\x08\x48\x83\xec\x10\xff\x50\x10";
-    memcpy(ptr, (void*)tramp, sizeof(tramp) - 1); // Note last zero!
-    ptr += sizeof(tramp) - 1;
-    *ptr = 0x48; // REX.w
-    ptr += 1;
-    *ptr = 0xba; // mov rdx
-    ptr += 1;
-    memcpy(ptr, &data, 8); // mov rdx, &data
-    ptr += 8;
-    // ; rdx = &data
-    // add rsp, 0x10 ; clean stack
-    // mov rdx, [rdx] ; restore rdx
-    // ret
-    const char tramp2[] = "\x48\x83\xc4\x10\x48\x8b\x12\xc3";
-    memcpy(ptr, (void*)tramp2, sizeof(tramp2) - 1);
-
-    memcpy(data + 0x8,  (void*)&uc, 8);
-    memcpy(data + 0x10, (void*)&handler, 8);
-#else
-    ptr = closure;
-    *ptr = 0xb8; // mov eax
-    ptr += 1;
-    memcpy(ptr, (void*)&data, 4); // mov eax, &data
-    ptr += 4;
-    // ; eax = &data
-    // mov [eax], edx; save edx
-    // mov [eax+0x4], ecx; save ecx
-    // mov ecx, [esp+4]; get ptr to exception because of cdecl
-    // mov edx, [eax+0x8]; get ptr to uc
-    // call [eax + 0xC]; get ptr to our handler, it's fastcall so we don't clean stac
-    const char tramp[] = "\x89\x10\x89\x48\x04\x8b\x4c\x24\x04\x8b\x50\x08\xff\x50\x0c";
-    memcpy(ptr, (void*)tramp, sizeof(tramp) - 1);
-    ptr += sizeof(tramp) - 1;
-    *ptr = 0xb9; // mov ecx
-    ptr += 1;
-    memcpy(ptr, (void*)&data, 4); // mov ecx, &data
-    ptr += 4;
-
-    // mov edx, [ecx] ; restore edx
-    // mov ecx, [ecx+4] ; restore ecx
-    // ret 4
-    const char tramp2[] = "\x8b\x11\x8b\x49\x04\xc2\x04\x00";
-    memcpy(ptr, (void*)tramp2, sizeof(tramp2) - 1);
-
-    memcpy(data + 0x8,  (void*)&uc, 4);
-    memcpy(data + 0xC, (void*)&handler, 4);
-#endif
-
-    uc->seh_handle = AddVectoredExceptionHandler(1, (PVECTORED_EXCEPTION_HANDLER)closure);
-    if (!uc->seh_handle) {
-        VirtualFree(uc->seh_closure, 0, MEM_RELEASE);
-        uc->seh_closure = NULL;
+    buf = VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (buf && !remember_code_gen_buffer(uc, buf, size)) {
+        VirtualFree(buf, 0, MEM_RELEASE);
         return NULL;
     }
 
-    return VirtualAlloc(NULL, size, MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    return buf;
 #else
     // The VEH lazy-commit path is compiled out: always commit upfront.
     return VirtualAlloc(NULL, size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
@@ -1015,7 +1027,7 @@ void free_code_gen_buffer(struct uc_struct *uc)
     TCGContext *tcg_ctx = uc->tcg_ctx;
     if (tcg_ctx->initial_buffer) {
 #ifdef WIN32_ENABLE_VEH
-        may_remove_handler(uc);
+        forget_code_gen_buffer(uc);
 #endif
         VirtualFree(tcg_ctx->initial_buffer, 0, MEM_RELEASE);
     }
