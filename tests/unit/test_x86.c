@@ -2891,6 +2891,44 @@ static void test_x86_lock_btc_reg(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_smc_read_hook(uc_engine *uc, uc_mem_type type,
+                                   uint64_t address, int size, int64_t value,
+                                   void *user_data)
+{
+}
+
+static void test_x86_smc_after_dirty_page(void)
+{
+    uc_engine *uc;
+    // Stores clean the TLB entry of the page at 0x3000; a hook on 0x3100 alone
+    // keeps tb_gen_code from re-arming it, so only tlb_protect_code catches the patch.
+    char code[] = "\xb9\x00\x10\x00\x00"             // mov ecx, 0x1000
+                  "\xc6\x05\x00\x38\x00\x00\xaa"     // L: mov byte [0x3800], 0xaa
+                  "\xe2\xf7"                         // loop L
+                  "\xbc\x00\x3f\x00\x00"             // mov esp, 0x3f00
+                  "\xe8\xe8\x20\x00\x00"             // call 0x3100
+                  "\x89\xc3"                         // mov ebx, eax
+                  "\xc7\x05\x01\x31\x00\x00\x02\x00\x00\x00" // mov dword [0x3101], 2
+                  "\xe8\xd7\x20\x00\x00";            // call 0x3100
+    char func[] = "\xb8\x01\x00\x00\x00\xc3";        // mov eax, 1; ret
+    int r_eax, r_ebx;
+    uc_hook hook;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_mem_write(uc, 0x3100, func, sizeof(func) - 1));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ, test_x86_smc_read_hook, NULL,
+                   0x3100, 0x3100));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx));
+    TEST_CHECK(r_ebx == 1);
+    TEST_CHECK(r_eax == 2);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -2978,4 +3016,5 @@ TEST_LIST = {
     {"test_x86_lock_bt_reg", test_x86_lock_bt_reg},
     {"test_x86_lock_btc_mem", test_x86_lock_btc_mem},
     {"test_x86_lock_btc_reg", test_x86_lock_btc_reg},
+    {"test_x86_smc_after_dirty_page", test_x86_smc_after_dirty_page},
     {NULL, NULL}};

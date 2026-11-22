@@ -1270,6 +1270,7 @@
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_sparc
 #define tb_invalidate_phys_range tb_invalidate_phys_range_sparc
 #define tb_invalidate_phys_page_fast tb_invalidate_phys_page_fast_sparc
+#define tb_page_has_code tb_page_has_code_sparc
 #define tb_check_watchpoint tb_check_watchpoint_sparc
 #define cpu_io_recompile cpu_io_recompile_sparc
 #define tb_flush_jmp_cache tb_flush_jmp_cache_sparc
