@@ -445,8 +445,9 @@ struct uc_struct {
                    // for safe concurrent use of multiple uc instances. Only
                    // meaningful when the VEH path is compiled in; without it the
                    // buffer is always committed upfront.
-    PVOID seh_handle;
-    void *seh_closure;
+    void *code_gen_buffer_entry; // This engine's entry in the list of lazily
+                                 // committed code gen buffers that the
+                                 // vectored exception handler reads.
 #endif
     GArray *unmapped_regions;
     int32_t snapshot_level;
