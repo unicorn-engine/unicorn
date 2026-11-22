@@ -17,6 +17,17 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * The exception handler of the lazily committed code buffer, below, takes an
+ * SRWLOCK, which the Windows headers declare from Vista on. osdep.h asks for
+ * that level as well, but only after it has included system headers, and by
+ * then a toolchain whose default is older has settled on its own. So ask
+ * here, ahead of the first header.
+ */
+#if defined(_WIN32) && defined(WIN32_ENABLE_VEH) && !defined(_WIN32_WINNT)
+#define _WIN32_WINNT 0x0600
+#endif
+
 #include "qemu/osdep.h"
 #include "qemu/units.h"
 #include "qemu-common.h"
