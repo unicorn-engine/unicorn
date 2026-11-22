@@ -1270,6 +1270,7 @@
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_mipsel
 #define tb_invalidate_phys_range tb_invalidate_phys_range_mipsel
 #define tb_invalidate_phys_page_fast tb_invalidate_phys_page_fast_mipsel
+#define tb_page_has_code tb_page_has_code_mipsel
 #define tb_check_watchpoint tb_check_watchpoint_mipsel
 #define cpu_io_recompile cpu_io_recompile_mipsel
 #define tb_flush_jmp_cache tb_flush_jmp_cache_mipsel

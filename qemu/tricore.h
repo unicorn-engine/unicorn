@@ -1270,6 +1270,7 @@
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_tricore
 #define tb_invalidate_phys_range tb_invalidate_phys_range_tricore
 #define tb_invalidate_phys_page_fast tb_invalidate_phys_page_fast_tricore
+#define tb_page_has_code tb_page_has_code_tricore
 #define tb_check_watchpoint tb_check_watchpoint_tricore
 #define cpu_io_recompile cpu_io_recompile_tricore
 #define tb_flush_jmp_cache tb_flush_jmp_cache_tricore

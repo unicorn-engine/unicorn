@@ -1270,6 +1270,7 @@
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_ppc
 #define tb_invalidate_phys_range tb_invalidate_phys_range_ppc
 #define tb_invalidate_phys_page_fast tb_invalidate_phys_page_fast_ppc
+#define tb_page_has_code tb_page_has_code_ppc
 #define tb_check_watchpoint tb_check_watchpoint_ppc
 #define cpu_io_recompile cpu_io_recompile_ppc
 #define tb_flush_jmp_cache tb_flush_jmp_cache_ppc

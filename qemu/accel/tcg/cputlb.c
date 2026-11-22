@@ -614,8 +614,13 @@ void tlb_flush_page_all_cpus_synced(CPUState *src, target_ulong addr)
    can be detected */
 void tlb_protect_code(struct uc_struct *uc, ram_addr_t ram_addr)
 {
-    cpu_physical_memory_test_and_clear_dirty(ram_addr, TARGET_PAGE_SIZE,
-                                             DIRTY_MEMORY_CODE);
+    /* No dirty bitmap: re-arm TLB_NOTDIRTY on the entries mapping this page,
+       which notdirty_write may have cleared while the page held no code. */
+    if (uc->cpu) {
+        uintptr_t host = (uintptr_t)qemu_map_ram_ptr(uc, NULL,
+                                                     ram_addr & TARGET_PAGE_MASK);
+        tlb_reset_dirty(uc->cpu, host, TARGET_PAGE_SIZE);
+    }
 }
 
 /* update the TLB so that writes in physical page 'phys_addr' are no longer
@@ -1208,13 +1213,10 @@ static void notdirty_write(CPUState *cpu, vaddr mem_vaddr, unsigned size,
         page_collection_unlock(pages);
     }
 
-    /* For exec pages, this is cleared in tb_gen_code. */
-    // If we:
-    // - have memory hooks installed
-    // - or doing snapshot
-    // , then never clean the tlb
+    // Never clean while memory hooks are installed, while snapshotting, or
+    // while the page holds translated code (tlb_protect_code re-arms it).
     if (!(!mr || (tlbe->addr_write != -1 && mr->priority < cpu->uc->snapshot_level)) &&
-            !(tlbe->addr_code != -1) &&
+            !tb_page_has_code(cpu->uc, ram_addr) &&
             !uc_mem_hook_installed(cpu->uc, tlbe->paddr | (mem_vaddr & ~TARGET_PAGE_MASK))) {
         tlb_set_dirty(cpu, mem_vaddr);
     }

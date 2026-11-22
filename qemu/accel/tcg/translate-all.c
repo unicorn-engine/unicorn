@@ -416,6 +416,14 @@ static PageDesc *page_find_alloc(struct uc_struct *uc, tb_page_addr_t index, int
     return pd + (index & (V_L2_SIZE - 1));
 }
 
+static inline PageDesc *page_find(struct uc_struct *uc, tb_page_addr_t index);
+
+bool tb_page_has_code(struct uc_struct *uc, tb_page_addr_t addr)
+{
+    PageDesc *p = page_find(uc, addr >> TARGET_PAGE_BITS);
+    return p != NULL && p->first_tb != (uintptr_t)NULL;
+}
+
 static inline PageDesc *page_find(struct uc_struct *uc, tb_page_addr_t index)
 {
     return page_find_alloc(uc, index, 0);
