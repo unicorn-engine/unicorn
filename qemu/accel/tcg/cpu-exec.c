@@ -588,6 +588,14 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 #endif /* buggy compiler */
 
         assert_no_pages_locked();
+
+        if (uc->tcg_ctx && uc->tcg_ctx->tb_abort_orig_ptr != NULL) {
+            if (uc->tcg_ctx->code_gen_ptr == uc->tcg_ctx->tb_abort_gen_ptr) {
+                uc->tcg_ctx->code_gen_ptr = uc->tcg_ctx->tb_abort_orig_ptr;
+            }
+            uc->tcg_ctx->tb_abort_orig_ptr = NULL;
+            uc->tcg_ctx->tb_abort_gen_ptr = NULL;
+        }
     }
 
     /* if an exception is pending, we execute it here */

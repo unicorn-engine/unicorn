@@ -655,6 +655,10 @@ struct TCGContext {
     void *code_gen_ptr;
     void *data_gen_ptr;
 
+    /* Rollback state for an in-progress tb_gen_code() aborted by longjmp. */
+    void *tb_abort_orig_ptr;
+    void *tb_abort_gen_ptr;
+
     /* Threshold to flush the translated code buffer.  */
     void *code_gen_highwater;
 
