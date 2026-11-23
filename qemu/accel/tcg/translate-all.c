@@ -880,17 +880,21 @@ static LONG __fastcall code_gen_buffer_handler(PEXCEPTION_POINTERS ptr, struct u
 {
     PEXCEPTION_RECORD record = ptr->ExceptionRecord;
     if (record->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
-        uint8_t* base = (uint8_t*)(record->ExceptionInformation[1]);
-        uint8_t* left = uc->tcg_ctx->initial_buffer;
-        uint8_t* right = left + uc->tcg_ctx->initial_buffer_size;
-        if (left && base >= left && base < right) {
-            // It's our region
-            uint8_t* base_end = base + COMMIT_COUNT * 4096;
-            uint32_t size = COMMIT_COUNT * 4096;
-            if (base_end >= right) {
-                size = right - base;
-                // whoops, we are almost run out of memory! Commit all instead
+        uint8_t *fault_addr = (uint8_t *)(record->ExceptionInformation[1]);
+        uint8_t *left = uc->tcg_ctx->initial_buffer;
+        uint8_t *right = left + uc->tcg_ctx->initial_buffer_size;
+        if (left && fault_addr >= left && fault_addr < right) {
+            // It's our region. Page-align down so VirtualAlloc commits exact
+            // page-aligned chunks without drifting +4 KiB per exception, and
+            // clamp to the remaining reservation without pointer-overflow UB.
+            size_t page_size = uc->qemu_real_host_page_size ? uc->qemu_real_host_page_size : 4096;
+            uint8_t *base = (uint8_t *)((uintptr_t)fault_addr & ~(uintptr_t)(page_size - 1));
+            if (base < left) {
+                base = left;
             }
+            size_t commit_size = (size_t)COMMIT_COUNT * 4096;
+            size_t remaining = (size_t)(right - base);
+            size_t size = remaining < commit_size ? remaining : commit_size;
             if (VirtualAlloc(base, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE)) {
                 return EXCEPTION_CONTINUE_EXECUTION;
             } else {
@@ -1400,6 +1404,8 @@ static void do_tb_flush(CPUState *cpu, run_on_cpu_data tb_flush_count)
     page_flush_tb(cpu->uc);
 
     tcg_region_reset_all(cpu->uc->tcg_ctx);
+    cpu->uc->tcg_ctx->tb_abort_orig_ptr = NULL;
+    cpu->uc->tcg_ctx->tb_abort_gen_ptr = NULL;
     /* XXX: flush processor icache at this point if cache flush is
        expensive */
     cpu->uc->tcg_ctx->tb_ctx.tb_flush_count = cpu->uc->tcg_ctx->tb_ctx.tb_flush_count + 1;
@@ -1728,6 +1734,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     tb_page_addr_t phys_pc, phys_page2;
     target_ulong virt_page2;
     tcg_insn_unit *gen_code_buf;
+    void *orig_code_gen_ptr;
     int gen_code_size, search_size, max_insns;
 
     assert_memory_lock();
@@ -1756,6 +1763,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     }
 
  buffer_overflow:
+    orig_code_gen_ptr = tcg_ctx->code_gen_ptr;
     tb = tcg_tb_alloc(tcg_ctx);
     if (unlikely(!tb)) {
         /* flush must be done */
@@ -1767,6 +1775,8 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     }
 
     gen_code_buf = tcg_ctx->code_gen_ptr;
+    tcg_ctx->tb_abort_orig_ptr = orig_code_gen_ptr;
+    tcg_ctx->tb_abort_gen_ptr = gen_code_buf;
     tb->tc.ptr = gen_code_buf;
     tb->pc = pc;
     tb->cs_base = cs_base;
@@ -1837,6 +1847,8 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     }
     tb->tc.size = gen_code_size;
 
+    tcg_ctx->tb_abort_orig_ptr = NULL;
+    tcg_ctx->tb_abort_gen_ptr = NULL;
     tcg_ctx->code_gen_ptr = (void *)
         ROUND_UP((uintptr_t)gen_code_buf + gen_code_size + search_size,
                  CODE_GEN_ALIGN);
