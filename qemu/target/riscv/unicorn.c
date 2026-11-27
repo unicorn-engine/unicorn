@@ -157,16 +157,17 @@ uc_err reg_read(void *_env, int mode, unsigned int regid, void *value,
         *(uint64_t *)value = env->fpr[regid - UC_RISCV_REG_F0];
     } else if (regid >= UC_RISCV_REG_USTATUS &&
                regid < UC_RISCV_REG_USTATUS + csrno_count) {
-        target_ulong val;
+        target_ulong val = 0;
         int csrno = csrno_map[regid - UC_RISCV_REG_USTATUS];
-        riscv_csrrw(env, csrno, &val, -1, 0);
+        if (riscv_csrrw_debug(env, csrno, &val, 0, 0) == 0) {
 #ifdef TARGET_RISCV64
-        CHECK_REG_TYPE(uint64_t);
-        *(uint64_t *)value = (uint64_t)val;
+            CHECK_REG_TYPE(uint64_t);
+            *(uint64_t *)value = (uint64_t)val;
 #else
-        CHECK_REG_TYPE(uint32_t);
-        *(uint32_t *)value = (uint32_t)val;
+            CHECK_REG_TYPE(uint32_t);
+            *(uint32_t *)value = (uint32_t)val;
 #endif
+        }
     } else {
         switch (regid) {
         default:
@@ -222,14 +223,18 @@ uc_err reg_write(void *_env, int mode, unsigned int regid, const void *value,
         env->fpr[regid - UC_RISCV_REG_F0] = *(uint64_t *)value;
     } else if (regid >= UC_RISCV_REG_USTATUS &&
                regid < UC_RISCV_REG_USTATUS + csrno_count) {
-        target_ulong val;
+        target_ulong val = 0;
         int csrno = csrno_map[regid - UC_RISCV_REG_USTATUS];
 #ifdef TARGET_RISCV64
         CHECK_REG_TYPE(uint64_t);
-        riscv_csrrw(env, csrno, &val, *(uint64_t *)value, -1);
+        if (riscv_csrrw_debug(env, csrno, &val, *(uint64_t *)value, -1) != 0) {
+            ret = UC_ERR_ARG;
+        }
 #else
         CHECK_REG_TYPE(uint32_t);
-        riscv_csrrw(env, csrno, &val, *(uint32_t *)value, -1);
+        if (riscv_csrrw_debug(env, csrno, &val, *(uint32_t *)value, -1) != 0) {
+            ret = UC_ERR_ARG;
+        }
 #endif
     } else {
         switch (regid) {
