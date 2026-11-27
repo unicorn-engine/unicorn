@@ -991,6 +991,113 @@ static void test_riscv_priv(void)
     TEST_ASSERT(reg_value == 0);
 }
 
+static void test_riscv32_csr_debug_access(void)
+{
+    uc_engine *uc;
+    uint32_t mtvec_in = 0x12345678;
+    int regs[4] = {UC_RISCV_REG_MTVEC, UC_RISCV_REG_FFLAGS, UC_RISCV_REG_FRM,
+                   UC_RISCV_REG_FCSR};
+    uint32_t vals[4] = {0xaaaaaaaa, 0xbbbbbbbb, 0xcccccccc, 0xdddddddd};
+    void *ptrs[4] = {&vals[0], &vals[1], &vals[2], &vals[3]};
+    uint32_t mstatus = 0xffffffff;
+    uint32_t priv = 0;
+    uint32_t sscratch = 0x5a5a5a5a;
+    uint32_t readback = 0;
+    uint32_t sip = 0;
+    uint32_t sentinel = 0xdeadbeef;
+    uint32_t ro_val = 0x1234;
+    uint32_t fflags_in = 0x15;
+    uc_err expected_err =
+        getenv("UC_IGNORE_REG_BREAK") ? UC_ERR_ARG : UC_ERR_OK;
+
+    OK(uc_open(UC_ARCH_RISCV, UC_MODE_RISCV32, &uc));
+    OK(uc_reg_write(uc, UC_RISCV_REG_MTVEC, &mtvec_in));
+
+    OK(uc_reg_read_batch(uc, regs, ptrs, 4));
+    TEST_CHECK(vals[0] == mtvec_in);
+    TEST_CHECK(vals[1] == 0);
+    TEST_CHECK(vals[2] == 0);
+    TEST_CHECK(vals[3] == 0);
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_MSTATUS, &mstatus));
+    TEST_CHECK((mstatus & 0x6000) == 0);
+
+    OK(uc_reg_write(uc, UC_RISCV_REG_PRIV, &priv));
+    OK(uc_reg_write(uc, UC_RISCV_REG_SSCRATCH, &sscratch));
+    OK(uc_reg_read(uc, UC_RISCV_REG_SSCRATCH, &readback));
+    TEST_CHECK(readback == sscratch);
+
+    OK(uc_reg_write(uc, UC_RISCV_REG_SIP, &sip));
+
+    uc_assert_err(expected_err,
+                  uc_reg_read(uc, UC_RISCV_REG_USTATUS, &sentinel));
+    TEST_CHECK(sentinel == 0xdeadbeef);
+    uc_assert_err(expected_err,
+                  uc_reg_write(uc, UC_RISCV_REG_USTATUS, &ro_val));
+    uc_assert_err(expected_err,
+                  uc_reg_write(uc, UC_RISCV_REG_MVENDORID, &ro_val));
+
+    OK(uc_reg_write(uc, UC_RISCV_REG_FFLAGS, &fflags_in));
+    OK(uc_reg_read(uc, UC_RISCV_REG_FFLAGS, &readback));
+    TEST_CHECK(readback == fflags_in);
+
+    OK(uc_close(uc));
+}
+
+static void test_riscv64_csr_debug_access(void)
+{
+    uc_engine *uc;
+    uint64_t mtvec_in = 0x123456789abcdef0ULL;
+    int regs[4] = {UC_RISCV_REG_MTVEC, UC_RISCV_REG_FFLAGS, UC_RISCV_REG_FRM,
+                   UC_RISCV_REG_FCSR};
+    uint64_t vals[4] = {0xaaaaaaaaaaaaaaaaULL, 0xbbbbbbbbbbbbbbbbULL,
+                        0xccccccccccccccccULL, 0xddddddddddddddddULL};
+    void *ptrs[4] = {&vals[0], &vals[1], &vals[2], &vals[3]};
+    uint64_t mstatus = 0xffffffffffffffffULL;
+    uint64_t priv = 0;
+    uint64_t sscratch = 0x5a5a5a5a5a5a5a5aULL;
+    uint64_t readback = 0;
+    uint64_t sip = 0;
+    uint64_t sentinel = 0xdeadbeefcafebabeULL;
+    uint64_t ro_val = 0x1234;
+    uint64_t fflags_in = 0x15;
+    uc_err expected_err =
+        getenv("UC_IGNORE_REG_BREAK") ? UC_ERR_ARG : UC_ERR_OK;
+
+    OK(uc_open(UC_ARCH_RISCV, UC_MODE_RISCV64, &uc));
+    OK(uc_reg_write(uc, UC_RISCV_REG_MTVEC, &mtvec_in));
+
+    OK(uc_reg_read_batch(uc, regs, ptrs, 4));
+    TEST_CHECK(vals[0] == mtvec_in);
+    TEST_CHECK(vals[1] == 0);
+    TEST_CHECK(vals[2] == 0);
+    TEST_CHECK(vals[3] == 0);
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_MSTATUS, &mstatus));
+    TEST_CHECK((mstatus & 0x6000) == 0);
+
+    OK(uc_reg_write(uc, UC_RISCV_REG_PRIV, &priv));
+    OK(uc_reg_write(uc, UC_RISCV_REG_SSCRATCH, &sscratch));
+    OK(uc_reg_read(uc, UC_RISCV_REG_SSCRATCH, &readback));
+    TEST_CHECK(readback == sscratch);
+
+    OK(uc_reg_write(uc, UC_RISCV_REG_SIP, &sip));
+
+    uc_assert_err(expected_err,
+                  uc_reg_read(uc, UC_RISCV_REG_USTATUS, &sentinel));
+    TEST_CHECK(sentinel == 0xdeadbeefcafebabeULL);
+    uc_assert_err(expected_err,
+                  uc_reg_write(uc, UC_RISCV_REG_USTATUS, &ro_val));
+    uc_assert_err(expected_err,
+                  uc_reg_write(uc, UC_RISCV_REG_MVENDORID, &ro_val));
+
+    OK(uc_reg_write(uc, UC_RISCV_REG_FFLAGS, &fflags_in));
+    OK(uc_reg_read(uc, UC_RISCV_REG_FFLAGS, &readback));
+    TEST_CHECK(readback == fflags_in);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_riscv32_nop", test_riscv32_nop},
     {"test_riscv64_nop", test_riscv64_nop},
@@ -1024,4 +1131,6 @@ TEST_LIST = {
      test_riscv_correct_address_in_long_jump_hook},
     {"test_riscv_mmu", test_riscv_mmu},
     {"test_riscv_priv", test_riscv_priv},
+    {"test_riscv32_csr_debug_access", test_riscv32_csr_debug_access},
+    {"test_riscv64_csr_debug_access", test_riscv64_csr_debug_access},
     {NULL, NULL}};
